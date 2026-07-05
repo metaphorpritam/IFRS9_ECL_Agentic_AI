@@ -6,6 +6,7 @@ aliases: [corpus pipeline, ingestion pipeline]
 tags: [knowledge-layer, retrieval]
 sources:
   - ../.claude/skills/pageindex-plus/SKILL.md
+  - ../knowledge/code_map.md
 code:
   - ../knowledge/preprocess_notes.py
 links:

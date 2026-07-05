@@ -9,3 +9,7 @@ Waiting on operator: ~~(1) mortgage.csv from creditriskanalytics.net -> data/raw
 ## 2026-07-05 06:36 UTC — tags: security
 
 Recommend (non-urgent): rotate the 4 API keys after the capstone or if any doubt - they transited a chat transcript and an editor buffer in plaintext, even though they never touched git.
+
+## 2026-07-05 16:33 UTC — tags: day3
+
+Vintage-concentration nuance for Day 3: the book grows toward mid-panel (8,662 staged loans at t=20 vs 13,863 at t=40), so portfolio-level default-rate series mixes vintage composition with the cycle - Z recovery should use cohort-controlled or rate-based inversion, not raw counts.

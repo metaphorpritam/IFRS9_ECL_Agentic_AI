@@ -25,7 +25,10 @@ Never re-orient by re-reading raw sources. Every page gets one line here.
 
 - [[Golden Fixtures]] — the 8 recreated `compute_*.py` scripts; 133/133 golden values pass; the engine freeze gate.
 - [[Knowledge Pipeline]] — preprocess → ingest → index → caption chain; hard-won ingestion lessons.
-- [[LGD Model]] — draft stub: Day-2 two-stage cure × severity model.
+- [[LGD Model]] — two-stage cure × severity on resolved workouts; excess-loss loading +0.0255, never clipped.
+- [[EAD Model]] — contractual amortisation profiles + revolver CCF (€14.0m fixture); the double-counting rule.
+- [[Staging Model]] — relative SICR verified to 1e-10; Stage 2 empty in calm / 75.8% in stress; threshold sensitivity exhibit.
+- [[ECL Engine]] — the sum + movement decomposition; GATE PASSED 187/187, engine frozen 2026-07-05.
 - [[Loan Panel]] — DCR → 621,736-row eligible loan-quarter panel; itemized waterfall; verified lags; train/OOT split.
 - [[Hazard Model]] — cloglog competing-risk PD engine; AUC 0.748/0.661; seasoning hump reproduced; timing convention.
 

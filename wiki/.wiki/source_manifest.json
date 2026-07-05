@@ -1,16 +1,24 @@
 {
-  "updated": "2026-07-05T07:07:44+00:00",
+  "updated": "2026-07-05T16:34:11+00:00",
   "files": {
     ".claude/skills/llm-wiki/SKILL.md": "4026f4aabe3e51b5",
     ".claude/skills/pageindex-plus/SKILL.md": "00af9cba829b27ad",
     "MASTER_PLAN.md": "771ceb85fd37b284",
+    "analysis/ead_exhibits.py": "911c6419b0cfa5ba",
     "analysis/eda_suite.py": "30fde7511466758a",
     "analysis/fit_hazard.py": "cf4b217bc51c0132",
+    "analysis/fit_lgd.py": "486177588f502d80",
+    "analysis/run_ecl.py": "a142650611e1f449",
     "data/panel/build_panel.py": "ff45ef82dbed1a62",
-    "engine/__init__.py": "da7594ec9a2478dc",
+    "engine/__init__.py": "f72375a2a3fc63c4",
+    "engine/ead.py": "caff4dc715ca0992",
+    "engine/ecl.py": "bdf463250956398d",
     "engine/hazard.py": "d862e636c3078362",
+    "engine/lgd.py": "8b16df7ef06ab2c0",
+    "engine/staging.py": "c424882ad5ca2d8c",
     "init_docs/ifrs9_credit_risk_notes.html": "e7f7530d04dae452",
     "init_docs/ifrs9_ecl_copilot_plan.md": "a04212a2ed9fe3a2",
+    "knowledge/code_map.md": "29f45df8b3e4003c",
     "knowledge/corpus/ifrs9_credit_risk_notes.md.md": "b95a091e3c28a292",
     "knowledge/preprocess_notes.py": "41e3a0401089445e",
     "knowledge/sources/ifrs9_credit_risk_notes.md": "d31660d4d1354556",
@@ -24,6 +32,10 @@
     "tests/fixtures/compute_scenarios.py": "a7da17b1a6ada814",
     "tests/fixtures/compute_validation.py": "a6299a5d93339f7b",
     "tests/fixtures/compute_vasicek.py": "182c086be3d694a5",
-    "tests/test_fixtures.py": "9c33322b2cf543bc"
+    "tests/test_ead.py": "4a83f56efb2ad90b",
+    "tests/test_ecl.py": "ffda71e3702c5d0b",
+    "tests/test_fixtures.py": "9c33322b2cf543bc",
+    "tests/test_lgd.py": "603162c7e93ed006",
+    "tests/test_staging.py": "17cf98320d741f85"
   }
 }

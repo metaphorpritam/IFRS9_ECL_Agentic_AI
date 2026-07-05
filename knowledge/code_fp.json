@@ -1,0 +1,362 @@
+{
+  "files": {
+    "engine/__init__.py": {
+      "content_hash": "f72375a2a3fc63c4",
+      "fp": {
+        "struct_hash": "88bc99bc790d8e50",
+        "funcs": [],
+        "classes": [],
+        "imports": [
+          "engine"
+        ]
+      }
+    },
+    "engine/ead.py": {
+      "content_hash": "caff4dc715ca0992",
+      "fp": {
+        "struct_hash": "b120dc99602dd3f7",
+        "funcs": [
+          "_ead_paths(balance,annual_rate_pct,remaining_quarters,horizon)",
+          "ccf_ead(drawn,limit,ccf)",
+          "ead_matrix(panel_snapshot_df,horizon)",
+          "ead_profile(balance,annual_rate,remaining_quarters,horizon)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "numpy",
+          "pandas"
+        ]
+      }
+    },
+    "engine/ecl.py": {
+      "content_hash": "bdf463250956398d",
+      "fp": {
+        "struct_hash": "7c7feef9c97494fe",
+        "funcs": [
+          "_as_period_vector(x,T,name)",
+          "_lgd_eta0(result,frame)",
+          "_lgd_grid(models,frame,Tmax)",
+          "_marginal_pd_grid(models,frame,R)",
+          "_pick(df,stage,suffix)",
+          "_survival_marginal(lam_d,lam_p)",
+          "crosscheck_lgd_grid(models,snapshot_df,n_sample,k_max,seed)",
+          "ecl_for_snapshot(panel_df,t,models,config)",
+          "ecl_schedule(hazard_default,lgd,ead,eir,hazard_prepay)",
+          "ecl_totals(schedule,periods_12m)",
+          "movement_decomposition(allowance_t0_df,allowance_t1_df,label_t0,label_t1)",
+          "reported_allowance(allowance_df)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "engine",
+          "numpy",
+          "pandas",
+          "patsy",
+          "scipy"
+        ]
+      }
+    },
+    "engine/hazard.py": {
+      "content_hash": "d862e636c3078362",
+      "fp": {
+        "struct_hash": "1786dacea90bf08e",
+        "funcs": [
+          "_fit(panel_df,formula,event_col,name)",
+          "_prepare(df)",
+          "fit_default_hazard(panel_df)",
+          "fit_prepay_hazard(panel_df)",
+          "pd_term_structure(models,profile_df,horizon)",
+          "predict_hazard(model,df)"
+        ],
+        "classes": [
+          "HazardModel.mcfadden_r2(self)",
+          "HazardModel.params(self)"
+        ],
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "numpy",
+          "pandas",
+          "statsmodels"
+        ]
+      }
+    },
+    "engine/lgd.py": {
+      "content_hash": "8b16df7ef06ab2c0",
+      "fp": {
+        "struct_hash": "d5a98c1dc6fc76d0",
+        "funcs": [
+          "_prepare(df)",
+          "fit_lgd_models(panel_df,cure_threshold)",
+          "predict_components(models,df)",
+          "predict_lgd(models,df)"
+        ],
+        "classes": [
+          "LgdModels.cure_params(self)",
+          "LgdModels.lgd_upper_bound(self)",
+          "LgdModels.severity_params(self)"
+        ],
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "engine",
+          "numpy",
+          "pandas",
+          "statsmodels"
+        ]
+      }
+    },
+    "engine/staging.py": {
+      "content_hash": "c424882ad5ca2d8c",
+      "fp": {
+        "struct_hash": "9354043a443a12d0",
+        "funcs": [
+          "_age_curve(model,max_age)",
+          "_backstop_30dpd(pd_table,cfg)",
+          "_cum_default_pd(models,frame,horizons)",
+          "_design_matrix(model,frame)",
+          "_spline_cols(model)",
+          "assign_stages(panel_df,models,config,snapshot_time,pd_tables)",
+          "build_macro_map(panel_df)",
+          "crosscheck_term_structure(panel_df,models,at_time,n_sample,seed)",
+          "lifetime_pd_table(panel_df,models,at_time,macro_map,config)",
+          "origination_covariates(snapshot_df,macro_map)",
+          "quantitative_sicr(pd_table,config)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "engine",
+          "numpy",
+          "pandas",
+          "patsy"
+        ]
+      }
+    },
+    "data/panel/__init__.py": {
+      "content_hash": "083f9f4eed54c3e1",
+      "fp": {
+        "struct_hash": "ea1badefcb351eba",
+        "funcs": [],
+        "classes": [],
+        "imports": []
+      }
+    },
+    "data/panel/build_panel.py": {
+      "content_hash": "ff45ef82dbed1a62",
+      "fp": {
+        "struct_hash": "c5dbce64d6d620ec",
+        "funcs": [
+          "_profile(df)",
+          "add_derived(df)",
+          "add_macro_lags(df)",
+          "add_split(df)",
+          "apply_waterfall(df,wf)",
+          "load_raw()",
+          "main()",
+          "run_self_checks(df,wf)",
+          "write_exhibits(wf,retained,final,lag_stats,notes)"
+        ],
+        "classes": [
+          "Waterfall.__init__(self,df0)",
+          "Waterfall.record(self,name,reason,before,after)",
+          "Waterfall.total_rows_dropped(self)"
+        ],
+        "imports": [
+          "__future__",
+          "datetime",
+          "json",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sys"
+        ]
+      }
+    },
+    "analysis/ead_exhibits.py": {
+      "content_hash": "911c6419b0cfa5ba",
+      "fp": {
+        "struct_hash": "5d148758d2b41005",
+        "funcs": [
+          "load_snapshot()",
+          "main()",
+          "pick_representatives(snap)",
+          "plot_profiles(reps,ead,path)",
+          "sanity_checks(snap,ead)",
+          "write_report(snap,reps,checks,horizon,path)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sys"
+        ]
+      }
+    },
+    "analysis/eda_suite.py": {
+      "content_hash": "30fde7511466758a",
+      "fp": {
+        "struct_hash": "92ce8b7ec7b2cc10",
+        "funcs": [
+          "exhibit_default_rate_vs_macro(df,v)",
+          "exhibit_hazard_by_age(df,v,min_exposure)",
+          "exhibit_lgd(df,v)",
+          "exhibit_orig_quality(df,v)",
+          "exhibit_prepay_incentive(df,v)",
+          "exhibit_vintage_curves(df,v,width,min_loans)",
+          "main()",
+          "write_report(v,df)"
+        ],
+        "classes": [
+          "Verdicts.__init__(self)",
+          "Verdicts.add(self,exhibit,expectation,observed,passed)",
+          "Verdicts.n_fail(self)"
+        ],
+        "imports": [
+          "__future__",
+          "datetime",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "scipy",
+          "sys"
+        ]
+      }
+    },
+    "analysis/fit_hazard.py": {
+      "content_hash": "cf4b217bc51c0132",
+      "fp": {
+        "struct_hash": "fb733b370f722594",
+        "funcs": [
+          "fail(msg)",
+          "hazard_ratio_table(model)",
+          "main()",
+          "render_hr_markdown(models,meta)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sklearn",
+          "sys"
+        ]
+      }
+    },
+    "analysis/fit_lgd.py": {
+      "content_hash": "486177588f502d80",
+      "fp": {
+        "struct_hash": "d84bdf0101b3499b",
+        "funcs": [
+          "build_report(models,tr,oo,panel,stats)",
+          "coef_table(res,robust)",
+          "decile_frame(models,sample,edges)",
+          "load_samples()",
+          "main()",
+          "md_table(df,fmt)",
+          "plot_distribution(models,tr)",
+          "plot_two_panel(models,tr,oo,edges,kind)",
+          "sensitivity_block(panel,tr,oo)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sklearn",
+          "sys"
+        ]
+      }
+    },
+    "analysis/mpl_style.py": {
+      "content_hash": "2e0fb83fd355693e",
+      "fp": {
+        "struct_hash": "ff96905bf3035f59",
+        "funcs": [
+          "apply_textbook_style()",
+          "figsize_for(kind)"
+        ],
+        "classes": [],
+        "imports": [
+          "matplotlib"
+        ]
+      }
+    },
+    "analysis/run_ecl.py": {
+      "content_hash": "a142650611e1f449",
+      "fp": {
+        "struct_hash": "31994db9389ae237",
+        "funcs": [
+          "coverage_of(agg,stage)",
+          "main()",
+          "plot_allowance_by_stage(aggs,path)",
+          "plot_coverage_by_stage(aggs,path)",
+          "plot_waterfall(wf,path)",
+          "sanity_checks(books,aggs,wf,lgd_xcheck)",
+          "stage_aggregates(book)",
+          "write_report(books,aggs,wf,cfg,checks,timings,path)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sys",
+          "time"
+        ]
+      }
+    },
+    "analysis/staging_exhibits.py": {
+      "content_hash": "2699c61f43beeaa9",
+      "fp": {
+        "struct_hash": "3446e3cc3d4114c1",
+        "funcs": [
+          "main()",
+          "plot_sensitivity(sens,books,cfg,path)",
+          "plot_stage_distribution(books,path)",
+          "sanity_checks(books,sens,xcheck_err)",
+          "scale_benchmark(panel,models,macro_map)",
+          "sensitivity_table(panel,models,macro_map,cfg)",
+          "stage_book(panel,models,cfg,t)",
+          "stage_shares(book)",
+          "write_report(books,sens,cfg,bench,xcheck_err,fit_seconds,stage_seconds,checks,path)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sys",
+          "time"
+        ]
+      }
+    }
+  }
+}
