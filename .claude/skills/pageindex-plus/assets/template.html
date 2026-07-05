@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<!--
+  MathJax SVG renderer — the only external dependency.
+  SVG (not CHTML) chosen because it prints cleanly and renders correctly
+  even when CSS fonts haven't loaded yet.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --warn: #c0392b;
+    --good: #1e7e34;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --pageW: 920px;
+  }
+  html { background: #ddd; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.45; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: white;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.10);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 26px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 6px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 24px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 28px; }
+  h3 { font-size: 16px; color: var(--accent); margin-top: 16px; margin-bottom: 6px; }
+  h4 { font-size: 14px; margin-top: 12px; margin-bottom: 4px; }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 10px 18px; padding-left: 8px; }
+  li { margin: 2px 0; }
+  /* Figures */
+  .fig { display:block; margin: 10px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: -2px; margin-bottom: 16px; }
+  /* Two-column layout for side-by-side text */
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .twocol > div > p:first-child { margin-top: 0; }
+  /* Textbook boxes */
+  .defn, .note, .thm, .ex, .warn {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 8px 12px; margin: 10px 0;
+    border-radius: 3px;
+  }
+  .thm { border-left-color: #8e44ad; background: #f5edf7; }
+  .ex  { border-left-color: var(--good); background: #ecf7ee; }
+  .warn{ border-left-color: var(--warn); background: #fdecea; }
+  .note{ border-left-color: #d39e00; background: var(--thmBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b { font-variant: small-caps; letter-spacing: 0.4px; }
+  /* Tables */
+  table { border-collapse: collapse; margin: 8px auto; font-size: 13px; }
+  th, td { border: 1px solid #999; padding: 4px 8px; text-align: center; }
+  th { background: #e8eef7; font-weight: 600; }
+  td.l { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .check { color: var(--good); font-weight: bold; }
+  .cross { color: #999; }
+  /* Summary / cheatsheet block */
+  .summary {
+    background: var(--boxbg); border-radius: 4px;
+    padding: 8px 14px; margin: 8px 0; font-size: 13.5px;
+  }
+  code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: 12.8px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 16px 0; }
+  /* TOC layout */
+  .toc { columns: 2; column-gap: 28px; font-size: 13px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  /* Centered display math wrapper */
+  .formula-block { text-align:center; margin: 6px 0; }
+  /* Print-friendly */
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>{{TITLE}}</h1>
+<div class="subtitle">{{SUBTITLE}}</div>
+
+<!-- ============================================================== -->
+<!-- TABLE OF CONTENTS                                                -->
+<!-- ============================================================== -->
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s1">Section title</a></li>
+<!-- add one <li> per top-level section -->
+</ol>
+</div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTIONS GO HERE                                                 -->
+<!-- Each section pattern:                                            -->
+<!--                                                                  -->
+<!--   <h2 id="sN">N &nbsp; Section Title</h2>                        -->
+<!--   <p>Intro paragraph…</p>                                        -->
+<!--                                                                  -->
+<!--   <h3>N.1 Sub-section</h3>                                       -->
+<!--   <p>…</p>                                                       -->
+<!--                                                                  -->
+<!--   <div class="defn"><b>Definition.</b> …</div>                   -->
+<!--   <div class="thm">  <b>Theorem.</b>    …</div>                  -->
+<!--   <div class="ex">   <b>Example.</b>    …</div>                  -->
+<!--   <div class="warn"> <b>Warning.</b>    …</div>                  -->
+<!--   <div class="note"> <b>Intuition.</b>  …</div>                  -->
+<!--                                                                  -->
+<!--   <img class="fig" src="data:image/png;base64,{{IMG:01_key}}">   -->
+<!--   <div class="figcap">Fig. 1 — caption.</div>                    -->
+<!--                                                                  -->
+<!--   Display math:  $$ y = mx + b $$                                -->
+<!--   Inline  math:  $f(x) = e^{-x^2}$                               -->
+<!--                                                                  -->
+<!--   For HTML, use &lt; and &gt; instead of < and > inside math     -->
+<!-- ============================================================== -->
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from {{SOURCE}} on {{DATE}}.
+</div>
+
+</body>
+</html>

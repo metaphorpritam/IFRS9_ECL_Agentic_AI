@@ -1,0 +1,30 @@
+# secrets — never committed (rotate immediately if one ever lands in history)
+.env
+.env.*
+!.env.example
+*.key
+*credentials*
+*.pem
+
+# data — raw/processed panels are licensed downloads, never redistributed via git
+data/raw/
+data/processed/
+data/scenarios/
+!data/**/.gitkeep
+!data/**/README.md
+
+# python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# node / frontend
+node_modules/
+app/ui/dist/
+
+# misc
+.DS_Store
+*.log

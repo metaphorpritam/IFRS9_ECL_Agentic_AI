@@ -1,0 +1,9 @@
+# LF everywhere (repo lives on a 9P Windows mount; WSL + Docker need LF)
+* text=auto eol=lf
+
+# binaries
+*.png binary
+*.webp binary
+*.skill binary
+*.parquet binary
+*.zip binary
