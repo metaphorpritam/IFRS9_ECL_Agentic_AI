@@ -1,0 +1,735 @@
+{
+  "generated": "2026-07-05T05:50:05+00:00",
+  "wiki_dir": "wiki",
+  "pages": 10,
+  "nodes": [
+    {
+      "id": "bootstrap-decisions",
+      "path": "pages/bootstrap-decisions.md",
+      "title": "Bootstrap Decisions",
+      "type": "decision",
+      "tags": [
+        "decisions",
+        "bootstrap"
+      ],
+      "aliases": [
+        "phase minus one decisions",
+        "reconciliation decisions"
+      ],
+      "status": "active",
+      "sources": [
+        "../MASTER_PLAN.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 13,
+          "text": "Bootstrap Decisions"
+        },
+        {
+          "line": 19,
+          "text": "Contradiction resolutions (build plan internal)"
+        },
+        {
+          "line": 30,
+          "text": "Accepted defaults (§7)"
+        },
+        {
+          "line": 37,
+          "text": "Session decisions (2026-07-05)"
+        }
+      ],
+      "in_degree": 5,
+      "out_degree": 2
+    },
+    {
+      "id": "build-plan",
+      "path": "pages/build-plan.md",
+      "title": "Build Plan",
+      "type": "source",
+      "tags": [
+        "planning",
+        "methodology"
+      ],
+      "aliases": [
+        "copilot plan",
+        "ifrs9_ecl_copilot_plan"
+      ],
+      "status": "active",
+      "sources": [
+        "../init_docs/ifrs9_ecl_copilot_plan.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 13,
+          "text": "Build Plan"
+        },
+        {
+          "line": 18,
+          "text": "Contents map"
+        },
+        {
+          "line": 31,
+          "text": "Deviations recorded"
+        }
+      ],
+      "in_degree": 7,
+      "out_degree": 3
+    },
+    {
+      "id": "golden-fixtures",
+      "path": "pages/golden-fixtures.md",
+      "title": "Golden Fixtures",
+      "type": "module",
+      "tags": [
+        "testing",
+        "engine",
+        "gate"
+      ],
+      "aliases": [
+        "fixture scripts",
+        "compute scripts",
+        "gate tests"
+      ],
+      "status": "active",
+      "sources": [
+        "../knowledge/corpus/ifrs9_credit_risk_notes.md.md"
+      ],
+      "code": [
+        "../tests/test_fixtures.py",
+        "../tests/__init__.py",
+        "../tests/fixtures/__init__.py",
+        "../tests/fixtures/compute_ecl.py",
+        "../tests/fixtures/compute_pd.py",
+        "../tests/fixtures/compute_vasicek.py",
+        "../tests/fixtures/compute_scenarios.py",
+        "../tests/fixtures/compute_grossup.py",
+        "../tests/fixtures/compute_ncl.py",
+        "../tests/fixtures/compute_rollrate.py",
+        "../tests/fixtures/compute_validation.py"
+      ],
+      "headings": [
+        {
+          "line": 26,
+          "text": "Golden Fixtures"
+        },
+        {
+          "line": 36,
+          "text": "Coverage (script → worked example → headline values)"
+        }
+      ],
+      "in_degree": 5,
+      "out_degree": 3
+    },
+    {
+      "id": "ifrs9-study-notes",
+      "path": "pages/ifrs9-study-notes.md",
+      "title": "IFRS9 Study Notes",
+      "type": "source",
+      "tags": [
+        "domain-knowledge",
+        "corpus"
+      ],
+      "aliases": [
+        "the notes",
+        "credit risk notes",
+        "study notes"
+      ],
+      "status": "active",
+      "sources": [
+        "../init_docs/ifrs9_credit_risk_notes.html",
+        "../knowledge/sources/ifrs9_credit_risk_notes.md",
+        "../knowledge/corpus/ifrs9_credit_risk_notes.md.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 16,
+          "text": "IFRS9 Study Notes"
+        },
+        {
+          "line": 24,
+          "text": "Topic map (section → role in the build)"
+        },
+        {
+          "line": 36,
+          "text": "Numeric ground truth"
+        }
+      ],
+      "in_degree": 8,
+      "out_degree": 6
+    },
+    {
+      "id": "index",
+      "path": "index.md",
+      "title": "IFRS9 ECL Copilot Wiki Index",
+      "type": "concept",
+      "tags": [
+        "index"
+      ],
+      "aliases": [],
+      "status": "active",
+      "sources": [],
+      "code": [],
+      "headings": [
+        {
+          "line": 8,
+          "text": "IFRS9 ECL Copilot Wiki — wiki index"
+        },
+        {
+          "line": 14,
+          "text": "Concepts"
+        },
+        {
+          "line": 18,
+          "text": "Sources"
+        },
+        {
+          "line": 24,
+          "text": "Modules"
+        },
+        {
+          "line": 29,
+          "text": "Entities"
+        },
+        {
+          "line": 34,
+          "text": "Decisions & open questions"
+        }
+      ],
+      "in_degree": 0,
+      "out_degree": 9
+    },
+    {
+      "id": "knowledge-pipeline",
+      "path": "pages/knowledge-pipeline.md",
+      "title": "Knowledge Pipeline",
+      "type": "module",
+      "tags": [
+        "knowledge-layer",
+        "retrieval"
+      ],
+      "aliases": [
+        "corpus pipeline",
+        "ingestion pipeline"
+      ],
+      "status": "active",
+      "sources": [
+        "../.claude/skills/pageindex-plus/SKILL.md"
+      ],
+      "code": [
+        "../knowledge/preprocess_notes.py"
+      ],
+      "headings": [
+        {
+          "line": 16,
+          "text": "Knowledge Pipeline"
+        },
+        {
+          "line": 31,
+          "text": "Hard-won lessons (do not rediscover)"
+        }
+      ],
+      "in_degree": 8,
+      "out_degree": 3
+    },
+    {
+      "id": "llm-wiki-skill",
+      "path": "pages/llm-wiki-skill.md",
+      "title": "llm-wiki Skill",
+      "type": "entity",
+      "tags": [
+        "skill",
+        "knowledge-layer"
+      ],
+      "aliases": [
+        "llm-wiki",
+        "the wiki skill"
+      ],
+      "status": "active",
+      "sources": [
+        "../.claude/skills/llm-wiki/SKILL.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 13,
+          "text": "llm-wiki Skill"
+        },
+        {
+          "line": 19,
+          "text": "Roles in this project"
+        },
+        {
+          "line": 29,
+          "text": "Conventions adopted here"
+        }
+      ],
+      "in_degree": 5,
+      "out_degree": 2
+    },
+    {
+      "id": "master-plan",
+      "path": "pages/master-plan.md",
+      "title": "Master Plan",
+      "type": "source",
+      "tags": [
+        "planning"
+      ],
+      "aliases": [
+        "MASTER_PLAN",
+        "execution plan"
+      ],
+      "status": "active",
+      "sources": [
+        "../MASTER_PLAN.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 14,
+          "text": "Master Plan"
+        },
+        {
+          "line": 20,
+          "text": "Structure"
+        },
+        {
+          "line": 28,
+          "text": "Key synthesis findings"
+        }
+      ],
+      "in_degree": 6,
+      "out_degree": 8
+    },
+    {
+      "id": "pageindex-plus-skill",
+      "path": "pages/pageindex-plus-skill.md",
+      "title": "pageindex-plus Skill",
+      "type": "entity",
+      "tags": [
+        "skill",
+        "knowledge-layer",
+        "retrieval"
+      ],
+      "aliases": [
+        "pageindex",
+        "pageindex-plus"
+      ],
+      "status": "active",
+      "sources": [
+        "../.claude/skills/pageindex-plus/SKILL.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 13,
+          "text": "pageindex-plus Skill"
+        },
+        {
+          "line": 20,
+          "text": "Used here for"
+        },
+        {
+          "line": 29,
+          "text": "Environment caveats"
+        }
+      ],
+      "in_degree": 6,
+      "out_degree": 3
+    },
+    {
+      "id": "project-overview",
+      "path": "pages/project-overview.md",
+      "title": "Project Overview",
+      "type": "concept",
+      "tags": [
+        "hub",
+        "orientation"
+      ],
+      "aliases": [
+        "ifrs9 ecl copilot",
+        "the project"
+      ],
+      "status": "active",
+      "sources": [
+        "../MASTER_PLAN.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 14,
+          "text": "Project Overview"
+        },
+        {
+          "line": 21,
+          "text": "Governing principles"
+        },
+        {
+          "line": 29,
+          "text": "Where things are"
+        },
+        {
+          "line": 36,
+          "text": "Session recovery ritual"
+        }
+      ],
+      "in_degree": 1,
+      "out_degree": 12
+    }
+  ],
+  "edges": [
+    {
+      "src": "bootstrap-decisions",
+      "dst": "build-plan",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "bootstrap-decisions",
+      "dst": "master-plan",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "build-plan",
+      "dst": "bootstrap-decisions",
+      "type": "mentions",
+      "line": 34
+    },
+    {
+      "src": "build-plan",
+      "dst": "ifrs9-study-notes",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "build-plan",
+      "dst": "master-plan",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "golden-fixtures",
+      "dst": "ifrs9-study-notes",
+      "type": "derived-from",
+      "line": 22
+    },
+    {
+      "src": "golden-fixtures",
+      "dst": "ifrs9-study-notes",
+      "type": "mentions",
+      "line": 28
+    },
+    {
+      "src": "golden-fixtures",
+      "dst": "master-plan",
+      "type": "implements",
+      "line": 23
+    },
+    {
+      "src": "ifrs9-study-notes",
+      "dst": "build-plan",
+      "type": "relates",
+      "line": 12
+    },
+    {
+      "src": "ifrs9-study-notes",
+      "dst": "golden-fixtures",
+      "type": "mentions",
+      "line": 38
+    },
+    {
+      "src": "ifrs9-study-notes",
+      "dst": "golden-fixtures",
+      "type": "relates",
+      "line": 12
+    },
+    {
+      "src": "ifrs9-study-notes",
+      "dst": "knowledge-pipeline",
+      "type": "mentions",
+      "line": 21
+    },
+    {
+      "src": "ifrs9-study-notes",
+      "dst": "knowledge-pipeline",
+      "type": "part-of",
+      "line": 13
+    },
+    {
+      "src": "ifrs9-study-notes",
+      "dst": "pageindex-plus-skill",
+      "type": "mentions",
+      "line": 20
+    },
+    {
+      "src": "index",
+      "dst": "bootstrap-decisions",
+      "type": "mentions",
+      "line": 36
+    },
+    {
+      "src": "index",
+      "dst": "build-plan",
+      "type": "mentions",
+      "line": 21
+    },
+    {
+      "src": "index",
+      "dst": "golden-fixtures",
+      "type": "mentions",
+      "line": 26
+    },
+    {
+      "src": "index",
+      "dst": "ifrs9-study-notes",
+      "type": "mentions",
+      "line": 22
+    },
+    {
+      "src": "index",
+      "dst": "knowledge-pipeline",
+      "type": "mentions",
+      "line": 27
+    },
+    {
+      "src": "index",
+      "dst": "llm-wiki-skill",
+      "type": "mentions",
+      "line": 31
+    },
+    {
+      "src": "index",
+      "dst": "master-plan",
+      "type": "mentions",
+      "line": 20
+    },
+    {
+      "src": "index",
+      "dst": "pageindex-plus-skill",
+      "type": "mentions",
+      "line": 32
+    },
+    {
+      "src": "index",
+      "dst": "project-overview",
+      "type": "mentions",
+      "line": 16
+    },
+    {
+      "src": "knowledge-pipeline",
+      "dst": "ifrs9-study-notes",
+      "type": "relates",
+      "line": 13
+    },
+    {
+      "src": "knowledge-pipeline",
+      "dst": "llm-wiki-skill",
+      "type": "relates",
+      "line": 13
+    },
+    {
+      "src": "knowledge-pipeline",
+      "dst": "pageindex-plus-skill",
+      "type": "uses",
+      "line": 12
+    },
+    {
+      "src": "llm-wiki-skill",
+      "dst": "knowledge-pipeline",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "llm-wiki-skill",
+      "dst": "pageindex-plus-skill",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "master-plan",
+      "dst": "bootstrap-decisions",
+      "type": "mentions",
+      "line": 24
+    },
+    {
+      "src": "master-plan",
+      "dst": "bootstrap-decisions",
+      "type": "relates",
+      "line": 11
+    },
+    {
+      "src": "master-plan",
+      "dst": "build-plan",
+      "type": "derived-from",
+      "line": 10
+    },
+    {
+      "src": "master-plan",
+      "dst": "build-plan",
+      "type": "mentions",
+      "line": 16
+    },
+    {
+      "src": "master-plan",
+      "dst": "golden-fixtures",
+      "type": "mentions",
+      "line": 30
+    },
+    {
+      "src": "master-plan",
+      "dst": "ifrs9-study-notes",
+      "type": "derived-from",
+      "line": 10
+    },
+    {
+      "src": "master-plan",
+      "dst": "llm-wiki-skill",
+      "type": "derived-from",
+      "line": 10
+    },
+    {
+      "src": "master-plan",
+      "dst": "pageindex-plus-skill",
+      "type": "derived-from",
+      "line": 10
+    },
+    {
+      "src": "pageindex-plus-skill",
+      "dst": "knowledge-pipeline",
+      "type": "mentions",
+      "line": 22
+    },
+    {
+      "src": "pageindex-plus-skill",
+      "dst": "knowledge-pipeline",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "pageindex-plus-skill",
+      "dst": "llm-wiki-skill",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "project-overview",
+      "dst": "bootstrap-decisions",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "project-overview",
+      "dst": "build-plan",
+      "type": "mentions",
+      "line": 31
+    },
+    {
+      "src": "project-overview",
+      "dst": "build-plan",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "project-overview",
+      "dst": "golden-fixtures",
+      "type": "mentions",
+      "line": 24
+    },
+    {
+      "src": "project-overview",
+      "dst": "ifrs9-study-notes",
+      "type": "mentions",
+      "line": 32
+    },
+    {
+      "src": "project-overview",
+      "dst": "ifrs9-study-notes",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "project-overview",
+      "dst": "knowledge-pipeline",
+      "type": "mentions",
+      "line": 32
+    },
+    {
+      "src": "project-overview",
+      "dst": "knowledge-pipeline",
+      "type": "uses",
+      "line": 11
+    },
+    {
+      "src": "project-overview",
+      "dst": "llm-wiki-skill",
+      "type": "uses",
+      "line": 11
+    },
+    {
+      "src": "project-overview",
+      "dst": "master-plan",
+      "type": "mentions",
+      "line": 31
+    },
+    {
+      "src": "project-overview",
+      "dst": "master-plan",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "project-overview",
+      "dst": "pageindex-plus-skill",
+      "type": "uses",
+      "line": 11
+    }
+  ],
+  "unresolved": [],
+  "duplicates": [],
+  "title_index": {
+    "ifrs9 ecl copilot wiki index": "index",
+    "index": "index",
+    "bootstrap decisions": "bootstrap-decisions",
+    "bootstrap-decisions": "bootstrap-decisions",
+    "phase minus one decisions": "bootstrap-decisions",
+    "reconciliation decisions": "bootstrap-decisions",
+    "build plan": "build-plan",
+    "build-plan": "build-plan",
+    "copilot plan": "build-plan",
+    "ifrs9_ecl_copilot_plan": "build-plan",
+    "golden fixtures": "golden-fixtures",
+    "golden-fixtures": "golden-fixtures",
+    "fixture scripts": "golden-fixtures",
+    "compute scripts": "golden-fixtures",
+    "gate tests": "golden-fixtures",
+    "ifrs9 study notes": "ifrs9-study-notes",
+    "ifrs9-study-notes": "ifrs9-study-notes",
+    "the notes": "ifrs9-study-notes",
+    "credit risk notes": "ifrs9-study-notes",
+    "study notes": "ifrs9-study-notes",
+    "knowledge pipeline": "knowledge-pipeline",
+    "knowledge-pipeline": "knowledge-pipeline",
+    "corpus pipeline": "knowledge-pipeline",
+    "ingestion pipeline": "knowledge-pipeline",
+    "llm-wiki skill": "llm-wiki-skill",
+    "llm-wiki-skill": "llm-wiki-skill",
+    "llm-wiki": "llm-wiki-skill",
+    "the wiki skill": "llm-wiki-skill",
+    "master plan": "master-plan",
+    "master-plan": "master-plan",
+    "master_plan": "master-plan",
+    "execution plan": "master-plan",
+    "pageindex-plus skill": "pageindex-plus-skill",
+    "pageindex-plus-skill": "pageindex-plus-skill",
+    "pageindex": "pageindex-plus-skill",
+    "pageindex-plus": "pageindex-plus-skill",
+    "project overview": "project-overview",
+    "project-overview": "project-overview",
+    "ifrs9 ecl copilot": "project-overview",
+    "the project": "project-overview"
+  },
+  "warnings": []
+}

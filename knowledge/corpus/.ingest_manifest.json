@@ -1,0 +1,21 @@
+{
+  "files": {
+    "ifrs9_credit_risk_notes.md": {
+      "hash": "d31660d4d1354556",
+      "slug": "ifrs9_credit_risk_notes.md",
+      "assets": [
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig001.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig002.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig003.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig004.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig005.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig006.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig007.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig008.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig009.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig010.png"
+      ],
+      "figures": 10
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "generated": "2026-07-05T05:50:05+00:00",
+  "errors": {
+    "broken_links": [],
+    "missing_frontmatter": [],
+    "missing_sources": [],
+    "stale_pages": []
+  },
+  "warnings": {
+    "unhashed_sources": [],
+    "orphans": [],
+    "uncovered_sources": [],
+    "todos": [],
+    "duplicates": [],
+    "unknown_type": [],
+    "index_gaps": []
+  },
+  "counts": {
+    "errors": 0,
+    "warnings": 0,
+    "pages": 10,
+    "edges": 51
+  }
+}

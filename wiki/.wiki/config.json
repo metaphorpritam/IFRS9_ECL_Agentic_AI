@@ -1,0 +1,14 @@
+{
+  "name": "IFRS9 ECL Copilot Wiki",
+  "source_roots": [
+    "../init_docs",
+    "../knowledge"
+  ],
+  "code_globs": [
+    "../knowledge/*.py",
+    "../tests/**/*.py",
+    "../engine/**/*.py",
+    "../agent/**/*.py"
+  ],
+  "created": "2026-07-05T00:58:03+00:00"
+}
