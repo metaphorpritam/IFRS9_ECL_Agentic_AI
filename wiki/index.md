@@ -25,6 +25,9 @@ Never re-orient by re-reading raw sources. Every page gets one line here.
 
 - [[Golden Fixtures]] — the 8 recreated `compute_*.py` scripts; 133/133 golden values pass; the engine freeze gate.
 - [[Knowledge Pipeline]] — preprocess → ingest → index → caption chain; hard-won ingestion lessons.
+- [[LGD Model]] — draft stub: Day-2 two-stage cure × severity model.
+- [[Loan Panel]] — DCR → 621,736-row eligible loan-quarter panel; itemized waterfall; verified lags; train/OOT split.
+- [[Hazard Model]] — cloglog competing-risk PD engine; AUC 0.748/0.661; seasoning hump reproduced; timing convention.
 
 ## Entities
 

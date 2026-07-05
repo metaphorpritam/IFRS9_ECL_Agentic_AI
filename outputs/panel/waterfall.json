@@ -1,0 +1,157 @@
+{
+  "generated_at_utc": "2026-07-05T06:31:56+00:00",
+  "source": "data/raw/dcr_full.csv",
+  "raw": {
+    "rows": 622489,
+    "loans": 50000,
+    "defaults": 15158,
+    "payoffs": 26589
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "exact_duplicate_rows",
+      "reason": "Verbatim copies of an existing row (all 28 columns identical), incl. the doubled terminal default rows of ids 37067/37130/37792; dropped copies are duplicates of retained rows, so no information is lost.",
+      "rows_in": 622489,
+      "rows_dropped": 305,
+      "rows_out": 622184,
+      "loans_in": 50000,
+      "loans_dropped": 0,
+      "loans_out": 50000,
+      "defaults_dropped": 3,
+      "payoffs_dropped": 0
+    },
+    {
+      "step": 2,
+      "name": "id_collision_loans",
+      "reason": "5 ids each contain two interleaved distinct loans (same-(id,time) rows with conflicting covariates, e.g. two different balance_orig/FICO tracks under id 3014, both defaulting); rows cannot be attributed to either loan, so the whole id is excluded.",
+      "rows_in": 622184,
+      "rows_dropped": 108,
+      "rows_out": 622076,
+      "loans_in": 50000,
+      "loans_dropped": 5,
+      "loans_out": 49995,
+      "defaults_dropped": 3,
+      "payoffs_dropped": 2
+    },
+    {
+      "step": 3,
+      "name": "same_quarter_status_conflict",
+      "reason": "Same-(id,time) pairs identical on every covariate but with one status-0 row shadowing a terminal row (e.g. id 37528 at t=51): the terminal row is kept so the event is preserved; the shadow is dropped.",
+      "rows_in": 622076,
+      "rows_dropped": 7,
+      "rows_out": 622069,
+      "loans_in": 49995,
+      "loans_dropped": 0,
+      "loans_out": 49995,
+      "defaults_dropped": 0,
+      "payoffs_dropped": 0
+    },
+    {
+      "step": 4,
+      "name": "post_terminal_truncation",
+      "reason": "Generic guard: any row after a loan's FIRST terminal event (default or payoff) is truncated \u2014 a loan leaves the at-risk set at its event. Expected 0 after steps 1-3 resolved the 4-loan anomaly; recorded to prove the check ran.",
+      "rows_in": 622069,
+      "rows_dropped": 0,
+      "rows_out": 622069,
+      "loans_in": 49995,
+      "loans_dropped": 0,
+      "loans_out": 49995,
+      "defaults_dropped": 0,
+      "payoffs_dropped": 0
+    },
+    {
+      "step": 5,
+      "name": "nonpositive_origination_balance_loans",
+      "reason": "18 loans with balance_orig_time missing-coded as 0 (a static origination defect): original property value = balance_orig / (LTV_orig/100) = 0, so updated LTV and the double-trigger interaction are incomputable for every row of the loan; these are exactly the rows where the vendor's own LTV_time is NaN.",
+      "rows_in": 622069,
+      "rows_dropped": 270,
+      "rows_out": 621799,
+      "loans_in": 49995,
+      "loans_dropped": 18,
+      "loans_out": 49977,
+      "defaults_dropped": 5,
+      "payoffs_dropped": 7
+    },
+    {
+      "step": 6,
+      "name": "zero_balance_live_rows",
+      "reason": "Non-terminal (status 0) rows with balance_time <= 0: zero exposure on a live row is a missing-coded balance, not a real state \u2014 the history continues or the loan is censored at the prior quarter. Terminal payoff rows with balance 0 are KEPT (the zero balance IS the payoff; the row carries the competing-risk event).",
+      "rows_in": 621799,
+      "rows_dropped": 38,
+      "rows_out": 621761,
+      "loans_in": 49977,
+      "loans_dropped": 1,
+      "loans_out": 49976,
+      "defaults_dropped": 0,
+      "payoffs_dropped": 0
+    },
+    {
+      "step": 7,
+      "name": "nonpositive_current_note_rate_rows",
+      "reason": "Rows with interest_rate_time missing-coded as 0: the prepayment incentive (note rate - market rate) is incomputable; all such rows are status 0, so no events are lost.",
+      "rows_in": 621761,
+      "rows_dropped": 25,
+      "rows_out": 621736,
+      "loans_in": 49976,
+      "loans_dropped": 2,
+      "loans_out": 49974,
+      "defaults_dropped": 0,
+      "payoffs_dropped": 0
+    }
+  ],
+  "retained_but_flagged": {
+    "state_orig_time_missing": {
+      "rows": 2829,
+      "disposition": "kept \u2014 state unused at this rung (national macros only; no state-level merge in scope)"
+    },
+    "orig_rate_missing_coded_zero": {
+      "rows": 89730,
+      "disposition": "kept + flag orig_rate_missing \u2014 origination-rate snapshot missing-coded 0; current note rate is populated and drives the prepayment incentive"
+    },
+    "lag_warmup_rows_time_le_5": {
+      "rows": 3343,
+      "disposition": "kept + flag lag_warmup \u2014 uer_chg4_lag1 needs uer(t-5), undefined before t=6; excluded from no-NaN guarantee"
+    },
+    "within_loan_time_gaps": {
+      "rows": 1257,
+      "disposition": "kept \u2014 non-consecutive quarter steps inside loans; macro lags repaired from the panel-internal time map so lag distance is always exact"
+    }
+  },
+  "lag_construction": {
+    "uer_lag1": {
+      "rows_agree_groupby_shift": 570505,
+      "rows_completed_from_time_map": 50948,
+      "rows_nan_warmup": 283
+    },
+    "uer_lag2": {
+      "rows_agree_groupby_shift": 523413,
+      "rows_completed_from_time_map": 97511,
+      "rows_nan_warmup": 812
+    },
+    "gdp_lag1": {
+      "rows_agree_groupby_shift": 570505,
+      "rows_completed_from_time_map": 50948,
+      "rows_nan_warmup": 283
+    },
+    "gap_steps_within_loans": 1257,
+    "warmup_rows": 3343
+  },
+  "collision_ids": [
+    3014,
+    5180,
+    15568,
+    42503,
+    42514
+  ],
+  "final": {
+    "rows": 621736,
+    "loans": 49974,
+    "defaults": 15147,
+    "payoffs": 26580,
+    "censored_loans": 8247,
+    "train_rows": 421761,
+    "oot_rows": 199975,
+    "columns": 46
+  }
+}

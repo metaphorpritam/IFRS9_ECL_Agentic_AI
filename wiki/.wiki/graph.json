@@ -1,7 +1,7 @@
 {
-  "generated": "2026-07-05T05:50:05+00:00",
+  "generated": "2026-07-05T07:07:44+00:00",
   "wiki_dir": "wiki",
-  "pages": 10,
+  "pages": 13,
   "nodes": [
     {
       "id": "bootstrap-decisions",
@@ -123,6 +123,51 @@
       "out_degree": 3
     },
     {
+      "id": "hazard-model",
+      "path": "pages/hazard-model.md",
+      "title": "Hazard Model",
+      "type": "module",
+      "tags": [
+        "engine",
+        "pd"
+      ],
+      "aliases": [
+        "PD model",
+        "cloglog hazard",
+        "default hazard"
+      ],
+      "status": "active",
+      "sources": [
+        "../knowledge/sources/ifrs9_credit_risk_notes.md"
+      ],
+      "code": [
+        "../engine/__init__.py",
+        "../engine/hazard.py",
+        "../analysis/fit_hazard.py",
+        "../analysis/eda_suite.py"
+      ],
+      "headings": [
+        {
+          "line": 20,
+          "text": "Hazard Model"
+        },
+        {
+          "line": 27,
+          "text": "Fit (train t≤40; exhibits in outputs/hazard/)"
+        },
+        {
+          "line": 39,
+          "text": "TIMING CONVENTION (review-enforced)"
+        },
+        {
+          "line": 46,
+          "text": "EDA verification (outputs/eda/, 5 PASS / 0 FAIL / 1 INFO)"
+        }
+      ],
+      "in_degree": 2,
+      "out_degree": 3
+    },
+    {
       "id": "ifrs9-study-notes",
       "path": "pages/ifrs9-study-notes.md",
       "title": "IFRS9 Study Notes",
@@ -157,7 +202,7 @@
           "text": "Numeric ground truth"
         }
       ],
-      "in_degree": 8,
+      "in_degree": 11,
       "out_degree": 6
     },
     {
@@ -190,16 +235,16 @@
           "text": "Modules"
         },
         {
-          "line": 29,
+          "line": 32,
           "text": "Entities"
         },
         {
-          "line": 34,
+          "line": 37,
           "text": "Decisions & open questions"
         }
       ],
       "in_degree": 0,
-      "out_degree": 9
+      "out_degree": 12
     },
     {
       "id": "knowledge-pipeline",
@@ -233,6 +278,34 @@
       ],
       "in_degree": 8,
       "out_degree": 3
+    },
+    {
+      "id": "lgd-model",
+      "path": "pages/lgd-model.md",
+      "title": "LGD Model",
+      "type": "module",
+      "tags": [
+        "engine",
+        "lgd"
+      ],
+      "aliases": [
+        "lgd",
+        "loss given default model",
+        "cure severity model"
+      ],
+      "status": "draft",
+      "sources": [
+        "../knowledge/sources/ifrs9_credit_risk_notes.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 14,
+          "text": "LGD Model"
+        }
+      ],
+      "in_degree": 2,
+      "out_degree": 2
     },
     {
       "id": "llm-wiki-skill",
@@ -270,6 +343,36 @@
       "out_degree": 2
     },
     {
+      "id": "loan-panel",
+      "path": "pages/loan-panel.md",
+      "title": "Loan Panel",
+      "type": "module",
+      "tags": [
+        "engine",
+        "data"
+      ],
+      "aliases": [
+        "panel builder",
+        "loan-month panel",
+        "build_panel"
+      ],
+      "status": "active",
+      "sources": [
+        "../knowledge/sources/ifrs9_credit_risk_notes.md"
+      ],
+      "code": [
+        "../data/panel/build_panel.py"
+      ],
+      "headings": [
+        {
+          "line": 17,
+          "text": "Loan Panel"
+        }
+      ],
+      "in_degree": 3,
+      "out_degree": 4
+    },
+    {
       "id": "master-plan",
       "path": "pages/master-plan.md",
       "title": "Master Plan",
@@ -300,7 +403,7 @@
           "text": "Key synthesis findings"
         }
       ],
-      "in_degree": 6,
+      "in_degree": 8,
       "out_degree": 8
     },
     {
@@ -429,6 +532,24 @@
       "line": 23
     },
     {
+      "src": "hazard-model",
+      "dst": "ifrs9-study-notes",
+      "type": "derived-from",
+      "line": 17
+    },
+    {
+      "src": "hazard-model",
+      "dst": "loan-panel",
+      "type": "uses",
+      "line": 15
+    },
+    {
+      "src": "hazard-model",
+      "dst": "master-plan",
+      "type": "implements",
+      "line": 16
+    },
+    {
       "src": "ifrs9-study-notes",
       "dst": "build-plan",
       "type": "relates",
@@ -468,7 +589,7 @@
       "src": "index",
       "dst": "bootstrap-decisions",
       "type": "mentions",
-      "line": 36
+      "line": 39
     },
     {
       "src": "index",
@@ -484,6 +605,12 @@
     },
     {
       "src": "index",
+      "dst": "hazard-model",
+      "type": "mentions",
+      "line": 30
+    },
+    {
+      "src": "index",
       "dst": "ifrs9-study-notes",
       "type": "mentions",
       "line": 22
@@ -496,9 +623,21 @@
     },
     {
       "src": "index",
+      "dst": "lgd-model",
+      "type": "mentions",
+      "line": 28
+    },
+    {
+      "src": "index",
       "dst": "llm-wiki-skill",
       "type": "mentions",
-      "line": 31
+      "line": 34
+    },
+    {
+      "src": "index",
+      "dst": "loan-panel",
+      "type": "mentions",
+      "line": 29
     },
     {
       "src": "index",
@@ -510,7 +649,7 @@
       "src": "index",
       "dst": "pageindex-plus-skill",
       "type": "mentions",
-      "line": 32
+      "line": 35
     },
     {
       "src": "index",
@@ -537,6 +676,18 @@
       "line": 12
     },
     {
+      "src": "lgd-model",
+      "dst": "ifrs9-study-notes",
+      "type": "derived-from",
+      "line": 11
+    },
+    {
+      "src": "lgd-model",
+      "dst": "loan-panel",
+      "type": "uses",
+      "line": 10
+    },
+    {
       "src": "llm-wiki-skill",
       "dst": "knowledge-pipeline",
       "type": "relates",
@@ -547,6 +698,30 @@
       "dst": "pageindex-plus-skill",
       "type": "relates",
       "line": 10
+    },
+    {
+      "src": "loan-panel",
+      "dst": "hazard-model",
+      "type": "used-by",
+      "line": 14
+    },
+    {
+      "src": "loan-panel",
+      "dst": "ifrs9-study-notes",
+      "type": "derived-from",
+      "line": 13
+    },
+    {
+      "src": "loan-panel",
+      "dst": "lgd-model",
+      "type": "mentions",
+      "line": 37
+    },
+    {
+      "src": "loan-panel",
+      "dst": "master-plan",
+      "type": "implements",
+      "line": 12
     },
     {
       "src": "master-plan",
@@ -705,6 +880,11 @@
     "fixture scripts": "golden-fixtures",
     "compute scripts": "golden-fixtures",
     "gate tests": "golden-fixtures",
+    "hazard model": "hazard-model",
+    "hazard-model": "hazard-model",
+    "pd model": "hazard-model",
+    "cloglog hazard": "hazard-model",
+    "default hazard": "hazard-model",
     "ifrs9 study notes": "ifrs9-study-notes",
     "ifrs9-study-notes": "ifrs9-study-notes",
     "the notes": "ifrs9-study-notes",
@@ -714,10 +894,20 @@
     "knowledge-pipeline": "knowledge-pipeline",
     "corpus pipeline": "knowledge-pipeline",
     "ingestion pipeline": "knowledge-pipeline",
+    "lgd model": "lgd-model",
+    "lgd-model": "lgd-model",
+    "lgd": "lgd-model",
+    "loss given default model": "lgd-model",
+    "cure severity model": "lgd-model",
     "llm-wiki skill": "llm-wiki-skill",
     "llm-wiki-skill": "llm-wiki-skill",
     "llm-wiki": "llm-wiki-skill",
     "the wiki skill": "llm-wiki-skill",
+    "loan panel": "loan-panel",
+    "loan-panel": "loan-panel",
+    "panel builder": "loan-panel",
+    "loan-month panel": "loan-panel",
+    "build_panel": "loan-panel",
     "master plan": "master-plan",
     "master-plan": "master-plan",
     "master_plan": "master-plan",
