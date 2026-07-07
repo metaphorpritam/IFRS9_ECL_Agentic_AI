@@ -150,7 +150,8 @@ def psi(train_scores: np.ndarray, oot_scores: np.ndarray,
 
 
 def permutation_importance_oot(model, F_oot: pd.DataFrame, y: np.ndarray,
-                               seed: int = SEED) -> pd.DataFrame:
+                               seed: int = SEED
+                               ) -> tuple[pd.DataFrame, float]:
     """AUC drop on OOT when a feature (or family block) is permuted.
 
     Blocks are permuted with ONE shared row permutation per repeat so
@@ -276,6 +277,21 @@ def main() -> None:
 
     cal_note = (f"OOT level: champion {_cal_word(p_oo_champ, y_oo)}, "
                 f"challenger {_cal_word(p_oo_mlp, y_oo)}")
+
+    # calibration SHAPE, not just level: pooled observed/predicted in the
+    # bottom vs top score quintile of the OOT reliability bins -- an average
+    # ratio near 1 can net off opposite-signed bin errors (rotated curve)
+    def _band(b: pd.DataFrame, top: bool) -> float:
+        k = max(1, N_RELI_BINS // 5)
+        sel = b.iloc[-k:] if top else b.iloc[:k]
+        return float((sel["obs"] * sel["n"]).sum()
+                     / (sel["pred"] * sel["n"]).sum())
+
+    shp = {tag: (_band(reli[("oot", lab)], False),
+                 _band(reli[("oot", lab)], True),
+                 bool((reli[("oot", lab)]["obs"]
+                       > reli[("oot", lab)]["pred"]).all()))
+           for tag, lab in [("champ", CHAMP), ("mlp", CHAL)]}
     fig.suptitle(f"Reliability: {N_RELI_BINS} score-quantile bins -- "
                  f"{cal_note}", y=1.05, fontsize=11)
     fig.savefig(OUT / "reliability.png")
