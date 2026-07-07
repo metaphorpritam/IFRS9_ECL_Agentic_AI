@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.139.0",
+    "fastmcp>=3.4.3",
     "huggingface-hub>=1.22.0",
     "langgraph>=1.2.8",
     "matplotlib>=3.11.0",
