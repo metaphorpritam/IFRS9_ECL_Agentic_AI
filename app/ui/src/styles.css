@@ -1,0 +1,447 @@
+/* IFRS 9 ECL Copilot — minimal hand CSS, textbook palette (analysis/mpl_style.py).
+   accent #1f3a5f · warn #c0392b · good #27ae60 · purple #8e44ad
+   orange #e67e22 · blue2 #2980b9 · gray #7f8c8d */
+
+:root {
+  --accent: #1f3a5f;
+  --warn: #c0392b;
+  --good: #27ae60;
+  --purple: #8e44ad;
+  --orange: #e67e22;
+  --blue2: #2980b9;
+  --gray: #7f8c8d;
+
+  --surface: #fcfcfb;
+  --panel: #ffffff;
+  --ink: #22303c;
+  --ink-muted: #5c6b7a;
+  --line: #e3e6e3;
+  --amber-bg: #fdf3e4;
+  --amber-ink: #8a4b0f;
+
+  --sans: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --serif: Georgia, 'Times New Roman', serif;
+  --mono: 'Cascadia Code', 'SF Mono', Consolas, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  line-height: 1.45;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 24px 48px;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 8px 0 18px;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-family: var(--serif);
+  font-size: 26px;
+  color: var(--accent);
+  letter-spacing: 0.2px;
+}
+
+.header-sub {
+  color: var(--ink-muted);
+  max-width: 560px;
+  margin-top: 4px;
+}
+
+.header-offline {
+  margin-top: 6px;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.tiles {
+  display: flex;
+  gap: 12px;
+}
+
+.tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 16px;
+  min-width: 148px;
+}
+
+.tile-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-muted);
+}
+
+.tile-value {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.tile-hint {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+/* ------------------------------------------------------------------ grid */
+
+.grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-areas:
+    'controls waterfall'
+    'cycle    cycle'
+    'trace    chat';
+  gap: 16px;
+}
+
+.col-controls { grid-area: controls; }
+.col-waterfall { grid-area: waterfall; min-width: 0; }
+.col-cycle { grid-area: cycle; min-width: 0; }
+.col-trace { grid-area: trace; min-width: 0; }
+.col-chat { grid-area: chat; min-width: 0; }
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'controls' 'waterfall' 'cycle' 'trace' 'chat';
+  }
+  .tiles { flex-wrap: wrap; }
+}
+
+/* ----------------------------------------------------------------- panel */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel h2 {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--accent);
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.panel-sub {
+  color: var(--ink-muted);
+  font-size: 12px;
+  margin: 2px 0 10px;
+}
+
+.chart {
+  width: 100%;
+  height: 300px;
+}
+
+.chart-tall {
+  height: 340px;
+}
+
+.empty-note {
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  padding: 8px 0;
+  list-style: none;
+}
+
+/* -------------------------------------------------------------- controls */
+
+.control-group {
+  margin: 10px 0 14px;
+}
+
+.control-group-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+.slider-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 52px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.slider-label {
+  font-size: 12.5px;
+}
+
+.slider-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  text-align: right;
+  color: var(--ink-muted);
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 4px;
+  padding: 7px 14px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.btn:hover:not(:disabled) {
+  background: #2c4f7c;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.status {
+  font-size: 12.5px;
+  margin-top: 6px;
+}
+
+.status-ok { color: var(--good); }
+.status-err { color: var(--warn); }
+.muted { color: var(--ink-muted); }
+
+/* ----------------------------------------------------------- agent trace */
+
+.conn {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray);
+  display: inline-block;
+}
+
+.conn-live .conn-dot { background: var(--good); }
+.conn-connecting .conn-dot { background: var(--orange); }
+.conn-reconnecting .conn-dot { background: var(--warn); }
+
+.trace-list {
+  list-style: none;
+  overflow-y: auto;
+  max-height: 300px;
+  font-size: 12.5px;
+  border-top: 1px solid var(--line);
+  flex: 1;
+}
+
+.trace-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.trace-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.badge-router { background: var(--blue2); }
+.badge-tool { background: var(--accent); }
+.badge-result { background: var(--good); }
+.badge-narration { background: var(--purple); }
+.badge-error { background: var(--warn); }
+.badge-other { background: var(--gray); }
+
+.trace-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trace-tool {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+.trace-args {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-right: 6px;
+}
+
+/* ------------------------------------------------------------------ chat */
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 10px;
+}
+
+.msg {
+  border-radius: 6px;
+  padding: 8px 12px;
+  max-width: 92%;
+}
+
+.msg-user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+}
+
+.msg-agent {
+  align-self: flex-start;
+  background: #f1f3f5;
+  border: 1px solid var(--line);
+}
+
+.msg-error {
+  align-self: flex-start;
+  background: #fdeceb;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+}
+
+/* Refusal — the amber 'outside validated scope' style (a demo FEATURE). */
+.msg-refusal {
+  align-self: flex-start;
+  background: var(--amber-bg);
+  border: 1px solid var(--orange);
+  border-left: 4px solid var(--orange);
+  color: var(--amber-ink);
+}
+
+.refusal-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--amber-ink);
+  background: rgba(230, 126, 34, 0.18);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-bottom: 4px;
+}
+
+.citations {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.citations-label {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.citation {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: #eef2f6;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.chat-form input {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.chat-form input:focus {
+  outline: 2px solid var(--blue2);
+  outline-offset: -1px;
+}
+
+.chat-form .btn {
+  margin-top: 0;
+}

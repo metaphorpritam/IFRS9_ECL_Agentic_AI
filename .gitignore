@@ -25,6 +25,11 @@ __pycache__/
 node_modules/
 app/ui/dist/
 
+# model warm-start caches (joblib; rebuilt on demand — staleness rule in
+# agent/tools_tier1.py) and the runtime agent audit trail
+outputs/models/
+outputs/agent_log/
+
 # misc
 .DS_Store
 *.log

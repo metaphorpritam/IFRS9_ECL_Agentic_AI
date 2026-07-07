@@ -4,8 +4,11 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.139.0",
+    "huggingface-hub>=1.22.0",
+    "langgraph>=1.2.8",
     "matplotlib>=3.11.0",
     "numpy>=2.5.1",
+    "openai>=2.44.0",
     "pandas>=3.0.3",
     "pyarrow>=24.0.0",
     "pytest>=9.1.1",
