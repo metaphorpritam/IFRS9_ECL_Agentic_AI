@@ -1,0 +1,50 @@
+# --- secrets: NEVER in the build context ---------------------------------
+.env
+.env.*
+*.key
+*credentials*
+*.pem
+
+# --- vcs / caches / local tooling -----------------------------------------
+.git
+.gitignore
+.gitattributes
+.venv
+.mypy_cache
+.pytest_cache
+.claude
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+**/*.log
+
+# --- node ------------------------------------------------------------------
+app/ui/node_modules
+app/ui/dist
+
+# --- non-runtime corpora / licensed raw data -------------------------------
+data/raw
+data/processed/*
+!data/processed/panel.parquet
+data/panel
+init_docs
+knowledge
+wiki
+skills
+scripts
+tests
+challenger
+MASTER_PLAN.md
+README.md
+uv.lock
+pyproject.toml
+
+# --- outputs: only models/, vasicek/z_path.csv, scenario_ecl/*.csv ship ----
+outputs/*
+!outputs/models
+!outputs/vasicek
+!outputs/scenario_ecl
+outputs/vasicek/*.png
+outputs/vasicek/*.md
+outputs/scenario_ecl/*.png
+outputs/scenario_ecl/*.md

@@ -23,6 +23,7 @@ Never re-orient by re-reading raw sources. Every page gets one line here.
 
 ## Modules
 
+- [[Agent Layer]] — LangGraph copilot + Tier-1 tools, LIVE public HF Space; refusal path; coherent-shock convention.
 - [[Scenario Layer]] — Vasicek ρ=0.0227, DFAST paths, satellite, Jensen 1.035×, challenger scorecard; Day-3 gate PASS.
 - [[Golden Fixtures]] — the 8 recreated `compute_*.py` scripts; 133/133 golden values pass; the engine freeze gate.
 - [[Knowledge Pipeline]] — preprocess → ingest → index → caption chain; hard-won ingestion lessons.

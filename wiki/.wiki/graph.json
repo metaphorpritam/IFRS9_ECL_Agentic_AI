@@ -1,8 +1,64 @@
 {
-  "generated": "2026-07-07T13:33:05+00:00",
+  "generated": "2026-07-07T20:12:53+00:00",
   "wiki_dir": "wiki",
-  "pages": 18,
+  "pages": 19,
   "nodes": [
+    {
+      "id": "agent-layer",
+      "path": "pages/agent-layer.md",
+      "title": "Agent Layer",
+      "type": "module",
+      "tags": [
+        "agent",
+        "day4",
+        "deploy"
+      ],
+      "aliases": [
+        "copilot",
+        "tier-1 tools",
+        "langgraph router",
+        "the app"
+      ],
+      "status": "active",
+      "sources": [
+        "../MASTER_PLAN.md",
+        "../outputs/gate/day4_gate_report.md"
+      ],
+      "code": [
+        "../agent/__init__.py",
+        "../agent/tools_tier1.py",
+        "../agent/graph.py",
+        "../app/api/main.py",
+        "../scripts/demo_agent.py",
+        "../tests/test_tools.py",
+        "../tests/test_router.py",
+        "../tests/test_api.py"
+      ],
+      "headings": [
+        {
+          "line": 24,
+          "text": "Agent Layer"
+        },
+        {
+          "line": 31,
+          "text": "Architecture"
+        },
+        {
+          "line": 39,
+          "text": "Tools (agent/tools_tier1.py)"
+        },
+        {
+          "line": 46,
+          "text": "THE COHERENT-SHOCK CONVENTION (load-bearing)"
+        },
+        {
+          "line": 54,
+          "text": "Known caveats"
+        }
+      ],
+      "in_degree": 1,
+      "out_degree": 4
+    },
     {
       "id": "bootstrap-decisions",
       "path": "pages/bootstrap-decisions.md",
@@ -147,7 +203,7 @@
           "text": "GATE (frozen 2026-07-05)"
         }
       ],
-      "in_degree": 5,
+      "in_degree": 6,
       "out_degree": 7
     },
     {
@@ -308,20 +364,20 @@
           "text": "Modules"
         },
         {
-          "line": 36,
+          "line": 37,
           "text": "Entities"
         },
         {
-          "line": 41,
+          "line": 42,
           "text": "Concepts (contd.)"
         },
         {
-          "line": 45,
+          "line": 46,
           "text": "Decisions & open questions"
         }
       ],
       "in_degree": 0,
-      "out_degree": 17
+      "out_degree": 18
     },
     {
       "id": "knowledge-pipeline",
@@ -493,7 +549,7 @@
           "text": "Key synthesis findings"
         }
       ],
-      "in_degree": 10,
+      "in_degree": 11,
       "out_degree": 8
     },
     {
@@ -629,7 +685,7 @@
           "text": "Challenger (challenger/mlp.py — review clean)"
         }
       ],
-      "in_degree": 2,
+      "in_degree": 3,
       "out_degree": 6
     },
     {
@@ -665,7 +721,7 @@
           "text": "Findings (t-snapshots; exhibits in outputs/staging/)"
         }
       ],
-      "in_degree": 3,
+      "in_degree": 4,
       "out_degree": 4
     },
     {
@@ -699,6 +755,30 @@
     }
   ],
   "edges": [
+    {
+      "src": "agent-layer",
+      "dst": "ecl-engine",
+      "type": "uses",
+      "line": 20
+    },
+    {
+      "src": "agent-layer",
+      "dst": "master-plan",
+      "type": "implements",
+      "line": 21
+    },
+    {
+      "src": "agent-layer",
+      "dst": "scenario-layer",
+      "type": "uses",
+      "line": 20
+    },
+    {
+      "src": "agent-layer",
+      "dst": "staging-model",
+      "type": "uses",
+      "line": 20
+    },
     {
       "src": "bootstrap-decisions",
       "dst": "build-plan",
@@ -863,9 +943,15 @@
     },
     {
       "src": "index",
+      "dst": "agent-layer",
+      "type": "mentions",
+      "line": 26
+    },
+    {
+      "src": "index",
       "dst": "bootstrap-decisions",
       "type": "mentions",
-      "line": 47
+      "line": 48
     },
     {
       "src": "index",
@@ -877,25 +963,25 @@
       "src": "index",
       "dst": "ead-model",
       "type": "mentions",
-      "line": 30
+      "line": 31
     },
     {
       "src": "index",
       "dst": "ecl-engine",
       "type": "mentions",
-      "line": 32
+      "line": 33
     },
     {
       "src": "index",
       "dst": "golden-fixtures",
       "type": "mentions",
-      "line": 27
+      "line": 28
     },
     {
       "src": "index",
       "dst": "hazard-model",
       "type": "mentions",
-      "line": 34
+      "line": 35
     },
     {
       "src": "index",
@@ -907,25 +993,25 @@
       "src": "index",
       "dst": "knowledge-pipeline",
       "type": "mentions",
-      "line": 28
+      "line": 29
     },
     {
       "src": "index",
       "dst": "lgd-model",
       "type": "mentions",
-      "line": 29
+      "line": 30
     },
     {
       "src": "index",
       "dst": "llm-wiki-skill",
       "type": "mentions",
-      "line": 38
+      "line": 39
     },
     {
       "src": "index",
       "dst": "loan-panel",
       "type": "mentions",
-      "line": 33
+      "line": 34
     },
     {
       "src": "index",
@@ -937,7 +1023,7 @@
       "src": "index",
       "dst": "pageindex-plus-skill",
       "type": "mentions",
-      "line": 39
+      "line": 40
     },
     {
       "src": "index",
@@ -949,19 +1035,19 @@
       "src": "index",
       "dst": "scenario-layer",
       "type": "mentions",
-      "line": 26
+      "line": 27
     },
     {
       "src": "index",
       "dst": "staging-model",
       "type": "mentions",
-      "line": 31
+      "line": 32
     },
     {
       "src": "index",
       "dst": "variable-dictionary",
       "type": "mentions",
-      "line": 43
+      "line": 44
     },
     {
       "src": "knowledge-pipeline",
@@ -1269,6 +1355,12 @@
   "title_index": {
     "ifrs9 ecl copilot wiki index": "index",
     "index": "index",
+    "agent layer": "agent-layer",
+    "agent-layer": "agent-layer",
+    "copilot": "agent-layer",
+    "tier-1 tools": "agent-layer",
+    "langgraph router": "agent-layer",
+    "the app": "agent-layer",
     "bootstrap decisions": "bootstrap-decisions",
     "bootstrap-decisions": "bootstrap-decisions",
     "phase minus one decisions": "bootstrap-decisions",

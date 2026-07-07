@@ -29,3 +29,7 @@ Operator requirement (2026-07-05): model documentation must foreground (1) mathe
 ## 2026-07-07 13:23 UTC — tags: rung3, isolation
 
 Multi-dataset isolation contract (agreed 2026-07-05, binding for the Freddie rung-3 stretch and any other dataset): (1) per-dataset panel builder -> data/processed/<dataset>/panel.parquet emitting ONE canonical schema contract, asserted by a schema test; engine consumes only the contract; (2) engine stays frozen + stateless (fit objects, no module caches) - cross-dataset coefficient inheritance impossible; (3) all DCR-tuned calibrations (SICR 2x+0.5pp, cure 0.05, satellite lags, rho) are dataset-scoped decisions - rung 3 RE-ESTIMATES, never inherits, each with its own decision entry; (4) outputs and wiki pages dataset-namespaced (outputs/<dataset>/, <dataset>-panel page); (5) one uv.lock across analyses for attribution; (6) each dataset build = own workflow + adversarial reviews, worktree isolation if concurrent.
+
+## 2026-07-07 20:12 UTC — tags: day4, agent
+
+Coherent-shock convention (load-bearing, agent/tools_tier1.py): satellite has no unemployment term, so shock_macro applies shocks along the DFAST severe-minus-base co-movement direction (named var normalised to 1), per-concept deltas returned transparently. Also: torch pruned from Docker image (challenger-only, ~5GB); parallel shock = permanent level shift, peak_revert = ramp/hold/decay; staging frozen across shocks (inherited Day-3).

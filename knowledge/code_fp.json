@@ -555,6 +555,177 @@
           "time"
         ]
       }
+    },
+    "agent/__init__.py": {
+      "content_hash": "8319120c9934fb99",
+      "fp": {
+        "struct_hash": "ea1badefcb351eba",
+        "funcs": [],
+        "classes": [],
+        "imports": []
+      }
+    },
+    "agent/graph.py": {
+      "content_hash": "f2ddedf4fc160ffc",
+      "fp": {
+        "struct_hash": "b4ca5417920b2ae2",
+        "funcs": [
+          "_allowed_numbers(tool_result)",
+          "_call_llm(messages)",
+          "_chat_once(model,messages)",
+          "_client()",
+          "_extract_json(text)",
+          "_llm_narrate(tool_result)",
+          "_llm_route(question)",
+          "_log_run(record)",
+          "_make_tool_node(name)",
+          "_narrator_node(state)",
+          "_now()",
+          "_number_tokens(text)",
+          "_refusal_node(state)",
+          "_router_node(state)",
+          "build_graph()",
+          "decide_route(question)",
+          "deterministic_narration(tool_result)",
+          "get_graph()",
+          "narration_numbers_ok(text,tool_result)",
+          "run_agent(question)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "agent",
+          "datetime",
+          "json",
+          "langgraph",
+          "math",
+          "operator",
+          "os",
+          "pathlib",
+          "pydantic",
+          "re",
+          "threading",
+          "typing"
+        ]
+      }
+    },
+    "agent/tools_tier1.py": {
+      "content_hash": "53e047747aef5bcd",
+      "fp": {
+        "struct_hash": "2ede3b53f210b698",
+        "funcs": [
+          "_build_state()",
+          "_comovement_betas(sset)",
+          "_fingerprint()",
+          "_fit_or_load_models(panel)",
+          "_formula_columns(formula,frame)",
+          "_frozen_book(state,t)",
+          "_last_logged_seq(path)",
+          "_log_call(tool,args,headline)",
+          "_m(x)",
+          "_run_book(state,z_path)",
+          "_segment_mask(state,segment)",
+          "_shock_profile(shape,horizon,rs_window,reversion)",
+          "_stage_mix(book)",
+          "_state()",
+          "_strip_training_data(models)",
+          "_waterfall_rows(wf)",
+          "_weights_key(w_up,w_base,w_down)",
+          "_z_for_macro_path(state,path_df)",
+          "decompose_waterfall(t0,t1)",
+          "rerun_ecl(segment)",
+          "reweight_scenarios(w_up,w_base,w_down)",
+          "shock_macro(var,shock,shape)",
+          "warm_up()"
+        ],
+        "classes": [
+          "DecomposeWaterfallArgs._ordered(self)",
+          "ReweightArgs._sums_to_one(self)",
+          "ShockMacroArgs._within_bounds(self)"
+        ],
+        "imports": [
+          "__future__",
+          "copy",
+          "dataclasses",
+          "datetime",
+          "engine",
+          "hashlib",
+          "joblib",
+          "json",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "pydantic",
+          "re",
+          "threading",
+          "typing",
+          "warnings"
+        ]
+      }
+    },
+    "app/api/__init__.py": {
+      "content_hash": "e3b0c44298fc1c14",
+      "fp": {
+        "struct_hash": "ea1badefcb351eba",
+        "funcs": [],
+        "classes": [],
+        "imports": []
+      }
+    },
+    "app/api/main.py": {
+      "content_hash": "3ce262645edfa94c",
+      "fp": {
+        "struct_hash": "1e482acb412b1d01",
+        "funcs": [
+          "_fallback_ask(question,emit)",
+          "_json_safe(obj)",
+          "_request_validation_handler(request,exc)",
+          "_resolve_agent()",
+          "_route(q)",
+          "_run_agent(question)",
+          "_sse_events()",
+          "agent_ask(req)",
+          "agent_stream()",
+          "api_decompose_waterfall(args)",
+          "api_rerun_ecl(args)",
+          "api_reweight_scenarios(args)",
+          "api_shock_macro(args)",
+          "credit_cycle()",
+          "ecl_summary()",
+          "ecl_waterfall(t0,t1)",
+          "health()",
+          "lifespan(app)"
+        ],
+        "classes": [
+          "TraceBroker.__init__(self)",
+          "TraceBroker.publish(self,event)",
+          "TraceBroker.snapshot(self)",
+          "TraceBroker.start_trace(self)",
+          "TraceBroker.subscribe(self)",
+          "TraceBroker.unsubscribe(self,q)"
+        ],
+        "imports": [
+          "__future__",
+          "agent",
+          "asyncio",
+          "contextlib",
+          "engine",
+          "fastapi",
+          "importlib",
+          "inspect",
+          "json",
+          "logging",
+          "math",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "pydantic",
+          "re",
+          "threading",
+          "time",
+          "typing"
+        ]
+      }
     }
   }
 }

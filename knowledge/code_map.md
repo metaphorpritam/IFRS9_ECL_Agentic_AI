@@ -27,6 +27,11 @@ analysis/run_ecl.py
 analysis/run_scenarios.py
 analysis/scenario_exhibits.py
 analysis/staging_exhibits.py
+agent/__init__.py
+agent/graph.py
+agent/tools_tier1.py
+app/api/__init__.py
+app/api/main.py
 ```
 
 ## Module dependency hierarchy (local imports)
@@ -41,8 +46,10 @@ analysis/staging_exhibits.py
 - `fit_hazard` → `mpl_style`
 - `fit_lgd` → `mpl_style`
 - `fit_vasicek` → `mpl_style`
+- `graph` → (no local imports)
 - `hazard` → (no local imports)
 - `lgd` → (no local imports)
+- `main` → (no local imports)
 - `mpl_style` → (no local imports)
 - `run_ecl` → `mpl_style`
 - `run_scenarios` → `mpl_style`
@@ -51,6 +58,7 @@ analysis/staging_exhibits.py
 - `scenarios` → (no local imports)
 - `staging` → (no local imports)
 - `staging_exhibits` → `mpl_style`
+- `tools_tier1` → (no local imports)
 - `vasicek` → (no local imports)
 
 Imported-by (reverse):
@@ -61,6 +69,33 @@ Imported-by (reverse):
 
 Calls (caller → callee):
 
+- `agent/graph.py::_allowed_numbers` → `agent/graph.py::_number_tokens`
+- `agent/graph.py::_call_llm` → `agent/graph.py::_chat_once`
+- `agent/graph.py::_chat_once` → `agent/graph.py::_client`
+- `agent/graph.py::_llm_narrate` → `agent/graph.py::_call_llm`
+- `agent/graph.py::_llm_route` → `agent/graph.py::_call_llm`
+- `agent/graph.py::_make_tool_node` → `agent/graph.py::_now`
+- `agent/graph.py::_narrator_node` → `agent/graph.py::_llm_narrate`, `agent/graph.py::_now`, `agent/graph.py::deterministic_narration`, `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::_refusal_node` → `agent/graph.py::_now`
+- `agent/graph.py::_router_node` → `agent/graph.py::_now`, `agent/graph.py::decide_route`
+- `agent/graph.py::build_graph` → `agent/graph.py::_make_tool_node`
+- `agent/graph.py::decide_route` → `agent/graph.py::_extract_json`, `agent/graph.py::_llm_route`
+- `agent/graph.py::get_graph` → `agent/graph.py::build_graph`
+- `agent/graph.py::narration_numbers_ok` → `agent/graph.py::_allowed_numbers`, `agent/graph.py::_number_tokens`
+- `agent/graph.py::run_agent` → `agent/graph.py::_log_run`, `agent/graph.py::_now`, `agent/graph.py::get_graph`
+- `agent/tools_tier1.py::_build_state` → `agent/tools_tier1.py::_comovement_betas`, `agent/tools_tier1.py::_fit_or_load_models`, `agent/tools_tier1.py::_weights_key`, `engine/satellite.py::driver_frame`, `engine/satellite.py::fit_satellite`, `engine/satellite.py::recover_z`, `engine/satellite.py::scenario_ecl_for_snapshot`, `engine/satellite.py::scenario_z_paths`, `engine/satellite.py::ttc_macro_means`, `engine/scenarios.py::build_scenario_set`, `engine/scenarios.py::panel_macro_concepts`, `engine/staging.py::assign_stages`, `engine/staging.py::build_macro_map`
+- `agent/tools_tier1.py::_fit_or_load_models` → `agent/tools_tier1.py::_fingerprint`, `agent/tools_tier1.py::_strip_training_data`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/lgd.py::fit_lgd_models`
+- `agent/tools_tier1.py::_frozen_book` → `engine/ecl.py::ecl_for_snapshot`
+- `agent/tools_tier1.py::_log_call` → `agent/tools_tier1.py::_last_logged_seq`
+- `agent/tools_tier1.py::_run_book` → `engine/satellite.py::scenario_ecl_for_snapshot`
+- `agent/tools_tier1.py::_state` → `agent/tools_tier1.py::_build_state`
+- `agent/tools_tier1.py::_strip_training_data` → `agent/tools_tier1.py::_formula_columns`
+- `agent/tools_tier1.py::_z_for_macro_path` → `engine/satellite.py::driver_frame`
+- `agent/tools_tier1.py::decompose_waterfall` → `agent/tools_tier1.py::_frozen_book`, `agent/tools_tier1.py::_log_call`, `agent/tools_tier1.py::_m`, `agent/tools_tier1.py::_state`, `agent/tools_tier1.py::_waterfall_rows`, `engine/ecl.py::movement_decomposition`, `engine/scenarios.py::panel_time_to_period`
+- `agent/tools_tier1.py::rerun_ecl` → `agent/tools_tier1.py::_log_call`, `agent/tools_tier1.py::_m`, `agent/tools_tier1.py::_segment_mask`, `agent/tools_tier1.py::_state`
+- `agent/tools_tier1.py::reweight_scenarios` → `agent/tools_tier1.py::_log_call`, `agent/tools_tier1.py::_m`, `agent/tools_tier1.py::_run_book`, `agent/tools_tier1.py::_state`, `agent/tools_tier1.py::_weights_key`
+- `agent/tools_tier1.py::shock_macro` → `agent/tools_tier1.py::_log_call`, `agent/tools_tier1.py::_m`, `agent/tools_tier1.py::_run_book`, `agent/tools_tier1.py::_shock_profile`, `agent/tools_tier1.py::_stage_mix`, `agent/tools_tier1.py::_state`, `agent/tools_tier1.py::_waterfall_rows`, `agent/tools_tier1.py::_z_for_macro_path`, `engine/ecl.py::movement_decomposition`
+- `agent/tools_tier1.py::warm_up` → `agent/tools_tier1.py::_state`
 - `analysis/ead_exhibits.py::main` → `analysis/ead_exhibits.py::load_snapshot`, `analysis/ead_exhibits.py::pick_representatives`, `analysis/ead_exhibits.py::plot_profiles`, `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::write_report`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::write_report`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`, `engine/ead.py::ead_matrix`
 - `analysis/ead_exhibits.py::plot_profiles` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`
 - `analysis/ead_exhibits.py::write_report` → `engine/ead.py::ccf_ead`
@@ -101,6 +136,11 @@ Calls (caller → callee):
 - `analysis/staging_exhibits.py::sensitivity_table` → `engine/staging.py::lifetime_pd_table`, `engine/staging.py::quantitative_sicr`
 - `analysis/staging_exhibits.py::stage_book` → `engine/staging.py::assign_stages`
 - `analysis/staging_exhibits.py::write_report` → `analysis/staging_exhibits.py::stage_shares`
+- `app/api/main.py::_fallback_ask` → `app/api/main.py::_route`
+- `app/api/main.py::_request_validation_handler` → `app/api/main.py::_json_safe`
+- `app/api/main.py::agent_stream` → `app/api/main.py::_sse_events`
+- `app/api/main.py::ecl_summary` → `engine/scenarios.py::panel_time_to_period`
+- `app/api/main.py::lifespan` → `app/api/main.py::_resolve_agent`
 - `data/panel/build_panel.py::Waterfall.__init__` → `data/panel/build_panel.py::_profile`
 - `data/panel/build_panel.py::Waterfall.record` → `data/panel/build_panel.py::_profile`
 - `data/panel/build_panel.py::main` → `data/panel/build_panel.py::_profile`, `data/panel/build_panel.py::add_derived`, `data/panel/build_panel.py::add_macro_lags`, `data/panel/build_panel.py::add_split`, `data/panel/build_panel.py::apply_waterfall`, `data/panel/build_panel.py::load_raw`, `data/panel/build_panel.py::run_self_checks`, `data/panel/build_panel.py::write_exhibits`
@@ -147,6 +187,40 @@ Calls (caller → callee):
 
 Called-by (reverse — **impact map**: who breaks if you change the callee):
 
+- `agent/graph.py::_allowed_numbers` ← `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::_call_llm` ← `agent/graph.py::_llm_narrate`, `agent/graph.py::_llm_route`
+- `agent/graph.py::_chat_once` ← `agent/graph.py::_call_llm`
+- `agent/graph.py::_client` ← `agent/graph.py::_chat_once`
+- `agent/graph.py::_extract_json` ← `agent/graph.py::decide_route`
+- `agent/graph.py::_llm_narrate` ← `agent/graph.py::_narrator_node`
+- `agent/graph.py::_llm_route` ← `agent/graph.py::decide_route`
+- `agent/graph.py::_log_run` ← `agent/graph.py::run_agent`
+- `agent/graph.py::_make_tool_node` ← `agent/graph.py::build_graph`
+- `agent/graph.py::_now` ← `agent/graph.py::_make_tool_node`, `agent/graph.py::_narrator_node`, `agent/graph.py::_refusal_node`, `agent/graph.py::_router_node`, `agent/graph.py::run_agent`
+- `agent/graph.py::_number_tokens` ← `agent/graph.py::_allowed_numbers`, `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::build_graph` ← `agent/graph.py::get_graph`
+- `agent/graph.py::decide_route` ← `agent/graph.py::_router_node`
+- `agent/graph.py::deterministic_narration` ← `agent/graph.py::_narrator_node`
+- `agent/graph.py::get_graph` ← `agent/graph.py::run_agent`
+- `agent/graph.py::narration_numbers_ok` ← `agent/graph.py::_narrator_node`
+- `agent/tools_tier1.py::_build_state` ← `agent/tools_tier1.py::_state`
+- `agent/tools_tier1.py::_comovement_betas` ← `agent/tools_tier1.py::_build_state`
+- `agent/tools_tier1.py::_fingerprint` ← `agent/tools_tier1.py::_fit_or_load_models`
+- `agent/tools_tier1.py::_fit_or_load_models` ← `agent/tools_tier1.py::_build_state`
+- `agent/tools_tier1.py::_formula_columns` ← `agent/tools_tier1.py::_strip_training_data`
+- `agent/tools_tier1.py::_frozen_book` ← `agent/tools_tier1.py::decompose_waterfall`
+- `agent/tools_tier1.py::_last_logged_seq` ← `agent/tools_tier1.py::_log_call`
+- `agent/tools_tier1.py::_log_call` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::rerun_ecl`, `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_m` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::rerun_ecl`, `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_run_book` ← `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_segment_mask` ← `agent/tools_tier1.py::rerun_ecl`
+- `agent/tools_tier1.py::_shock_profile` ← `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_stage_mix` ← `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_state` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::rerun_ecl`, `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`, `agent/tools_tier1.py::warm_up`
+- `agent/tools_tier1.py::_strip_training_data` ← `agent/tools_tier1.py::_fit_or_load_models`
+- `agent/tools_tier1.py::_waterfall_rows` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_weights_key` ← `agent/tools_tier1.py::_build_state`, `agent/tools_tier1.py::reweight_scenarios`
+- `agent/tools_tier1.py::_z_for_macro_path` ← `agent/tools_tier1.py::shock_macro`
 - `analysis/ead_exhibits.py::load_snapshot` ← `analysis/ead_exhibits.py::main`
 - `analysis/ead_exhibits.py::pick_representatives` ← `analysis/ead_exhibits.py::main`
 - `analysis/ead_exhibits.py::plot_profiles` ← `analysis/ead_exhibits.py::main`
@@ -211,6 +285,10 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `analysis/staging_exhibits.py::stage_book` ← `analysis/staging_exhibits.py::main`
 - `analysis/staging_exhibits.py::stage_shares` ← `analysis/staging_exhibits.py::main`, `analysis/staging_exhibits.py::plot_stage_distribution`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`
 - `analysis/staging_exhibits.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
+- `app/api/main.py::_json_safe` ← `app/api/main.py::_request_validation_handler`
+- `app/api/main.py::_resolve_agent` ← `app/api/main.py::lifespan`
+- `app/api/main.py::_route` ← `app/api/main.py::_fallback_ask`
+- `app/api/main.py::_sse_events` ← `app/api/main.py::agent_stream`
 - `data/panel/build_panel.py::_profile` ← `data/panel/build_panel.py::Waterfall.__init__`, `data/panel/build_panel.py::Waterfall.record`, `data/panel/build_panel.py::main`, `data/panel/build_panel.py::run_self_checks`
 - `data/panel/build_panel.py::add_derived` ← `data/panel/build_panel.py::main`
 - `data/panel/build_panel.py::add_macro_lags` ← `data/panel/build_panel.py::main`
@@ -229,17 +307,17 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `engine/ecl.py::_pick` ← `engine/ecl.py::movement_decomposition`
 - `engine/ecl.py::_survival_marginal` ← `engine/ecl.py::_marginal_pd_grid`, `engine/ecl.py::ecl_schedule`, `engine/satellite.py::scenario_ecl_for_snapshot`
 - `engine/ecl.py::crosscheck_lgd_grid` ← `analysis/run_ecl.py::main`
-- `engine/ecl.py::ecl_for_snapshot` ← `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`
-- `engine/ecl.py::movement_decomposition` ← `analysis/run_ecl.py::main`
+- `engine/ecl.py::ecl_for_snapshot` ← `agent/tools_tier1.py::_frozen_book`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`
+- `engine/ecl.py::movement_decomposition` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::shock_macro`, `analysis/run_ecl.py::main`
 - `engine/ecl.py::reported_allowance` ← `engine/ecl.py::movement_decomposition`
 - `engine/hazard.py::_fit` ← `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`
 - `engine/hazard.py::_prepare` ← `engine/hazard.py::_fit`, `engine/hazard.py::predict_hazard`, `engine/lgd.py::fit_lgd_models`, `engine/lgd.py::predict_components`, `engine/staging.py::_design_matrix`
-- `engine/hazard.py::fit_default_hazard` ← `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`
-- `engine/hazard.py::fit_prepay_hazard` ← `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`
+- `engine/hazard.py::fit_default_hazard` ← `agent/tools_tier1.py::_fit_or_load_models`, `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`
+- `engine/hazard.py::fit_prepay_hazard` ← `agent/tools_tier1.py::_fit_or_load_models`, `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`
 - `engine/hazard.py::pd_term_structure` ← `analysis/fit_hazard.py::main`, `engine/staging.py::crosscheck_term_structure`
 - `engine/hazard.py::predict_hazard` ← `analysis/fit_challenger.py::main`, `analysis/fit_challenger.py::pdp_curve`, `analysis/fit_hazard.py::main`, `analysis/fit_vasicek.py::quarterly_rates`, `engine/hazard.py::pd_term_structure`, `engine/satellite.py::observed_vs_ttc_rates`
 - `engine/lgd.py::_prepare` ← `engine/hazard.py::_fit`, `engine/hazard.py::predict_hazard`, `engine/lgd.py::fit_lgd_models`, `engine/lgd.py::predict_components`, `engine/staging.py::_design_matrix`
-- `engine/lgd.py::fit_lgd_models` ← `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::sensitivity_block`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`
+- `engine/lgd.py::fit_lgd_models` ← `agent/tools_tier1.py::_fit_or_load_models`, `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::sensitivity_block`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`
 - `engine/lgd.py::predict_components` ← `analysis/fit_lgd.py::decile_frame`, `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::plot_distribution`, `analysis/fit_lgd.py::sensitivity_block`, `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`, `engine/lgd.py::predict_lgd`, `engine/satellite.py::scenario_ecl_for_snapshot`
 - `engine/lgd.py::predict_lgd` ← `analysis/fit_lgd.py::main`
 - `engine/satellite.py::_estimation_sample` ← `engine/satellite.py::fit_satellite`, `engine/satellite.py::gfc_sensitivity`
@@ -247,27 +325,27 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `engine/satellite.py::_signs_ok` ← `engine/satellite.py::fit_satellite`
 - `engine/satellite.py::anchor_sanity` ← `analysis/run_scenarios.py::main`
 - `engine/satellite.py::condition_hazard_grid` ← `engine/satellite.py::scenario_ecl_for_snapshot`
-- `engine/satellite.py::driver_frame` ← `analysis/run_scenarios.py::main`, `engine/satellite.py::scenario_z_paths`
-- `engine/satellite.py::fit_satellite` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::driver_frame` ← `agent/tools_tier1.py::_build_state`, `agent/tools_tier1.py::_z_for_macro_path`, `analysis/run_scenarios.py::main`, `engine/satellite.py::scenario_z_paths`
+- `engine/satellite.py::fit_satellite` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`
 - `engine/satellite.py::gfc_mask_for_times` ← `engine/satellite.py::gfc_sensitivity`
 - `engine/satellite.py::gfc_sensitivity` ← `analysis/run_scenarios.py::main`
 - `engine/satellite.py::observed_vs_ttc_rates` ← `engine/satellite.py::recover_z`
-- `engine/satellite.py::recover_z` ← `analysis/run_scenarios.py::main`
-- `engine/satellite.py::scenario_ecl_for_snapshot` ← `analysis/run_scenarios.py::main`
-- `engine/satellite.py::scenario_z_paths` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::recover_z` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`
+- `engine/satellite.py::scenario_ecl_for_snapshot` ← `agent/tools_tier1.py::_build_state`, `agent/tools_tier1.py::_run_book`, `analysis/run_scenarios.py::main`
+- `engine/satellite.py::scenario_z_paths` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`
 - `engine/satellite.py::stationarity_table` ← `analysis/run_scenarios.py::main`
-- `engine/satellite.py::ttc_macro_means` ← `analysis/run_scenarios.py::main`, `engine/satellite.py::observed_vs_ttc_rates`
+- `engine/satellite.py::ttc_macro_means` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`, `engine/satellite.py::observed_vs_ttc_rates`
 - `engine/scenarios.py::_extend_with_reversion` ← `engine/scenarios.py::build_scenario_set`
-- `engine/scenarios.py::build_scenario_set` ← `analysis/run_scenarios.py::main`, `analysis/scenario_exhibits.py::main`
-- `engine/scenarios.py::panel_macro_concepts` ← `analysis/run_scenarios.py::main`, `engine/scenarios.py::build_scenario_set`
-- `engine/scenarios.py::panel_time_to_period` ← `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::t_axis`, `engine/satellite.py::gfc_mask_for_times`, `engine/scenarios.py::ScenarioSet.jumpoff_period`, `engine/scenarios.py::build_scenario_set`
+- `engine/scenarios.py::build_scenario_set` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`, `analysis/scenario_exhibits.py::main`
+- `engine/scenarios.py::panel_macro_concepts` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`, `engine/scenarios.py::build_scenario_set`
+- `engine/scenarios.py::panel_time_to_period` ← `agent/tools_tier1.py::decompose_waterfall`, `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::t_axis`, `app/api/main.py::ecl_summary`, `engine/satellite.py::gfc_mask_for_times`, `engine/scenarios.py::ScenarioSet.jumpoff_period`, `engine/scenarios.py::build_scenario_set`
 - `engine/staging.py::_age_curve` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_cum_default_pd`
 - `engine/staging.py::_backstop_30dpd` ← `engine/staging.py::assign_stages`
 - `engine/staging.py::_cum_default_pd` ← `analysis/staging_exhibits.py::scale_benchmark`, `engine/staging.py::lifetime_pd_table`
 - `engine/staging.py::_design_matrix` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_age_curve`, `engine/staging.py::_cum_default_pd`
 - `engine/staging.py::_spline_cols` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_age_curve`, `engine/staging.py::_cum_default_pd`
-- `engine/staging.py::assign_stages` ← `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::stage_book`, `engine/ecl.py::ecl_for_snapshot`, `engine/satellite.py::scenario_ecl_for_snapshot`
-- `engine/staging.py::build_macro_map` ← `analysis/fit_challenger.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`, `engine/scenarios.py::build_scenario_set`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
+- `engine/staging.py::assign_stages` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::stage_book`, `engine/ecl.py::ecl_for_snapshot`, `engine/satellite.py::scenario_ecl_for_snapshot`
+- `engine/staging.py::build_macro_map` ← `agent/tools_tier1.py::_build_state`, `analysis/fit_challenger.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`, `engine/scenarios.py::build_scenario_set`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
 - `engine/staging.py::crosscheck_term_structure` ← `analysis/staging_exhibits.py::main`
 - `engine/staging.py::lifetime_pd_table` ← `analysis/fit_challenger.py::main`, `analysis/staging_exhibits.py::sensitivity_table`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`
 - `engine/staging.py::origination_covariates` ← `analysis/fit_challenger.py::main`, `analysis/staging_exhibits.py::scale_benchmark`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
@@ -282,14 +360,19 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 
 ## Third-party libraries used
 
+- **agent** — agent/graph.py, app/api/main.py
 - **analysis** — analysis/scenario_exhibits.py
 - **challenger** — analysis/fit_challenger.py
 - **data** — engine/scenarios.py
-- **engine** — analysis/ead_exhibits.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, engine/__init__.py, engine/ecl.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
+- **engine** — agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, app/api/main.py, engine/__init__.py, engine/ecl.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
+- **fastapi** — app/api/main.py
+- **joblib** — agent/tools_tier1.py
+- **langgraph** — agent/graph.py
 - **matplotlib** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/mpl_style.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py
-- **numpy** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py, engine/vasicek.py
-- **pandas** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/staging_exhibits.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
+- **numpy** — agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, app/api/main.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py, engine/vasicek.py
+- **pandas** — agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/staging_exhibits.py, app/api/main.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
 - **patsy** — engine/ecl.py, engine/staging.py
+- **pydantic** — agent/graph.py, agent/tools_tier1.py, app/api/main.py
 - **scipy** — analysis/eda_suite.py, engine/ecl.py, engine/vasicek.py
 - **sklearn** — analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py
 - **statsmodels** — engine/hazard.py, engine/lgd.py, engine/satellite.py
@@ -298,19 +381,21 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 
 Per file: a `struct_hash` over signatures (function params, class methods, import bases) — not raw bytes. Change level vs the previous run:
 
-- `analysis/fit_challenger.py` — **NEW**  `5ee6cd72a620fb8a`
-- `analysis/fit_vasicek.py` — **NEW**  `2d2825bd567b1bee`
-- `analysis/run_scenarios.py` — **NEW**  `cfe7b28be2262445`
-- `analysis/scenario_exhibits.py` — **NEW**  `362e2ea69a149517`
-- `engine/satellite.py` — **NEW**  `cab43402a5546d0b`
-- `engine/scenarios.py` — **NEW**  `6aafeb84b332544d`
-- `engine/vasicek.py` — **NEW**  `2228076826c94a00`
+- `agent/__init__.py` — **NEW**  `ea1badefcb351eba`
+- `agent/graph.py` — **NEW**  `b4ca5417920b2ae2`
+- `agent/tools_tier1.py` — **NEW**  `2ede3b53f210b698`
+- `app/api/__init__.py` — **NEW**  `ea1badefcb351eba`
+- `app/api/main.py` — **NEW**  `1e482acb412b1d01`
 - `analysis/ead_exhibits.py` — **NONE**  `5d148758d2b41005`
 - `analysis/eda_suite.py` — **NONE**  `92ce8b7ec7b2cc10`
+- `analysis/fit_challenger.py` — **NONE**  `5ee6cd72a620fb8a`
 - `analysis/fit_hazard.py` — **NONE**  `fb733b370f722594`
 - `analysis/fit_lgd.py` — **NONE**  `d84bdf0101b3499b`
+- `analysis/fit_vasicek.py` — **NONE**  `2d2825bd567b1bee`
 - `analysis/mpl_style.py` — **NONE**  `ff96905bf3035f59`
 - `analysis/run_ecl.py` — **NONE**  `31994db9389ae237`
+- `analysis/run_scenarios.py` — **NONE**  `cfe7b28be2262445`
+- `analysis/scenario_exhibits.py` — **NONE**  `362e2ea69a149517`
 - `analysis/staging_exhibits.py` — **NONE**  `3446e3cc3d4114c1`
 - `data/panel/__init__.py` — **NONE**  `ea1badefcb351eba`
 - `data/panel/build_panel.py` — **NONE**  `c5dbce64d6d620ec`
@@ -319,7 +404,10 @@ Per file: a `struct_hash` over signatures (function params, class methods, impor
 - `engine/ecl.py` — **NONE**  `7c7feef9c97494fe`
 - `engine/hazard.py` — **NONE**  `1786dacea90bf08e`
 - `engine/lgd.py` — **NONE**  `d5a98c1dc6fc76d0`
+- `engine/satellite.py` — **NONE**  `cab43402a5546d0b`
+- `engine/scenarios.py` — **NONE**  `6aafeb84b332544d`
 - `engine/staging.py` — **NONE**  `9354043a443a12d0`
+- `engine/vasicek.py` — **NONE**  `2228076826c94a00`
 
 > STRUCTURAL = signatures/imports changed (re-index this file and its callers). COSMETIC = bytes changed but signatures identical (safe to skip re-analysis). NONE = identical. NEW / DELETED as named.
 
@@ -734,3 +822,128 @@ _SICR staging exhibits: stage distributions, threshold sensitivity, report._
 
 **Data sources / paths referenced:**
 - `panel.parquet`
+
+### agent/__init__.py
+
+_Agent layer: typed, deterministic tools + (Day 4) the LangGraph router._
+
+**Imports** — third-party: — · local: — · stdlib: —
+
+### agent/graph.py
+
+_LangGraph orchestration for the IFRS 9 ECL copilot (Day 4)._
+
+**Imports** — third-party: agent, langgraph, pydantic · local: — · stdlib: __future__, datetime, json, math, operator, os, pathlib, re, threading, typing
+
+**Classes:**
+- `AgentState`
+
+**Functions:**
+- `_client()` — Lazy singleton OpenAI client pointed at OpenRouter (key from env).
+- `_chat_once(model: str, messages: list[dict]) -> str` — One temperature-0 chat completion against one model.
+- `_call_llm(messages: list[dict]) -> tuple[str, str]` — Primary model, then FALLBACK_MODEL on ANY error; (text, model_used).
+- `_llm_route(question: str) -> tuple[str, str]` — Raw router completion for a question; (text, model_used).
+- `_llm_narrate(tool_result: dict) -> tuple[str, str]` — Raw narrator completion over ONLY the tool's returned JSON.
+- `_extract_json(text: str) -> dict` — Parse the router's JSON object, tolerating code fences / prose tails.
+- `decide_route(question: str) -> dict` — Classify a question -> {route, args, detail} with hard validation.
+- `_number_tokens(text: str) -> list[str]`
+- `_allowed_numbers(tool_result: dict) -> list[float]` — Every number a faithful narration may contain.
+- `narration_numbers_ok(text: str, tool_result: dict) -> bool` — True iff EVERY number token in the narration appears in the result.
+- `deterministic_narration(tool_result: dict) -> str` — Engine-authored fallback answer: the tool's own headline, verbatim.
+- `_now() -> str`
+- `_router_node(state: AgentState) -> dict`
+- `_make_tool_node(name: str)` — Node that executes ONE registry tool with already-validated args.
+- `_narrator_node(state: AgentState) -> dict`
+- `_refusal_node(state: AgentState) -> dict`
+- `build_graph()` — Compile the StateGraph (router -> tool -> narrator | refusal).
+- `get_graph()`
+- `_log_run(record: dict) -> None`
+- `run_agent(question: str) -> dict` — Answer one question through the graph; audit the full trace.
+
+**Data sources / paths referenced:**
+- `agent_runs.jsonl`
+- `https://openrouter.ai/api/v1`
+
+### agent/tools_tier1.py
+
+_Tier-1 parameterised tools over the FROZEN IFRS 9 ECL engine._
+
+**Imports** — third-party: engine, joblib, numpy, pandas, pydantic · local: — · stdlib: __future__, copy, dataclasses, datetime, hashlib, json, pathlib, re, threading, typing, warnings
+
+**Classes:**
+- `ShockMacroArgs`
+- `ReweightArgs`
+- `RerunEclArgs`
+- `DecomposeWaterfallArgs`
+- `EngineState` — Everything the four tools need, built once (module docstring).
+
+**Functions:**
+- `_fingerprint() -> str` — Cache key: panel size+mtime, hazard/LGD source bytes, CACHE_VERSION.
+- `_formula_columns(formula: str, frame: pd.DataFrame) -> list[str]` — Frame columns the patsy formula references by name (word-boundary).
+- `_strip_training_data(models: dict) -> dict` — Deep-copy the fitted models and shed the embedded training payload.
+- `_fit_or_load_models(panel: pd.DataFrame) -> dict` — Joblib warm start for the ~10-50s model fits (staleness rule above).
+- `_comovement_betas(sset) -> dict[str, dict[str, float]]` — Severe-minus-base co-movement loadings over the 13q R&S window.
+- `_build_state() -> EngineState` — The full macro -> satellite -> Z -> PIT -> ECL chain, once.
+- `_state() -> EngineState`
+- `warm_up() -> None` — Build (or joblib warm-load) the engine state now.
+- `_last_logged_seq(path: Path) -> int`
+- `_log_call(tool: str, args: dict, headline: str) -> str` — Append one audit line; return the tool_call_id referencing it.
+- `_weights_key(w_up: float, w_base: float, w_down: float) -> tuple`
+- `_z_for_macro_path(state: EngineState, path_df: pd.DataFrame) -> np.ndarray` — Satellite Z for a 40q concept path, history spliced for the lags.
+- `_run_book(state: EngineState, z_path: np.ndarray) -> pd.DataFrame` — One scenario-conditional ECL run of the t=60 book (frozen engine).
+- `_shock_profile(shape: str, horizon: int, rs_window: int, reversion: int) -> np.ndarray` — Per-quarter multiplier of the shock (module docstring shapes).
+- `_stage_mix(book: pd.DataFrame) -> dict` — Loan counts + reported allowance by IFRS 9 stage (JSON-ready).
+- `_waterfall_rows(wf: pd.DataFrame) -> list[dict]`
+- `_m(x: float) -> str` — Dollars -> '$Xm' display string (the tool narrates, not the LLM).
+- `shock_macro(var: Literal['UER', 'HPI', 'GDP'], shock: float, shape: Literal['parallel', 'peak_revert']='parallel') -> dict` — Coherent macro shock of the base scenario -> re-run ECL chain.
+- `reweight_scenarios(w_up: float, w_base: float, w_down: float) -> dict` — Reweight the three cached scenario ECLs; report the Jensen gap.
+- `_segment_mask(state: EngineState, segment: str) -> np.ndarray`
+- `rerun_ecl(segment: Literal['all', 'stage1', 'stage2', 'stage3', 'investor', 'high_ltv']='all') -> dict` — Scenario-weighted allowance for a segment of the t=60 book.
+- `_frozen_book(state: EngineState, t: int) -> pd.DataFrame` — Frozen rung-1 ECL book at snapshot t, memoised per t.
+- `decompose_waterfall(t0: int=20, t1: int=40) -> dict` — Frozen-engine allowance movement decomposition between two snapshots.
+
+**Data sources / paths referenced:**
+- `Tier-1 parameterised tools over the FROZEN IFRS 9 ECL engine.
+
+Four PURE, deterministic functions the LLM router (Day 4) can call. Each
+retu`
+- `panel.parquet`
+- `tool_calls.jsonl`
+
+### app/api/__init__.py
+
+**Imports** — third-party: — · local: — · stdlib: —
+
+### app/api/main.py
+
+_FastAPI backend: the frozen ECL engine, the Tier-1 agent, the built UI._
+
+**Imports** — third-party: agent, engine, fastapi, numpy, pandas, pydantic · local: — · stdlib: __future__, asyncio, contextlib, importlib, inspect, json, logging, math, pathlib, re, threading, time, typing
+
+**Classes:**
+- `TraceBroker` (methods: start_trace, publish, snapshot, subscribe, unsubscribe) — Ring buffer of the most recent /ask trace + live asyncio fan-out.
+- `AskRequest`
+
+**Functions:**
+- `_fallback_ask(question: str, emit: Callable[[dict], None]) -> dict` — Keyword router over the four Tier-1 tools; everything else refuses.
+- `_route(q: str) -> tuple[str | None, dict]` — Question (lowercased) -> (tool name | None for refusal, kwargs).
+- `_resolve_agent() -> Callable | None` — Find the Day-4 router if it exists (module docstring seam).
+- `_run_agent(question: str) -> dict` — Synchronous agent run (called in the threadpool by /ask).
+- `async def lifespan(app: FastAPI)`
+- `_json_safe(obj)` — Recursively make a validation-error payload strictly JSON-safe.
+- `async def _request_validation_handler(request: Request, exc: RequestValidationError)`
+- `health() -> dict`
+- `ecl_summary() -> dict` — Headline stats + the scenario table for the dashboard header.
+- `ecl_waterfall(t0: int=Query(default=20), t1: int=Query(default=40)) -> dict` — Movement decomposition between two rung-1 snapshots.
+- `credit_cycle() -> dict` — The recovered credit-cycle series Z_t with calendar labels.
+- `api_shock_macro(args: ShockMacroArgs) -> dict`
+- `api_reweight_scenarios(args: ReweightArgs) -> dict`
+- `api_rerun_ecl(args: RerunEclArgs) -> dict`
+- `api_decompose_waterfall(args: DecomposeWaterfallArgs) -> dict`
+- `async def agent_ask(req: AskRequest) -> dict` — Route a question through the agent; one at a time (demo limit).
+- `async def _sse_events()` — Replay the buffered latest trace, then stream live events.
+- `async def agent_stream() -> StreamingResponse` — SSE feed of the most recent /ask trace (single-worker, in-memory).
+
+**Data sources / paths referenced:**
+- `index.html`
+- `z_path.csv`
