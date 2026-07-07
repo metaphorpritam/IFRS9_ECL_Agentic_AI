@@ -56,16 +56,27 @@ export const getSummary = () =>
     allowance_m: d.weighted_allowance / 1e6,
   }));
 
-export const getWaterfall = () =>
-  fetch('/api/ecl/waterfall').then(json).then((d) => ({
-    start: { label: 'Opening allowance', value_m: d.opening_allowance / 1e6 },
-    steps: d.components
+// Shared shape for both waterfalls: the historical movement decomposition and
+// a tool response's waterfall_vs_baseline (identical row schema).
+export const adaptWaterfallRows = (rows, startLabel, endLabel) => {
+  const level = (name) => rows.find((c) => c.component === name);
+  return {
+    start: { label: startLabel, value_m: (level('opening')?.amount ?? 0) / 1e6 },
+    steps: rows
       .filter((c) => c.component !== 'opening' && c.component !== 'closing')
       .map((c) => ({
         label: c.component.replace(/_/g, ' '),
         delta_m: c.amount / 1e6,
       })),
-    end: { label: 'Closing allowance', value_m: d.closing_allowance / 1e6 },
+    end: { label: endLabel, value_m: (level('closing')?.amount ?? 0) / 1e6 },
+  };
+};
+
+export const getWaterfall = () =>
+  fetch('/api/ecl/waterfall').then(json).then((d) => ({
+    ...adaptWaterfallRows(d.components, 'Opening allowance', 'Closing allowance'),
+    period_t0: d.period_t0,
+    period_t1: d.period_t1,
   }));
 
 export const getCreditCycle = () =>

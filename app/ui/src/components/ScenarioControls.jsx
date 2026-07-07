@@ -28,9 +28,12 @@ export default function ScenarioControls({ onRan }) {
     setBusy(true);
     setStatus(null);
     try {
-      await fn();
-      setStatus({ kind: 'ok', text: `${label} — engine re-run complete.` });
-      onRan?.();
+      const result = await fn();
+      setStatus({
+        kind: 'ok',
+        text: result?.headline || `${label} — engine re-run complete.`,
+      });
+      onRan?.({ label, result });
     } catch (err) {
       setStatus({ kind: 'err', text: `${label} failed: ${err.message}` });
     } finally {

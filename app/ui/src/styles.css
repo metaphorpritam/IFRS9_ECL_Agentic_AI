@@ -445,3 +445,29 @@ input[type='range'] {
 .chat-form .btn {
   margin-top: 0;
 }
+
+/* stage-horizon explainer under the waterfall */
+.stage-guide {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-muted, #5b6472);
+  border-top: 1px solid var(--grid-line, #e3e7ee);
+  padding-top: 8px;
+}
+.stage-guide summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink, #22293a);
+}
+.stage-guide ul {
+  margin: 8px 0 6px 18px;
+  padding: 0;
+}
+.stage-guide li {
+  margin-bottom: 6px;
+  line-height: 1.45;
+}
+.stage-guide p {
+  margin: 4px 0 2px;
+  line-height: 1.45;
+}

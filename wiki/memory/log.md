@@ -41,3 +41,7 @@ Day 4 IN FLIGHT, session tokens low. Running: author:ui (app/ui scaffolded, prea
 ## 2026-07-07 20:12 UTC — tags: day4, complete, ship
 
 DAY 4 COMPLETE - PROJECT SHIPPED. Public HF Space LIVE + E2E-verified (shock question -> shock_macro 7.3s, refusal works): huggingface.co/spaces/Preetomsorkar/ifrs9-ecl-copilot. Suite 381/381 (133 fixtures + 187 Day-2 + 91 Day-3 + Day-4), frozen five NONE vs d3ea14f. Agent-layer review FIXED a pytest-deadlocking SSE test + NaN-422 edge. Docker 1.45GB non-root, secrets grep zero across layers. UI 26kB JS. 4-day plan DONE. Remaining stretch: Tier-3 query_model_docs, Tier-2 sandbox, MCP server, Freddie rung 3 (operator should register at Clarity DI).
+
+## 2026-07-07 20:37 UTC — tags: day4, bugfix
+
+Post-ship bugfix: UI-API contract seam (both 422s user-reported). Root cause: UI built in parallel against invented draft shapes; the pydantic extra=forbid contract rejected them - working as designed, seam untested (agent-layer review scoped to agent only; UI had no reviewer per lighter-review agreement). Fix: app/ui/src/api.js now sends canonical {w_up,w_base,w_down} and {var,shock,shape}, plus response adapters (weighted_allowance->allowance_m/1e6, components->start/steps/end, points->parallel arrays). Verified local + live Space (200s). LESSON for stretch work: integration seams between parallel-built layers need one cheap contract test (schemathesis-style or a 10-line pytest hitting each endpoint with the UI's exact payloads).

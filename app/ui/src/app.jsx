@@ -21,6 +21,7 @@ export default function App() {
   const [summary, setSummary] = useState(null);
   const [apiDown, setApiDown] = useState(false);
   const [rev, setRev] = useState(0);
+  const [action, setAction] = useState(null); // last tool run: {label, result}
 
   useEffect(() => {
     let alive = true;
@@ -32,8 +33,23 @@ export default function App() {
     };
   }, [rev]);
 
-  // Bump after any tool run: header + waterfall refetch from the engine.
-  const onRan = useCallback(() => setRev((r) => r + 1), []);
+  // After any tool run: keep the tool's own result (the header and waterfall
+  // reflect the ACTION), and bump rev for anything that refetches.
+  const onRan = useCallback((a) => {
+    setAction(a ?? null);
+    setRev((r) => r + 1);
+  }, []);
+
+  // Header values: the last action's engine numbers win over the baseline
+  // summary; every value is a tool/engine result either way.
+  const r = action?.result;
+  const allowanceM =
+    r?.shocked_allowance != null ? r.shocked_allowance / 1e6
+    : r?.weighted_allowance != null ? r.weighted_allowance / 1e6
+    : summary?.allowance_m;
+  const coverage = r?.coverage ?? summary?.coverage;
+  const jensen = r?.jensen_ratio ?? summary?.jensen_ratio;
+  const afterHint = action ? `after: ${action.label}` : 'probability-weighted';
 
   return (
     <div class="page">
@@ -54,17 +70,17 @@ export default function App() {
         <div class="tiles">
           <StatTile
             label="Reported allowance"
-            value={fmtMillions(summary?.allowance_m)}
-            hint="probability-weighted"
+            value={fmtMillions(allowanceM)}
+            hint={afterHint}
           />
           <StatTile
             label="Coverage"
-            value={fmtPct(summary?.coverage)}
+            value={fmtPct(coverage)}
             hint="allowance / EAD"
           />
           <StatTile
             label="Jensen ratio"
-            value={fmtRatio(summary?.jensen_ratio)}
+            value={fmtRatio(jensen)}
             hint="weighted ECL vs avg path"
           />
         </div>
@@ -75,7 +91,7 @@ export default function App() {
           <ScenarioControls onRan={onRan} />
         </div>
         <div class="col-waterfall">
-          <WaterfallChart rev={rev} />
+          <WaterfallChart rev={rev} action={action} />
         </div>
         <div class="col-cycle">
           <CreditCycleChart />
