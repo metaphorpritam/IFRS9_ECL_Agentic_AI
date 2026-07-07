@@ -20,8 +20,9 @@
  *   { "calendar": ["2000Q2", ...],
  *     "ttc": [...], "pit": [...], "hybrid": [...], "observed": [...] }   (observed optional)
  *
- * POST /api/tools/reweight_scenarios   body {"weights": {"up": w, "base": w, "severe": w}}
- * POST /api/tools/shock_macro          body {"uer_shock_pp": 2.0}
+ * POST /api/tools/reweight_scenarios   body {"w_up": w, "w_base": w, "w_down": w}
+ * POST /api/tools/shock_macro          body {"var": "UER", "shock": 2.0, "shape": "parallel"}
+ *   (canonical shapes = agent/tools_tier1.py pydantic models, extra="forbid")
  *   -> 200 on success; UI then refetches /api/ecl/summary and /api/ecl/waterfall.
  *
  * POST /api/agent/ask                  body {"question": "..."}
@@ -47,15 +48,47 @@ const post = (url, body) =>
     body: JSON.stringify(body),
   }).then(json);
 
-export const getSummary = () => fetch('/api/ecl/summary').then(json);
-export const getWaterfall = () => fetch('/api/ecl/waterfall').then(json);
-export const getCreditCycle = () => fetch('/api/exhibits/credit_cycle').then(json);
+// Adapters: map the API's canonical payloads onto the shapes the components
+// consume (single seam — components stay contract-agnostic).
+export const getSummary = () =>
+  fetch('/api/ecl/summary').then(json).then((d) => ({
+    ...d,
+    allowance_m: d.weighted_allowance / 1e6,
+  }));
 
-export const reweightScenarios = (weights) =>
-  post('/api/tools/reweight_scenarios', { weights });
+export const getWaterfall = () =>
+  fetch('/api/ecl/waterfall').then(json).then((d) => ({
+    start: { label: 'Opening allowance', value_m: d.opening_allowance / 1e6 },
+    steps: d.components
+      .filter((c) => c.component !== 'opening' && c.component !== 'closing')
+      .map((c) => ({
+        label: c.component.replace(/_/g, ' '),
+        delta_m: c.amount / 1e6,
+      })),
+    end: { label: 'Closing allowance', value_m: d.closing_allowance / 1e6 },
+  }));
+
+export const getCreditCycle = () =>
+  fetch('/api/exhibits/credit_cycle').then(json).then((d) => ({
+    calendar: d.points.map((p) => p.calendar),
+    ttc: d.points.map((p) => p.ttc_pd * 100),
+    pit: d.points.map((p) => p.pit_pd * 100),
+    observed: d.points.map((p) => p.observed_dr * 100),
+  }));
+
+export const reweightScenarios = ({ up, base, severe }) =>
+  post('/api/tools/reweight_scenarios', {
+    w_up: up,
+    w_base: base,
+    w_down: severe,
+  });
 
 export const shockMacro = (uerShockPp) =>
-  post('/api/tools/shock_macro', { uer_shock_pp: uerShockPp });
+  post('/api/tools/shock_macro', {
+    var: 'UER',
+    shock: uerShockPp,
+    shape: 'parallel',
+  });
 
 export const askAgent = (question) => post('/api/agent/ask', { question });
 
