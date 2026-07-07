@@ -109,6 +109,77 @@
         ]
       }
     },
+    "engine/satellite.py": {
+      "content_hash": "8d036410f16f3784",
+      "fp": {
+        "struct_hash": "cab43402a5546d0b",
+        "funcs": [
+          "_estimation_sample(z,drivers)",
+          "_hazard_grid(model,frame,R)",
+          "_signs_ok(res,terms)",
+          "anchor_sanity(tab,res)",
+          "condition_hazard_grid(lam,on,z_path,rho)",
+          "driver_frame(concepts)",
+          "fit_satellite(z,drivers)",
+          "gfc_mask_for_times(times)",
+          "gfc_sensitivity(z,drivers,model)",
+          "observed_vs_ttc_rates(panel_df,default_model,macro_means)",
+          "recover_z(panel_df,default_model)",
+          "scenario_ecl_for_snapshot(panel_df,t,models,z_path,rho,macro_means,staged,config)",
+          "scenario_z_paths(model,sset,history_concepts,include_weighted)",
+          "stationarity_table(series)",
+          "ttc_macro_means(panel_df)"
+        ],
+        "classes": [
+          "SatelliteModel.adj_r2(self)",
+          "SatelliteModel.aic(self)",
+          "SatelliteModel.dw(self)",
+          "SatelliteModel.n_obs(self)",
+          "SatelliteModel.params(self)",
+          "SatelliteModel.predict(self,drivers)"
+        ],
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "engine",
+          "itertools",
+          "numpy",
+          "pandas",
+          "statsmodels",
+          "typing",
+          "warnings"
+        ]
+      }
+    },
+    "engine/scenarios.py": {
+      "content_hash": "6e3aaa7078a0aa83",
+      "fp": {
+        "struct_hash": "6aafeb84b332544d",
+        "funcs": [
+          "_extend_with_reversion(rs_path,longrun,horizon,reversion)",
+          "build_scenario_set(panel_path,horizon,reversion,mirror_factor,uer_floor,weights)",
+          "panel_macro_concepts(macro_map)",
+          "panel_time_to_period(t)"
+        ],
+        "classes": [
+          "ScenarioSet.__post_init__(self)",
+          "ScenarioSet.as_long_frame(self)",
+          "ScenarioSet.jumpoff_period(self)",
+          "ScenarioSet.path(self,name)",
+          "ScenarioSet.weighted_path(self)"
+        ],
+        "imports": [
+          "__future__",
+          "data",
+          "dataclasses",
+          "engine",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "typing"
+        ]
+      }
+    },
     "engine/staging.py": {
       "content_hash": "c424882ad5ca2d8c",
       "fp": {
@@ -134,6 +205,28 @@
           "numpy",
           "pandas",
           "patsy"
+        ]
+      }
+    },
+    "engine/vasicek.py": {
+      "content_hash": "164b2f15e68c8f26",
+      "fp": {
+        "struct_hash": "2228076826c94a00",
+        "funcs": [
+          "_check_prob(p,name)",
+          "_check_rho(rho)",
+          "anchor_check(pd_ttc,rho,n)",
+          "calibrate_rho(observed_rates,ttc_anchors,rho_bounds,ddof)",
+          "hybrid_pd(pd_ttc,z,rho,alpha)",
+          "invert_z(observed_rate,ttc_anchor,rho)",
+          "pit_pd(pd_ttc,z,rho)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "dataclasses",
+          "numpy",
+          "scipy"
         ]
       }
     },
@@ -234,6 +327,34 @@
         ]
       }
     },
+    "analysis/fit_challenger.py": {
+      "content_hash": "6e9835e345e03c25",
+      "fp": {
+        "struct_hash": "5ee6cd72a620fb8a",
+        "funcs": [
+          "fail(msg)",
+          "main()",
+          "pdp_curve(sample,raw_col,grid,mlp_model,champ_model)",
+          "permutation_importance_oot(model,F_oot,y,seed)",
+          "plain_log_ticks(ax,which)",
+          "psi(train_scores,oot_scores,n_bins)",
+          "reliability_bins(y,p,n_bins)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "challenger",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sklearn",
+          "sys"
+        ]
+      }
+    },
     "analysis/fit_hazard.py": {
       "content_hash": "cf4b217bc51c0132",
       "fp": {
@@ -287,6 +408,31 @@
         ]
       }
     },
+    "analysis/fit_vasicek.py": {
+      "content_hash": "a99843a6fc0bb2a3",
+      "fp": {
+        "struct_hash": "2d2825bd567b1bee",
+        "funcs": [
+          "_fail(msg)",
+          "build_exhibit(tab,res,flat_ttc,z_oltv,out_png)",
+          "main()",
+          "quarterly_rates(panel,model)",
+          "t_to_period(t)",
+          "write_report(path,tab,res,res_oltv,flat_ttc,anchor_err,roundtrip_err,exhibit,model)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sys"
+        ]
+      }
+    },
     "analysis/mpl_style.py": {
       "content_hash": "2e0fb83fd355693e",
       "fp": {
@@ -326,6 +472,58 @@
           "pathlib",
           "sys",
           "time"
+        ]
+      }
+    },
+    "analysis/run_scenarios.py": {
+      "content_hash": "a133741d7efa6d0e",
+      "fp": {
+        "struct_hash": "cfe7b28be2262445",
+        "funcs": [
+          "_fail(msg)",
+          "main()",
+          "plot_jensen(curve,points,ratio,out_png)",
+          "plot_satellite_fit(z_ser,satm,out_png)",
+          "plot_scenario_bars(summary,weighted_row,out_png)",
+          "plot_z_fan(z_ser,zp,out_png)",
+          "t_axis(times)",
+          "write_satellite_report(path,satm,stat_tab,gfc_tab,sanity,res,z_ser)",
+          "write_scenario_report(path,summary,jensen,wsens,checks,res,satm,sset,timings)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "engine",
+          "matplotlib",
+          "mpl_style",
+          "numpy",
+          "pandas",
+          "pathlib",
+          "sys",
+          "time"
+        ]
+      }
+    },
+    "analysis/scenario_exhibits.py": {
+      "content_hash": "36eb269aba7cfb51",
+      "fp": {
+        "struct_hash": "362e2ea69a149517",
+        "funcs": [
+          "_fan(ax,sset,concept,scale)",
+          "_zone_notes(ax,sset,y,va)",
+          "fan_hpi_growth(sset,path)",
+          "fan_uer(sset,path)",
+          "main()",
+          "write_report(sset,path)"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "analysis",
+          "engine",
+          "matplotlib",
+          "numpy",
+          "pathlib"
         ]
       }
     },

@@ -76,6 +76,32 @@ def model(train_sub):
 
 
 # ---------------------------------------------------------------------------
+# like-for-like: challenger covariates == champion covariates, by contract
+# ---------------------------------------------------------------------------
+
+def test_like_for_like_covariate_set_matches_champion():
+    """FEATURES must be EXACTLY the champion's covariate information set
+    (engine/hazard.py RHS, read-only): cr(loan_age) -> raw loan_age, every
+    main-effect term present, nothing extra, and the only champion term not
+    handed to the MLP is the centered LTVxUER interaction (rediscovering it
+    is a scorecard question, not an input)."""
+    from engine.hazard import _RHS
+
+    champ, interactions = set(), []
+    for term in (t.strip() for t in _RHS.split("+")):
+        if term.startswith("cr(loan_age"):
+            champ.add("loan_age")
+        elif ":" in term:
+            interactions.append(term)
+        else:
+            champ.add(term)
+    assert champ == set(FEATURES), (
+        f"covariate drift vs champion: champion-only {champ - set(FEATURES)}, "
+        f"challenger-only {set(FEATURES) - champ}")
+    assert interactions == ["center(ltv10):center(uer_lag1)"]
+
+
+# ---------------------------------------------------------------------------
 # discrimination floor / prediction hygiene
 # ---------------------------------------------------------------------------
 

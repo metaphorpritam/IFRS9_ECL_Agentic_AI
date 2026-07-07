@@ -292,8 +292,32 @@ def main() -> None:
                  bool((reli[("oot", lab)]["obs"]
                        > reli[("oot", lab)]["pred"]).all()))
            for tag, lab in [("champ", CHAMP), ("mlp", CHAL)]}
+
+    def _shape_read(lo: float, hi: float, all_under: bool) -> str:
+        if all_under:
+            return "observed exceeds predicted in EVERY bin -- a level shift"
+        if lo > 1.2 and hi < 1.0:
+            return (f"ROTATED curve: still under-predicts the low/mid-score "
+                    f"book {lo:.1f}x while over-predicting the top quintile "
+                    f"({hi:.2f}x), so the near-1 average NETS OFF "
+                    "opposite-signed bin errors")
+        if lo < 1.0 and hi > 1.2:
+            return (f"ROTATED curve (steep): over-predicts the bottom "
+                    f"({lo:.2f}x), under-predicts the top {hi:.1f}x")
+        return "roughly parallel to the diagonal"
+
+    shape_note = (
+        f"pooled observed/predicted in the bottom vs top OOT score quintile "
+        f"-- champion {shp['champ'][0]:.2f}x / {shp['champ'][1]:.2f}x "
+        f"({_shape_read(*shp['champ'])}); challenger {shp['mlp'][0]:.2f}x / "
+        f"{shp['mlp'][1]:.2f}x ({_shape_read(*shp['mlp'])})")
+    print(f"OOT calibration shape: {shape_note}")
     fig.suptitle(f"Reliability: {N_RELI_BINS} score-quantile bins -- "
-                 f"{cal_note}", y=1.05, fontsize=11)
+                 f"{cal_note}\nbottom/top OOT quintile obs/pred: champion "
+                 f"{shp['champ'][0]:.1f}x/{shp['champ'][1]:.1f}x, challenger "
+                 f"{shp['mlp'][0]:.1f}x/{shp['mlp'][1]:.1f}x -- an average "
+                 "near 1 can net off opposite-signed bin errors",
+                 y=1.10, fontsize=10)
     fig.savefig(OUT / "reliability.png")
     plt.close(fig)
     print("wrote", OUT / "reliability.png")
@@ -578,6 +602,14 @@ def main() -> None:
         "artefact). Challenger predictions are prior-corrected "
         "(sigmoid(z - ln pos_weight)) so the class weighting does not "
         "inflate the hazard scale.",
+        "",
+        f"**Calibration SHAPE, not just level**: {shape_note}. A book-level "
+        "mean ratio near 1 is therefore NOT bin-level calibration: on this "
+        "OOT window neither model tracks the reliability diagonal, and "
+        "'challenger levels better' holds for the portfolio-mean hazard "
+        "only, not loan-by-loan. Either PD scale would need recalibration "
+        "before any absolute use -- the challenger stays challenger either "
+        "way.",
         "",
         "| PSI train -> OOT (bins = train score deciles) | value | reading |",
         "|---|---|---|",

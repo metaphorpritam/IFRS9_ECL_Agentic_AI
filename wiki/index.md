@@ -23,6 +23,7 @@ Never re-orient by re-reading raw sources. Every page gets one line here.
 
 ## Modules
 
+- [[Scenario Layer]] — Vasicek ρ=0.0227, DFAST paths, satellite, Jensen 1.035×, challenger scorecard; Day-3 gate PASS.
 - [[Golden Fixtures]] — the 8 recreated `compute_*.py` scripts; 133/133 golden values pass; the engine freeze gate.
 - [[Knowledge Pipeline]] — preprocess → ingest → index → caption chain; hard-won ingestion lessons.
 - [[LGD Model]] — two-stage cure × severity on resolved workouts; excess-loss loading +0.0255, never clipped.
@@ -36,6 +37,10 @@ Never re-orient by re-reading raw sources. Every page gets one line here.
 
 - [[llm-wiki Skill]] — this wiki's engine; session ritual and conventions adopted here.
 - [[pageindex-plus Skill]] — corpus ingestion, code fingerprints (freeze-gate tripwire), MDD export path.
+
+## Concepts (contd.)
+
+- [[Variable Dictionary]] — every variable: source → transformation → window → rationale → expected vs fitted sign.
 
 ## Decisions & open questions
 

@@ -1,7 +1,7 @@
 {
-  "generated": "2026-07-05T16:34:11+00:00",
+  "generated": "2026-07-07T13:33:05+00:00",
   "wiki_dir": "wiki",
-  "pages": 16,
+  "pages": 18,
   "nodes": [
     {
       "id": "bootstrap-decisions",
@@ -147,7 +147,7 @@
           "text": "GATE (frozen 2026-07-05)"
         }
       ],
-      "in_degree": 4,
+      "in_degree": 5,
       "out_degree": 7
     },
     {
@@ -237,7 +237,7 @@
           "text": "EDA verification (outputs/eda/, 5 PASS / 0 FAIL / 1 INFO)"
         }
       ],
-      "in_degree": 4,
+      "in_degree": 6,
       "out_degree": 3
     },
     {
@@ -275,7 +275,7 @@
           "text": "Numeric ground truth"
         }
       ],
-      "in_degree": 14,
+      "in_degree": 15,
       "out_degree": 6
     },
     {
@@ -308,16 +308,20 @@
           "text": "Modules"
         },
         {
-          "line": 35,
+          "line": 36,
           "text": "Entities"
         },
         {
-          "line": 40,
+          "line": 41,
+          "text": "Concepts (contd.)"
+        },
+        {
+          "line": 45,
           "text": "Decisions & open questions"
         }
       ],
       "in_degree": 0,
-      "out_degree": 15
+      "out_degree": 17
     },
     {
       "id": "knowledge-pipeline",
@@ -390,7 +394,7 @@
           "text": "Fit quality"
         }
       ],
-      "in_degree": 3,
+      "in_degree": 4,
       "out_degree": 3
     },
     {
@@ -455,7 +459,7 @@
           "text": "Loan Panel"
         }
       ],
-      "in_degree": 5,
+      "in_degree": 7,
       "out_degree": 4
     },
     {
@@ -489,7 +493,7 @@
           "text": "Key synthesis findings"
         }
       ],
-      "in_degree": 9,
+      "in_degree": 10,
       "out_degree": 8
     },
     {
@@ -568,6 +572,67 @@
       "out_degree": 12
     },
     {
+      "id": "scenario-layer",
+      "path": "pages/scenario-layer.md",
+      "title": "Scenario Layer",
+      "type": "module",
+      "tags": [
+        "engine",
+        "scenarios",
+        "day3"
+      ],
+      "aliases": [
+        "vasicek",
+        "satellite",
+        "scenarios",
+        "jensen exhibit",
+        "credit cycle"
+      ],
+      "status": "active",
+      "sources": [
+        "../knowledge/sources/ifrs9_credit_risk_notes.md",
+        "../outputs/variable_dictionary.md"
+      ],
+      "code": [
+        "../engine/vasicek.py",
+        "../engine/scenarios.py",
+        "../engine/satellite.py",
+        "../data/ingest/dfast.py",
+        "../analysis/fit_vasicek.py",
+        "../analysis/run_scenarios.py",
+        "../challenger/mlp.py",
+        "../analysis/fit_challenger.py",
+        "../tests/test_vasicek.py",
+        "../tests/test_scenarios.py",
+        "../tests/test_satellite.py",
+        "../tests/test_challenger.py"
+      ],
+      "headings": [
+        {
+          "line": 29,
+          "text": "Scenario Layer"
+        },
+        {
+          "line": 33,
+          "text": "Vasicek/Z (engine/vasicek.py — review clean)"
+        },
+        {
+          "line": 41,
+          "text": "Scenarios (engine/scenarios.py + data/ingest/dfast.py — review clean)"
+        },
+        {
+          "line": 47,
+          "text": "Satellite + scenario ECL (engine/satellite.py — review FIXED report-integrity issues)"
+        },
+        {
+          "line": 55,
+          "text": "Challenger (challenger/mlp.py — review clean)"
+        }
+      ],
+      "in_degree": 2,
+      "out_degree": 6
+    },
+    {
       "id": "staging-model",
       "path": "pages/staging-model.md",
       "title": "Staging Model",
@@ -600,8 +665,37 @@
           "text": "Findings (t-snapshots; exhibits in outputs/staging/)"
         }
       ],
-      "in_degree": 2,
+      "in_degree": 3,
       "out_degree": 4
+    },
+    {
+      "id": "variable-dictionary",
+      "path": "pages/variable-dictionary.md",
+      "title": "Variable Dictionary",
+      "type": "concept",
+      "tags": [
+        "documentation",
+        "mdd",
+        "features"
+      ],
+      "aliases": [
+        "feature dictionary",
+        "variable rationale",
+        "feature glossary"
+      ],
+      "status": "active",
+      "sources": [
+        "../outputs/variable_dictionary.md"
+      ],
+      "code": [],
+      "headings": [
+        {
+          "line": 13,
+          "text": "Variable Dictionary"
+        }
+      ],
+      "in_degree": 2,
+      "out_degree": 5
     }
   ],
   "edges": [
@@ -771,7 +865,7 @@
       "src": "index",
       "dst": "bootstrap-decisions",
       "type": "mentions",
-      "line": 42
+      "line": 47
     },
     {
       "src": "index",
@@ -783,25 +877,25 @@
       "src": "index",
       "dst": "ead-model",
       "type": "mentions",
-      "line": 29
+      "line": 30
     },
     {
       "src": "index",
       "dst": "ecl-engine",
       "type": "mentions",
-      "line": 31
+      "line": 32
     },
     {
       "src": "index",
       "dst": "golden-fixtures",
       "type": "mentions",
-      "line": 26
+      "line": 27
     },
     {
       "src": "index",
       "dst": "hazard-model",
       "type": "mentions",
-      "line": 33
+      "line": 34
     },
     {
       "src": "index",
@@ -813,25 +907,25 @@
       "src": "index",
       "dst": "knowledge-pipeline",
       "type": "mentions",
-      "line": 27
+      "line": 28
     },
     {
       "src": "index",
       "dst": "lgd-model",
       "type": "mentions",
-      "line": 28
+      "line": 29
     },
     {
       "src": "index",
       "dst": "llm-wiki-skill",
       "type": "mentions",
-      "line": 37
+      "line": 38
     },
     {
       "src": "index",
       "dst": "loan-panel",
       "type": "mentions",
-      "line": 32
+      "line": 33
     },
     {
       "src": "index",
@@ -843,7 +937,7 @@
       "src": "index",
       "dst": "pageindex-plus-skill",
       "type": "mentions",
-      "line": 38
+      "line": 39
     },
     {
       "src": "index",
@@ -853,9 +947,21 @@
     },
     {
       "src": "index",
+      "dst": "scenario-layer",
+      "type": "mentions",
+      "line": 26
+    },
+    {
+      "src": "index",
       "dst": "staging-model",
       "type": "mentions",
-      "line": 30
+      "line": 31
+    },
+    {
+      "src": "index",
+      "dst": "variable-dictionary",
+      "type": "mentions",
+      "line": 43
     },
     {
       "src": "knowledge-pipeline",
@@ -1068,6 +1174,42 @@
       "line": 11
     },
     {
+      "src": "scenario-layer",
+      "dst": "ecl-engine",
+      "type": "uses",
+      "line": 24
+    },
+    {
+      "src": "scenario-layer",
+      "dst": "hazard-model",
+      "type": "uses",
+      "line": 24
+    },
+    {
+      "src": "scenario-layer",
+      "dst": "ifrs9-study-notes",
+      "type": "derived-from",
+      "line": 26
+    },
+    {
+      "src": "scenario-layer",
+      "dst": "loan-panel",
+      "type": "uses",
+      "line": 24
+    },
+    {
+      "src": "scenario-layer",
+      "dst": "master-plan",
+      "type": "implements",
+      "line": 25
+    },
+    {
+      "src": "scenario-layer",
+      "dst": "variable-dictionary",
+      "type": "mentions",
+      "line": 61
+    },
+    {
       "src": "staging-model",
       "dst": "ecl-engine",
       "type": "used-by",
@@ -1090,6 +1232,36 @@
       "dst": "loan-panel",
       "type": "uses",
       "line": 13
+    },
+    {
+      "src": "variable-dictionary",
+      "dst": "hazard-model",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "variable-dictionary",
+      "dst": "lgd-model",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "variable-dictionary",
+      "dst": "loan-panel",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "variable-dictionary",
+      "dst": "scenario-layer",
+      "type": "relates",
+      "line": 10
+    },
+    {
+      "src": "variable-dictionary",
+      "dst": "staging-model",
+      "type": "relates",
+      "line": 10
     }
   ],
   "unresolved": [],
@@ -1160,11 +1332,23 @@
     "project-overview": "project-overview",
     "ifrs9 ecl copilot": "project-overview",
     "the project": "project-overview",
+    "scenario layer": "scenario-layer",
+    "scenario-layer": "scenario-layer",
+    "vasicek": "scenario-layer",
+    "satellite": "scenario-layer",
+    "scenarios": "scenario-layer",
+    "jensen exhibit": "scenario-layer",
+    "credit cycle": "scenario-layer",
     "staging model": "staging-model",
     "staging-model": "staging-model",
     "staging": "staging-model",
     "sicr": "staging-model",
-    "stage allocation": "staging-model"
+    "stage allocation": "staging-model",
+    "variable dictionary": "variable-dictionary",
+    "variable-dictionary": "variable-dictionary",
+    "feature dictionary": "variable-dictionary",
+    "variable rationale": "variable-dictionary",
+    "feature glossary": "variable-dictionary"
   },
   "warnings": []
 }

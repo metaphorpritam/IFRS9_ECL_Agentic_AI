@@ -26,6 +26,8 @@
 
 Reliability (score-quantile bins, log-log): OOT level: champion under-predicts 4.71x on average, challenger over-predicts 1.19x on average (models trained through 2008-2010Q1 stress score the 2010-2015 recovery -- any shared level gap is the macro regime shift, not an MLP artefact). Challenger predictions are prior-corrected (sigmoid(z - ln pos_weight)) so the class weighting does not inflate the hazard scale.
 
+**Calibration SHAPE, not just level**: pooled observed/predicted in the bottom vs top OOT score quintile -- champion 8.02x / 3.07x (observed exceeds predicted in EVERY bin -- a level shift); challenger 2.04x / 0.70x (ROTATED curve: still under-predicts the low/mid-score book 2.0x while over-predicting the top quintile (0.70x), so the near-1 average NETS OFF opposite-signed bin errors). A book-level mean ratio near 1 is therefore NOT bin-level calibration: on this OOT window neither model tracks the reliability diagonal, and 'challenger levels better' holds for the portfolio-mean hazard only, not loan-by-loan. Either PD scale would need recalibration before any absolute use -- the challenger stays challenger either way.
+
 | PSI train -> OOT (bins = train score deciles) | value | reading |
 |---|---|---|
 | champion | 3.711 | large shift |

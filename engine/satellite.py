@@ -28,11 +28,13 @@ ECONOMIC-SIGN GOVERNANCE CONSTRAINT (EXPECTED_SIGN): a spec is admissible
 only if every fitted driver coefficient carries its economically
 interpretable sign (falling unemployment / rising HPI / rising GDP cannot
 worsen the credit cycle). Wrong-signed candidates -- on this panel duer,
-whose conditional coefficient turns positive (and insignificant) once
-hpi_growth is present, a collinearity artifact of the one-cycle sample --
-are thereby excluded, WITH the full grid (including the rejected specs and
-their signs) reported, not hidden. Sign restrictions on satellite-model
-coefficients are standard model-governance practice for exactly this
+whose conditional coefficient turns positive (and insignificant) whenever
+gdp_growth co-enters the spec (duer alone, or with hpi_growth only, keeps
+its negative sign but loses on AIC), a collinearity artifact of the
+one-cycle sample -- are thereby excluded, WITH the full grid (including
+the rejected specs and their signs) reported, not hidden. Sign
+restrictions on satellite-model coefficients are standard
+model-governance practice for exactly this
 small-sample identification problem. Hygiene emitted for the report: ADF +
 KPSS per series with plain-language verdicts, Durbin-Watson, adjusted R2,
 and a GFC-dummy sensitivity refit.

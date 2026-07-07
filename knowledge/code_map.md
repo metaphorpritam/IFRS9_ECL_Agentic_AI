@@ -10,15 +10,22 @@ engine/ead.py
 engine/ecl.py
 engine/hazard.py
 engine/lgd.py
+engine/satellite.py
+engine/scenarios.py
 engine/staging.py
+engine/vasicek.py
 data/panel/__init__.py
 data/panel/build_panel.py
 analysis/ead_exhibits.py
 analysis/eda_suite.py
+analysis/fit_challenger.py
 analysis/fit_hazard.py
 analysis/fit_lgd.py
+analysis/fit_vasicek.py
 analysis/mpl_style.py
 analysis/run_ecl.py
+analysis/run_scenarios.py
+analysis/scenario_exhibits.py
 analysis/staging_exhibits.py
 ```
 
@@ -30,28 +37,37 @@ analysis/staging_exhibits.py
 - `ead_exhibits` → `mpl_style`
 - `ecl` → (no local imports)
 - `eda_suite` → `mpl_style`
+- `fit_challenger` → `mpl_style`
 - `fit_hazard` → `mpl_style`
 - `fit_lgd` → `mpl_style`
+- `fit_vasicek` → `mpl_style`
 - `hazard` → (no local imports)
 - `lgd` → (no local imports)
 - `mpl_style` → (no local imports)
 - `run_ecl` → `mpl_style`
+- `run_scenarios` → `mpl_style`
+- `satellite` → (no local imports)
+- `scenario_exhibits` → (no local imports)
+- `scenarios` → (no local imports)
 - `staging` → (no local imports)
 - `staging_exhibits` → `mpl_style`
+- `vasicek` → (no local imports)
 
 Imported-by (reverse):
 
-- `mpl_style` ← `ead_exhibits`, `eda_suite`, `fit_hazard`, `fit_lgd`, `run_ecl`, `staging_exhibits`
+- `mpl_style` ← `ead_exhibits`, `eda_suite`, `fit_challenger`, `fit_hazard`, `fit_lgd`, `fit_vasicek`, `run_ecl`, `run_scenarios`, `staging_exhibits`
 
 ## Function call graph (resolved local calls)
 
 Calls (caller → callee):
 
-- `analysis/ead_exhibits.py::main` → `analysis/ead_exhibits.py::load_snapshot`, `analysis/ead_exhibits.py::pick_representatives`, `analysis/ead_exhibits.py::plot_profiles`, `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::write_report`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`, `engine/ead.py::ead_matrix`
+- `analysis/ead_exhibits.py::main` → `analysis/ead_exhibits.py::load_snapshot`, `analysis/ead_exhibits.py::pick_representatives`, `analysis/ead_exhibits.py::plot_profiles`, `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::write_report`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::write_report`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`, `engine/ead.py::ead_matrix`
 - `analysis/ead_exhibits.py::plot_profiles` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`
 - `analysis/ead_exhibits.py::write_report` → `engine/ead.py::ccf_ead`
-- `analysis/eda_suite.py::main` → `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::exhibit_default_rate_vs_macro`, `analysis/eda_suite.py::exhibit_hazard_by_age`, `analysis/eda_suite.py::exhibit_lgd`, `analysis/eda_suite.py::exhibit_orig_quality`, `analysis/eda_suite.py::exhibit_prepay_incentive`, `analysis/eda_suite.py::exhibit_vintage_curves`, `analysis/eda_suite.py::write_report`, `analysis/mpl_style.py::apply_textbook_style`, `analysis/run_ecl.py::write_report`, `analysis/staging_exhibits.py::write_report`
-- `analysis/fit_hazard.py::main` → `analysis/fit_hazard.py::fail`, `analysis/fit_hazard.py::render_hr_markdown`, `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/hazard.py::pd_term_structure`, `engine/hazard.py::predict_hazard`
+- `analysis/eda_suite.py::main` → `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::exhibit_default_rate_vs_macro`, `analysis/eda_suite.py::exhibit_hazard_by_age`, `analysis/eda_suite.py::exhibit_lgd`, `analysis/eda_suite.py::exhibit_orig_quality`, `analysis/eda_suite.py::exhibit_prepay_incentive`, `analysis/eda_suite.py::exhibit_vintage_curves`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::write_report`, `analysis/mpl_style.py::apply_textbook_style`, `analysis/run_ecl.py::write_report`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::write_report`
+- `analysis/fit_challenger.py::main` → `analysis/fit_challenger.py::fail`, `analysis/fit_challenger.py::pdp_curve`, `analysis/fit_challenger.py::permutation_importance_oot`, `analysis/fit_challenger.py::plain_log_ticks`, `analysis/fit_challenger.py::psi`, `analysis/fit_challenger.py::reliability_bins`, `analysis/fit_hazard.py::fail`, `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/hazard.py::predict_hazard`, `engine/staging.py::build_macro_map`, `engine/staging.py::lifetime_pd_table`, `engine/staging.py::origination_covariates`, `engine/staging.py::quantitative_sicr`
+- `analysis/fit_challenger.py::pdp_curve` → `engine/hazard.py::predict_hazard`
+- `analysis/fit_hazard.py::main` → `analysis/fit_challenger.py::fail`, `analysis/fit_hazard.py::fail`, `analysis/fit_hazard.py::render_hr_markdown`, `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/hazard.py::pd_term_structure`, `engine/hazard.py::predict_hazard`
 - `analysis/fit_hazard.py::render_hr_markdown` → `analysis/fit_hazard.py::hazard_ratio_table`
 - `analysis/fit_lgd.py::build_report` → `analysis/fit_lgd.py::coef_table`, `analysis/fit_lgd.py::decile_frame`, `analysis/fit_lgd.py::md_table`, `analysis/fit_lgd.py::sensitivity_block`
 - `analysis/fit_lgd.py::decile_frame` → `engine/lgd.py::predict_components`
@@ -59,12 +75,25 @@ Calls (caller → callee):
 - `analysis/fit_lgd.py::plot_distribution` → `analysis/mpl_style.py::figsize_for`, `engine/lgd.py::predict_components`
 - `analysis/fit_lgd.py::plot_two_panel` → `analysis/fit_lgd.py::decile_frame`, `analysis/mpl_style.py::figsize_for`
 - `analysis/fit_lgd.py::sensitivity_block` → `analysis/fit_lgd.py::md_table`, `engine/lgd.py::fit_lgd_models`, `engine/lgd.py::predict_components`
-- `analysis/run_ecl.py::main` → `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/run_ecl.py::plot_allowance_by_stage`, `analysis/run_ecl.py::plot_coverage_by_stage`, `analysis/run_ecl.py::plot_waterfall`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::stage_aggregates`, `analysis/run_ecl.py::write_report`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`, `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`, `engine/ecl.py::movement_decomposition`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/lgd.py::fit_lgd_models`
+- `analysis/fit_vasicek.py::build_exhibit` → `analysis/fit_vasicek.py::t_to_period`, `analysis/mpl_style.py::apply_textbook_style`, `engine/vasicek.py::hybrid_pd`, `engine/vasicek.py::pit_pd`
+- `analysis/fit_vasicek.py::main` → `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::_fail`, `analysis/fit_vasicek.py::build_exhibit`, `analysis/fit_vasicek.py::quarterly_rates`, `analysis/fit_vasicek.py::t_to_period`, `analysis/fit_vasicek.py::write_report`, `analysis/run_ecl.py::write_report`, `analysis/run_scenarios.py::_fail`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::write_report`, `engine/hazard.py::fit_default_hazard`, `engine/vasicek.py::anchor_check`, `engine/vasicek.py::calibrate_rho`, `engine/vasicek.py::invert_z`, `engine/vasicek.py::pit_pd`
+- `analysis/fit_vasicek.py::quarterly_rates` → `analysis/fit_vasicek.py::_fail`, `analysis/fit_vasicek.py::t_to_period`, `analysis/run_scenarios.py::_fail`, `engine/hazard.py::predict_hazard`
+- `analysis/fit_vasicek.py::write_report` → `analysis/fit_vasicek.py::t_to_period`
+- `analysis/run_ecl.py::main` → `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::write_report`, `analysis/run_ecl.py::plot_allowance_by_stage`, `analysis/run_ecl.py::plot_coverage_by_stage`, `analysis/run_ecl.py::plot_waterfall`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::stage_aggregates`, `analysis/run_ecl.py::write_report`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`, `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`, `engine/ecl.py::movement_decomposition`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/lgd.py::fit_lgd_models`
 - `analysis/run_ecl.py::plot_allowance_by_stage` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`
 - `analysis/run_ecl.py::plot_coverage_by_stage` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`
 - `analysis/run_ecl.py::plot_waterfall` → `analysis/mpl_style.py::apply_textbook_style`
 - `analysis/run_ecl.py::sanity_checks` → `analysis/run_ecl.py::coverage_of`
-- `analysis/staging_exhibits.py::main` → `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::write_report`, `analysis/staging_exhibits.py::plot_sensitivity`, `analysis/staging_exhibits.py::plot_stage_distribution`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::scale_benchmark`, `analysis/staging_exhibits.py::sensitivity_table`, `analysis/staging_exhibits.py::stage_book`, `analysis/staging_exhibits.py::stage_shares`, `analysis/staging_exhibits.py::write_report`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/staging.py::build_macro_map`, `engine/staging.py::crosscheck_term_structure`
+- `analysis/run_scenarios.py::main` → `analysis/fit_vasicek.py::_fail`, `analysis/run_scenarios.py::_fail`, `analysis/run_scenarios.py::plot_jensen`, `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::plot_scenario_bars`, `analysis/run_scenarios.py::plot_z_fan`, `analysis/run_scenarios.py::write_satellite_report`, `analysis/run_scenarios.py::write_scenario_report`, `engine/ecl.py::ecl_for_snapshot`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/lgd.py::fit_lgd_models`, `engine/satellite.py::anchor_sanity`, `engine/satellite.py::driver_frame`, `engine/satellite.py::fit_satellite`, `engine/satellite.py::gfc_sensitivity`, `engine/satellite.py::recover_z`, `engine/satellite.py::scenario_ecl_for_snapshot`, `engine/satellite.py::scenario_z_paths`, `engine/satellite.py::stationarity_table`, `engine/satellite.py::ttc_macro_means`, `engine/scenarios.py::build_scenario_set`, `engine/scenarios.py::panel_macro_concepts`, `engine/staging.py::assign_stages`, `engine/staging.py::build_macro_map`
+- `analysis/run_scenarios.py::plot_jensen` → `analysis/mpl_style.py::apply_textbook_style`
+- `analysis/run_scenarios.py::plot_satellite_fit` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/run_scenarios.py::t_axis`, `engine/scenarios.py::panel_time_to_period`
+- `analysis/run_scenarios.py::plot_scenario_bars` → `analysis/mpl_style.py::apply_textbook_style`
+- `analysis/run_scenarios.py::plot_z_fan` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/run_scenarios.py::t_axis`
+- `analysis/run_scenarios.py::t_axis` → `engine/scenarios.py::panel_time_to_period`
+- `analysis/scenario_exhibits.py::fan_hpi_growth` → `analysis/scenario_exhibits.py::_fan`, `analysis/scenario_exhibits.py::_zone_notes`
+- `analysis/scenario_exhibits.py::fan_uer` → `analysis/scenario_exhibits.py::_fan`, `analysis/scenario_exhibits.py::_zone_notes`
+- `analysis/scenario_exhibits.py::main` → `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::write_report`, `analysis/mpl_style.py::apply_textbook_style`, `analysis/run_ecl.py::write_report`, `analysis/scenario_exhibits.py::fan_hpi_growth`, `analysis/scenario_exhibits.py::fan_uer`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::write_report`, `engine/scenarios.py::build_scenario_set`
+- `analysis/staging_exhibits.py::main` → `analysis/ead_exhibits.py::sanity_checks`, `analysis/ead_exhibits.py::write_report`, `analysis/eda_suite.py::write_report`, `analysis/fit_vasicek.py::write_report`, `analysis/run_ecl.py::sanity_checks`, `analysis/run_ecl.py::write_report`, `analysis/scenario_exhibits.py::write_report`, `analysis/staging_exhibits.py::plot_sensitivity`, `analysis/staging_exhibits.py::plot_stage_distribution`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::scale_benchmark`, `analysis/staging_exhibits.py::sensitivity_table`, `analysis/staging_exhibits.py::stage_book`, `analysis/staging_exhibits.py::stage_shares`, `analysis/staging_exhibits.py::write_report`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/staging.py::build_macro_map`, `engine/staging.py::crosscheck_term_structure`
 - `analysis/staging_exhibits.py::plot_sensitivity` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`
 - `analysis/staging_exhibits.py::plot_stage_distribution` → `analysis/mpl_style.py::apply_textbook_style`, `analysis/mpl_style.py::figsize_for`, `analysis/staging_exhibits.py::stage_shares`
 - `analysis/staging_exhibits.py::sanity_checks` → `analysis/staging_exhibits.py::stage_shares`
@@ -92,12 +121,29 @@ Calls (caller → callee):
 - `engine/lgd.py::fit_lgd_models` → `engine/hazard.py::_prepare`, `engine/lgd.py::_prepare`
 - `engine/lgd.py::predict_components` → `engine/hazard.py::_prepare`, `engine/lgd.py::_prepare`
 - `engine/lgd.py::predict_lgd` → `engine/lgd.py::predict_components`
+- `engine/satellite.py::_hazard_grid` → `engine/staging.py::_age_curve`, `engine/staging.py::_design_matrix`, `engine/staging.py::_spline_cols`
+- `engine/satellite.py::anchor_sanity` → `engine/vasicek.py::anchor_check`, `engine/vasicek.py::pit_pd`
+- `engine/satellite.py::condition_hazard_grid` → `engine/vasicek.py::pit_pd`
+- `engine/satellite.py::fit_satellite` → `engine/satellite.py::_estimation_sample`, `engine/satellite.py::_signs_ok`
+- `engine/satellite.py::gfc_mask_for_times` → `engine/scenarios.py::panel_time_to_period`
+- `engine/satellite.py::gfc_sensitivity` → `engine/satellite.py::_estimation_sample`, `engine/satellite.py::gfc_mask_for_times`
+- `engine/satellite.py::observed_vs_ttc_rates` → `engine/hazard.py::predict_hazard`, `engine/satellite.py::ttc_macro_means`
+- `engine/satellite.py::recover_z` → `engine/satellite.py::observed_vs_ttc_rates`, `engine/vasicek.py::calibrate_rho`
+- `engine/satellite.py::scenario_ecl_for_snapshot` → `engine/ead.py::ead_matrix`, `engine/ecl.py::_lgd_grid`, `engine/ecl.py::_survival_marginal`, `engine/lgd.py::predict_components`, `engine/satellite.py::_hazard_grid`, `engine/satellite.py::condition_hazard_grid`, `engine/staging.py::assign_stages`
+- `engine/satellite.py::scenario_z_paths` → `engine/satellite.py::driver_frame`
+- `engine/scenarios.py::ScenarioSet.jumpoff_period` → `engine/scenarios.py::panel_time_to_period`
+- `engine/scenarios.py::build_scenario_set` → `engine/scenarios.py::_extend_with_reversion`, `engine/scenarios.py::panel_macro_concepts`, `engine/scenarios.py::panel_time_to_period`, `engine/staging.py::build_macro_map`
 - `engine/staging.py::_age_curve` → `engine/staging.py::_design_matrix`, `engine/staging.py::_spline_cols`
 - `engine/staging.py::_cum_default_pd` → `engine/staging.py::_age_curve`, `engine/staging.py::_design_matrix`, `engine/staging.py::_spline_cols`
 - `engine/staging.py::_design_matrix` → `engine/hazard.py::_prepare`, `engine/lgd.py::_prepare`
 - `engine/staging.py::assign_stages` → `engine/staging.py::_backstop_30dpd`, `engine/staging.py::build_macro_map`, `engine/staging.py::lifetime_pd_table`, `engine/staging.py::quantitative_sicr`
 - `engine/staging.py::crosscheck_term_structure` → `engine/hazard.py::pd_term_structure`, `engine/staging.py::build_macro_map`, `engine/staging.py::lifetime_pd_table`, `engine/staging.py::origination_covariates`
 - `engine/staging.py::lifetime_pd_table` → `engine/staging.py::_cum_default_pd`, `engine/staging.py::build_macro_map`, `engine/staging.py::origination_covariates`
+- `engine/vasicek.py::anchor_check` → `engine/vasicek.py::pit_pd`
+- `engine/vasicek.py::calibrate_rho` → `engine/vasicek.py::_check_prob`, `engine/vasicek.py::_check_rho`
+- `engine/vasicek.py::hybrid_pd` → `engine/vasicek.py::pit_pd`
+- `engine/vasicek.py::invert_z` → `engine/vasicek.py::_check_prob`, `engine/vasicek.py::_check_rho`
+- `engine/vasicek.py::pit_pd` → `engine/vasicek.py::_check_prob`, `engine/vasicek.py::_check_rho`
 
 Called-by (reverse — **impact map**: who breaks if you change the callee):
 
@@ -105,15 +151,21 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `analysis/ead_exhibits.py::pick_representatives` ← `analysis/ead_exhibits.py::main`
 - `analysis/ead_exhibits.py::plot_profiles` ← `analysis/ead_exhibits.py::main`
 - `analysis/ead_exhibits.py::sanity_checks` ← `analysis/ead_exhibits.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
-- `analysis/ead_exhibits.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
+- `analysis/ead_exhibits.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
 - `analysis/eda_suite.py::exhibit_default_rate_vs_macro` ← `analysis/eda_suite.py::main`
 - `analysis/eda_suite.py::exhibit_hazard_by_age` ← `analysis/eda_suite.py::main`
 - `analysis/eda_suite.py::exhibit_lgd` ← `analysis/eda_suite.py::main`
 - `analysis/eda_suite.py::exhibit_orig_quality` ← `analysis/eda_suite.py::main`
 - `analysis/eda_suite.py::exhibit_prepay_incentive` ← `analysis/eda_suite.py::main`
 - `analysis/eda_suite.py::exhibit_vintage_curves` ← `analysis/eda_suite.py::main`
-- `analysis/eda_suite.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
-- `analysis/fit_hazard.py::fail` ← `analysis/fit_hazard.py::main`
+- `analysis/eda_suite.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
+- `analysis/fit_challenger.py::fail` ← `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`
+- `analysis/fit_challenger.py::pdp_curve` ← `analysis/fit_challenger.py::main`
+- `analysis/fit_challenger.py::permutation_importance_oot` ← `analysis/fit_challenger.py::main`
+- `analysis/fit_challenger.py::plain_log_ticks` ← `analysis/fit_challenger.py::main`
+- `analysis/fit_challenger.py::psi` ← `analysis/fit_challenger.py::main`
+- `analysis/fit_challenger.py::reliability_bins` ← `analysis/fit_challenger.py::main`
+- `analysis/fit_hazard.py::fail` ← `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`
 - `analysis/fit_hazard.py::hazard_ratio_table` ← `analysis/fit_hazard.py::render_hr_markdown`
 - `analysis/fit_hazard.py::render_hr_markdown` ← `analysis/fit_hazard.py::main`
 - `analysis/fit_lgd.py::build_report` ← `analysis/fit_lgd.py::main`
@@ -124,15 +176,33 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `analysis/fit_lgd.py::plot_distribution` ← `analysis/fit_lgd.py::main`
 - `analysis/fit_lgd.py::plot_two_panel` ← `analysis/fit_lgd.py::main`
 - `analysis/fit_lgd.py::sensitivity_block` ← `analysis/fit_lgd.py::build_report`
-- `analysis/mpl_style.py::apply_textbook_style` ← `analysis/ead_exhibits.py::plot_profiles`, `analysis/eda_suite.py::main`, `analysis/fit_hazard.py::main`, `analysis/fit_lgd.py::main`, `analysis/run_ecl.py::plot_allowance_by_stage`, `analysis/run_ecl.py::plot_coverage_by_stage`, `analysis/run_ecl.py::plot_waterfall`, `analysis/staging_exhibits.py::plot_sensitivity`, `analysis/staging_exhibits.py::plot_stage_distribution`
-- `analysis/mpl_style.py::figsize_for` ← `analysis/ead_exhibits.py::plot_profiles`, `analysis/fit_hazard.py::main`, `analysis/fit_lgd.py::plot_distribution`, `analysis/fit_lgd.py::plot_two_panel`, `analysis/run_ecl.py::plot_allowance_by_stage`, `analysis/run_ecl.py::plot_coverage_by_stage`, `analysis/staging_exhibits.py::plot_sensitivity`, `analysis/staging_exhibits.py::plot_stage_distribution`
+- `analysis/fit_vasicek.py::_fail` ← `analysis/fit_vasicek.py::main`, `analysis/fit_vasicek.py::quarterly_rates`, `analysis/run_scenarios.py::main`
+- `analysis/fit_vasicek.py::build_exhibit` ← `analysis/fit_vasicek.py::main`
+- `analysis/fit_vasicek.py::quarterly_rates` ← `analysis/fit_vasicek.py::main`
+- `analysis/fit_vasicek.py::t_to_period` ← `analysis/fit_vasicek.py::build_exhibit`, `analysis/fit_vasicek.py::main`, `analysis/fit_vasicek.py::quarterly_rates`, `analysis/fit_vasicek.py::write_report`
+- `analysis/fit_vasicek.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
+- `analysis/mpl_style.py::apply_textbook_style` ← `analysis/ead_exhibits.py::plot_profiles`, `analysis/eda_suite.py::main`, `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/fit_lgd.py::main`, `analysis/fit_vasicek.py::build_exhibit`, `analysis/run_ecl.py::plot_allowance_by_stage`, `analysis/run_ecl.py::plot_coverage_by_stage`, `analysis/run_ecl.py::plot_waterfall`, `analysis/run_scenarios.py::plot_jensen`, `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::plot_scenario_bars`, `analysis/run_scenarios.py::plot_z_fan`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::plot_sensitivity`, `analysis/staging_exhibits.py::plot_stage_distribution`
+- `analysis/mpl_style.py::figsize_for` ← `analysis/ead_exhibits.py::plot_profiles`, `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/fit_lgd.py::plot_distribution`, `analysis/fit_lgd.py::plot_two_panel`, `analysis/run_ecl.py::plot_allowance_by_stage`, `analysis/run_ecl.py::plot_coverage_by_stage`, `analysis/staging_exhibits.py::plot_sensitivity`, `analysis/staging_exhibits.py::plot_stage_distribution`
 - `analysis/run_ecl.py::coverage_of` ← `analysis/run_ecl.py::sanity_checks`
 - `analysis/run_ecl.py::plot_allowance_by_stage` ← `analysis/run_ecl.py::main`
 - `analysis/run_ecl.py::plot_coverage_by_stage` ← `analysis/run_ecl.py::main`
 - `analysis/run_ecl.py::plot_waterfall` ← `analysis/run_ecl.py::main`
 - `analysis/run_ecl.py::sanity_checks` ← `analysis/ead_exhibits.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
 - `analysis/run_ecl.py::stage_aggregates` ← `analysis/run_ecl.py::main`
-- `analysis/run_ecl.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
+- `analysis/run_ecl.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
+- `analysis/run_scenarios.py::_fail` ← `analysis/fit_vasicek.py::main`, `analysis/fit_vasicek.py::quarterly_rates`, `analysis/run_scenarios.py::main`
+- `analysis/run_scenarios.py::plot_jensen` ← `analysis/run_scenarios.py::main`
+- `analysis/run_scenarios.py::plot_satellite_fit` ← `analysis/run_scenarios.py::main`
+- `analysis/run_scenarios.py::plot_scenario_bars` ← `analysis/run_scenarios.py::main`
+- `analysis/run_scenarios.py::plot_z_fan` ← `analysis/run_scenarios.py::main`
+- `analysis/run_scenarios.py::t_axis` ← `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::plot_z_fan`
+- `analysis/run_scenarios.py::write_satellite_report` ← `analysis/run_scenarios.py::main`
+- `analysis/run_scenarios.py::write_scenario_report` ← `analysis/run_scenarios.py::main`
+- `analysis/scenario_exhibits.py::_fan` ← `analysis/scenario_exhibits.py::fan_hpi_growth`, `analysis/scenario_exhibits.py::fan_uer`
+- `analysis/scenario_exhibits.py::_zone_notes` ← `analysis/scenario_exhibits.py::fan_hpi_growth`, `analysis/scenario_exhibits.py::fan_uer`
+- `analysis/scenario_exhibits.py::fan_hpi_growth` ← `analysis/scenario_exhibits.py::main`
+- `analysis/scenario_exhibits.py::fan_uer` ← `analysis/scenario_exhibits.py::main`
+- `analysis/scenario_exhibits.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
 - `analysis/staging_exhibits.py::plot_sensitivity` ← `analysis/staging_exhibits.py::main`
 - `analysis/staging_exhibits.py::plot_stage_distribution` ← `analysis/staging_exhibits.py::main`
 - `analysis/staging_exhibits.py::sanity_checks` ← `analysis/ead_exhibits.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
@@ -140,7 +210,7 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `analysis/staging_exhibits.py::sensitivity_table` ← `analysis/staging_exhibits.py::main`
 - `analysis/staging_exhibits.py::stage_book` ← `analysis/staging_exhibits.py::main`
 - `analysis/staging_exhibits.py::stage_shares` ← `analysis/staging_exhibits.py::main`, `analysis/staging_exhibits.py::plot_stage_distribution`, `analysis/staging_exhibits.py::sanity_checks`, `analysis/staging_exhibits.py::write_report`
-- `analysis/staging_exhibits.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
+- `analysis/staging_exhibits.py::write_report` ← `analysis/ead_exhibits.py::main`, `analysis/eda_suite.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/scenario_exhibits.py::main`, `analysis/staging_exhibits.py::main`
 - `data/panel/build_panel.py::_profile` ← `data/panel/build_panel.py::Waterfall.__init__`, `data/panel/build_panel.py::Waterfall.record`, `data/panel/build_panel.py::main`, `data/panel/build_panel.py::run_self_checks`
 - `data/panel/build_panel.py::add_derived` ← `data/panel/build_panel.py::main`
 - `data/panel/build_panel.py::add_macro_lags` ← `data/panel/build_panel.py::main`
@@ -151,54 +221,90 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `data/panel/build_panel.py::write_exhibits` ← `data/panel/build_panel.py::main`
 - `engine/ead.py::_ead_paths` ← `engine/ead.py::ead_matrix`, `engine/ead.py::ead_profile`
 - `engine/ead.py::ccf_ead` ← `analysis/ead_exhibits.py::write_report`
-- `engine/ead.py::ead_matrix` ← `analysis/ead_exhibits.py::main`, `engine/ecl.py::ecl_for_snapshot`
+- `engine/ead.py::ead_matrix` ← `analysis/ead_exhibits.py::main`, `engine/ecl.py::ecl_for_snapshot`, `engine/satellite.py::scenario_ecl_for_snapshot`
 - `engine/ecl.py::_as_period_vector` ← `engine/ecl.py::ecl_schedule`
 - `engine/ecl.py::_lgd_eta0` ← `engine/ecl.py::_lgd_grid`
-- `engine/ecl.py::_lgd_grid` ← `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`
+- `engine/ecl.py::_lgd_grid` ← `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`, `engine/satellite.py::scenario_ecl_for_snapshot`
 - `engine/ecl.py::_marginal_pd_grid` ← `engine/ecl.py::ecl_for_snapshot`
 - `engine/ecl.py::_pick` ← `engine/ecl.py::movement_decomposition`
-- `engine/ecl.py::_survival_marginal` ← `engine/ecl.py::_marginal_pd_grid`, `engine/ecl.py::ecl_schedule`
+- `engine/ecl.py::_survival_marginal` ← `engine/ecl.py::_marginal_pd_grid`, `engine/ecl.py::ecl_schedule`, `engine/satellite.py::scenario_ecl_for_snapshot`
 - `engine/ecl.py::crosscheck_lgd_grid` ← `analysis/run_ecl.py::main`
-- `engine/ecl.py::ecl_for_snapshot` ← `analysis/run_ecl.py::main`
+- `engine/ecl.py::ecl_for_snapshot` ← `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`
 - `engine/ecl.py::movement_decomposition` ← `analysis/run_ecl.py::main`
 - `engine/ecl.py::reported_allowance` ← `engine/ecl.py::movement_decomposition`
 - `engine/hazard.py::_fit` ← `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`
 - `engine/hazard.py::_prepare` ← `engine/hazard.py::_fit`, `engine/hazard.py::predict_hazard`, `engine/lgd.py::fit_lgd_models`, `engine/lgd.py::predict_components`, `engine/staging.py::_design_matrix`
-- `engine/hazard.py::fit_default_hazard` ← `analysis/fit_hazard.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
-- `engine/hazard.py::fit_prepay_hazard` ← `analysis/fit_hazard.py::main`, `analysis/run_ecl.py::main`, `analysis/staging_exhibits.py::main`
+- `engine/hazard.py::fit_default_hazard` ← `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/fit_vasicek.py::main`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`
+- `engine/hazard.py::fit_prepay_hazard` ← `analysis/fit_challenger.py::main`, `analysis/fit_hazard.py::main`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`
 - `engine/hazard.py::pd_term_structure` ← `analysis/fit_hazard.py::main`, `engine/staging.py::crosscheck_term_structure`
-- `engine/hazard.py::predict_hazard` ← `analysis/fit_hazard.py::main`, `engine/hazard.py::pd_term_structure`
+- `engine/hazard.py::predict_hazard` ← `analysis/fit_challenger.py::main`, `analysis/fit_challenger.py::pdp_curve`, `analysis/fit_hazard.py::main`, `analysis/fit_vasicek.py::quarterly_rates`, `engine/hazard.py::pd_term_structure`, `engine/satellite.py::observed_vs_ttc_rates`
 - `engine/lgd.py::_prepare` ← `engine/hazard.py::_fit`, `engine/hazard.py::predict_hazard`, `engine/lgd.py::fit_lgd_models`, `engine/lgd.py::predict_components`, `engine/staging.py::_design_matrix`
-- `engine/lgd.py::fit_lgd_models` ← `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::sensitivity_block`, `analysis/run_ecl.py::main`
-- `engine/lgd.py::predict_components` ← `analysis/fit_lgd.py::decile_frame`, `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::plot_distribution`, `analysis/fit_lgd.py::sensitivity_block`, `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`, `engine/lgd.py::predict_lgd`
+- `engine/lgd.py::fit_lgd_models` ← `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::sensitivity_block`, `analysis/run_ecl.py::main`, `analysis/run_scenarios.py::main`
+- `engine/lgd.py::predict_components` ← `analysis/fit_lgd.py::decile_frame`, `analysis/fit_lgd.py::main`, `analysis/fit_lgd.py::plot_distribution`, `analysis/fit_lgd.py::sensitivity_block`, `engine/ecl.py::crosscheck_lgd_grid`, `engine/ecl.py::ecl_for_snapshot`, `engine/lgd.py::predict_lgd`, `engine/satellite.py::scenario_ecl_for_snapshot`
 - `engine/lgd.py::predict_lgd` ← `analysis/fit_lgd.py::main`
-- `engine/staging.py::_age_curve` ← `engine/ecl.py::_marginal_pd_grid`, `engine/staging.py::_cum_default_pd`
+- `engine/satellite.py::_estimation_sample` ← `engine/satellite.py::fit_satellite`, `engine/satellite.py::gfc_sensitivity`
+- `engine/satellite.py::_hazard_grid` ← `engine/satellite.py::scenario_ecl_for_snapshot`
+- `engine/satellite.py::_signs_ok` ← `engine/satellite.py::fit_satellite`
+- `engine/satellite.py::anchor_sanity` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::condition_hazard_grid` ← `engine/satellite.py::scenario_ecl_for_snapshot`
+- `engine/satellite.py::driver_frame` ← `analysis/run_scenarios.py::main`, `engine/satellite.py::scenario_z_paths`
+- `engine/satellite.py::fit_satellite` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::gfc_mask_for_times` ← `engine/satellite.py::gfc_sensitivity`
+- `engine/satellite.py::gfc_sensitivity` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::observed_vs_ttc_rates` ← `engine/satellite.py::recover_z`
+- `engine/satellite.py::recover_z` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::scenario_ecl_for_snapshot` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::scenario_z_paths` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::stationarity_table` ← `analysis/run_scenarios.py::main`
+- `engine/satellite.py::ttc_macro_means` ← `analysis/run_scenarios.py::main`, `engine/satellite.py::observed_vs_ttc_rates`
+- `engine/scenarios.py::_extend_with_reversion` ← `engine/scenarios.py::build_scenario_set`
+- `engine/scenarios.py::build_scenario_set` ← `analysis/run_scenarios.py::main`, `analysis/scenario_exhibits.py::main`
+- `engine/scenarios.py::panel_macro_concepts` ← `analysis/run_scenarios.py::main`, `engine/scenarios.py::build_scenario_set`
+- `engine/scenarios.py::panel_time_to_period` ← `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::t_axis`, `engine/satellite.py::gfc_mask_for_times`, `engine/scenarios.py::ScenarioSet.jumpoff_period`, `engine/scenarios.py::build_scenario_set`
+- `engine/staging.py::_age_curve` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_cum_default_pd`
 - `engine/staging.py::_backstop_30dpd` ← `engine/staging.py::assign_stages`
 - `engine/staging.py::_cum_default_pd` ← `analysis/staging_exhibits.py::scale_benchmark`, `engine/staging.py::lifetime_pd_table`
-- `engine/staging.py::_design_matrix` ← `engine/ecl.py::_marginal_pd_grid`, `engine/staging.py::_age_curve`, `engine/staging.py::_cum_default_pd`
-- `engine/staging.py::_spline_cols` ← `engine/ecl.py::_marginal_pd_grid`, `engine/staging.py::_age_curve`, `engine/staging.py::_cum_default_pd`
-- `engine/staging.py::assign_stages` ← `analysis/staging_exhibits.py::stage_book`, `engine/ecl.py::ecl_for_snapshot`
-- `engine/staging.py::build_macro_map` ← `analysis/staging_exhibits.py::main`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
+- `engine/staging.py::_design_matrix` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_age_curve`, `engine/staging.py::_cum_default_pd`
+- `engine/staging.py::_spline_cols` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_age_curve`, `engine/staging.py::_cum_default_pd`
+- `engine/staging.py::assign_stages` ← `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::stage_book`, `engine/ecl.py::ecl_for_snapshot`, `engine/satellite.py::scenario_ecl_for_snapshot`
+- `engine/staging.py::build_macro_map` ← `analysis/fit_challenger.py::main`, `analysis/run_scenarios.py::main`, `analysis/staging_exhibits.py::main`, `engine/scenarios.py::build_scenario_set`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
 - `engine/staging.py::crosscheck_term_structure` ← `analysis/staging_exhibits.py::main`
-- `engine/staging.py::lifetime_pd_table` ← `analysis/staging_exhibits.py::sensitivity_table`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`
-- `engine/staging.py::origination_covariates` ← `analysis/staging_exhibits.py::scale_benchmark`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
-- `engine/staging.py::quantitative_sicr` ← `analysis/staging_exhibits.py::sensitivity_table`, `engine/staging.py::assign_stages`
+- `engine/staging.py::lifetime_pd_table` ← `analysis/fit_challenger.py::main`, `analysis/staging_exhibits.py::sensitivity_table`, `engine/staging.py::assign_stages`, `engine/staging.py::crosscheck_term_structure`
+- `engine/staging.py::origination_covariates` ← `analysis/fit_challenger.py::main`, `analysis/staging_exhibits.py::scale_benchmark`, `engine/staging.py::crosscheck_term_structure`, `engine/staging.py::lifetime_pd_table`
+- `engine/staging.py::quantitative_sicr` ← `analysis/fit_challenger.py::main`, `analysis/staging_exhibits.py::sensitivity_table`, `engine/staging.py::assign_stages`
+- `engine/vasicek.py::_check_prob` ← `engine/vasicek.py::calibrate_rho`, `engine/vasicek.py::invert_z`, `engine/vasicek.py::pit_pd`
+- `engine/vasicek.py::_check_rho` ← `engine/vasicek.py::calibrate_rho`, `engine/vasicek.py::invert_z`, `engine/vasicek.py::pit_pd`
+- `engine/vasicek.py::anchor_check` ← `analysis/fit_vasicek.py::main`, `engine/satellite.py::anchor_sanity`
+- `engine/vasicek.py::calibrate_rho` ← `analysis/fit_vasicek.py::main`, `engine/satellite.py::recover_z`
+- `engine/vasicek.py::hybrid_pd` ← `analysis/fit_vasicek.py::build_exhibit`
+- `engine/vasicek.py::invert_z` ← `analysis/fit_vasicek.py::main`
+- `engine/vasicek.py::pit_pd` ← `analysis/fit_vasicek.py::build_exhibit`, `analysis/fit_vasicek.py::main`, `engine/satellite.py::anchor_sanity`, `engine/satellite.py::condition_hazard_grid`, `engine/vasicek.py::anchor_check`, `engine/vasicek.py::hybrid_pd`
 
 ## Third-party libraries used
 
-- **engine** — analysis/ead_exhibits.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/run_ecl.py, analysis/staging_exhibits.py, engine/__init__.py, engine/ecl.py, engine/lgd.py, engine/staging.py
-- **matplotlib** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/mpl_style.py, analysis/run_ecl.py, analysis/staging_exhibits.py
-- **numpy** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/run_ecl.py, analysis/staging_exhibits.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/staging.py
-- **pandas** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/run_ecl.py, analysis/staging_exhibits.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/staging.py
+- **analysis** — analysis/scenario_exhibits.py
+- **challenger** — analysis/fit_challenger.py
+- **data** — engine/scenarios.py
+- **engine** — analysis/ead_exhibits.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, engine/__init__.py, engine/ecl.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
+- **matplotlib** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/mpl_style.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py
+- **numpy** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py, engine/vasicek.py
+- **pandas** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/staging_exhibits.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
 - **patsy** — engine/ecl.py, engine/staging.py
-- **scipy** — analysis/eda_suite.py, engine/ecl.py
-- **sklearn** — analysis/fit_hazard.py, analysis/fit_lgd.py
-- **statsmodels** — engine/hazard.py, engine/lgd.py
+- **scipy** — analysis/eda_suite.py, engine/ecl.py, engine/vasicek.py
+- **sklearn** — analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py
+- **statsmodels** — engine/hazard.py, engine/lgd.py, engine/satellite.py
 
 ## Structural fingerprints & change classification
 
 Per file: a `struct_hash` over signatures (function params, class methods, import bases) — not raw bytes. Change level vs the previous run:
 
+- `analysis/fit_challenger.py` — **NEW**  `5ee6cd72a620fb8a`
+- `analysis/fit_vasicek.py` — **NEW**  `2d2825bd567b1bee`
+- `analysis/run_scenarios.py` — **NEW**  `cfe7b28be2262445`
+- `analysis/scenario_exhibits.py` — **NEW**  `362e2ea69a149517`
+- `engine/satellite.py` — **NEW**  `cab43402a5546d0b`
+- `engine/scenarios.py` — **NEW**  `6aafeb84b332544d`
+- `engine/vasicek.py` — **NEW**  `2228076826c94a00`
 - `analysis/ead_exhibits.py` — **NONE**  `5d148758d2b41005`
 - `analysis/eda_suite.py` — **NONE**  `92ce8b7ec7b2cc10`
 - `analysis/fit_hazard.py` — **NONE**  `fb733b370f722594`
@@ -304,6 +410,53 @@ _Two-stage workout LGD model: cure logit x fractional-logit severity._
 - `predict_components(models: LgdModels, df: pd.DataFrame) -> pd.DataFrame` — Per-row decomposition of expected LGD.
 - `predict_lgd(models: LgdModels, df: pd.DataFrame) -> np.ndarray` — Expected LGD per row: (1 - P(cure)) * (E[min(lgd,1)|non-cure] + loading).
 
+### engine/satellite.py
+
+_Satellite macro-link model + scenario-conditional ECL (notes section 9;_
+
+**Imports** — third-party: engine, numpy, pandas, statsmodels · local: — · stdlib: __future__, dataclasses, itertools, typing, warnings
+
+**Classes:**
+- `SatelliteModel` (methods: params, aic, adj_r2, dw, n_obs, predict) — Fitted satellite Z_t = c + b' drivers_t + e_t (OLS).
+
+**Functions:**
+- `ttc_macro_means(panel_df: pd.DataFrame) -> pd.Series` — Panel-period means of the frozen hazard's four macro regressors.
+- `observed_vs_ttc_rates(panel_df: pd.DataFrame, default_model: HazardModel, macro_means: pd.Series | None=None) -> pd.DataFrame` — Observed vs composition-adjusted expected (TTC) default rate per quarter.
+- `recover_z(panel_df: pd.DataFrame, default_model: HazardModel) -> tuple[BelkinResult, pd.DataFrame]` — Belkin Z recovery on the composition-adjusted rates: (result, table).
+- `anchor_sanity(tab: pd.DataFrame, res: BelkinResult) -> dict[str, float]` — Anchor diagnostics for the report (and the unit-test gate).
+- `driver_frame(concepts: pd.DataFrame) -> pd.DataFrame` — Concept history/path -> lagged satellite driver columns.
+- `stationarity_table(series: Mapping[str, pd.Series]) -> pd.DataFrame` — ADF + KPSS per series with a plain-language verdict.
+- `_estimation_sample(z: pd.Series, drivers: pd.DataFrame) -> pd.DataFrame` — Common estimation sample: all candidate columns + Z observed.
+- `_signs_ok(res, terms: tuple[str, ...]) -> bool` — Economic-sign governance check on the fitted driver coefficients.
+- `fit_satellite(z: pd.Series, drivers: pd.DataFrame) -> SatelliteModel` — AIC-choose the driver subset + lags and fit the satellite OLS.
+- `gfc_mask_for_times(times: np.ndarray) -> np.ndarray` — Boolean mask of panel quarters inside the NBER GFC window.
+- `gfc_sensitivity(z: pd.Series, drivers: pd.DataFrame, model: SatelliteModel) -> pd.DataFrame` — Refit the chosen spec with a GFC dummy; side-by-side coefficients.
+- `scenario_z_paths(model: SatelliteModel, sset: ScenarioSet, history_concepts: pd.DataFrame, include_weighted: bool=True) -> pd.DataFrame` — Satellite Z path per scenario over the ScenarioSet horizon.
+- `_hazard_grid(model: HazardModel, frame: pd.DataFrame, R: np.ndarray) -> tuple[np.ndarray, np.ndarray]` — (n, max R) conditional hazards, covariates frozen, age advancing.
+- `condition_hazard_grid(lam: np.ndarray, on: np.ndarray, z_path: np.ndarray, rho: float) -> np.ndarray` — PIT-condition a hazard grid: lambda -> pit_pd(lambda, Z_h, rho).
+- `scenario_ecl_for_snapshot(panel_df: pd.DataFrame, t: int, models: dict, *, z_path: np.ndarray | None=None, rho: float | None=None, macro_means: pd.Series | Mapping | None=None, staged: pd.DataFrame | None=None, config: EclConfig | None=None) -> pd.DataFrame` — Scenario-conditional per-loan ECL at reporting quarter t.
+
+### engine/scenarios.py
+
+_Scenario set for scenario-conditional ECL (plan section 2.6; notes section 9)._
+
+**Imports** — third-party: data, engine, numpy, pandas · local: — · stdlib: __future__, dataclasses, pathlib, typing
+
+**Classes:**
+- `ScenarioSet` (methods: jumpoff_period, path, weighted_path, as_long_frame) — Named macro scenario paths + probability weights (validated).
+
+**Functions:**
+- `panel_time_to_period(t: int) -> pd.Period` — Panel clock quarter t (1..60) -> calendar quarter (t=1 ~ 2000Q2).
+- `panel_macro_concepts(macro_map: pd.DataFrame) -> pd.DataFrame` — engine.staging.build_macro_map output -> per-quarter concept frame.
+- `_extend_with_reversion(rs_path: np.ndarray, longrun: np.ndarray, horizon: int, reversion: int) -> np.ndarray` — R&S path (n x k) -> horizon x k: linear reversion to longrun, then hold.
+- `build_scenario_set(panel_path: str | Path=PANEL_PATH, horizon: int=40, reversion: int=8, mirror_factor: float=UPSIDE_MIRROR_FACTOR, uer_floor: float=UER_FLOOR_PP, weights: Mapping[str, float] | None=None) -> ScenarioSet` — Build the base/down/up ScenarioSet at the panel's t=60 reporting date.
+
+**Data sources / paths referenced:**
+- `Scenario set for scenario-conditional ECL (plan section 2.6; notes section 9).
+
+Builds the three probability-weighted macro scenarios (base `
+- `panel.parquet`
+
 ### engine/staging.py
 
 _IFRS 9 SICR staging -- the RELATIVE deterioration test (notes section 2.2)._
@@ -325,6 +478,24 @@ _IFRS 9 SICR staging -- the RELATIVE deterioration test (notes section 2.2)._
 - `_backstop_30dpd(pd_table: pd.DataFrame, cfg: StagingConfig) -> np.ndarray` — 30-DPD rebuttable-presumption hook. INERT on DCR: no dpd column
 - `assign_stages(panel_df: pd.DataFrame, models: dict[str, HazardModel], config: StagingConfig | None=None, snapshot_time: int | None=None, pd_tables: dict[int, pd.DataFrame] | None=None) -> pd.DataFrame` — IFRS 9 stage per live loan at the reporting quarter.
 - `crosscheck_term_structure(panel_df: pd.DataFrame, models: dict[str, HazardModel], at_time: int, n_sample: int=25, seed: int=0) -> float` — Max |fast-path PD - pd_term_structure PD| over a fixed-seed sample.
+
+### engine/vasicek.py
+
+_Vasicek one-factor PIT/TTC conditioning and Belkin Z-shift recovery._
+
+**Imports** — third-party: numpy, scipy · local: — · stdlib: __future__, dataclasses
+
+**Classes:**
+- `BelkinResult` — Output of ``calibrate_rho`` (Belkin Z-shift calibration).
+
+**Functions:**
+- `_check_rho(rho: float) -> float`
+- `_check_prob(p, name: str) -> np.ndarray`
+- `pit_pd(pd_ttc, z, rho)` — Vasicek conditional (point-in-time) PD given systematic factor Z.
+- `hybrid_pd(pd_ttc, z, rho, alpha: float=0.5)` — Damped PIT/TTC hybrid: condition on alpha * Z instead of Z.
+- `invert_z(observed_rate, ttc_anchor, rho)` — Recover the systematic factor Z from an observed default rate.
+- `anchor_check(pd_ttc: float, rho: float, n: int=_GH_NODES_DEFAULT) -> tuple[float, float]` — Verify the TTC anchor E_Z[PD_PIT(Z)] = PD_TTC by Gauss-Hermite.
+- `calibrate_rho(observed_rates, ttc_anchors, rho_bounds: tuple[float, float]=(0.0001, 0.95), ddof: int=1) -> BelkinResult` — Belkin calibration: find rho such that Var(Z_t(rho)) = 1.
 
 ### data/panel/__init__.py
 
@@ -407,6 +578,24 @@ Every chart is a TEST with a known expected shape, not decoration: each exhib`
 - `by `analysis/eda_suite.py` on `data/processed/panel.parquet` (`
 - `panel.parquet`
 
+### analysis/fit_challenger.py
+
+_Fit the MLP challenger PD model and emit the champion-challenger scorecard._
+
+**Imports** — third-party: challenger, engine, matplotlib, numpy, pandas, sklearn · local: mpl_style · stdlib: __future__, pathlib, sys
+
+**Functions:**
+- `fail(msg: str) -> None`
+- `plain_log_ticks(ax, which: str='xy') -> None` — Plain-number tick labels on log axes (mpl_style sets
+- `reliability_bins(y: np.ndarray, p: np.ndarray, n_bins: int=N_RELI_BINS) -> pd.DataFrame` — Quantile-binned mean predicted vs observed event rate.
+- `psi(train_scores: np.ndarray, oot_scores: np.ndarray, n_bins: int=N_PSI_BINS) -> tuple[float, pd.DataFrame]` — Population stability index of a score distribution, train -> OOT.
+- `permutation_importance_oot(model, F_oot: pd.DataFrame, y: np.ndarray, seed: int=SEED) -> tuple[pd.DataFrame, float]` — AUC drop on OOT when a feature (or family block) is permuted.
+- `pdp_curve(sample: pd.DataFrame, raw_col: str, grid: np.ndarray, mlp_model, champ_model) -> pd.DataFrame` — Partial dependence of both models' hazards on one RAW column.
+- `main() -> None`
+
+**Data sources / paths referenced:**
+- `panel.parquet`
+
 ### analysis/fit_hazard.py
 
 _Fit the rung-1 discrete-time cloglog hazard PD models and emit exhibits._
@@ -443,6 +632,24 @@ _Fit the rung-1 two-stage workout LGD model and emit exhibits._
 **Data sources / paths referenced:**
 - `panel.parquet`
 
+### analysis/fit_vasicek.py
+
+_Recover the credit-cycle factor Z_t from the panel (Belkin Z-shift) and_
+
+**Imports** — third-party: engine, matplotlib, numpy, pandas · local: mpl_style · stdlib: __future__, pathlib, sys
+
+**Functions:**
+- `t_to_period(t) -> pd.PeriodIndex | pd.Period` — Panel quarter index -> real calendar quarter (t = 1 ~ 2000Q2).
+- `_fail(msg: str) -> None`
+- `quarterly_rates(panel: pd.DataFrame, model) -> pd.DataFrame` — Observed vs composition-adjusted expected TTC rate per quarter.
+- `build_exhibit(tab: pd.DataFrame, res, flat_ttc: float, z_oltv: np.ndarray, out_png: Path) -> dict` — Two-panel centerpiece: PIT PD path vs flat TTC + hybrid; Z_t below.
+- `write_report(path: Path, tab: pd.DataFrame, res, res_oltv, flat_ttc: float, anchor_err: float, roundtrip_err: float, exhibit: dict, model) -> None`
+- `main() -> None`
+
+**Data sources / paths referenced:**
+- `panel.parquet`
+- `z_path.csv`
+
 ### analysis/mpl_style.py
 
 _Textbook-quality matplotlib defaults for academic HTML notes._
@@ -471,6 +678,42 @@ _ECL engine exhibits: allowance by stage, the movement waterfall, coverage._
 
 **Data sources / paths referenced:**
 - `panel.parquet`
+
+### analysis/run_scenarios.py
+
+_Satellite model + scenario-conditional ECL -- Day 3's forward-looking core._
+
+**Imports** — third-party: engine, matplotlib, numpy, pandas · local: mpl_style · stdlib: __future__, pathlib, sys, time
+
+**Functions:**
+- `_fail(msg: str) -> None`
+- `t_axis(times) -> np.ndarray` — Panel quarters -> matplotlib timestamps (calendar anchoring).
+- `plot_satellite_fit(z_ser: pd.Series, satm, out_png: Path) -> None` — Fitted vs recovered Z with calendar labels; residuals below.
+- `plot_z_fan(z_ser: pd.Series, zp: pd.DataFrame, out_png: Path) -> None` — History Z + the three scenario Z paths (calendar axis).
+- `plot_jensen(curve: pd.DataFrame, points: dict, ratio: float, out_png: Path) -> None` — THE Jensen exhibit -- notes Fig 6 logic on the engine's own numbers.
+- `plot_scenario_bars(summary: pd.DataFrame, weighted_row: pd.Series, out_png: Path) -> None`
+- `write_satellite_report(path: Path, satm, stat_tab: pd.DataFrame, gfc_tab: pd.DataFrame, sanity: dict, res, z_ser: pd.Series) -> None`
+- `write_scenario_report(path: Path, summary: pd.DataFrame, jensen: dict, wsens: pd.DataFrame, checks: list[dict], res, satm, sset, timings: dict[str, float]) -> None`
+- `main() -> None`
+
+**Data sources / paths referenced:**
+- `panel.parquet`
+- `scenario_ecl_summary.csv`
+- `scenario_z_paths.csv`
+
+### analysis/scenario_exhibits.py
+
+_Scenario-set exhibits (plan section 2.6; notes section 9)._
+
+**Imports** — third-party: analysis, engine, matplotlib, numpy · local: — · stdlib: __future__, pathlib
+
+**Functions:**
+- `_fan(ax, sset: ScenarioSet, concept: str, scale: float=1.0) -> None` — Draw the 3-scenario fan for one concept with h=0 jump-off anchoring.
+- `_zone_notes(ax, sset: ScenarioSet, y: float, va: str='top') -> None`
+- `fan_uer(sset: ScenarioSet, path: Path) -> None`
+- `fan_hpi_growth(sset: ScenarioSet, path: Path) -> None`
+- `write_report(sset: ScenarioSet, path: Path) -> None`
+- `main() -> None`
 
 ### analysis/staging_exhibits.py
 

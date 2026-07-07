@@ -285,8 +285,9 @@ def write_satellite_report(path: Path, satm, stat_tab: pd.DataFrame,
     p = satm.result.params
     se = satm.result.bse
     pv = satm.result.pvalues
-    eq = " + ".join(f"{p[t]:+.3f} {t}" for t in satm.terms)
-    sel = satm.selection.head(10)
+    eq = " ".join(f"{'+' if p[t] >= 0 else '-'} {abs(p[t]):.3f} {t}"
+                  for t in satm.terms)
+    sel = satm.selection
     L = [
         "# Satellite model report -- the macro-to-credit-cycle link",
         "",
@@ -353,7 +354,8 @@ def write_satellite_report(path: Path, satm, stat_tab: pd.DataFrame,
         "Grid: every non-empty subset of {duer, hpi_growth, gdp_growth}, "
         "each driver at lag 1 or 2 -- 26 specs. Admissible = all driver "
         "coefficients carry their economic sign (EXPECTED_SIGN: duer < 0, "
-        "hpi_growth > 0, gdp_growth > 0). Top 10 by AIC:",
+        f"hpi_growth > 0, gdp_growth > 0). The FULL {len(sel)}-spec grid "
+        "by AIC (rejected specs included, nothing hidden):",
         "",
         "| spec | AIC | adj R2 | DW | signs OK |",
         "|---|---|---|---|---|",
@@ -364,12 +366,15 @@ def write_satellite_report(path: Path, satm, stat_tab: pd.DataFrame,
     L += [
         "",
         "The chosen spec is the AIC minimum over the WHOLE grid as well as "
-        "within the sign-admissible set. Every spec containing duer fits a "
-        "POSITIVE (wrong-sign, insignificant) duer coefficient once "
-        "hpi_growth is present -- a collinearity artifact of a one-cycle "
-        "sample in which the unemployment surge and the HPI collapse are "
-        "the same episode; sign governance excludes those specs and the "
-        "grid above shows exactly what was excluded and why. Dropping a "
+        "within the sign-admissible set. Every spec that includes duer "
+        "TOGETHER WITH gdp_growth fits a POSITIVE (wrong-sign, "
+        "insignificant) duer coefficient -- a collinearity artifact of a "
+        "one-cycle sample in which the unemployment surge and the GDP "
+        "contraction are the same episode; duer alone (coef -0.7, p 0.02) "
+        "or alongside hpi_growth only keeps its economic sign but never "
+        "approaches the chosen spec on AIC. Sign governance excludes the "
+        "wrong-signed specs and the grid above shows exactly what was "
+        "excluded and why. Dropping a "
         "wrong-signed, insignificant driver is standard satellite-model "
         "governance, not data dredging: the constraint is stated ex ante "
         "from economics.",
@@ -515,10 +520,14 @@ def write_scenario_report(path: Path, summary: pd.DataFrame,
         f"1. calibrated rho = {res.rho:.4f} vs the toy's 0.12 -- the "
         "empirical asset correlation of this panel is ~5x smaller, so the "
         "PIT transform bends PDs far less per unit of Z;",
-        "2. scenario Z dispersion: our satellite-implied paths sit ~1.4 Z "
-        "apart at the widest (severe trough vs upside), against the toy's "
-        "4-Z spread (+1 to -3) -- DFAST-shaped quarterly paths are far "
-        "gentler than a stylised one-shot downside;",
+        "2. scenario Z dispersion: our satellite-implied paths touch their "
+        f"extremes for a single quarter (severe trough {jensen['z_trough']:+.2f} "
+        f"vs upside {jensen['z_up_at_widest']:+.2f} in the same quarter, "
+        f"{jensen['z_gap_widest']:.1f} Z at the widest point) but sit only "
+        f"{jensen['zbar_gap']:.1f} Z apart on the 13q R&S-window means the "
+        "ECL actually integrates -- against the toy's SUSTAINED 4-Z spread "
+        "(+1 to -3); DFAST-shaped quarterly paths are far gentler than a "
+        "stylised one-shot downside;",
         "3. only the DEFAULT-PD leg is conditioned (LGD and EAD stay at "
         "the frozen rung-1 projections), removing the PDxLGD convexity "
         "the toy implicitly bundles;",
@@ -759,6 +768,11 @@ def main() -> None:
         "ratio_reported": w_rep / a_rep, "ratio_lifetime": w_life / a_life,
         "w_coverage": w_rep / balance, "a_coverage": a_rep / balance,
         "zbar_w": zbar["weighted"], "z_longrun": z_longrun,
+        "z_trough": float(zp["down"].min()),
+        "z_up_at_widest": float(zp.loc[(zp["up"] - zp["down"]).idxmax(),
+                                       "up"]),
+        "z_gap_widest": float((zp["up"] - zp["down"]).max()),
+        "zbar_gap": zbar["up"] - zbar["down"],
         "n_total": n_total, "n_perf": n_perf, "n_s3": n_s3,
         "n_stage1": n_stage1,
         "life_up_m": tot["up"]["ecl_lifetime"] / 1e6,

@@ -25,7 +25,7 @@ Book: 7,849 non-payoff exposures at t=60 (7,806 live/performing + 43 Stage-3 def
 **Why our ratio is far below the notes' ~1.9x toy example (honest decomposition):**
 
 1. calibrated rho = 0.0227 vs the toy's 0.12 -- the empirical asset correlation of this panel is ~5x smaller, so the PIT transform bends PDs far less per unit of Z;
-2. scenario Z dispersion: our satellite-implied paths sit ~1.4 Z apart at the widest (severe trough vs upside), against the toy's 4-Z spread (+1 to -3) -- DFAST-shaped quarterly paths are far gentler than a stylised one-shot downside;
+2. scenario Z dispersion: our satellite-implied paths touch their extremes for a single quarter (severe trough -3.16 vs upside -0.28 in the same quarter, 2.9 Z at the widest point) but sit only 0.7 Z apart on the 13q R&S-window means the ECL actually integrates -- against the toy's SUSTAINED 4-Z spread (+1 to -3); DFAST-shaped quarterly paths are far gentler than a stylised one-shot downside;
 3. only the DEFAULT-PD leg is conditioned (LGD and EAD stay at the frozen rung-1 projections), removing the PDxLGD convexity the toy implicitly bundles;
 4. lifetime aggregation dilutes: all three scenarios share the same long-run reversion tail from h=21, and discounting plus amortisation shrink the differentiated window's weight; the toy is a single-period calculation entirely inside the stressed window.
 
@@ -56,7 +56,7 @@ Scenario probabilities are not statistically identified; the deliverable is the 
 |---|---|---|
 | anchor sanity (round trip / Gauss-Hermite) | PASS | 4.2e-17 / 1.9e-17 |
 | satellite sign governance + finite scenario Z | PASS | spec hpi_growth_lag1 + gdp_growth_lag2, all Z paths finite |
-| unconditioned wrapper == frozen ECL engine | PASS | max |diff| = 0.00e+00 |
+| unconditioned wrapper == frozen ECL engine | PASS | max abs diff = 0.00e+00 |
 | book population 7,806 live + 43 stage-3 | PASS | 7,806 + 43 |
 | allowance ordering severe > base > upside | PASS | 47.6 > 30.5 > 27.7 ($m) |
 | 12m ECL ordering severe > base > upside | PASS | 47.4 > 30.2 > 27.4 ($m) |
@@ -77,10 +77,10 @@ Scenario probabilities are not statistically identified; the deliverable is the 
 
 ## Performance
 
-* model fits (2 hazards + LGD): 9.6s
-* Z recovery (Belkin): 0.7s
-* scenario ECL runs (4 paths + crosscheck): 2.4s
-* Jensen curve traces: 2.5s
+* model fits (2 hazards + LGD): 8.5s
+* Z recovery (Belkin): 0.6s
+* scenario ECL runs (4 paths + crosscheck): 2.2s
+* Jensen curve traces: 2.3s
 
 ## Files
 
