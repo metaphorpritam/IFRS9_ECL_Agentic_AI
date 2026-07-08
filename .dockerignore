@@ -45,17 +45,23 @@ skills
 scripts
 tests
 challenger
+docs
 MASTER_PLAN.md
 README.md
 uv.lock
 pyproject.toml
 
-# --- outputs: only models/, vasicek/z_path.csv, scenario_ecl/*.csv ship ----
+# --- outputs: model cache + the consultant exhibits App v2's /api/model,
+# /api/policy and /api/exhibits endpoints parse/serve (markdown reports +
+# PNGs) ship; agent_log/, demo/, gate/, satellite/, panel/, ecl/, ead/,
+# scenarios/, mcp/ etc. are dev-only and stay out of the image.
 outputs/*
 !outputs/models
+!outputs/variable_dictionary.md
+!outputs/hazard
+!outputs/lgd
+!outputs/staging
+!outputs/eda
 !outputs/vasicek
 !outputs/scenario_ecl
-outputs/vasicek/*.png
-outputs/vasicek/*.md
-outputs/scenario_ecl/*.png
-outputs/scenario_ecl/*.md
+!outputs/challenger
