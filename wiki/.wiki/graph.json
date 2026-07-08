@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-08T12:07:16+00:00",
+  "generated": "2026-07-08T14:59:39+00:00",
   "wiki_dir": "wiki",
   "pages": 19,
   "nodes": [
@@ -27,6 +27,7 @@
       "code": [
         "../agent/__init__.py",
         "../agent/tools_tier1.py",
+        "../agent/tools_tier2.py",
         "../agent/graph.py",
         "../agent/tier3_retrieval.py",
         "../agent/mcp_server.py",
@@ -35,28 +36,34 @@
         "../tests/test_tools.py",
         "../tests/test_router.py",
         "../tests/test_api.py",
+        "../tests/test_contract.py",
+        "../tests/test_tier2.py",
         "../tests/test_tier3.py",
         "../tests/test_mcp.py"
       ],
       "headings": [
         {
-          "line": 28,
+          "line": 31,
           "text": "Agent Layer"
         },
         {
-          "line": 35,
+          "line": 38,
           "text": "Architecture"
         },
         {
-          "line": 43,
+          "line": 46,
           "text": "Tools (agent/tools_tier1.py)"
         },
         {
-          "line": 50,
+          "line": 53,
           "text": "THE COHERENT-SHOCK CONVENTION (load-bearing)"
         },
         {
-          "line": 58,
+          "line": 61,
+          "text": "App v2 additions (Day 5+)"
+        },
+        {
+          "line": 76,
           "text": "Known caveats"
         }
       ],
@@ -770,25 +777,25 @@
       "src": "agent-layer",
       "dst": "ecl-engine",
       "type": "uses",
-      "line": 24
+      "line": 27
     },
     {
       "src": "agent-layer",
       "dst": "master-plan",
       "type": "implements",
-      "line": 25
+      "line": 28
     },
     {
       "src": "agent-layer",
       "dst": "scenario-layer",
       "type": "uses",
-      "line": 24
+      "line": 27
     },
     {
       "src": "agent-layer",
       "dst": "staging-model",
       "type": "uses",
-      "line": 24
+      "line": 27
     },
     {
       "src": "bootstrap-decisions",

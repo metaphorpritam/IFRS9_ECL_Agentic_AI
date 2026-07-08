@@ -566,15 +566,18 @@
       }
     },
     "agent/graph.py": {
-      "content_hash": "4c836dfccd45900e",
+      "content_hash": "22bae2c53a472797",
       "fp": {
-        "struct_hash": "b53b3f6a4f3c038f",
+        "struct_hash": "e9a48d93fab3fbd3",
         "funcs": [
           "_allowed_numbers(tool_result)",
+          "_analyze_data_node(state)",
           "_call_llm(messages)",
           "_chat_once(model,messages)",
           "_client()",
+          "_extract_code(text)",
           "_extract_json(text)",
+          "_llm_codegen(question,error,previous_code)",
           "_llm_narrate(tool_result)",
           "_llm_narrate_docs(tool_result)",
           "_llm_route(question)",
@@ -602,6 +605,7 @@
           "__future__",
           "agent",
           "datetime",
+          "hashlib",
           "json",
           "langgraph",
           "math",
@@ -724,6 +728,61 @@
         ]
       }
     },
+    "agent/tools_tier2.py": {
+      "content_hash": "6e526137947c3b34",
+      "fp": {
+        "struct_hash": "8c08e1a62da18120",
+        "funcs": [
+          "_build_book(state)",
+          "_build_scenarios(state)",
+          "_build_z_path(state)",
+          "_check_open_event(args)",
+          "_child_worker(code,surface,queue)",
+          "_compute_import_safe_prefixes()",
+          "_current_address_space_bytes()",
+          "_data_surface()",
+          "_ensure_pandas_warm()",
+          "_eval_query_expr_node(node)",
+          "_harden_child()",
+          "_jsonable(v)",
+          "_restricted_globals(surface)",
+          "_sandbox_audit_hook(event,args)",
+          "_shrink_list_to_char_budget(preview,list_key,count_keys)",
+          "_summarize_result(result)",
+          "_validate_ast(tree)",
+          "_validate_format_string(fmt,method)",
+          "run_sandboxed(code,timeout_s)",
+          "warm_up()"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "ast",
+          "builtins",
+          "dataclasses",
+          "json",
+          "multiprocessing",
+          "numpy",
+          "os",
+          "pandas",
+          "pydantic",
+          "string",
+          "sys",
+          "sysconfig",
+          "threading",
+          "typing"
+        ]
+      }
+    },
+    "app/__init__.py": {
+      "content_hash": "e3b0c44298fc1c14",
+      "fp": {
+        "struct_hash": "ea1badefcb351eba",
+        "funcs": [],
+        "classes": [],
+        "imports": []
+      }
+    },
     "app/api/__init__.py": {
       "content_hash": "e3b0c44298fc1c14",
       "fp": {
@@ -734,18 +793,31 @@
       }
     },
     "app/api/main.py": {
-      "content_hash": "3ce262645edfa94c",
+      "content_hash": "07371e1ba78fcbed",
       "fp": {
-        "struct_hash": "1e482acb412b1d01",
+        "struct_hash": "b444f6d1bcada818",
         "funcs": [
           "_fallback_ask(question,emit)",
           "_json_safe(obj)",
+          "_md_sections(text)",
+          "_md_table_rows(block)",
+          "_md_table_span(lines)",
+          "_num(s)",
+          "_parse_ci(s)",
+          "_parse_fit_stats()",
+          "_parse_hazard_ratios()",
+          "_parse_lgd_report()",
+          "_parse_p(s)",
+          "_parse_staging_sensitivity()",
+          "_parse_variable_dictionary()",
+          "_pct(s)",
           "_request_validation_handler(request,exc)",
           "_resolve_agent()",
           "_route(q)",
           "_run_agent(question)",
           "_sse_events()",
           "agent_ask(req)",
+          "agent_interpret(req)",
           "agent_stream()",
           "api_decompose_waterfall(args)",
           "api_rerun_ecl(args)",
@@ -754,8 +826,14 @@
           "credit_cycle()",
           "ecl_summary()",
           "ecl_waterfall(t0,t1)",
+          "exhibits_list()",
           "health()",
-          "lifespan(app)"
+          "lifespan(app)",
+          "model_coefficients()",
+          "model_lgd()",
+          "model_variable_dictionary()",
+          "policy_staging_sensitivity()",
+          "policy_weights_table()"
         ],
         "classes": [
           "TraceBroker.__init__(self)",
