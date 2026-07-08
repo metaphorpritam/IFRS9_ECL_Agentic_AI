@@ -70,6 +70,14 @@ export default function ChatPanel() {
         {messages.length === 0 && (
           <div class="empty-note">
             Try: “What is the reported allowance under the severe scenario?”
+            {' '}or{' '}
+            <button
+              type="button"
+              class="chip"
+              onClick={() => setQuestion('Explain the ECL movement waterfall')}
+            >
+              explain the ECL waterfall
+            </button>
           </div>
         )}
         {messages.map((msg, i) =>

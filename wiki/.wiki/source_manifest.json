@@ -1,11 +1,13 @@
 {
-  "updated": "2026-07-07T20:12:54+00:00",
+  "updated": "2026-07-08T12:07:25+00:00",
   "files": {
     ".claude/skills/llm-wiki/SKILL.md": "4026f4aabe3e51b5",
     ".claude/skills/pageindex-plus/SKILL.md": "00af9cba829b27ad",
     "MASTER_PLAN.md": "771ceb85fd37b284",
     "agent/__init__.py": "8319120c9934fb99",
-    "agent/graph.py": "f2ddedf4fc160ffc",
+    "agent/graph.py": "4c836dfccd45900e",
+    "agent/mcp_server.py": "0184428e5b378ef6",
+    "agent/tier3_retrieval.py": "3000e1af5c1299af",
     "agent/tools_tier1.py": "53e047747aef5bcd",
     "analysis/ead_exhibits.py": "911c6419b0cfa5ba",
     "analysis/eda_suite.py": "30fde7511466758a",
@@ -53,10 +55,12 @@
     "tests/test_ecl.py": "ffda71e3702c5d0b",
     "tests/test_fixtures.py": "9c33322b2cf543bc",
     "tests/test_lgd.py": "603162c7e93ed006",
+    "tests/test_mcp.py": "6f4dfd402f0dbd5e",
     "tests/test_router.py": "aa79ad81cc182396",
     "tests/test_satellite.py": "5799d058a5931618",
     "tests/test_scenarios.py": "fdb7d3a7b5e37b20",
     "tests/test_staging.py": "17cf98320d741f85",
+    "tests/test_tier3.py": "f97015cf6ac93618",
     "tests/test_tools.py": "629334067fe65453",
     "tests/test_vasicek.py": "126c2142d7e1835a"
   }

@@ -2,7 +2,7 @@
 title: LGD Model
 type: module
 status: active
-aliases: [lgd, loss given default model, cure severity model]
+aliases: [lgd, loss given default model, cure severity model, loss given default]
 tags: [engine, lgd]
 sources:
   - ../knowledge/sources/ifrs9_credit_risk_notes.md

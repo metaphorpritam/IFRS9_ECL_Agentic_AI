@@ -2,7 +2,7 @@
 title: Hazard Model
 type: module
 status: active
-aliases: [PD model, cloglog hazard, default hazard]
+aliases: [PD model, cloglog hazard, default hazard, PD, default probability]
 tags: [engine, pd]
 sources:
   - ../knowledge/sources/ifrs9_credit_risk_notes.md

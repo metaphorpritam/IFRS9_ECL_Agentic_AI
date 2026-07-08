@@ -11,11 +11,15 @@ code:
   - ../agent/__init__.py
   - ../agent/tools_tier1.py
   - ../agent/graph.py
+  - ../agent/tier3_retrieval.py
+  - ../agent/mcp_server.py
   - ../app/api/main.py
   - ../scripts/demo_agent.py
   - ../tests/test_tools.py
   - ../tests/test_router.py
   - ../tests/test_api.py
+  - ../tests/test_tier3.py
+  - ../tests/test_mcp.py
 links:
   uses: [ECL Engine, Scenario Layer, Staging Model]
   implements: [Master Plan]

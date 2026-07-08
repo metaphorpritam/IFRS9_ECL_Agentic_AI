@@ -14,9 +14,10 @@ project splits the two: a frozen, unit-tested ECL engine computes every number;
 a LangGraph agent only **routes** the question to a typed tool, **parameterises**
 it under pydantic validation, and **narrates** the engine's output — with a
 mechanical post-check that every number in the narration appears verbatim in
-the tool's JSON. Questions outside the four validated tool families get an
-explicit refusal ("outside my validated scope"). The refusal is a governance
-feature, demonstrated on purpose.
+the tool's JSON — plus a 5th route for documentation questions (Tier 3,
+below), held to the same rule. Questions outside those five validated routes
+get an explicit refusal ("outside my validated scope"). The refusal is a
+governance feature, demonstrated on purpose.
 
 ## Architecture
 
@@ -50,13 +51,42 @@ Freddie Mac loan-level panel (2000Q2–2015Q1, 60 quarters)   DFAST 2026 scenari
 │ app/api/main.py       FastAPI :7860 — engine views, tools, /ask, SSE trace   │
 │ app/ui/               Preact + ECharts SPA (4 components + header)           │
 └──────────────────────────────────────────────────────────────────────────────┘
+        │  + a 5th route, no LLM in the retrieval path (41 stretch tests)
+        ▼
+┌────────────────────────── TIER-3 + MCP (stretch, 41 tests) ──────────────────┐
+│ agent/tier3_retrieval.py  query_model_docs — deterministic lexical/graph     │
+│                           retrieval over wiki/ + knowledge/corpus, cited     │
+│                           passages only, zero LLM calls inside the tool      │
+│ agent/mcp_server.py       the 4 Tier-1 tools over MCP (fastmcp) — same       │
+│                           pydantic models, same frozen-engine numbers        │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **The governing rule** (enforced in review and in code): the LLM never computes.
 Malformed tool arguments are rejected by pydantic before any engine code runs;
 narrations that invent numbers are replaced by the engine's own deterministic
 headline; every successful tool call is one line in a replayable JSONL audit
-trail with a `tc-<seq>` reference quoted in the answer.
+trail with a `tc-<seq>` reference quoted in the answer. The rule extends to
+Tier-3 (below): the LLM never invents documentation either — only what a
+retrieved passage says, citing it.
+
+## Tier 3: knowledge questions, answered with citations
+
+Not every good question has a number behind it — *"how is LGD split into cure
+and severity?"*, *"why is ρ so far below the Basel 0.15 convention?"* are
+methodology questions, not arithmetic. A 5th route, `query_model_docs`
+(`agent/tier3_retrieval.py`), answers these from two on-disk sources — the
+model-development wiki (`wiki/`, 19 pages) and the indexed IFRS 9 credit-risk
+notes corpus (`knowledge/corpus/`, 69 nodes) — using the same deterministic
+lexical + typed-graph scoring as the `llm-wiki` and `pageindex-plus` skills
+(reused via `importlib`, never reimplemented). **No LLM call happens inside
+retrieval** — same question, same files, same passages, every time. The
+narrator may only state what a returned passage says, and every claim
+carries a real, verified citation: `pages/ecl-engine.md#Headline numbers` or
+`notes §9.2 p10`, never an invented heading or page number. A mechanical
+post-check on the narration enforces this the same way the Tier-1
+verbatim-number check does; a question with no matching passage gets an
+explicit "nothing to cite" rather than a guess.
 
 ## Quickstart
 
@@ -92,10 +122,62 @@ so startup is a ~10–25 s warm load, not a ~50 s refit; tool calls answer in
 seconds from in-memory state.
 
 ```bash
-uv run --no-sync pytest tests/ -q          # 381 passed
+uv run --no-sync pytest tests/ -q          # 422 passed
 ```
 
-## Five-question demo script
+## MCP server: the same four tools, over the Model Context Protocol
+
+`agent/mcp_server.py` exposes the four Tier-1 tools — `shock_macro`,
+`reweight_scenarios`, `rerun_ecl`, `decompose_waterfall` — as an MCP server,
+so any MCP client (Claude Desktop, an IDE agent, a script using the
+`fastmcp`/`mcp` SDK) can call them directly, with no HTTP layer and no
+copilot UI in between. It is a **thin adapter only**: every argument schema
+is the real pydantic model from `agent/tools_tier1.TIER1_ARG_MODELS`
+(bounds, `extra="forbid"`, and every cross-field check — weights summing to
+1, shock bounds, `t0 < t1` — run unchanged), and every number in every
+response comes straight from the frozen IFRS 9 engine, exactly as it does
+through the FastAPI routes or the LangGraph copilot. **One validated model,
+three surfaces** (direct Python call, `POST /api/tools/{tool}`, MCP) — same
+functions, same numbers, no re-implementation anywhere.
+
+```bash
+# stdio transport (default) -- what an MCP client launches as a subprocess
+uv run --no-sync python -m agent.mcp_server
+
+# equivalent, via the fastmcp CLI
+uv run --no-sync fastmcp run agent/mcp_server.py:mcp
+```
+
+Register it in Claude Desktop (or any MCP client) by adding to that client's
+MCP config:
+
+```json
+{
+  "mcpServers": {
+    "ifrs9-ecl-copilot": {
+      "command": "uv",
+      "args": [
+        "run", "--no-sync",
+        "--directory", "/absolute/path/to/IFRS9_ECL_Agentic_AI",
+        "python", "-m", "agent.mcp_server"
+      ]
+    }
+  }
+}
+```
+
+Restart the client; it will list the four tools plus the
+`resource://ifrs9-ecl/health` resource. `tests/test_mcp.py` calls the server
+in-process (fastmcp's `Client` against the in-memory `mcp` object — no
+subprocess, no network) and checks parity with a direct call, schema
+fidelity against `TIER1_ARG_MODELS`, and that invalid arguments fail loud
+(`fastmcp.exceptions.ToolError`) rather than crash or write to the audit
+trail. First tool call in a fresh process pays the engine's warm-up cost
+once (~9s joblib warm start); poll `resource://ifrs9-ecl/health` (cheap,
+never triggers warm-up) to check `engine_warm` first. Full walkthrough:
+`outputs/mcp/README_section.md`.
+
+## Six-question demo script
 
 1. **"What happens to Stage 2 ECL if unemployment rises 2%?"** → routes to
    `shock_macro(UER, +2pp, parallel)`: base allowance $30.5m → $31.7m (+4.1%),
@@ -109,9 +191,14 @@ uv run --no-sync pytest tests/ -q          # 381 passed
    routes to `decompose_waterfall(20, 40)`: opening + stage migration +
    remeasurement + derecognitions + new loans = closing, an identity asserted
    inside the frozen engine.
-5. **"Should I buy Tesla stock this quarter?"** → the router classifies it
-   out-of-scope and the copilot **refuses**, naming the four validated tool
-   families. Watch the agent-trace panel: `router → refusal`, no tool call, no
+5. **"Explain the ECL movement waterfall."** → routes to `query_model_docs`
+   (Tier 3, no number requested — a methodology question): the copilot
+   answers from the wiki and notes corpus, every sentence cited
+   (`pages/ecl-engine.md#Headline numbers`, `notes §9.2 p10`, …), no LLM
+   invention.
+6. **"Should I buy Tesla stock this quarter?"** → the router classifies it
+   out-of-scope and the copilot **refuses**, naming the five validated
+   routes. Watch the agent-trace panel: `router → refusal`, no tool call, no
    invented number.
 
 ## Key exhibits
@@ -145,19 +232,21 @@ uv run --no-sync pytest tests/ -q          # 381 passed
   probability-weighted range.
 * **Scenario ECL (t=60 book, 7,849 loans, $1.67bn):** up $27.7m / base $30.5m /
   severe $47.6m; weighted $34.0m = 2.03% coverage.
-* **Test discipline:** **381 tests** (133 golden fixtures pinning engine
-  values, 187 through Day 2, 91 scenario-layer, 103 agent/API), plus a
-  fingerprint tripwire proving the five frozen engine modules are
-  byte-identical to the Day-2 gate at every subsequent gate.
+* **Test discipline:** **422 tests** (133 golden fixtures pinning engine
+  values, 187 through Day 2, 91 scenario-layer, 103 agent/API, 41 stretch:
+  Tier-3 doc retrieval + MCP adapter), plus a fingerprint tripwire proving
+  the five frozen engine modules are byte-identical to the Day-2 gate at
+  every subsequent gate.
 * **Agent latency:** engine warm-up 10–25 s once (joblib cache), then 3–12 s
   per question end-to-end including the LLM round trip.
 
 ## Repository map
 
 ```
-engine/        frozen five + vasicek/scenarios/satellite     agent/   tools + LangGraph
+engine/        frozen five + vasicek/scenarios/satellite     agent/   tools + LangGraph + tier3 + mcp
 app/api/       FastAPI service        app/ui/    Preact/ECharts SPA
-analysis/      exhibit scripts        tests/     381 tests (133 golden fixtures)
+analysis/      exhibit scripts        tests/     422 tests (133 golden fixtures)
+wiki/          model-development wiki (19 pages)  knowledge/  indexed IFRS9 notes corpus
 data/          panel pipeline + DFAST ingest (raw data gitignored)
 outputs/       exhibits, reports, model cache, audit logs, gate reports
 Dockerfile     multi-stage build (node UI → python:3.13-slim, port 7860)

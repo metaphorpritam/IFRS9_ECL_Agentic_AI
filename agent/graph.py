@@ -1,32 +1,44 @@
-"""LangGraph orchestration for the IFRS 9 ECL copilot (Day 4).
+"""LangGraph orchestration for the IFRS 9 ECL copilot (Day 4 + Tier-3).
 
-Graph shape (deliberately small — five kinds of node, one loop-free pass):
+Graph shape (deliberately small — six kinds of node, one loop-free pass):
 
-    START -> router -+-> shock_macro ---------+
-                     +-> reweight_scenarios --+-> narrator -> END
-                     +-> rerun_ecl -----------+
-                     +-> decompose_waterfall -+
-                     +-> refusal ----------------------------> END
+    START -> router -+-> shock_macro ------------+
+                     +-> reweight_scenarios ------+
+                     +-> rerun_ecl ----------------+-> narrator -> END
+                     +-> decompose_waterfall ------+
+                     +-> query_model_docs ---------+
+                     +-> refusal --------------------------------> END
 
-THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic. Every
-number in every answer comes from the frozen engine via the four Tier-1
-tools in agent/tools_tier1.py. The LLM only (a) ROUTES the question to one
-tool and parameterises it, and (b) NARRATES the tool's returned numbers.
-Both LLM outputs are distrusted mechanically:
+THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic and never
+states a fact from its own memory. Every NUMBER in every Tier-1 answer comes
+from the frozen engine via the four Tier-1 tools in agent/tools_tier1.py.
+Every CLAIM in a Tier-3 (``query_model_docs``, agent/tier3_retrieval.py)
+answer comes from a retrieved wiki/knowledge-corpus passage, cited. The LLM
+only (a) ROUTES the question to one tool (parameterising it, for Tier-1 —
+Tier-3 always reuses the user's own original question, never a router
+paraphrase), and (b) NARRATES the tool's returned result. Both LLM outputs
+are distrusted mechanically:
 
   * The router must emit ONLY JSON ``{"route": ..., "args": {...}}``. Its
     args are validated against the tool's pydantic model (extra='forbid');
     any parse or validation failure routes to REFUSAL — the agent never
     guesses arguments.
-  * The narrator receives ONLY the tool's returned JSON and must reference
-    its numbers verbatim. A post-check extracts every number token from the
-    narration and asserts it appears in (or is a plain rounding of) the
-    tool result; on any miss — or any narrator API failure — the answer
-    falls back to the tool's own deterministic ``headline``, which is
-    engine-generated text.
+  * The Tier-1 narrator receives ONLY the tool's returned JSON and must
+    reference its numbers verbatim. A post-check extracts every number
+    token from the narration and asserts it appears in (or is a plain
+    rounding of) the tool result; on any miss — or any narrator API
+    failure — the answer falls back to the tool's own deterministic
+    ``headline``, which is engine-generated text.
+  * The Tier-3 narrator receives ONLY the retrieved ``passages`` and must
+    cite one for every claim. A post-check (``docs_answer_ok``) requires at
+    least one passage's ``citation`` string to appear verbatim in the
+    answer AND every number in the answer to appear in some passage's own
+    text; on any miss — or any narrator API failure — the answer falls back
+    to a deterministic "here is what the documentation says" listing of the
+    retrieved passages (``deterministic_docs_narration``).
 
 The REFUSAL path is a feature, not an error state: out-of-scope questions
-get a fixed message naming the four validated tool families and offering to
+get a fixed message naming the five validated tool families and offering to
 extend the toolset. Nothing is invented.
 
 LLM plumbing: OpenRouter via the openai SDK (base_url
@@ -41,8 +53,9 @@ writes the full trace as one line of outputs/agent_log/agent_runs.jsonl
 itself is additionally audited by tools_tier1 into tool_calls.jsonl.
 
 Offline tests (tests/test_router.py) monkeypatch ``_llm_route`` /
-``_llm_narrate`` / ``_chat_once`` and the TIER1_TOOLS registry entries —
-pytest never touches the network or the heavy engine state.
+``_llm_narrate`` / ``_chat_once`` and the TIER1_TOOLS registry entries;
+tests/test_tier3.py does the same for ``query_model_docs`` / ``_llm_narrate_
+docs`` — pytest never touches the network or the heavy engine state.
 """
 
 from __future__ import annotations
@@ -58,6 +71,7 @@ from typing import Annotated, TypedDict
 
 from pydantic import ValidationError
 
+from agent.tier3_retrieval import TIER3_ARG_MODELS, query_model_docs
 from agent.tools_tier1 import TIER1_ARG_MODELS, TIER1_TOOLS
 
 import operator
@@ -71,8 +85,19 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 PRIMARY_MODEL = "google/gemma-4-31b-it"
 FALLBACK_MODEL = "deepseek/deepseek-v4-flash"
 
-#: the four supported tool families, in the order the refusal message cites
+#: the four Tier-1 (numbers) tool families, in the order the refusal message
+#: cites them — unchanged by Tier-3 (kept exactly as the live router defines
+#: it, so existing tests/behaviour are untouched)
 TOOL_ROUTES = tuple(TIER1_TOOLS)          # registry order from tools_tier1
+
+#: the one Tier-3 (documentation) route, kept separate from TOOL_ROUTES so
+#: Tier-1-only call sites (e.g. TOOL_ROUTES-based refusal-message checks)
+#: are unaffected
+TIER3_ROUTE = "query_model_docs"
+
+#: every valid non-REFUSE route -> its pydantic argument model
+ROUTE_ARG_MODELS = {**TIER1_ARG_MODELS, **TIER3_ARG_MODELS}
+
 REFUSE = "REFUSE"
 
 REFUSAL_MESSAGE = (
@@ -86,15 +111,20 @@ REFUSAL_MESSAGE = (
     "(3) rerun_ecl — allowance for a book segment (all, stage1, stage2, "
     "stage3, investor, high_ltv); "
     "(4) decompose_waterfall — the allowance movement decomposition between "
-    "two reporting snapshots. "
+    "two reporting snapshots; "
+    "and one documentation tool, (5) query_model_docs — methodology / "
+    "definition questions answered strictly from the model-development wiki "
+    "and the IFRS 9 knowledge corpus, every claim cited to a real page or "
+    "note section. "
     "Rephrase your question into one of those, or ask the model owners to "
     "extend the validated toolset."
 )
 
 ROUTER_SYSTEM_PROMPT = """\
 You are the ROUTER of a validated IFRS 9 ECL model agent. You never compute
-numbers. Your only job is to classify the user's question into EXACTLY ONE
-of four engine tools — or REFUSE — and emit the tool's arguments.
+numbers and you never state facts yourself. Your only job is to classify
+the user's question into EXACTLY ONE of five engine tools — or REFUSE —
+and emit the tool's arguments.
 
 Tools (args must satisfy these contracts exactly):
 
@@ -116,10 +146,25 @@ Tools (args must satisfy these contracts exactly):
 4. decompose_waterfall — "why did the allowance move between two dates".
    args: {"t0": <int 1..60>, "t1": <int 1..60>, t0 < t1}; defaults 20, 40.
 
-REFUSE anything else: general knowledge, market or rate predictions,
-opinions, advice, arithmetic requests, model methodology debates, other
-portfolios, anything needing data or computation outside these four tools.
-When in doubt, REFUSE — never guess.
+5. query_model_docs — FACTUAL "what does our documentation say" methodology
+   questions: "explain X", "how is Y defined here", "why did we choose Z",
+   requests to define/explain a concept (SICR, PD, LGD, staging, the
+   standard's mechanics, ...) using THIS project's own model-development
+   wiki and its IFRS 9 knowledge corpus. args: {} always (the question text
+   itself is reused verbatim by the tool — never restate or rephrase it in
+   args).
+   Disambiguation: a request to SEE, show, or walk through the book's
+   actual allowance movement or waterfall NUMBERS (e.g. "walk me through
+   the allowance waterfall") is decompose_waterfall (tool 4), never this
+   route. Use this route only for what the documentation SAYS — definitions,
+   methodology, rationale.
+
+REFUSE anything else: general knowledge unrelated to this project, market
+or rate predictions, opinions/advice, arithmetic requests, HYPOTHETICAL
+methodology debates ("what do you think we should do instead", "is this the
+best approach"), poems or other creative writing, other portfolios,
+anything needing data or computation outside these five tools. When in
+doubt, REFUSE — never guess.
 
 Respond with ONLY a JSON object, no prose, no code fences:
   {"route": "<tool name or REFUSE>", "args": {...}}
@@ -142,6 +187,25 @@ HARD RULES — violations are discarded by an automated check:
   standard names with digits (write 'the accounting standard', not a
   numbered standard).
 - No speculation beyond what the JSON states. Plain factual tone.
+"""
+
+NARRATOR_DOCS_SYSTEM_PROMPT = """\
+You are the NARRATOR for a documentation-retrieval tool over an IFRS 9 ECL
+model's own wiki and knowledge corpus. You will receive a JSON object with
+"question" and a list of "passages", each {"source", "citation", "text"}.
+
+HARD RULES — violations are discarded by an automated check:
+- Answer ONLY using the given passages. Never use outside knowledge, even
+  if you believe it is correct — if the passages do not cover something,
+  say so honestly instead of filling the gap.
+- Every factual claim must be immediately followed by the citation of the
+  passage it came from, in square brackets, EXACTLY as given (e.g.
+  '... 12-month ECL for Stage 1 [pages/staging-model.md#Staging Model].').
+  Use at least one citation; if you draw on more than one passage, cite
+  each of the claims it supports.
+- Do not invent, compute, or rescale any number. Only use a number if it
+  appears verbatim in one of the passages' text.
+- Short answer (2-5 sentences), plain factual tone, for a bank risk analyst.
 """
 
 
@@ -211,6 +275,16 @@ def _llm_narrate(tool_result: dict) -> tuple[str, str]:
     ])
 
 
+def _llm_narrate_docs(tool_result: dict) -> tuple[str, str]:
+    """Raw narrator completion over ONLY the retrieved passages (Tier-3)."""
+    payload = {"question": tool_result.get("question"),
+              "passages": tool_result.get("passages", [])}
+    return _call_llm([
+        {"role": "system", "content": NARRATOR_DOCS_SYSTEM_PROMPT},
+        {"role": "user", "content": json.dumps(payload)},
+    ])
+
+
 # ---------------------------------------------------------------------------
 # router output parsing + validation (failure == refusal, never a guess)
 # ---------------------------------------------------------------------------
@@ -243,10 +317,11 @@ def _extract_json(text: str) -> dict:
 def decide_route(question: str) -> dict:
     """Classify a question -> {route, args, detail} with hard validation.
 
-    route is one of TOOL_ROUTES or REFUSE. args are the pydantic-validated
-    tool arguments (model_dump, so defaults are materialised). Any LLM
-    failure, unparseable output, unknown route, or argument-validation
-    failure collapses to REFUSE with a diagnostic detail string.
+    route is one of TOOL_ROUTES, TIER3_ROUTE, or REFUSE. args are the
+    pydantic-validated tool arguments (model_dump, so defaults are
+    materialised). Any LLM failure, unparseable output, unknown route, or
+    argument-validation failure collapses to REFUSE with a diagnostic
+    detail string.
     """
     try:
         raw, model_used = _llm_route(question)
@@ -262,7 +337,7 @@ def decide_route(question: str) -> dict:
     if route == REFUSE:
         return {"route": REFUSE, "args": {}, "model": model_used,
                 "detail": "router classified the question as out of scope"}
-    if route not in TIER1_TOOLS:
+    if route not in ROUTE_ARG_MODELS:
         return {"route": REFUSE, "args": {}, "model": model_used,
                 "detail": f"unknown route {route!r}"}
     args = parsed.get("args") or {}
@@ -270,7 +345,7 @@ def decide_route(question: str) -> dict:
         return {"route": REFUSE, "args": {}, "model": model_used,
                 "detail": "router args are not an object"}
     try:
-        validated = TIER1_ARG_MODELS[route](**args)
+        validated = ROUTE_ARG_MODELS[route](**args)
     except ValidationError as exc:
         first = exc.errors()[0]
         return {"route": REFUSE, "args": {}, "model": model_used,
@@ -350,6 +425,72 @@ def deterministic_narration(tool_result: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# docs narration check (the mechanical anti-hallucination guard, Tier-3)
+# ---------------------------------------------------------------------------
+
+def _numbers_in_passages(passages: list[dict]) -> list[float]:
+    """Every number appearing verbatim in ANY retrieved passage's text."""
+    allowed: list[float] = []
+    for p in passages:
+        for tok in _number_tokens(p.get("text", "")):
+            try:
+                allowed.append(float(tok.replace(",", "")))
+            except ValueError:                    # pragma: no cover
+                pass
+    return allowed
+
+
+def docs_answer_ok(text: str, tool_result: dict) -> bool:
+    """True iff the narration cites a real passage AND invents no numbers.
+
+    Two checks, both required (a single miss fails the whole text):
+      1. at least one passage's `citation` string appears verbatim in the
+         answer (the narrator must show its work);
+      2. every number token in the answer equals — or is a plain rounding
+         of — a number that appears somewhere in the passages' own text (a
+         number is only legitimate if it was actually IN the documentation
+         quoted back, never computed or recalled from the model's memory).
+    """
+    passages = tool_result.get("passages") or []
+    if not passages:
+        return False
+    citations = [p["citation"] for p in passages if p.get("citation")]
+    if not any(c and c in text for c in citations):
+        return False
+    allowed = _numbers_in_passages(passages)
+    for tok in _number_tokens(text):
+        n = float(tok.replace(",", ""))
+        decimals = len(tok.split(".")[1]) if "." in tok else 0
+        tol = 0.5 * 10.0 ** (-decimals) + 1e-9
+        if not any(abs(n - a) <= tol or abs(abs(n) - abs(a)) <= tol
+                  for a in allowed):
+            return False
+    return True
+
+
+def deterministic_docs_narration(tool_result: dict) -> str:
+    """Fallback answer: list each retrieved passage under its citation.
+
+    Used whenever the LLM narration fails the citation/number check above
+    (or the narrator LLM itself errors) — never silently invents an answer.
+    """
+    passages = tool_result.get("passages") or []
+    ref = tool_result.get("tool_call_id")
+    if not passages:
+        return ("The wiki and the IFRS 9 knowledge corpus have nothing that "
+                f"directly addresses this question, so I have nothing to "
+                f"cite. [engine-computed; audit ref {ref}]")
+    lines = ["Here is what the documentation says:"]
+    for p in passages:
+        snippet = " ".join(p.get("text", "").split())
+        if len(snippet) > 240:
+            snippet = snippet[:240].rsplit(" ", 1)[0] + "…"
+        lines.append(f"- [{p['citation']}] {snippet}")
+    lines.append(f"[engine-computed; audit ref {ref}]")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # graph state + nodes
 # ---------------------------------------------------------------------------
 
@@ -396,6 +537,23 @@ def _make_tool_node(name: str):
     return node
 
 
+def _query_model_docs_node(state: AgentState) -> dict:
+    """Tier-3 tool node: ALWAYS retrieves on the user's own original
+    question — never a router-authored paraphrase (state["tool_args"] is
+    empty by construction, see QueryModelDocsArgs)."""
+    try:
+        result = query_model_docs(question=state["question"])
+        event = {"node": TIER3_ROUTE, "ts": _now(), "status": "ok",
+                 "tool_call_id": result.get("tool_call_id"),
+                 "headline": result.get("headline")}
+    except Exception as exc:          # retrieval failure: honest, no answer
+        result = {"error": f"{type(exc).__name__}: {exc}",
+                  "tool": TIER3_ROUTE}
+        event = {"node": TIER3_ROUTE, "ts": _now(), "status": "error",
+                 "detail": result["error"]}
+    return {"tool_result": result, "trace": [event]}
+
+
 def _narrator_node(state: AgentState) -> dict:
     result = state["tool_result"]
     if "error" in result:
@@ -406,6 +564,8 @@ def _narrator_node(state: AgentState) -> dict:
         return {"answer": answer,
                 "trace": [{"node": "narrator", "ts": _now(),
                            "mode": "tool_error"}]}
+    if result.get("tool") == TIER3_ROUTE:
+        return _narrate_docs(result)
     try:
         text, model_used = _llm_narrate(result)
         ok = narration_numbers_ok(text, result)
@@ -420,6 +580,23 @@ def _narrator_node(state: AgentState) -> dict:
                        "number_check_passed": bool(ok)}]}
 
 
+def _narrate_docs(result: dict) -> dict:
+    """Tier-3 narration branch: cite-and-quote only, or the deterministic
+    'here is what the documentation says' passage listing on any failure."""
+    try:
+        text, model_used = _llm_narrate_docs(result)
+        ok = docs_answer_ok(text, result)
+        mode = "llm" if ok else "template_citation_check_failed"
+    except Exception as exc:
+        text, model_used, ok = None, None, False
+        mode = f"template_llm_error:{type(exc).__name__}"
+    answer = text.strip() if ok else deterministic_docs_narration(result)
+    return {"answer": answer,
+            "trace": [{"node": "narrator", "ts": _now(), "mode": mode,
+                       "model": model_used,
+                       "citation_check_passed": bool(ok)}]}
+
+
 def _refusal_node(state: AgentState) -> dict:
     return {"answer": REFUSAL_MESSAGE, "tool_result": {},
             "trace": [{"node": "refusal", "ts": _now(),
@@ -427,18 +604,29 @@ def _refusal_node(state: AgentState) -> dict:
 
 
 def build_graph():
-    """Compile the StateGraph (router -> tool -> narrator | refusal)."""
+    """Compile the StateGraph (router -> tool -> narrator | refusal).
+
+        START -> router -+-> shock_macro ------------+
+                         +-> reweight_scenarios ------+
+                         +-> rerun_ecl ----------------+-> narrator -> END
+                         +-> decompose_waterfall ------+
+                         +-> query_model_docs ---------+
+                         +-> refusal --------------------------------> END
+    """
     g = StateGraph(AgentState)
     g.add_node("router", _router_node)
     for name in TOOL_ROUTES:
         g.add_node(name, _make_tool_node(name))
         g.add_edge(name, "narrator")
+    g.add_node(TIER3_ROUTE, _query_model_docs_node)
+    g.add_edge(TIER3_ROUTE, "narrator")
     g.add_node("narrator", _narrator_node)
     g.add_node("refusal", _refusal_node)
     g.add_edge(START, "router")
     g.add_conditional_edges(
         "router", lambda s: s["route"],
-        {**{name: name for name in TOOL_ROUTES}, REFUSE: "refusal"})
+        {**{name: name for name in TOOL_ROUTES}, TIER3_ROUTE: TIER3_ROUTE,
+         REFUSE: "refusal"})
     g.add_edge("narrator", END)
     g.add_edge("refusal", END)
     return g.compile()

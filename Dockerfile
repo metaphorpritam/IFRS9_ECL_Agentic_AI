@@ -50,6 +50,20 @@ COPY app/__init__.py ./app/__init__.py
 COPY app/api ./app/api
 COPY analysis ./analysis
 
+# Tier-3 (query_model_docs) retrieval sources: the model-development wiki
+# (pages + the pre-built typed graph) and the indexed IFRS9 credit-risk
+# notes corpus — both read-only at runtime, no LLM/network involved.
+COPY wiki ./wiki
+COPY knowledge/corpus ./knowledge/corpus
+COPY knowledge/index ./knowledge/index
+
+# the two retrieval scripts agent/tier3_retrieval.py loads by file path
+# (importlib.util.spec_from_file_location, never copy-pasted) — same
+# relative paths as in the repo; wiki_query.py needs wiki_graph.py
+# alongside it (sys.path sibling import)
+COPY .claude/skills/llm-wiki/scripts/wiki_query.py .claude/skills/llm-wiki/scripts/wiki_graph.py ./.claude/skills/llm-wiki/scripts/
+COPY .claude/skills/pageindex-plus/scripts/pageindex_query.py ./.claude/skills/pageindex-plus/scripts/
+
 # runtime data: the loan panel, the DFAST scenario CSVs and their loader
 COPY data/__init__.py ./data/__init__.py
 COPY data/ingest ./data/ingest

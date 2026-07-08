@@ -2,7 +2,7 @@
 title: ECL Engine
 type: module
 status: active
-aliases: [ecl, allowance engine, movement decomposition]
+aliases: [ecl, allowance engine, movement decomposition, waterfall, provision, reserve]
 tags: [engine, ecl, gate]
 sources:
   - ../knowledge/sources/ifrs9_credit_risk_notes.md

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-07T20:12:53+00:00",
+  "generated": "2026-07-08T12:07:16+00:00",
   "wiki_dir": "wiki",
   "pages": 19,
   "nodes": [
@@ -28,31 +28,35 @@
         "../agent/__init__.py",
         "../agent/tools_tier1.py",
         "../agent/graph.py",
+        "../agent/tier3_retrieval.py",
+        "../agent/mcp_server.py",
         "../app/api/main.py",
         "../scripts/demo_agent.py",
         "../tests/test_tools.py",
         "../tests/test_router.py",
-        "../tests/test_api.py"
+        "../tests/test_api.py",
+        "../tests/test_tier3.py",
+        "../tests/test_mcp.py"
       ],
       "headings": [
         {
-          "line": 24,
+          "line": 28,
           "text": "Agent Layer"
         },
         {
-          "line": 31,
+          "line": 35,
           "text": "Architecture"
         },
         {
-          "line": 39,
+          "line": 43,
           "text": "Tools (agent/tools_tier1.py)"
         },
         {
-          "line": 46,
+          "line": 50,
           "text": "THE COHERENT-SHOCK CONVENTION (load-bearing)"
         },
         {
-          "line": 54,
+          "line": 58,
           "text": "Known caveats"
         }
       ],
@@ -178,7 +182,10 @@
       "aliases": [
         "ecl",
         "allowance engine",
-        "movement decomposition"
+        "movement decomposition",
+        "waterfall",
+        "provision",
+        "reserve"
       ],
       "status": "active",
       "sources": [
@@ -263,7 +270,9 @@
       "aliases": [
         "PD model",
         "cloglog hazard",
-        "default hazard"
+        "default hazard",
+        "PD",
+        "default probability"
       ],
       "status": "active",
       "sources": [
@@ -425,7 +434,8 @@
       "aliases": [
         "lgd",
         "loss given default model",
-        "cure severity model"
+        "cure severity model",
+        "loss given default"
       ],
       "status": "active",
       "sources": [
@@ -701,7 +711,8 @@
       "aliases": [
         "staging",
         "SICR",
-        "stage allocation"
+        "stage allocation",
+        "significant increase in credit risk"
       ],
       "status": "active",
       "sources": [
@@ -759,25 +770,25 @@
       "src": "agent-layer",
       "dst": "ecl-engine",
       "type": "uses",
-      "line": 20
+      "line": 24
     },
     {
       "src": "agent-layer",
       "dst": "master-plan",
       "type": "implements",
-      "line": 21
+      "line": 25
     },
     {
       "src": "agent-layer",
       "dst": "scenario-layer",
       "type": "uses",
-      "line": 20
+      "line": 24
     },
     {
       "src": "agent-layer",
       "dst": "staging-model",
       "type": "uses",
-      "line": 20
+      "line": 24
     },
     {
       "src": "bootstrap-decisions",
@@ -1379,6 +1390,9 @@
     "ecl": "ecl-engine",
     "allowance engine": "ecl-engine",
     "movement decomposition": "ecl-engine",
+    "waterfall": "ecl-engine",
+    "provision": "ecl-engine",
+    "reserve": "ecl-engine",
     "golden fixtures": "golden-fixtures",
     "golden-fixtures": "golden-fixtures",
     "fixture scripts": "golden-fixtures",
@@ -1389,6 +1403,8 @@
     "pd model": "hazard-model",
     "cloglog hazard": "hazard-model",
     "default hazard": "hazard-model",
+    "pd": "hazard-model",
+    "default probability": "hazard-model",
     "ifrs9 study notes": "ifrs9-study-notes",
     "ifrs9-study-notes": "ifrs9-study-notes",
     "the notes": "ifrs9-study-notes",
@@ -1403,6 +1419,7 @@
     "lgd": "lgd-model",
     "loss given default model": "lgd-model",
     "cure severity model": "lgd-model",
+    "loss given default": "lgd-model",
     "llm-wiki skill": "llm-wiki-skill",
     "llm-wiki-skill": "llm-wiki-skill",
     "llm-wiki": "llm-wiki-skill",
@@ -1436,6 +1453,7 @@
     "staging": "staging-model",
     "sicr": "staging-model",
     "stage allocation": "staging-model",
+    "significant increase in credit risk": "staging-model",
     "variable dictionary": "variable-dictionary",
     "variable-dictionary": "variable-dictionary",
     "feature dictionary": "variable-dictionary",

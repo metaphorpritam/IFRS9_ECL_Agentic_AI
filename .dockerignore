@@ -12,11 +12,14 @@
 .venv
 .mypy_cache
 .pytest_cache
-.claude
 **/__pycache__
 **/*.pyc
 **/.DS_Store
 **/*.log
+
+# .claude/ ships only two small retrieval scripts Tier-3 loads by file path
+# (agent/tier3_retrieval.py); everything else under .claude is dev tooling.
+# (No secrets live here — just skill scripts/docs, ~272K total.)
 
 # --- node ------------------------------------------------------------------
 app/ui/node_modules
@@ -28,8 +31,16 @@ data/processed/*
 !data/processed/panel.parquet
 data/panel
 init_docs
-knowledge
-wiki
+# knowledge/: only corpus/ (indexed IFRS9 notes) + index/ (PageIndex tree)
+# ship — Tier-3's retrieval sources. code_map.md/code_fp.json/captions.json/
+# sources/ (raw licensed docs) are dev-only and stay out of the image.
+knowledge/sources
+knowledge/code_map.md
+knowledge/code_fp.json
+knowledge/captions.json
+knowledge/preprocess_notes.py
+# wiki/ ships whole (pages/ + .wiki/graph.json + memory/) — it is small
+# (~140K) and agent/tier3_retrieval.py reads pages/ + .wiki/ at runtime.
 skills
 scripts
 tests

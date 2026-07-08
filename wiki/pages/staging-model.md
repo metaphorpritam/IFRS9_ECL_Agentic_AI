@@ -2,7 +2,7 @@
 title: Staging Model
 type: module
 status: active
-aliases: [staging, SICR, stage allocation]
+aliases: [staging, SICR, stage allocation, significant increase in credit risk]
 tags: [engine, staging, sicr]
 sources:
   - ../knowledge/sources/ifrs9_credit_risk_notes.md

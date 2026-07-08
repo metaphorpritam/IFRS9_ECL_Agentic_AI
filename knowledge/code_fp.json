@@ -566,9 +566,9 @@
       }
     },
     "agent/graph.py": {
-      "content_hash": "f2ddedf4fc160ffc",
+      "content_hash": "4c836dfccd45900e",
       "fp": {
-        "struct_hash": "b4ca5417920b2ae2",
+        "struct_hash": "b53b3f6a4f3c038f",
         "funcs": [
           "_allowed_numbers(tool_result)",
           "_call_llm(messages)",
@@ -576,17 +576,23 @@
           "_client()",
           "_extract_json(text)",
           "_llm_narrate(tool_result)",
+          "_llm_narrate_docs(tool_result)",
           "_llm_route(question)",
           "_log_run(record)",
           "_make_tool_node(name)",
+          "_narrate_docs(result)",
           "_narrator_node(state)",
           "_now()",
           "_number_tokens(text)",
+          "_numbers_in_passages(passages)",
+          "_query_model_docs_node(state)",
           "_refusal_node(state)",
           "_router_node(state)",
           "build_graph()",
           "decide_route(question)",
+          "deterministic_docs_narration(tool_result)",
           "deterministic_narration(tool_result)",
+          "docs_answer_ok(text,tool_result)",
           "get_graph()",
           "narration_numbers_ok(text,tool_result)",
           "run_agent(question)"
@@ -606,6 +612,61 @@
           "re",
           "threading",
           "typing"
+        ]
+      }
+    },
+    "agent/mcp_server.py": {
+      "content_hash": "0184428e5b378ef6",
+      "fp": {
+        "struct_hash": "874d403a5f958520",
+        "funcs": [
+          "_make_tool_wrapper(name,model,fn)",
+          "_project_version()",
+          "engine_health()"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "agent",
+          "engine",
+          "fastmcp",
+          "pathlib",
+          "pydantic",
+          "tomllib",
+          "typing"
+        ]
+      }
+    },
+    "agent/tier3_retrieval.py": {
+      "content_hash": "3000e1af5c1299af",
+      "fp": {
+        "struct_hash": "f9b36de6c168c74e",
+        "funcs": [
+          "_best_section(page_path,headings,q_tokens,heading_hits)",
+          "_load_module(path,name)",
+          "_notes_index()",
+          "_notes_passages(question,limit)",
+          "_page_sections(page_path,headings)",
+          "_pageindex_mod()",
+          "_score_section_text(text,q_tokens)",
+          "_section_number(title)",
+          "_wiki_anchor(heading_text)",
+          "_wiki_graph()",
+          "_wiki_passages(question,limit)",
+          "_wiki_query_mod()",
+          "query_model_docs(question,k)",
+          "warm_up()"
+        ],
+        "classes": [],
+        "imports": [
+          "__future__",
+          "agent",
+          "importlib",
+          "pathlib",
+          "pydantic",
+          "re",
+          "threading",
+          "types"
         ]
       }
     },

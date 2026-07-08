@@ -29,6 +29,8 @@ analysis/scenario_exhibits.py
 analysis/staging_exhibits.py
 agent/__init__.py
 agent/graph.py
+agent/mcp_server.py
+agent/tier3_retrieval.py
 agent/tools_tier1.py
 app/api/__init__.py
 app/api/main.py
@@ -50,6 +52,7 @@ app/api/main.py
 - `hazard` → (no local imports)
 - `lgd` → (no local imports)
 - `main` → (no local imports)
+- `mcp_server` → (no local imports)
 - `mpl_style` → (no local imports)
 - `run_ecl` → `mpl_style`
 - `run_scenarios` → `mpl_style`
@@ -58,6 +61,7 @@ app/api/main.py
 - `scenarios` → (no local imports)
 - `staging` → (no local imports)
 - `staging_exhibits` → `mpl_style`
+- `tier3_retrieval` → (no local imports)
 - `tools_tier1` → (no local imports)
 - `vasicek` → (no local imports)
 
@@ -73,16 +77,31 @@ Calls (caller → callee):
 - `agent/graph.py::_call_llm` → `agent/graph.py::_chat_once`
 - `agent/graph.py::_chat_once` → `agent/graph.py::_client`
 - `agent/graph.py::_llm_narrate` → `agent/graph.py::_call_llm`
+- `agent/graph.py::_llm_narrate_docs` → `agent/graph.py::_call_llm`
 - `agent/graph.py::_llm_route` → `agent/graph.py::_call_llm`
 - `agent/graph.py::_make_tool_node` → `agent/graph.py::_now`
-- `agent/graph.py::_narrator_node` → `agent/graph.py::_llm_narrate`, `agent/graph.py::_now`, `agent/graph.py::deterministic_narration`, `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::_narrate_docs` → `agent/graph.py::_llm_narrate_docs`, `agent/graph.py::_now`, `agent/graph.py::deterministic_docs_narration`, `agent/graph.py::docs_answer_ok`
+- `agent/graph.py::_narrator_node` → `agent/graph.py::_llm_narrate`, `agent/graph.py::_narrate_docs`, `agent/graph.py::_now`, `agent/graph.py::deterministic_narration`, `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::_numbers_in_passages` → `agent/graph.py::_number_tokens`
+- `agent/graph.py::_query_model_docs_node` → `agent/graph.py::_now`, `agent/tier3_retrieval.py::query_model_docs`
 - `agent/graph.py::_refusal_node` → `agent/graph.py::_now`
 - `agent/graph.py::_router_node` → `agent/graph.py::_now`, `agent/graph.py::decide_route`
 - `agent/graph.py::build_graph` → `agent/graph.py::_make_tool_node`
 - `agent/graph.py::decide_route` → `agent/graph.py::_extract_json`, `agent/graph.py::_llm_route`
+- `agent/graph.py::docs_answer_ok` → `agent/graph.py::_number_tokens`, `agent/graph.py::_numbers_in_passages`
 - `agent/graph.py::get_graph` → `agent/graph.py::build_graph`
 - `agent/graph.py::narration_numbers_ok` → `agent/graph.py::_allowed_numbers`, `agent/graph.py::_number_tokens`
 - `agent/graph.py::run_agent` → `agent/graph.py::_log_run`, `agent/graph.py::_now`, `agent/graph.py::get_graph`
+- `agent/mcp_server.py::engine_health` → `agent/mcp_server.py::_project_version`, `engine/scenarios.py::panel_time_to_period`
+- `agent/tier3_retrieval.py::_best_section` → `agent/tier3_retrieval.py::_page_sections`, `agent/tier3_retrieval.py::_score_section_text`
+- `agent/tier3_retrieval.py::_notes_index` → `agent/tier3_retrieval.py::_pageindex_mod`
+- `agent/tier3_retrieval.py::_notes_passages` → `agent/tier3_retrieval.py::_notes_index`, `agent/tier3_retrieval.py::_pageindex_mod`, `agent/tier3_retrieval.py::_section_number`
+- `agent/tier3_retrieval.py::_pageindex_mod` → `agent/tier3_retrieval.py::_load_module`
+- `agent/tier3_retrieval.py::_wiki_graph` → `agent/tier3_retrieval.py::_wiki_query_mod`
+- `agent/tier3_retrieval.py::_wiki_passages` → `agent/tier3_retrieval.py::_best_section`, `agent/tier3_retrieval.py::_wiki_anchor`, `agent/tier3_retrieval.py::_wiki_graph`, `agent/tier3_retrieval.py::_wiki_query_mod`
+- `agent/tier3_retrieval.py::_wiki_query_mod` → `agent/tier3_retrieval.py::_load_module`
+- `agent/tier3_retrieval.py::query_model_docs` → `agent/tier3_retrieval.py::_notes_passages`, `agent/tier3_retrieval.py::_wiki_passages`, `agent/tools_tier1.py::_log_call`
+- `agent/tier3_retrieval.py::warm_up` → `agent/tier3_retrieval.py::_notes_index`, `agent/tier3_retrieval.py::_wiki_graph`
 - `agent/tools_tier1.py::_build_state` → `agent/tools_tier1.py::_comovement_betas`, `agent/tools_tier1.py::_fit_or_load_models`, `agent/tools_tier1.py::_weights_key`, `engine/satellite.py::driver_frame`, `engine/satellite.py::fit_satellite`, `engine/satellite.py::recover_z`, `engine/satellite.py::scenario_ecl_for_snapshot`, `engine/satellite.py::scenario_z_paths`, `engine/satellite.py::ttc_macro_means`, `engine/scenarios.py::build_scenario_set`, `engine/scenarios.py::panel_macro_concepts`, `engine/staging.py::assign_stages`, `engine/staging.py::build_macro_map`
 - `agent/tools_tier1.py::_fit_or_load_models` → `agent/tools_tier1.py::_fingerprint`, `agent/tools_tier1.py::_strip_training_data`, `engine/hazard.py::fit_default_hazard`, `engine/hazard.py::fit_prepay_hazard`, `engine/lgd.py::fit_lgd_models`
 - `agent/tools_tier1.py::_frozen_book` → `engine/ecl.py::ecl_for_snapshot`
@@ -188,21 +207,40 @@ Calls (caller → callee):
 Called-by (reverse — **impact map**: who breaks if you change the callee):
 
 - `agent/graph.py::_allowed_numbers` ← `agent/graph.py::narration_numbers_ok`
-- `agent/graph.py::_call_llm` ← `agent/graph.py::_llm_narrate`, `agent/graph.py::_llm_route`
+- `agent/graph.py::_call_llm` ← `agent/graph.py::_llm_narrate`, `agent/graph.py::_llm_narrate_docs`, `agent/graph.py::_llm_route`
 - `agent/graph.py::_chat_once` ← `agent/graph.py::_call_llm`
 - `agent/graph.py::_client` ← `agent/graph.py::_chat_once`
 - `agent/graph.py::_extract_json` ← `agent/graph.py::decide_route`
 - `agent/graph.py::_llm_narrate` ← `agent/graph.py::_narrator_node`
+- `agent/graph.py::_llm_narrate_docs` ← `agent/graph.py::_narrate_docs`
 - `agent/graph.py::_llm_route` ← `agent/graph.py::decide_route`
 - `agent/graph.py::_log_run` ← `agent/graph.py::run_agent`
 - `agent/graph.py::_make_tool_node` ← `agent/graph.py::build_graph`
-- `agent/graph.py::_now` ← `agent/graph.py::_make_tool_node`, `agent/graph.py::_narrator_node`, `agent/graph.py::_refusal_node`, `agent/graph.py::_router_node`, `agent/graph.py::run_agent`
-- `agent/graph.py::_number_tokens` ← `agent/graph.py::_allowed_numbers`, `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::_narrate_docs` ← `agent/graph.py::_narrator_node`
+- `agent/graph.py::_now` ← `agent/graph.py::_make_tool_node`, `agent/graph.py::_narrate_docs`, `agent/graph.py::_narrator_node`, `agent/graph.py::_query_model_docs_node`, `agent/graph.py::_refusal_node`, `agent/graph.py::_router_node`, `agent/graph.py::run_agent`
+- `agent/graph.py::_number_tokens` ← `agent/graph.py::_allowed_numbers`, `agent/graph.py::_numbers_in_passages`, `agent/graph.py::docs_answer_ok`, `agent/graph.py::narration_numbers_ok`
+- `agent/graph.py::_numbers_in_passages` ← `agent/graph.py::docs_answer_ok`
 - `agent/graph.py::build_graph` ← `agent/graph.py::get_graph`
 - `agent/graph.py::decide_route` ← `agent/graph.py::_router_node`
+- `agent/graph.py::deterministic_docs_narration` ← `agent/graph.py::_narrate_docs`
 - `agent/graph.py::deterministic_narration` ← `agent/graph.py::_narrator_node`
+- `agent/graph.py::docs_answer_ok` ← `agent/graph.py::_narrate_docs`
 - `agent/graph.py::get_graph` ← `agent/graph.py::run_agent`
 - `agent/graph.py::narration_numbers_ok` ← `agent/graph.py::_narrator_node`
+- `agent/mcp_server.py::_project_version` ← `agent/mcp_server.py::engine_health`
+- `agent/tier3_retrieval.py::_best_section` ← `agent/tier3_retrieval.py::_wiki_passages`
+- `agent/tier3_retrieval.py::_load_module` ← `agent/tier3_retrieval.py::_pageindex_mod`, `agent/tier3_retrieval.py::_wiki_query_mod`
+- `agent/tier3_retrieval.py::_notes_index` ← `agent/tier3_retrieval.py::_notes_passages`, `agent/tier3_retrieval.py::warm_up`
+- `agent/tier3_retrieval.py::_notes_passages` ← `agent/tier3_retrieval.py::query_model_docs`
+- `agent/tier3_retrieval.py::_page_sections` ← `agent/tier3_retrieval.py::_best_section`
+- `agent/tier3_retrieval.py::_pageindex_mod` ← `agent/tier3_retrieval.py::_notes_index`, `agent/tier3_retrieval.py::_notes_passages`
+- `agent/tier3_retrieval.py::_score_section_text` ← `agent/tier3_retrieval.py::_best_section`
+- `agent/tier3_retrieval.py::_section_number` ← `agent/tier3_retrieval.py::_notes_passages`
+- `agent/tier3_retrieval.py::_wiki_anchor` ← `agent/tier3_retrieval.py::_wiki_passages`
+- `agent/tier3_retrieval.py::_wiki_graph` ← `agent/tier3_retrieval.py::_wiki_passages`, `agent/tier3_retrieval.py::warm_up`
+- `agent/tier3_retrieval.py::_wiki_passages` ← `agent/tier3_retrieval.py::query_model_docs`
+- `agent/tier3_retrieval.py::_wiki_query_mod` ← `agent/tier3_retrieval.py::_wiki_graph`, `agent/tier3_retrieval.py::_wiki_passages`
+- `agent/tier3_retrieval.py::query_model_docs` ← `agent/graph.py::_query_model_docs_node`
 - `agent/tools_tier1.py::_build_state` ← `agent/tools_tier1.py::_state`
 - `agent/tools_tier1.py::_comovement_betas` ← `agent/tools_tier1.py::_build_state`
 - `agent/tools_tier1.py::_fingerprint` ← `agent/tools_tier1.py::_fit_or_load_models`
@@ -210,7 +248,7 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `agent/tools_tier1.py::_formula_columns` ← `agent/tools_tier1.py::_strip_training_data`
 - `agent/tools_tier1.py::_frozen_book` ← `agent/tools_tier1.py::decompose_waterfall`
 - `agent/tools_tier1.py::_last_logged_seq` ← `agent/tools_tier1.py::_log_call`
-- `agent/tools_tier1.py::_log_call` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::rerun_ecl`, `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
+- `agent/tools_tier1.py::_log_call` ← `agent/tier3_retrieval.py::query_model_docs`, `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::rerun_ecl`, `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
 - `agent/tools_tier1.py::_m` ← `agent/tools_tier1.py::decompose_waterfall`, `agent/tools_tier1.py::rerun_ecl`, `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
 - `agent/tools_tier1.py::_run_book` ← `agent/tools_tier1.py::reweight_scenarios`, `agent/tools_tier1.py::shock_macro`
 - `agent/tools_tier1.py::_segment_mask` ← `agent/tools_tier1.py::rerun_ecl`
@@ -338,7 +376,7 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 - `engine/scenarios.py::_extend_with_reversion` ← `engine/scenarios.py::build_scenario_set`
 - `engine/scenarios.py::build_scenario_set` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`, `analysis/scenario_exhibits.py::main`
 - `engine/scenarios.py::panel_macro_concepts` ← `agent/tools_tier1.py::_build_state`, `analysis/run_scenarios.py::main`, `engine/scenarios.py::build_scenario_set`
-- `engine/scenarios.py::panel_time_to_period` ← `agent/tools_tier1.py::decompose_waterfall`, `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::t_axis`, `app/api/main.py::ecl_summary`, `engine/satellite.py::gfc_mask_for_times`, `engine/scenarios.py::ScenarioSet.jumpoff_period`, `engine/scenarios.py::build_scenario_set`
+- `engine/scenarios.py::panel_time_to_period` ← `agent/mcp_server.py::engine_health`, `agent/tools_tier1.py::decompose_waterfall`, `analysis/run_scenarios.py::plot_satellite_fit`, `analysis/run_scenarios.py::t_axis`, `app/api/main.py::ecl_summary`, `engine/satellite.py::gfc_mask_for_times`, `engine/scenarios.py::ScenarioSet.jumpoff_period`, `engine/scenarios.py::build_scenario_set`
 - `engine/staging.py::_age_curve` ← `engine/ecl.py::_marginal_pd_grid`, `engine/satellite.py::_hazard_grid`, `engine/staging.py::_cum_default_pd`
 - `engine/staging.py::_backstop_30dpd` ← `engine/staging.py::assign_stages`
 - `engine/staging.py::_cum_default_pd` ← `analysis/staging_exhibits.py::scale_benchmark`, `engine/staging.py::lifetime_pd_table`
@@ -360,19 +398,20 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 
 ## Third-party libraries used
 
-- **agent** — agent/graph.py, app/api/main.py
+- **agent** — agent/graph.py, agent/mcp_server.py, agent/tier3_retrieval.py, app/api/main.py
 - **analysis** — analysis/scenario_exhibits.py
 - **challenger** — analysis/fit_challenger.py
 - **data** — engine/scenarios.py
-- **engine** — agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, app/api/main.py, engine/__init__.py, engine/ecl.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
+- **engine** — agent/mcp_server.py, agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, app/api/main.py, engine/__init__.py, engine/ecl.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
 - **fastapi** — app/api/main.py
+- **fastmcp** — agent/mcp_server.py
 - **joblib** — agent/tools_tier1.py
 - **langgraph** — agent/graph.py
 - **matplotlib** — analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/mpl_style.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py
 - **numpy** — agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/scenario_exhibits.py, analysis/staging_exhibits.py, app/api/main.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py, engine/vasicek.py
 - **pandas** — agent/tools_tier1.py, analysis/ead_exhibits.py, analysis/eda_suite.py, analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py, analysis/fit_vasicek.py, analysis/run_ecl.py, analysis/run_scenarios.py, analysis/staging_exhibits.py, app/api/main.py, data/panel/build_panel.py, engine/ead.py, engine/ecl.py, engine/hazard.py, engine/lgd.py, engine/satellite.py, engine/scenarios.py, engine/staging.py
 - **patsy** — engine/ecl.py, engine/staging.py
-- **pydantic** — agent/graph.py, agent/tools_tier1.py, app/api/main.py
+- **pydantic** — agent/graph.py, agent/mcp_server.py, agent/tier3_retrieval.py, agent/tools_tier1.py, app/api/main.py
 - **scipy** — analysis/eda_suite.py, engine/ecl.py, engine/vasicek.py
 - **sklearn** — analysis/fit_challenger.py, analysis/fit_hazard.py, analysis/fit_lgd.py
 - **statsmodels** — engine/hazard.py, engine/lgd.py, engine/satellite.py
@@ -381,11 +420,11 @@ Called-by (reverse — **impact map**: who breaks if you change the callee):
 
 Per file: a `struct_hash` over signatures (function params, class methods, import bases) — not raw bytes. Change level vs the previous run:
 
-- `agent/__init__.py` — **NEW**  `ea1badefcb351eba`
-- `agent/graph.py` — **NEW**  `b4ca5417920b2ae2`
-- `agent/tools_tier1.py` — **NEW**  `2ede3b53f210b698`
-- `app/api/__init__.py` — **NEW**  `ea1badefcb351eba`
-- `app/api/main.py` — **NEW**  `1e482acb412b1d01`
+- `agent/graph.py` — **STRUCTURAL**  `b53b3f6a4f3c038f`
+- `agent/mcp_server.py` — **NEW**  `874d403a5f958520`
+- `agent/tier3_retrieval.py` — **NEW**  `f9b36de6c168c74e`
+- `agent/__init__.py` — **NONE**  `ea1badefcb351eba`
+- `agent/tools_tier1.py` — **NONE**  `2ede3b53f210b698`
 - `analysis/ead_exhibits.py` — **NONE**  `5d148758d2b41005`
 - `analysis/eda_suite.py` — **NONE**  `92ce8b7ec7b2cc10`
 - `analysis/fit_challenger.py` — **NONE**  `5ee6cd72a620fb8a`
@@ -397,6 +436,8 @@ Per file: a `struct_hash` over signatures (function params, class methods, impor
 - `analysis/run_scenarios.py` — **NONE**  `cfe7b28be2262445`
 - `analysis/scenario_exhibits.py` — **NONE**  `362e2ea69a149517`
 - `analysis/staging_exhibits.py` — **NONE**  `3446e3cc3d4114c1`
+- `app/api/__init__.py` — **NONE**  `ea1badefcb351eba`
+- `app/api/main.py` — **NONE**  `1e482acb412b1d01`
 - `data/panel/__init__.py` — **NONE**  `ea1badefcb351eba`
 - `data/panel/build_panel.py` — **NONE**  `c5dbce64d6d620ec`
 - `engine/__init__.py` — **NONE**  `88bc99bc790d8e50`
@@ -831,7 +872,7 @@ _Agent layer: typed, deterministic tools + (Day 4) the LangGraph router._
 
 ### agent/graph.py
 
-_LangGraph orchestration for the IFRS 9 ECL copilot (Day 4)._
+_LangGraph orchestration for the IFRS 9 ECL copilot (Day 4 + Tier-3)._
 
 **Imports** — third-party: agent, langgraph, pydantic · local: — · stdlib: __future__, datetime, json, math, operator, os, pathlib, re, threading, typing
 
@@ -844,16 +885,22 @@ _LangGraph orchestration for the IFRS 9 ECL copilot (Day 4)._
 - `_call_llm(messages: list[dict]) -> tuple[str, str]` — Primary model, then FALLBACK_MODEL on ANY error; (text, model_used).
 - `_llm_route(question: str) -> tuple[str, str]` — Raw router completion for a question; (text, model_used).
 - `_llm_narrate(tool_result: dict) -> tuple[str, str]` — Raw narrator completion over ONLY the tool's returned JSON.
+- `_llm_narrate_docs(tool_result: dict) -> tuple[str, str]` — Raw narrator completion over ONLY the retrieved passages (Tier-3).
 - `_extract_json(text: str) -> dict` — Parse the router's JSON object, tolerating code fences / prose tails.
 - `decide_route(question: str) -> dict` — Classify a question -> {route, args, detail} with hard validation.
 - `_number_tokens(text: str) -> list[str]`
 - `_allowed_numbers(tool_result: dict) -> list[float]` — Every number a faithful narration may contain.
 - `narration_numbers_ok(text: str, tool_result: dict) -> bool` — True iff EVERY number token in the narration appears in the result.
 - `deterministic_narration(tool_result: dict) -> str` — Engine-authored fallback answer: the tool's own headline, verbatim.
+- `_numbers_in_passages(passages: list[dict]) -> list[float]` — Every number appearing verbatim in ANY retrieved passage's text.
+- `docs_answer_ok(text: str, tool_result: dict) -> bool` — True iff the narration cites a real passage AND invents no numbers.
+- `deterministic_docs_narration(tool_result: dict) -> str` — Fallback answer: list each retrieved passage under its citation.
 - `_now() -> str`
 - `_router_node(state: AgentState) -> dict`
 - `_make_tool_node(name: str)` — Node that executes ONE registry tool with already-validated args.
+- `_query_model_docs_node(state: AgentState) -> dict` — Tier-3 tool node: ALWAYS retrieves on the user's own original
 - `_narrator_node(state: AgentState) -> dict`
+- `_narrate_docs(result: dict) -> dict` — Tier-3 narration branch: cite-and-quote only, or the deterministic
 - `_refusal_node(state: AgentState) -> dict`
 - `build_graph()` — Compile the StateGraph (router -> tool -> narrator | refusal).
 - `get_graph()`
@@ -863,6 +910,42 @@ _LangGraph orchestration for the IFRS 9 ECL copilot (Day 4)._
 **Data sources / paths referenced:**
 - `agent_runs.jsonl`
 - `https://openrouter.ai/api/v1`
+
+### agent/mcp_server.py
+
+_MCP server: the four Tier-1 tools exposed over the Model Context Protocol._
+
+**Imports** — third-party: agent, engine, fastmcp, pydantic · local: — · stdlib: __future__, pathlib, tomllib, typing
+
+**Functions:**
+- `_project_version() -> str` — Read [project].version from pyproject.toml (no hardcoded drift).
+- `_make_tool_wrapper(name: str, model: type[BaseModel], fn: Callable[..., dict]) -> Callable[..., dict]` — A single-argument forwarder: args -> fn(**args.model_dump()).
+- `engine_health() -> dict`
+
+### agent/tier3_retrieval.py
+
+_Tier-3 documentation retrieval over the wiki + IFRS 9 knowledge corpus._
+
+**Imports** — third-party: agent, pydantic · local: — · stdlib: __future__, importlib, pathlib, re, threading, types
+
+**Classes:**
+- `QueryModelDocsArgs` — Deliberately EMPTY (extra='forbid'): the router only classifies —
+
+**Functions:**
+- `_load_module(path: Path, name: str) -> ModuleType`
+- `_wiki_query_mod() -> ModuleType`
+- `_pageindex_mod() -> ModuleType`
+- `_wiki_graph() -> dict` — The wiki's typed graph, built ONCE and cached (module-scope singleton).
+- `_notes_index() -> tuple[dict, dict]` — The PageIndex tree + page text, loaded ONCE and cached.
+- `warm_up() -> None` — Build/load both indices now (mirrors tools_tier1.warm_up).
+- `_page_sections(page_path: Path, headings: list[dict]) -> list[tuple[str, int, int]]` — [(heading text, start file-line, end file-line)] for one page, in
+- `_score_section_text(text: str, q_tokens: list[str]) -> float`
+- `_best_section(page_path: Path, headings: list[dict], q_tokens: list[str], heading_hits: dict) -> tuple[str | None, str]` — The (heading, verbatim section text) whose BODY best matches the
+- `_wiki_anchor(heading_text: str) -> str` — Trim a parenthetical aside off a heading for a tidier anchor, e.g.
+- `_wiki_passages(question: str, limit: int) -> tuple[list[dict], list[dict]]`
+- `_section_number(title: str) -> str | None`
+- `_notes_passages(question: str, limit: int) -> tuple[list[dict], list[dict]]`
+- `query_model_docs(question: str, k: int=6) -> dict` — Deterministic two-source retrieval for a methodology/knowledge question.
 
 ### agent/tools_tier1.py
 
