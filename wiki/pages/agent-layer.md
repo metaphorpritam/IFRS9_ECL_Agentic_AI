@@ -10,6 +10,7 @@ sources:
 code:
   - ../agent/__init__.py
   - ../agent/tools_tier1.py
+  - ../agent/tools_tier2.py
   - ../agent/graph.py
   - ../agent/tier3_retrieval.py
   - ../agent/mcp_server.py
@@ -18,6 +19,8 @@ code:
   - ../tests/test_tools.py
   - ../tests/test_router.py
   - ../tests/test_api.py
+  - ../tests/test_contract.py
+  - ../tests/test_tier2.py
   - ../tests/test_tier3.py
   - ../tests/test_mcp.py
 links:
@@ -54,6 +57,21 @@ a univariate UER-only shock cannot reach Z. `shock_macro` therefore applies ever
 co-moving move along the **DFAST severe-minus-base direction** (loadings normalised to the named
 variable, applied per-concept deltas returned in `applied_peak_deltas_pp`). Without this the
 flagship demo question would return delta = 0.
+
+## App v2 additions (Day 5+)
+
+The API grew 7 read-only exhibit/model endpoints (`/api/model/*`,
+`/api/policy/*`, `/api/exhibits/list`) parsing the consultant's markdown
+under `outputs/` into JSON, a `/static/exhibits` mount, and
+`POST /api/agent/interpret` — Scenario Lab auto-interpretation that REUSES
+graph.py's narrator + verbatim-number/citation checks (never duplicated;
+falls back to the tool's own headline when the check fails). The UI/API
+seam is contract-first: `docs/api_contract.md` is the single source of
+truth, exercised field-by-field by `tests/test_contract.py` (SSE trace
+events are `{"node": ...}` dicts — documented there). Tier-2
+`analyze_data` (agent/tools_tier2.py): the LLM writes pandas, the sandbox
+EXECUTES it (AST-validated, one repair attempt, else refusal); tests in
+`tests/test_tier2.py`. Suite 481/481 green at review time.
 
 ## Known caveats
 

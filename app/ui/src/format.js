@@ -20,3 +20,24 @@ export const fmtTime = (ms) => {
   const p = (n) => String(n).padStart(2, '0');
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 };
+
+// A "*_pct" field is already 0-100 scale (per the contract's convention) —
+// never re-multiply it.
+export const fmtPctScale = (v, dp = 1) =>
+  v == null || Number.isNaN(Number(v)) ? '—' : `${Number(v).toFixed(dp)}%`;
+
+export const fmtNum = (v, dp = 0) =>
+  v == null || Number.isNaN(Number(v))
+    ? '—'
+    : Number(v).toLocaleString(undefined, {
+        minimumFractionDigits: dp,
+        maximumFractionDigits: dp,
+      });
+
+export const fmtHazard = (v) =>
+  v == null || Number.isNaN(Number(v)) ? '—' : Number(v).toFixed(4);
+
+export const fmtSigned = (v, dp = 1) =>
+  v == null || Number.isNaN(Number(v))
+    ? '—'
+    : `${Number(v) >= 0 ? '+' : '−'}${Math.abs(Number(v)).toFixed(dp)}`;

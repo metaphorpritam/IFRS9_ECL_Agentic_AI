@@ -1,45 +1,26 @@
 /**
- * API client — the single place the endpoint CONTRACT lives.
- * All paths are relative (/api/...) so the Vite dev proxy (-> :7860) and the
- * single-origin Docker deployment both work unchanged.
- *
- * Contract (FastAPI service implements these shapes):
- *
- * GET /api/ecl/summary
- *   { "allowance_m": 34.0, "coverage": 0.0203, "jensen_ratio": 1.035,
- *     "weights": {"up": 0.25, "base": 0.5, "severe": 0.25},
- *     "scenarios": [{"name": "up", "allowance_m": 27.7, "coverage": 0.0165}, ...] }
- *
- * GET /api/ecl/waterfall
- *   { "start": {"label": "Baseline allowance", "value_m": 34.0},
- *     "steps": [{"label": "Scenario reweight", "delta_m": 1.8},
- *               {"label": "UER shock +2pp",    "delta_m": 4.6}, ...],
- *     "end":   {"label": "Reported allowance", "value_m": 40.4} }
- *
- * GET /api/exhibits/credit_cycle
- *   { "calendar": ["2000Q2", ...],
- *     "ttc": [...], "pit": [...], "hybrid": [...], "observed": [...] }   (observed optional)
- *
- * POST /api/tools/reweight_scenarios   body {"w_up": w, "w_base": w, "w_down": w}
- * POST /api/tools/shock_macro          body {"var": "UER", "shock": 2.0, "shape": "parallel"}
- *   (canonical shapes = agent/tools_tier1.py pydantic models, extra="forbid")
- *   -> 200 on success; UI then refetches /api/ecl/summary and /api/ecl/waterfall.
- *
- * POST /api/agent/ask                  body {"question": "..."}
- *   { "answer": "...", "refusal": false,
- *     "tool_calls": [{"tool": "reweight_scenarios", "args": {...}}] }
- *   Refusals come back with "refusal": true and an "outside my validated scope" answer.
- *
- * GET /api/agent/stream  (SSE)
- *   default `message` events, data = JSON:
- *   {"type": "router" | "tool_call" | "tool_result" | "narration" | "error",
- *    "text"?: "...", "tool"?: "...", "args"?: {...}, "result"?: {...}}
+ * API client — coded ONLY against docs/api_contract.md (the seam contract).
+ * Every function below returns the exact JSON the contract documents; the
+ * only "adapters" here reshape a contract payload into a chart-friendly
+ * array (e.g. waterfall rows -> {start, steps, end}), never invent a field.
+ * All money fields are raw USD floats; components divide by 1e6 themselves.
  */
 
 const json = async (res) => {
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body?.detail ? JSON.stringify(body.detail) : detail;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(`HTTP ${res.status}: ${detail}`);
+  }
   return res.json();
 };
+
+const get = (url) => fetch(url).then(json);
 
 const post = (url, body) =>
   fetch(url, {
@@ -48,16 +29,20 @@ const post = (url, body) =>
     body: JSON.stringify(body),
   }).then(json);
 
-// Adapters: map the API's canonical payloads onto the shapes the components
-// consume (single seam — components stay contract-agnostic).
-export const getSummary = () =>
-  fetch('/api/ecl/summary').then(json).then((d) => ({
-    ...d,
-    allowance_m: d.weighted_allowance / 1e6,
-  }));
+// --------------------------------------------------------------- 1. engine
 
-// Shared shape for both waterfalls: the historical movement decomposition and
-// a tool response's waterfall_vs_baseline (identical row schema).
+export const getHealth = () => get('/api/health');
+
+export const getSummary = () => get('/api/ecl/summary');
+
+export const getWaterfall = (t0 = 20, t1 = 40) =>
+  get(`/api/ecl/waterfall?t0=${t0}&t1=${t1}`);
+
+export const getCreditCycle = () => get('/api/exhibits/credit_cycle');
+
+/** Shared row shape for /api/ecl/waterfall and a tool's waterfall_vs_baseline
+ * (identical 6-row schema: opening, stage_migration, remeasurement,
+ * derecognitions, new_loans, closing). */
 export const adaptWaterfallRows = (rows, startLabel, endLabel) => {
   const level = (name) => rows.find((c) => c.component === name);
   return {
@@ -72,35 +57,49 @@ export const adaptWaterfallRows = (rows, startLabel, endLabel) => {
   };
 };
 
-export const getWaterfall = () =>
-  fetch('/api/ecl/waterfall').then(json).then((d) => ({
-    ...adaptWaterfallRows(d.components, 'Opening allowance', 'Closing allowance'),
-    period_t0: d.period_t0,
-    period_t1: d.period_t1,
-  }));
+// -------------------------------------------------------------- tier-1 tools
 
-export const getCreditCycle = () =>
-  fetch('/api/exhibits/credit_cycle').then(json).then((d) => ({
-    calendar: d.points.map((p) => p.calendar),
-    ttc: d.points.map((p) => p.ttc_pd * 100),
-    pit: d.points.map((p) => p.pit_pd * 100),
-    observed: d.points.map((p) => p.observed_dr * 100),
-  }));
+export const shockMacro = (v, shock, shape = 'parallel') =>
+  post('/api/tools/shock_macro', { var: v, shock, shape });
 
-export const reweightScenarios = ({ up, base, severe }) =>
-  post('/api/tools/reweight_scenarios', {
-    w_up: up,
-    w_base: base,
-    w_down: severe,
-  });
+export const reweightScenarios = (w_up, w_base, w_down) =>
+  post('/api/tools/reweight_scenarios', { w_up, w_base, w_down });
 
-export const shockMacro = (uerShockPp) =>
-  post('/api/tools/shock_macro', {
-    var: 'UER',
-    shock: uerShockPp,
-    shape: 'parallel',
-  });
+export const rerunEcl = (segment = 'all') =>
+  post('/api/tools/rerun_ecl', { segment });
+
+export const decomposeWaterfall = (t0, t1) =>
+  post('/api/tools/decompose_waterfall', { t0, t1 });
+
+export const TOOL_FN = {
+  shock_macro: shockMacro,
+  reweight_scenarios: reweightScenarios,
+  rerun_ecl: rerunEcl,
+  decompose_waterfall: decomposeWaterfall,
+};
+
+// -------------------------------------------------------------------- agent
 
 export const askAgent = (question) => post('/api/agent/ask', { question });
 
 export const AGENT_STREAM_URL = '/api/agent/stream';
+
+/** Auto-interpretation: {tool, result} -> {interpretation, grounded, mode}. */
+export const interpretResult = (tool, result) =>
+  post('/api/agent/interpret', { tool, result });
+
+// ------------------------------------------------------------ The Model tab
+
+export const getModelCoefficients = () => get('/api/model/coefficients');
+
+export const getVariableDictionary = () => get('/api/model/variable_dictionary');
+
+export const getLgd = () => get('/api/model/lgd');
+
+// ----------------------------------------------------------- The Policy tab
+
+export const getStagingSensitivity = () => get('/api/policy/staging_sensitivity');
+
+export const getWeightsTable = () => get('/api/policy/weights_table');
+
+export const getExhibitsList = () => get('/api/exhibits/list');

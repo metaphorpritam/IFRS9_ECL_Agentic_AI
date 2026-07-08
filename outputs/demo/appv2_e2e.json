@@ -1,0 +1,87 @@
+{
+  "e_tab_endpoints_200": {
+    "passed": true,
+    "detail": {
+      "/api/health": 200,
+      "/api/ecl/summary": 200,
+      "/api/ecl/waterfall?t0=20&t1=40": 200,
+      "/api/exhibits/credit_cycle": 200,
+      "/api/exhibits/list": 200,
+      "/api/model/coefficients": 200,
+      "/api/model/variable_dictionary": 200,
+      "/api/model/lgd": 200,
+      "/api/policy/staging_sensitivity": 200,
+      "/api/policy/weights_table": 200
+    }
+  },
+  "a_scenario_interpret": {
+    "passed": true,
+    "detail": {
+      "scenario_status": 200,
+      "interpret_status": 200,
+      "interpret_body": {
+        "interpretation": "weights up/base/down = 0.20/0.50/0.30: weighted allowance $35.0m (+2.9% vs adopted 25/50/25 $34.0m); Jensen ratio 1.038x vs $33.8m at the averaged path. The coverage is 0.02093584895156969.",
+        "grounded": true,
+        "mode": "llm"
+      }
+    }
+  },
+  "b_tier2_analyze_data": {
+    "passed": true,
+    "detail": {
+      "status": 200,
+      "elapsed_s": 24.7,
+      "route": "analyze_data",
+      "answer": "The average updated LTV of stage 2 loans is 272.9774621332569.",
+      "trace": [
+        {
+          "node": "router",
+          "ts": "2026-07-08T14:35:01+00:00",
+          "route": "analyze_data",
+          "args": {},
+          "model": "google/gemma-4-31b-it",
+          "detail": "ok"
+        },
+        {
+          "node": "analyze_data",
+          "ts": "2026-07-08T14:35:10+00:00",
+          "status": "ok",
+          "tool_call_id": "tc-000042",
+          "headline": "analyze_data executed generated pandas code against the t=60 scored book (result shape None); full code in the audit trail (result hash b6c32ab9773272fd).",
+          "model": "google/gemma-4-31b-it",
+          "attempts": [
+            {
+              "attempt": 1,
+              "code": "result = book[book['stage'] == 2]['updated_ltv'].mean()",
+              "ok": true,
+              "error": null
+            }
+          ]
+        },
+        {
+          "node": "narrator",
+          "ts": "2026-07-08T14:35:22+00:00",
+          "mode": "llm",
+          "model": "google/gemma-4-31b-it",
+          "number_check_passed": true
+        }
+      ]
+    }
+  },
+  "c_tier3_citation": {
+    "passed": true,
+    "detail": {
+      "status": 200,
+      "route": "query_model_docs",
+      "answer": "The ECL movement waterfall decomposes the change in allowance between two periods. For the movement from t=20 to t=40, the waterfall is as follows: opening 24.5 $\\rightarrow$ stage migration +3.9 $\\rightarrow$ remeasurement +26.0 $\\rightarrow$ derecognitions \u221221.2 $\\rightarrow$ new loans +999.4 $\\rightarrow$ closing 1,032.6 (all figures in $m), with an identity residual of < $0.01 [pages/ecl-engine.md#Headline numbers]."
+    }
+  },
+  "d_poem_refusal": {
+    "passed": true,
+    "detail": {
+      "status": 200,
+      "route": "REFUSE",
+      "answer": "That question is outside my validated scope, so I will not answer it with made-up numbers. Every figure I report is computed by the frozen IFRS 9 ECL engine through four validated tool families: (1) shock_macro \u2014 coherent macro shocks (UER / HPI / GDP, parallel or peak-and-revert) applied to the base scenario; (2) reweight_scenarios \u2014 scenario-weight sensitivity of the weighted allowance and the Jensen gap; (3) rerun_ecl \u2014 allowance for a book segment (all, stage1, stage2, stage3, investor, high_ltv); (4) decompose_waterfall \u2014 the allowance movement decomposition between two reporting snapshots; (5) analyze_data \u2014 long-tail analytical questions (rankings, filters, group-bys, ...) answered by generating pandas code that is EXECUTED in a validated sandbox against the scored book, never by LLM arithmetic; and one documentation tool, (6) query_model_docs \u2014 methodology / definition questions answered strictly from the model-development wiki and the IFRS 9 knowledge corpus, every claim cited to a real page or note section. Rephrase your question into one of those, or ask the model owners to extend the validated toolset."
+    }
+  }
+}

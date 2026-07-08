@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { adaptWaterfallRows, getWaterfall } from '../api.js';
-import { useECharts } from '../charts/useECharts.js';
-import { COLORS, CHART_TEXT, GRID_LINE, INK_MUTED, SURFACE } from '../palette.js';
+import { useECharts, useThemeVersion } from '../charts/useECharts.js';
+import { colors, chartText, gridLine, inkMuted, surface } from '../palette.js';
 import { fmtMillions, fmtSignedM } from '../format.js';
+import StageGuide from './StageGuide.jsx';
 
 /** Build the classic floating-bar waterfall: invisible base + visible bar. */
 function buildOption(wf) {
+  const c = colors();
+  const text = chartText();
+  const grid = gridLine();
+  const muted = inkMuted();
   const cats = [wf.start.label, ...wf.steps.map((s) => s.label), wf.end.label];
   const base = [];
   const bars = [];
@@ -15,7 +20,7 @@ function buildOption(wf) {
   bars.push({
     value: wf.start.value_m,
     kind: 'total',
-    itemStyle: { color: COLORS.accent, borderRadius: [4, 4, 0, 0] },
+    itemStyle: { color: c.accent, borderRadius: [4, 4, 0, 0] },
   });
 
   // Movement steps float from the running total.
@@ -28,7 +33,7 @@ function buildOption(wf) {
       kind: s.delta_m >= 0 ? 'up' : 'down',
       delta: s.delta_m,
       itemStyle: {
-        color: s.delta_m >= 0 ? COLORS.warn : COLORS.good,
+        color: s.delta_m >= 0 ? c.warn : c.good,
         borderRadius: 4,
       },
     });
@@ -40,11 +45,11 @@ function buildOption(wf) {
   bars.push({
     value: wf.end.value_m,
     kind: 'total',
-    itemStyle: { color: COLORS.accent, borderRadius: [4, 4, 0, 0] },
+    itemStyle: { color: c.accent, borderRadius: [4, 4, 0, 0] },
   });
 
   return {
-    textStyle: CHART_TEXT,
+    textStyle: text,
     grid: { left: 56, right: 16, top: 32, bottom: 56 },
     tooltip: {
       trigger: 'item',
@@ -59,20 +64,20 @@ function buildOption(wf) {
       type: 'category',
       data: cats,
       axisLabel: {
-        color: INK_MUTED,
+        color: muted,
         interval: 0,
         rotate: cats.length > 5 ? 20 : 0,
         fontSize: 11,
       },
-      axisLine: { lineStyle: { color: GRID_LINE } },
+      axisLine: { lineStyle: { color: grid } },
       axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
       name: 'Allowance ($m)',
-      nameTextStyle: { color: INK_MUTED },
-      axisLabel: { color: INK_MUTED },
-      splitLine: { lineStyle: { color: GRID_LINE, type: 'dashed' } },
+      nameTextStyle: { color: muted },
+      axisLabel: { color: muted },
+      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
     },
     series: [
       {
@@ -91,11 +96,11 @@ function buildOption(wf) {
         type: 'bar',
         stack: 'wf',
         data: bars,
-        itemStyle: { borderColor: SURFACE, borderWidth: 1 },
+        itemStyle: { borderColor: surface(), borderWidth: 1 },
         label: {
           show: true,
           position: 'top',
-          color: CHART_TEXT.color,
+          color: text.color,
           fontSize: 11,
           formatter: (p) =>
             p.data.kind === 'total'
@@ -107,77 +112,48 @@ function buildOption(wf) {
   };
 }
 
-function StageGuide() {
-  return (
-    <details class="stage-guide">
-      <summary>What do the stages and horizons mean?</summary>
-      <ul>
-        <li>
-          <b>Stage 1 — performing</b> (no significant deterioration since
-          origination): allowance = <b>12-month ECL</b> — expected loss from
-          defaults possible in the <i>next 4 quarters</i> only:
-          Σ S(t−1)·λ<sub>t</sub>·LGD<sub>t</sub>·EAD<sub>t</sub>·(1+EIR)<sup>−t</sup>, t ≤ 4.
-        </li>
-        <li>
-          <b>Stage 2 — significant increase in credit risk</b> (lifetime PD now
-          &gt; 2× its at-origination level + 0.5pp add-on): the same sum over the
-          <b> full remaining contractual life</b> (up to 40 quarters here) —
-          same loan, longer horizon, bigger allowance.
-        </li>
-        <li>
-          <b>Stage 3 — credit-impaired</b> (defaulted): lifetime ECL collapses
-          to LGD × current exposure — scenario-invariant by construction.
-        </li>
-      </ul>
-      <p>
-        The stage decides the <i>horizon</i>; the engine always computes both
-        12-month and lifetime ECL for every loan and reports the one the stage
-        prescribes. This book (2015Q1 reporting date) is a calm-quarter book:
-        7,803 loans in Stage 1, none in Stage 2, 43 in Stage 3 — so the
-        reported allowance is dominated by 12-month ECL, which is exactly where
-        scenario weights and macro shocks act.
-      </p>
-    </details>
-  );
-}
-
 /**
- * ECharts waterfall. Two modes:
- *  - action mode: the last shock's engine waterfall vs baseline;
- *  - historical mode: the fixed movement decomposition between two panel
- *    snapshots (independent of the scenario controls by design).
+ * ECharts waterfall. Three modes, resolved from `action = {tool, label, result}`:
+ *  - shock_macro: result.waterfall_vs_baseline (baseline vs shocked allowance);
+ *  - decompose_waterfall: result.components (its own custom t0/t1 window);
+ *  - anything else (reweight_scenarios, rerun_ecl) or no action yet:
+ *    the fixed historical movement between two panel snapshots (t0/t1 props).
  */
-export default function WaterfallChart({ rev, action }) {
+export default function WaterfallChart({ t0 = 20, t1 = 40, action }) {
   const [hist, setHist] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let alive = true;
-    getWaterfall()
+    getWaterfall(t0, t1)
       .then((d) => alive && (setHist(d), setError(null)))
       .catch((e) => alive && setError(e.message));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [t0, t1]);
 
-  const actionRows = action?.result?.waterfall_vs_baseline;
-  const wf = useMemo(
-    () =>
-      actionRows
-        ? adaptWaterfallRows(actionRows, 'Baseline allowance', 'Shocked allowance')
-        : hist,
-    [actionRows, hist],
-  );
+  const r = action?.result;
+  const shockRows = action?.tool === 'shock_macro' ? r?.waterfall_vs_baseline : null;
+  const decomposeRows = action?.tool === 'decompose_waterfall' ? r?.components : null;
 
-  const option = useMemo(() => (wf ? buildOption(wf) : null), [wf]);
+  const wf = useMemo(() => {
+    if (shockRows) return adaptWaterfallRows(shockRows, 'Baseline allowance', 'Shocked allowance');
+    if (decomposeRows) return adaptWaterfallRows(decomposeRows, 'Opening allowance', 'Closing allowance');
+    return hist;
+  }, [shockRows, decomposeRows, hist]);
+
+  const themeV = useThemeVersion();
+  const option = useMemo(() => (wf ? buildOption(wf) : null), [wf, themeV]);
   const ref = useECharts(option);
 
-  const subtitle = actionRows
+  const subtitle = shockRows
     ? `Effect of ${action.label} vs the baseline scenario — every bar is an engine number.`
-    : `Historical movement between panel snapshots ${hist?.period_t0 ?? '2005Q2'} → ${
-        hist?.period_t1 ?? '2010Q1'
-      } (fixed exhibit — scenario controls act on the reported allowance above, not on this history). Run a shock to see its effect decomposed here.`;
+    : decomposeRows
+      ? `Movement decomposition ${r.period_t0} → ${r.period_t1} — every bar is an engine number.`
+      : `Historical movement between panel snapshots ${hist?.period_t0 ?? '2005Q2'} → ${
+          hist?.period_t1 ?? '2010Q1'
+        } (fixed exhibit — scenario controls act on the reported allowance above, not on this history).`;
 
   return (
     <section class="panel">

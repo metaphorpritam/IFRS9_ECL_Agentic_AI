@@ -49,3 +49,7 @@ Post-ship bugfix: UI-API contract seam (both 422s user-reported). Root cause: UI
 ## 2026-07-07 21:33 UTC — tags: stretch, handoff
 
 Stretch 1+2 IN FLIGHT (session tokens low): author:tier3 (agent/tier3_retrieval.py + router knowledge route + alias curation) and author:mcp (agent/mcp_server.py fastmcp 3.4.3, parity-tested) running; QUEUED: review:stretch (citation tracing, router regression, MCP parity), ship:stretch (Docker image gains wiki/ + knowledge/corpus+index + 2 skill scripts; local + live Space E2E: 'Explain the ECL movement waterfall' must return CITED answer, poem must still refuse; README + 6-question demo). RESUME: Workflow scriptPath workflows/scripts/ifrs9-stretch-tier3-mcp-wf_c7a2cabb-558.js resumeFromRunId wf_c7a2cabb-558. fastmcp added to deps. Space update is user-pre-authorized (existing public Space).
+
+## 2026-07-08 12:57 UTC — tags: stretch, ship
+
+Stretch 1+2 SHIPPED (first sonnet/high-executor + Fable-review run): Tier-3 query_model_docs live (cited answers from wiki+corpus; 'Explain the ECL movement waterfall' now cites instead of refusing - verified on Space), MCP server (schema-verbatim, parity-tested; register via uv run python -m agent.mcp_server). Suite 422/422. Review catch: knowledge route was swallowing decompose_waterfall question 9 - fixed. Space needed factory_reboot after HF APP_STARTING hang (hardware null ~25min; platform-side). Remaining stretch: Tier-2 sandbox, then App v2 (north-star tabs + design pass + auto-interpretation), Freddie rung 3.

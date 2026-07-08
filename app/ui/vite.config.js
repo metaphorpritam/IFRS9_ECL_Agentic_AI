@@ -12,6 +12,12 @@ export default defineConfig({
         target: 'http://localhost:7860',
         changeOrigin: true,
       },
+      // Exhibit PNGs (/static/exhibits/*) are served by the same FastAPI
+      // app — proxy them too so images render in `npm run dev`.
+      '/static': {
+        target: 'http://localhost:7860',
+        changeOrigin: true,
+      },
     },
   },
   build: {

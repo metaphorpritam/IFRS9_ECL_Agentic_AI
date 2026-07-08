@@ -87,6 +87,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+import agent.graph as agent_graph
 import agent.tools_tier1 as tools
 from agent.tools_tier1 import (
     DecomposeWaterfallArgs,
@@ -100,6 +101,7 @@ logger = logging.getLogger("ecl.api")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 UI_DIST = PROJECT_ROOT / "app" / "ui" / "dist"
+OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 Z_PATH_CSV = PROJECT_ROOT / "outputs" / "vasicek" / "z_path.csv"
 
 #: seconds between SSE keep-alive comments on /api/agent/stream
@@ -352,6 +354,14 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
 
 
+class InterpretRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tool: Literal["shock_macro", "reweight_scenarios", "rerun_ecl",
+                 "decompose_waterfall", "query_model_docs"]
+    result: dict
+
+
 # ---------------------------------------------------------------------------
 # app + lifespan
 # ---------------------------------------------------------------------------
@@ -525,6 +535,423 @@ def credit_cycle() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# App v2: The Model / Policy tabs -- read-only markdown-exhibit parsers.
+#
+# These views parse the consultant's already-written analysis markdown
+# under outputs/ into JSON on every request (the files are small; no engine
+# state is touched, nothing is appended to the audit trail). Exact response
+# shapes are documented in docs/api_contract.md — THAT file is the single
+# source of truth the UI author codes against, not this docstring.
+# ---------------------------------------------------------------------------
+
+
+def _md_table_span(lines: list[str]) -> tuple[int, int] | None:
+    """First contiguous run of '|'-prefixed lines -> (start, end) exclusive."""
+    i = 0
+    while i < len(lines):
+        if lines[i].lstrip().startswith("|"):
+            j = i
+            while j < len(lines) and lines[j].lstrip().startswith("|"):
+                j += 1
+            return i, j
+        i += 1
+    return None
+
+
+def _md_table_rows(block: list[str]) -> list[dict]:
+    """A GFM pipe table (header, separator, data rows...) -> list of dicts."""
+    header = [c.strip() for c in block[0].strip().strip("|").split("|")]
+    rows = []
+    for line in block[2:]:
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != len(header):
+            continue
+        rows.append(dict(zip(header, cells)))
+    return rows
+
+
+def _md_sections(text: str) -> list[tuple[str, str]]:
+    """(title, body) for every '## ' section of a markdown file, in order."""
+    return re.findall(r"^## (.+?)\n(.*?)(?=\n## |\Z)", text, flags=re.S | re.M)
+
+
+def _num(s: str) -> float:
+    return float(s.replace(",", "").replace("+", ""))
+
+
+def _pct(s: str) -> float:
+    return float(s.strip().rstrip("%"))
+
+
+def _parse_p(s: str) -> tuple[float, str]:
+    """'<1e-16' -> (1e-16, '<1e-16'); '2.35e-06' -> (2.35e-06, '2.35e-06')."""
+    s = s.strip()
+    return (float(s[1:]) if s.startswith("<") else float(s)), s
+
+
+def _parse_ci(s: str) -> list[float]:
+    lo, hi = s.strip().strip("[]").split(",")
+    return [float(lo), float(hi)]
+
+
+def _parse_hazard_ratios() -> dict:
+    """outputs/hazard/hazard_ratios.md -> {'default': {...}, 'prepay': {...}}."""
+    text = (OUTPUTS_DIR / "hazard" / "hazard_ratios.md").read_text(
+        encoding="utf-8")
+    out: dict = {}
+    for title, body in _md_sections(text):
+        m = re.match(r"(Default|Prepayment) hazard", title)
+        if not m:
+            continue
+        key = "default" if m.group(1) == "Default" else "prepay"
+        stats = re.search(
+            r"n = ([\d,]+) loan-quarters, events = ([\d,]+), "
+            r"McFadden pseudo-R2 = ([\d.]+)", body)
+        lines = body.splitlines()
+        span = _md_table_span(lines)
+        table_rows = _md_table_rows(lines[span[0]:span[1]]) if span else []
+        fs = re.search(r"\*\*Family stories\*\*\n\n(.*)", body, flags=re.S)
+        stories = dict(re.findall(
+            r"-\s*\*\*(\w+)\*\*\s*--\s*(.*?)(?=\n-\s*\*\*|\Z)",
+            fs.group(1), flags=re.S)) if fs else {}
+        coefficients = [{
+            "variable": r["Covariate"],
+            "family": r["family"],
+            "hazard_ratio": float(r["HR = exp(coef)"]),
+            "ci": _parse_ci(r["95% CI"]),
+            "p": _parse_p(r["p"])[0],
+            "p_display": _parse_p(r["p"])[1],
+            "story": stories.get(r["family"], "").strip(),
+        } for r in table_rows]
+        out[key] = {
+            "n_fit": int(_num(stats.group(1))) if stats else None,
+            "events": int(_num(stats.group(2))) if stats else None,
+            "mcfadden_r2": float(stats.group(3)) if stats else None,
+            "coefficients": coefficients,
+        }
+    return out
+
+
+def _parse_fit_stats() -> dict:
+    """outputs/hazard/fit_stats.md -> AUCs, seasoning peak, net-UER note."""
+    text = (OUTPUTS_DIR / "hazard" / "fit_stats.md").read_text(
+        encoding="utf-8")
+    lines = text.splitlines()
+    span = _md_table_span(lines)
+    rows = _md_table_rows(lines[span[0]:span[1]])
+    models = {
+        ("default" if r["Model"] == "default" else "prepay"): {
+            "n_fit": int(_num(r["n (fit)"])),
+            "events": int(_num(r["events"])),
+            "train_auc": float(r["train AUC"]),
+            "oot_auc": float(r["OOT AUC"]),
+            "mcfadden_r2": float(r["McFadden R2"]),
+        } for r in rows
+    }
+    seasoning_m = re.search(
+        r"Seasoning peak: fitted (\d+)q vs empirical (\d+)q "
+        r"\(tolerance (\d+)q; plausible window \((\d+), (\d+)\)\)", text)
+    seasoning = {
+        "fitted_q": int(seasoning_m.group(1)),
+        "empirical_q": int(seasoning_m.group(2)),
+        "tolerance_q": int(seasoning_m.group(3)),
+        "plausible_window_q": [int(seasoning_m.group(4)),
+                               int(seasoning_m.group(5))],
+    } if seasoning_m else None
+    uer_m = re.search(r"Unemployment shock: (.+?)\n\n", text, flags=re.S)
+    dt_m = re.search(r"Double trigger: (.+?)\n\n", text, flags=re.S)
+    return {
+        **models,
+        "seasoning_peak": seasoning,
+        "net_uer_effect_note": uer_m.group(1).strip() if uer_m else None,
+        "double_trigger_note": dt_m.group(1).strip() if dt_m else None,
+    }
+
+
+_VARDICT_COLUMNS = {
+    "Variable (model name)": "variable",
+    "Source → transformation": "source_transformation",
+    "Lag / window": "lag_window",
+    "Economic rationale": "economic_rationale",
+    "Expected sign": "expected_sign",
+    "Fitted (verified)": "fitted_verified",
+    "Consumed by": "consumed_by",
+}
+
+
+def _parse_variable_dictionary() -> dict:
+    """outputs/variable_dictionary.md -> {preamble, rows, notes}."""
+    lines = (OUTPUTS_DIR / "variable_dictionary.md").read_text(
+        encoding="utf-8").splitlines()
+    span = _md_table_span(lines)
+    preamble = "\n".join(lines[1:span[0]]).strip()
+    notes = "\n".join(lines[span[1]:]).strip()
+    raw_rows = _md_table_rows(lines[span[0]:span[1]])
+    rows = [{_VARDICT_COLUMNS.get(k, k): v for k, v in r.items()}
+            for r in raw_rows]
+    return {"preamble": preamble, "rows": rows, "notes": notes}
+
+
+_LGD_METRIC_KEYS = {
+    "mean realised LGD": "mean_realised_lgd",
+    "mean predicted LGD": "mean_predicted_lgd",
+    "gap (pred - real)": "gap_pred_minus_real",
+    "cure rate realised": "cure_rate_realised",
+    "cure rate predicted": "cure_rate_predicted",
+    "mean sev (non-cure) realised": "mean_sev_noncure_realised",
+    "mean sev (non-cure) predicted": "mean_sev_noncure_predicted",
+    "decile MAE (LGD)": "decile_mae_lgd",
+}
+
+_LGD_EXHIBITS = [
+    {"id": "lgd_calibration_ltv",
+     "png_url": "/static/exhibits/lgd/calibration_ltv.png"},
+    {"id": "lgd_cure_by_ltv",
+     "png_url": "/static/exhibits/lgd/cure_by_ltv.png"},
+    {"id": "lgd_distribution",
+     "png_url": "/static/exhibits/lgd/lgd_distribution.png"},
+]
+
+
+def _parse_lgd_report() -> dict:
+    """outputs/lgd/lgd_report.md -> key numbers + the three LGD exhibits."""
+    text = (OUTPUTS_DIR / "lgd" / "lgd_report.md").read_text(
+        encoding="utf-8")
+
+    def _section_rows(title_prefix: str) -> list[dict]:
+        for title, body in _md_sections(text):
+            if title.startswith(title_prefix):
+                lines = body.splitlines()
+                span = _md_table_span(lines)
+                return _md_table_rows(lines[span[0]:span[1]]) if span else []
+        return []
+
+    cure_stage = [{
+        "variable": r[""], "coef": float(r["coef"]), "se": float(r["se"]),
+        "z": float(r["z"]), "p": float(r["p"]),
+        "odds_ratio": float(r["odds_ratio"]),
+    } for r in _section_rows("Stage 1")]
+    severity_stage = [{
+        "variable": r[""], "coef": float(r["coef"]),
+        "se_hc1": float(r["se(HC1)"]), "z": float(r["z"]),
+        "p": float(r["p"]),
+    } for r in _section_rows("Stage 2")]
+    oot_calibration = {
+        _LGD_METRIC_KEYS.get(r["metric"], r["metric"]):
+            {"train": float(r["train"]), "oot": float(r["OOT"])}
+        for r in _section_rows("OOT calibration")
+    }
+
+    cure_rate_m = re.search(r"cure rate ([\d.]+)%", text)
+    cure_auc_m = re.search(r"Cure AUC: train ([\d.]+), OOT ([\d.]+)\.", text)
+    loading_m = re.search(
+        r"Loading = E\[max\(lgd-1,0\) \| non-cure\] = \*\*([\d.]+)\*\*", text)
+
+    return {
+        "cure_rate": (float(cure_rate_m.group(1)) / 100.0
+                     if cure_rate_m else None),
+        "cure_auc": ({"train": float(cure_auc_m.group(1)),
+                     "oot": float(cure_auc_m.group(2))}
+                    if cure_auc_m else None),
+        "excess_loss_loading": (float(loading_m.group(1))
+                               if loading_m else None),
+        "oot_calibration": oot_calibration,
+        "cure_stage_coefficients": cure_stage,
+        "severity_stage_coefficients": severity_stage,
+        "exhibits": _LGD_EXHIBITS,
+    }
+
+
+def _parse_staging_sensitivity() -> dict:
+    """outputs/staging/staging_report.md -> the threshold-vs-Stage2 table."""
+    text = (OUTPUTS_DIR / "staging" / "staging_report.md").read_text(
+        encoding="utf-8")
+    for title, body in _md_sections(text):
+        if "Governance sensitivity" not in title:
+            continue
+        lines = body.splitlines()
+        span = _md_table_span(lines)
+        rows = _md_table_rows(lines[span[0]:span[1]])
+        thresholds = [c for c in rows[0] if c != "snapshot"]
+        out_rows = [{
+            "t": int(re.search(r"\d+", r["snapshot"]).group()),
+            "period": str(panel_time_to_period(
+                int(re.search(r"\d+", r["snapshot"]).group()))),
+            "stage2_share_pct": {k: _pct(r[k]) for k in thresholds},
+        } for r in rows]
+        reading_m = re.search(r"Reading: (.+?)(?:\n\n|\Z)", body, flags=re.S)
+        add_on_m = re.search(r"Add-on held at ([\d.]+)pp", body)
+        return {
+            "add_on_pp": float(add_on_m.group(1)) if add_on_m else None,
+            "thresholds": thresholds,
+            "rows": out_rows,
+            "reading": reading_m.group(1).strip() if reading_m else None,
+            "image_url": "/static/exhibits/staging/stage2_sensitivity.png",
+        }
+    raise HTTPException(status_code=503,
+                        detail="Governance sensitivity table not found in "
+                               "outputs/staging/staging_report.md")
+
+
+@app.get("/api/model/coefficients")
+def model_coefficients() -> dict:
+    """Hazard-ratio families + fit stats for The Model tab (see contract)."""
+    return {
+        "models": _parse_hazard_ratios(),
+        "fit_stats": _parse_fit_stats(),
+        "source_files": ["outputs/hazard/hazard_ratios.md",
+                         "outputs/hazard/fit_stats.md"],
+    }
+
+
+@app.get("/api/model/variable_dictionary")
+def model_variable_dictionary() -> dict:
+    """Every modelled variable: source, window, rationale, fitted sign."""
+    return _parse_variable_dictionary()
+
+
+@app.get("/api/model/lgd")
+def model_lgd() -> dict:
+    """Two-stage workout LGD: cure/severity coefficients + calibration."""
+    return _parse_lgd_report()
+
+
+@app.get("/api/policy/staging_sensitivity")
+def policy_staging_sensitivity() -> dict:
+    """SICR ratio-threshold vs Stage-2 share -- the governance dial."""
+    return _parse_staging_sensitivity()
+
+
+#: three canned scenario-weight sets for the Policy tab's weights table
+CANNED_WEIGHT_SETS = [
+    {"id": "adopted", "label": "Adopted (25/50/25)",
+     "w_up": 0.25, "w_base": 0.50, "w_down": 0.25},
+    {"id": "equal_thirds", "label": "Equal-thirds (33/33/33)",
+     "w_up": 1.0 / 3.0, "w_base": 1.0 / 3.0, "w_down": 1.0 / 3.0},
+    {"id": "downside_tilt", "label": "Downside-tilted (15/35/50)",
+     "w_up": 0.15, "w_base": 0.35, "w_down": 0.50},
+]
+
+
+@app.get("/api/policy/weights_table")
+def policy_weights_table() -> dict:
+    """Scenario table + the weighted allowance at 3 canned weight sets.
+
+    GOVERNANCE NOTE (deliberate): each canned weight set is computed by
+    calling the real ``tools.reweight_scenarios`` tool, never re-derived —
+    so every call to this endpoint appends THREE lines to
+    outputs/agent_log/tool_calls.jsonl (one per canned set). That is
+    treated as a feature: the audit trail is meant to record every
+    reweighting the app has ever shown a user, including from this Policy
+    tab convenience table, not just from the Copilot chat.
+    """
+    state = tools._state()
+    tot = state.scenario_totals
+    scenario_totals = [
+        {"name": n, "allowance": float(tot[n]),
+         "coverage": float(tot[n] / state.balance)}
+        for n in ("up", "base", "down")
+    ]
+    weight_sets = []
+    for spec in CANNED_WEIGHT_SETS:
+        result = tools.reweight_scenarios(
+            w_up=spec["w_up"], w_base=spec["w_base"], w_down=spec["w_down"])
+        weight_sets.append({
+            "id": spec["id"], "label": spec["label"],
+            "weights": result["weights"],
+            "weighted_allowance": result["weighted_allowance"],
+            "coverage": result["coverage"],
+            "jensen_ratio": result["jensen_ratio"],
+            "delta_vs_adopted_pct": result["delta_vs_adopted_pct"],
+        })
+    return {"amounts_in": "USD", "scenario_totals": scenario_totals,
+            "weight_sets": weight_sets}
+
+
+#: servable exhibit PNGs (module memory note: the fixed, reviewed list —
+#: not every PNG under outputs/, only the ones the consultant curated for
+#: The Model / Policy tabs)
+EXHIBITS = [
+    {"id": "hazard_age_baseline", "path": "hazard/age_baseline.png",
+     "title": "Seasoning (age) baseline hazard",
+     "caption": "Fitted natural-cubic-spline age baseline of the default "
+                "hazard."},
+    {"id": "hazard_pd_term_structure", "path": "hazard/pd_term_structure.png",
+     "title": "PD term structure",
+     "caption": "Lifetime PD term structure implied by the fitted hazards."},
+    {"id": "lgd_calibration_ltv", "path": "lgd/calibration_ltv.png",
+     "title": "LGD calibration by updated LTV",
+     "caption": "Realised vs predicted LGD by updated-LTV decile, train vs "
+                "OOT."},
+    {"id": "lgd_cure_by_ltv", "path": "lgd/cure_by_ltv.png",
+     "title": "Cure rate by updated LTV",
+     "caption": "Realised vs predicted cure rate by updated-LTV decile."},
+    {"id": "lgd_distribution", "path": "lgd/lgd_distribution.png",
+     "title": "Realised LGD distribution",
+     "caption": "Bimodal shape of realised workout LGD motivating the "
+                "two-stage model."},
+    {"id": "staging_stage2_sensitivity",
+     "path": "staging/stage2_sensitivity.png",
+     "title": "Stage-2 share vs SICR threshold",
+     "caption": "Stage-2 share of the book at t=20 and t=40 across SICR "
+                "ratio thresholds."},
+    {"id": "staging_stage_distribution",
+     "path": "staging/stage_distribution.png",
+     "title": "Stage distribution over time",
+     "caption": "Stage 1/2/3 population shares at each reporting "
+                "snapshot."},
+    {"id": "scenario_jensen_gap", "path": "scenario_ecl/jensen_gap.png",
+     "title": "Jensen gap",
+     "caption": "Weighted-scenario allowance vs allowance at the "
+                "weighted-average macro path."},
+    {"id": "scenario_ecl_bars", "path": "scenario_ecl/scenario_ecl_bars.png",
+     "title": "Scenario ECL comparison",
+     "caption": "Reported allowance under the up / base / down scenarios."},
+    {"id": "scenario_z_paths", "path": "scenario_ecl/z_paths.png",
+     "title": "Scenario Z paths",
+     "caption": "Recovered credit-cycle factor Z under each scenario's "
+                "macro path."},
+    {"id": "vasicek_credit_cycle", "path": "vasicek/credit_cycle.png",
+     "title": "Credit cycle (PIT vs TTC)",
+     "caption": "Recovered systematic factor Z_t and the PIT-vs-TTC PD gap "
+                "through the cycle."},
+    {"id": "eda_default_rate_vs_macro",
+     "path": "eda/default_rate_vs_macro.png",
+     "title": "Default rate vs macro",
+     "caption": "Quarterly default rate against the macro series (EDA)."},
+    {"id": "eda_hazard_by_loan_age", "path": "eda/hazard_by_loan_age.png",
+     "title": "Hazard by loan age",
+     "caption": "Empirical default hazard by loan age (EDA)."},
+    {"id": "eda_lgd_realised_bimodal",
+     "path": "eda/lgd_realised_bimodal.png",
+     "title": "Realised LGD (EDA)",
+     "caption": "Raw bimodal realised-LGD histogram, before modelling."},
+    {"id": "eda_origination_quality", "path": "eda/origination_quality.png",
+     "title": "Origination quality over vintages",
+     "caption": "FICO / LTV origination quality drift across vintages."},
+    {"id": "eda_prepay_vs_rate_incentive",
+     "path": "eda/prepay_vs_rate_incentive.png",
+     "title": "Prepayment vs rate incentive",
+     "caption": "Empirical prepayment rate against the note-vs-market rate "
+                "incentive."},
+    {"id": "eda_vintage_cumulative_default",
+     "path": "eda/vintage_cumulative_default.png",
+     "title": "Cumulative default by vintage",
+     "caption": "Cumulative default curves by origination vintage."},
+]
+
+
+@app.get("/api/exhibits/list")
+def exhibits_list() -> dict:
+    """id -> {title, png_url, caption} for every servable exhibit PNG."""
+    return {"exhibits": [
+        {"id": e["id"], "title": e["title"],
+         "png_url": f"/static/exhibits/{e['path']}", "caption": e["caption"]}
+        for e in EXHIBITS
+    ]}
+
+
+# ---------------------------------------------------------------------------
 # 2a. Tier-1 tools (pydantic arg models double as the OpenAPI schema;
 #     FastAPI 422s malformed bodies BEFORE the engine runs — governing rule)
 # ---------------------------------------------------------------------------
@@ -602,8 +1029,70 @@ async def agent_stream() -> StreamingResponse:
 
 
 # ---------------------------------------------------------------------------
-# 3. the built SPA (mounted LAST so /api/* wins the route match)
+# 2c. auto-interpretation hook (Scenario Lab: narrate an ALREADY-COMPUTED
+#     tool result) -- reuses agent/graph.py's narrator machinery verbatim,
+#     no duplicated anti-hallucination logic
 # ---------------------------------------------------------------------------
+
+
+@app.post("/api/agent/interpret")
+def agent_interpret(req: InterpretRequest) -> dict:
+    """Narrate a tool's OWN result JSON; never invents a number.
+
+    The LLM narrates ONLY the passed-in `result`; the same mechanical check
+    used by the live copilot (agent/graph.py) asserts every number in the
+    narration appears in that JSON — for query_model_docs, that every
+    number appears in a retrieved passage AND a real citation is quoted.
+    On any check failure or LLM error the response falls back to the
+    engine's own deterministic text (the tool's `headline`, or the
+    passage listing for query_model_docs); `grounded` reports which
+    happened: True iff the LLM's own prose passed the check.
+    """
+    result = dict(req.result)
+    result.setdefault("tool", req.tool)
+    required = ("passages",) if req.tool == "query_model_docs" \
+        else ("headline", "tool_call_id")
+    missing = [k for k in required if k not in result]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"result is missing required field(s) {missing} for "
+                   f"tool {req.tool!r}")
+
+    if req.tool == "query_model_docs":
+        try:
+            text, model_used = agent_graph._llm_narrate_docs(result)
+            ok = agent_graph.docs_answer_ok(text, result)
+            mode = "llm" if ok else "template_citation_check_failed"
+        except Exception as exc:
+            text, model_used, ok = None, None, False
+            mode = f"template_llm_error:{type(exc).__name__}"
+        interpretation = (text.strip() if ok
+                          else agent_graph.deterministic_docs_narration(result))
+    else:
+        try:
+            text, model_used = agent_graph._llm_narrate(result)
+            ok = agent_graph.narration_numbers_ok(text, result)
+            mode = "llm" if ok else "template_number_check_failed"
+        except Exception as exc:
+            text, model_used, ok = None, None, False
+            mode = f"template_llm_error:{type(exc).__name__}"
+        interpretation = (text.strip() if ok
+                          else agent_graph.deterministic_narration(result))
+
+    return {"interpretation": interpretation, "grounded": bool(ok),
+            "mode": mode}
+
+
+# ---------------------------------------------------------------------------
+# 3. the built SPA (mounted LAST so /api/* wins the route match) -- the
+#    exhibits static mount goes BEFORE it so /static/exhibits/* is matched
+#    first (Starlette tries routes in registration order)
+# ---------------------------------------------------------------------------
+
+if OUTPUTS_DIR.exists():
+    app.mount("/static/exhibits", StaticFiles(directory=OUTPUTS_DIR),
+             name="exhibits")
 
 if (UI_DIST / "index.html").exists():
     app.mount("/", StaticFiles(directory=UI_DIST, html=True), name="ui")

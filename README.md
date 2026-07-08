@@ -15,9 +15,11 @@ a LangGraph agent only **routes** the question to a typed tool, **parameterises*
 it under pydantic validation, and **narrates** the engine's output — with a
 mechanical post-check that every number in the narration appears verbatim in
 the tool's JSON — plus a 5th route for documentation questions (Tier 3,
-below), held to the same rule. Questions outside those five validated routes
-get an explicit refusal ("outside my validated scope"). The refusal is a
-governance feature, demonstrated on purpose.
+below) and a 6th route (Tier 2, below) where the LLM writes analysis code
+that a locked-down sandbox actually executes, held to the same rule.
+Questions outside those six validated routes get an explicit refusal
+("outside my validated scope"). The refusal is a governance feature,
+demonstrated on purpose.
 
 ## Architecture
 
@@ -60,6 +62,23 @@ Freddie Mac loan-level panel (2000Q2–2015Q1, 60 quarters)   DFAST 2026 scenari
 │ agent/mcp_server.py       the 4 Tier-1 tools over MCP (fastmcp) — same       │
 │                           pydantic models, same frozen-engine numbers        │
 └──────────────────────────────────────────────────────────────────────────────┘
+        │  + a 6th route: the LLM WRITES the analysis, the sandbox RUNS it
+        ▼
+┌────────────────────────── TIER-2 SANDBOX (App v2, +87 tests) ────────────────┐
+│ agent/tools_tier2.py      analyze_data — code-writer LLM emits pandas over   │
+│                           the frozen t=60 scored book; AST-validated, then   │
+│                           EXECUTED in a locked-down subprocess (no imports,  │
+│                           no file/network I/O, RLIMIT_AS, timeout); the      │
+│                           EXECUTED result — never the LLM's prose — is what  │
+│                           the narrator is allowed to quote                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+        │  App v2: same engine + same agent, a consultant's-deliverable UI
+        ▼
+┌────────────────────────── APP v2 — 5 TABS (Day 5+) ───────────────────────────┐
+│ Executive Overview │ The Model │ Scenario Lab │ Policy │ Copilot             │
+│ every tab pairs a pre-generated exhibit with an agent-grounded              │
+│ interpretation; a mini-chat dock (same copilot) rides along on every tab    │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **The governing rule** (enforced in review and in code): the LLM never computes.
@@ -87,6 +106,38 @@ carries a real, verified citation: `pages/ecl-engine.md#Headline numbers` or
 post-check on the narration enforces this the same way the Tier-1
 verbatim-number check does; a question with no matching passage gets an
 explicit "nothing to cite" rather than a guess.
+
+## Tier 2: long-tail analysis — the LLM writes the code, the sandbox runs it
+
+The four Tier-1 tools cover the shocks a risk team asks for every cycle; they
+don't cover *"what is the average updated LTV of stage 2 loans?"* or any of
+the thousand similar one-off cuts of the book. Tier 2 (`analyze_data`,
+`agent/tools_tier2.py`) answers those **without ever letting the LLM do the
+arithmetic**: the model is asked to write a short pandas expression against
+the frozen t=60 scored book; that code — never the model's prose — is what
+actually runs, and the number shown to the user is the sandbox's own output.
+
+The boundary is enforced twice, independently:
+
+* **Before execution — an AST allow-list.** The generated code is parsed
+  (never `eval`'d blind) and rejected before it ever reaches a process if it
+  imports anything, touches a forbidden module/attribute family (`os`,
+  `sys`, `subprocess`, `socket`, `ctypes`, dunder/frame/generator internals,
+  raw file I/O), or hides a reach-around inside `.format()`/`.eval()`/
+  `.query()` string arguments. One repair attempt is allowed on a rejected
+  or erroring first try; two strikes and the tool answers with an explicit
+  refusal rather than executing anything uncertain.
+* **During execution — a hardened child process**, independent of the AST
+  layer so a gap in one is still caught by the other: no network, no file
+  writes, no reads outside Python's own import path, a memory ceiling sized
+  off the process's real footprint, and a wall-clock timeout. Environment
+  secrets are scrubbed before the user's code ever runs.
+
+The generated code is always shown in the agent trace for audit — nothing
+executes off-screen. `tests/test_tier2.py` (adversarially reviewed) exercises
+the sandbox with real attack payloads (`os.system`, `__import__`, `.format()`
+attribute reach-arounds, generator/frame introspection, oversized
+allocations) as well as the happy path.
 
 ## Quickstart
 
@@ -122,7 +173,7 @@ so startup is a ~10–25 s warm load, not a ~50 s refit; tool calls answer in
 seconds from in-memory state.
 
 ```bash
-uv run --no-sync pytest tests/ -q          # 422 passed
+uv run --no-sync pytest tests/ -q          # 509 passed
 ```
 
 ## MCP server: the same four tools, over the Model Context Protocol
@@ -177,7 +228,32 @@ once (~9s joblib warm start); poll `resource://ifrs9-ecl/health` (cheap,
 never triggers warm-up) to check `engine_warm` first. Full walkthrough:
 `outputs/mcp/README_section.md`.
 
-## Six-question demo script
+## App v2: a consultant's deliverable + a client's lab
+
+Day 4's dashboard was a single scrolling page; it worked, but it read like a
+tool demo, not something a credit-risk consultant would actually hand a
+client. App v2 is a design pass built around one governing story: **the
+consultant has already run the analysis — the client browses it, experiments
+with it, and asks the copilot to interpret it**, never the other way around
+(the client never sees a raw number the model made up). Five tabs, one
+FastAPI backend, one LangGraph agent underneath all of them:
+
+| Tab | What it is |
+|---|---|
+| **Executive Overview** | The headline stats, the scenario table, the credit-cycle exhibit — the one-page version a committee reads first. |
+| **The Model** | The hazard-ratio families and their fit stats, the variable dictionary, the LGD calibration exhibits — parsed straight from the consultant's own markdown reports, with a plain-language "story" for every covariate. |
+| **Scenario Lab** | Run the four Tier-1 tools interactively (shock a macro variable, reweight the scenarios, rerun a segment, decompose a waterfall) and get an **automatic, grounded interpretation** under the result the moment it lands — no need to ask the copilot a follow-up question. |
+| **Policy** | Every governance exhibit (the SICR-threshold sensitivity curve, the scenario-weights table) paired explicitly with the decision it's meant to inform. |
+| **Copilot** | The agent front and centre — all six routes (four Tier-1 tools, Tier-2 `analyze_data`, Tier-3 `query_model_docs`), the live trace, the refusal path. |
+
+A **mini-chat dock** rides along on every tab, so the copilot is never more
+than one click away from whatever exhibit is on screen. The UI/API seam is
+contract-first this time: `docs/api_contract.md` is the single source of
+truth for every request/response shape (including the SSE trace-event
+schema), exercised field-by-field by `tests/test_contract.py` — the seam
+that broke silently in Day 4 now has a test.
+
+## Eight-question demo script
 
 1. **"What happens to Stage 2 ECL if unemployment rises 2%?"** → routes to
    `shock_macro(UER, +2pp, parallel)`: base allowance $30.5m → $31.7m (+4.1%),
@@ -196,8 +272,19 @@ never triggers warm-up) to check `engine_warm` first. Full walkthrough:
    answers from the wiki and notes corpus, every sentence cited
    (`pages/ecl-engine.md#Headline numbers`, `notes §9.2 p10`, …), no LLM
    invention.
-6. **"Should I buy Tesla stock this quarter?"** → the router classifies it
-   out-of-scope and the copilot **refuses**, naming the five validated
+6. **"What is the average updated LTV of stage 2 loans?"** → routes to
+   `analyze_data` (Tier 2): the code-writer LLM emits one line of pandas
+   (`book[book['stage']==2]['updated_ltv'].mean()`), the sandbox executes it
+   against the frozen t=60 book, and the generated code is visible in the
+   trace — the number in the answer is the sandbox's own output, never the
+   model's arithmetic.
+7. **Scenario Lab tab: shock UER +2pp and watch the interpretation appear
+   under the waterfall chart with no extra question asked** — the same
+   narrator + verbatim-number check the Copilot tab uses, wired to
+   `POST /api/agent/interpret` and fired automatically the moment a
+   Scenario Lab action returns.
+8. **"Should I buy Tesla stock this quarter?"** → the router classifies it
+   out-of-scope and the copilot **refuses**, naming all six validated
    routes. Watch the agent-trace panel: `router → refusal`, no tool call, no
    invented number.
 
@@ -211,6 +298,7 @@ never triggers warm-up) to check `engine_warm` first. Full walkthrough:
 | Champion–challenger scorecard (MLP vs cloglog) | `outputs/challenger/scorecard.md` |
 | Vasicek calibration report (ρ, anchor identity, round-trip) | `outputs/vasicek/vasicek_report.md` |
 | E2E container traces (shock + refusal) | `outputs/demo/e2e_trace.json`, `e2e_refusal.json` |
+| App v2 / Tier-2 E2E traces (scenario+interpret, analyze_data, citation, refusal) | `outputs/demo/appv2_e2e.json`, `shadow_*.json` |
 | Gate reports (frozen-engine tripwire, suite counts) | `outputs/gate/` |
 
 ## Numbers that matter (honest edition)
@@ -232,21 +320,24 @@ never triggers warm-up) to check `engine_warm` first. Full walkthrough:
   probability-weighted range.
 * **Scenario ECL (t=60 book, 7,849 loans, $1.67bn):** up $27.7m / base $30.5m /
   severe $47.6m; weighted $34.0m = 2.03% coverage.
-* **Test discipline:** **422 tests** (133 golden fixtures pinning engine
+* **Test discipline:** **509 tests** (133 golden fixtures pinning engine
   values, 187 through Day 2, 91 scenario-layer, 103 agent/API, 41 stretch:
-  Tier-3 doc retrieval + MCP adapter), plus a fingerprint tripwire proving
-  the five frozen engine modules are byte-identical to the Day-2 gate at
-  every subsequent gate.
+  Tier-3 doc retrieval + MCP adapter, 87 App v2: Tier-2 sandbox + the
+  UI/API contract), plus a fingerprint tripwire proving the five frozen
+  engine modules are byte-identical to the Day-2 gate at every subsequent
+  gate.
 * **Agent latency:** engine warm-up 10–25 s once (joblib cache), then 3–12 s
   per question end-to-end including the LLM round trip.
 
 ## Repository map
 
 ```
-engine/        frozen five + vasicek/scenarios/satellite     agent/   tools + LangGraph + tier3 + mcp
-app/api/       FastAPI service        app/ui/    Preact/ECharts SPA
-analysis/      exhibit scripts        tests/     422 tests (133 golden fixtures)
+engine/        frozen five + vasicek/scenarios/satellite     agent/   tools_tier1/tier2 + graph + tier3 + mcp
+app/api/       FastAPI service (contract in docs/api_contract.md)
+app/ui/        Preact/ECharts SPA — app/ui/src/tabs/ (5 App v2 tabs) + shared components
+analysis/      exhibit scripts        tests/     509 tests (133 golden fixtures)
 wiki/          model-development wiki (19 pages)  knowledge/  indexed IFRS9 notes corpus
+docs/          docs/api_contract.md — UI/API contract, single source of truth
 data/          panel pipeline + DFAST ingest (raw data gitignored)
 outputs/       exhibits, reports, model cache, audit logs, gate reports
 Dockerfile     multi-stage build (node UI → python:3.13-slim, port 7860)

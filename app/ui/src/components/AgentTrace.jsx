@@ -4,29 +4,48 @@ import { fmtTime } from '../format.js';
 
 const MAX_EVENTS = 200;
 
-const TYPE_META = {
-  router: { label: 'ROUTER', cls: 'badge-router' },
-  tool_call: { label: 'TOOL CALL', cls: 'badge-tool' },
-  tool_result: { label: 'RESULT', cls: 'badge-result' },
-  narration: { label: 'NARRATION', cls: 'badge-narration' },
-  error: { label: 'ERROR', cls: 'badge-error' },
-};
+// Trace events are dicts {"node": router|<tool name>|narrator|refusal, ...}
+// (docs/api_contract.md, GET /api/agent/stream) — NOT a `type` field. Any
+// node that isn't router/narrator/refusal is a tool-execution node named
+// after the tool itself (shock_macro, query_model_docs, analyze_data, ...);
+// the offline fallback router also emits node "tool".
+function eventMeta(ev) {
+  if (ev.status === 'error') return { label: 'ERROR', cls: 'badge-error' };
+  switch (ev.node) {
+    case 'router':
+      return { label: 'ROUTER', cls: 'badge-router' };
+    case 'narrator':
+      return { label: 'NARRATION', cls: 'badge-narration' };
+    case 'refusal':
+      return { label: 'REFUSAL', cls: 'badge-error' };
+    case undefined:
+      return { label: 'EVENT', cls: 'badge-other' };
+    default:
+      return { label: 'TOOL', cls: 'badge-tool' };
+  }
+}
+
+// The most human line each event carries, across both the live LangGraph
+// router's events (headline / detail / mode / message) and the offline
+// keyword fallback router's (label / answer / detail).
+const eventText = (ev) =>
+  ev.headline ?? ev.answer ?? ev.message ?? ev.detail ?? ev.label ?? ev.mode ?? '';
 
 function EventRow({ ev }) {
-  const meta = TYPE_META[ev.type] ?? { label: (ev.type || 'EVENT').toUpperCase(), cls: 'badge-other' };
+  const meta = eventMeta(ev);
+  const isToolNode =
+    ev.node && !['router', 'narrator', 'refusal', 'tool'].includes(ev.node);
+  const toolName = ev.tool || ev.route || (isToolNode ? ev.node : null);
   return (
     <li class="trace-row">
       <span class="trace-time">{fmtTime(ev.at)}</span>
       <span class={`badge ${meta.cls}`}>{meta.label}</span>
       <span class="trace-body">
-        {ev.tool && <code class="trace-tool">{ev.tool}</code>}
+        {toolName && <code class="trace-tool">{toolName}</code>}
         {ev.args !== undefined && (
           <code class="trace-args">{JSON.stringify(ev.args)}</code>
         )}
-        {ev.result !== undefined && (
-          <code class="trace-args">{JSON.stringify(ev.result)}</code>
-        )}
-        {ev.text && <span>{ev.text}</span>}
+        <span>{eventText(ev)}</span>
       </span>
     </li>
   );
@@ -47,7 +66,7 @@ export default function AgentTrace() {
       try {
         d = JSON.parse(e.data);
       } catch {
-        d = { type: 'narration', text: e.data };
+        d = { node: 'narrator', detail: e.data };
       }
       setEvents((prev) => [...prev.slice(-(MAX_EVENTS - 1)), { ...d, at: Date.now() }]);
     };

@@ -74,8 +74,21 @@ COPY data/scenarios/*.csv ./data/scenarios/
 # e.g. fresh file mtimes on HF Spaces — triggers a one-off ~50s refit in the
 # FastAPI lifespan, after which every tool call answers in seconds)
 COPY outputs/models ./outputs/models
-COPY outputs/vasicek/z_path.csv ./outputs/vasicek/z_path.csv
-COPY outputs/scenario_ecl/*.csv ./outputs/scenario_ecl/
+
+# App v2 consultant exhibits: the /api/model/*, /api/policy/* and
+# /api/exhibits/* endpoints parse these markdown reports and serve these
+# PNGs (StaticFiles mount over the whole of outputs/) for the Executive
+# Overview / The Model / Policy tabs. Also includes the scenario_ecl and
+# vasicek CSVs the tools/exhibits read (z_path.csv, scenario_ecl_summary.csv
+# etc). Read-only reference material, no code executes from here.
+COPY outputs/variable_dictionary.md ./outputs/variable_dictionary.md
+COPY outputs/hazard ./outputs/hazard
+COPY outputs/lgd ./outputs/lgd
+COPY outputs/staging ./outputs/staging
+COPY outputs/eda ./outputs/eda
+COPY outputs/vasicek ./outputs/vasicek
+COPY outputs/scenario_ecl ./outputs/scenario_ecl
+COPY outputs/challenger ./outputs/challenger
 
 # the built SPA (served by FastAPI at /)
 COPY --from=ui /build/dist ./app/ui/dist

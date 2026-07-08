@@ -1,0 +1,43 @@
+{
+  "scenario": {
+    "tool": "reweight_scenarios",
+    "weights": {
+      "up": 0.2,
+      "base": 0.5,
+      "down": 0.3
+    },
+    "per_scenario": {
+      "up": {
+        "weight": 0.2,
+        "allowance": 27689413.56375809
+      },
+      "base": {
+        "weight": 0.5,
+        "allowance": 30454080.645958915
+      },
+      "down": {
+        "weight": 0.3,
+        "allowance": 47587936.42113094
+      }
+    },
+    "weighted_allowance": 35041303.96207036,
+    "allowance_at_average_path": 33761843.315318495,
+    "jensen_ratio": 1.0378966466612132,
+    "coverage": 0.02093584895156969,
+    "adopted_weights": {
+      "up": 0.25,
+      "base": 0.5,
+      "down": 0.25
+    },
+    "adopted_weighted_allowance": 34046377.819201715,
+    "delta_vs_adopted_pct": 2.922267232514586,
+    "amounts_in": "USD",
+    "headline": "weights up/base/down = 0.20/0.50/0.30: weighted allowance $35.0m (+2.9% vs adopted 25/50/25 $34.0m); Jensen ratio 1.038x vs $33.8m at the averaged path",
+    "tool_call_id": "tc-000008"
+  },
+  "interpret": {
+    "interpretation": "weights up/base/down = 0.20/0.50/0.30: weighted allowance $35.0m (+2.9% vs adopted 25/50/25 $34.0m); Jensen ratio 1.038x vs $33.8m at the averaged path. The coverage is 0.02093584895156969.",
+    "grounded": true,
+    "mode": "llm"
+  }
+}

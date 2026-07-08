@@ -1,23 +1,28 @@
-"""LangGraph orchestration for the IFRS 9 ECL copilot (Day 4 + Tier-3).
+"""LangGraph orchestration for the IFRS 9 ECL copilot (Day 4 + Tier-3 + Tier-2).
 
-Graph shape (deliberately small — six kinds of node, one loop-free pass):
+Graph shape (deliberately small — seven kinds of node, one loop-free pass):
 
     START -> router -+-> shock_macro ------------+
                      +-> reweight_scenarios ------+
                      +-> rerun_ecl ----------------+-> narrator -> END
                      +-> decompose_waterfall ------+
                      +-> query_model_docs ---------+
-                     +-> refusal --------------------------------> END
+                     +-> analyze_data -+-> narrator ------------------> END
+                     |                 +-> refusal (repair also failed) -> END
+                     +-> refusal --------------------------------------> END
 
 THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic and never
 states a fact from its own memory. Every NUMBER in every Tier-1 answer comes
 from the frozen engine via the four Tier-1 tools in agent/tools_tier1.py.
 Every CLAIM in a Tier-3 (``query_model_docs``, agent/tier3_retrieval.py)
-answer comes from a retrieved wiki/knowledge-corpus passage, cited. The LLM
-only (a) ROUTES the question to one tool (parameterising it, for Tier-1 —
-Tier-3 always reuses the user's own original question, never a router
-paraphrase), and (b) NARRATES the tool's returned result. Both LLM outputs
-are distrusted mechanically:
+answer comes from a retrieved wiki/knowledge-corpus passage, cited. Every
+NUMBER in a Tier-2 (``analyze_data``, agent/tools_tier2.py) answer comes from
+EXECUTING LLM-written pandas code in the sandbox — the LLM may write the
+CODE, never the number. The LLM only (a) ROUTES the question to one tool
+(parameterising it, for Tier-1 — Tier-3 and Tier-2 always reuse the user's
+own original question, never a router paraphrase), (b) for Tier-2 only,
+WRITES the pandas code the sandbox then executes, and (c) NARRATES the
+result. Every LLM output is distrusted mechanically:
 
   * The router must emit ONLY JSON ``{"route": ..., "args": {...}}``. Its
     args are validated against the tool's pydantic model (extra='forbid');
@@ -36,9 +41,18 @@ are distrusted mechanically:
     text; on any miss — or any narrator API failure — the answer falls back
     to a deterministic "here is what the documentation says" listing of the
     retrieved passages (``deterministic_docs_narration``).
+  * The Tier-2 code-writer's code is AST-validated and then actually
+    EXECUTED (agent/tools_tier2.run_sandboxed) before the narrator ever
+    sees a number — the same verbatim-number post-check used for Tier-1
+    then runs over the EXECUTED ``result_preview``, not anything the LLM
+    claimed. A code-gen failure or a sandboxed rejection/error gets exactly
+    ONE repair attempt (the failing code + its error handed back to the
+    code-writer); still failing, the question falls through to REFUSAL —
+    never a guessed number. Every successful run's code (and a hash of its
+    executed result) is shown in the trace and audited.
 
 The REFUSAL path is a feature, not an error state: out-of-scope questions
-get a fixed message naming the five validated tool families and offering to
+get a fixed message naming the validated tool families and offering to
 extend the toolset. Nothing is invented.
 
 LLM plumbing: OpenRouter via the openai SDK (base_url
@@ -60,6 +74,7 @@ docs`` — pytest never touches the network or the heavy engine state.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -72,7 +87,8 @@ from typing import Annotated, TypedDict
 from pydantic import ValidationError
 
 from agent.tier3_retrieval import TIER3_ARG_MODELS, query_model_docs
-from agent.tools_tier1 import TIER1_ARG_MODELS, TIER1_TOOLS
+from agent.tools_tier1 import TIER1_ARG_MODELS, TIER1_TOOLS, _log_call
+from agent.tools_tier2 import TIER2_ARG_MODELS, run_sandboxed
 
 import operator
 
@@ -95,8 +111,12 @@ TOOL_ROUTES = tuple(TIER1_TOOLS)          # registry order from tools_tier1
 #: are unaffected
 TIER3_ROUTE = "query_model_docs"
 
+#: the one Tier-2 (sandboxed code interpreter) route, additive alongside
+#: TOOL_ROUTES/TIER3_ROUTE for the same reason
+TIER2_ROUTE = "analyze_data"
+
 #: every valid non-REFUSE route -> its pydantic argument model
-ROUTE_ARG_MODELS = {**TIER1_ARG_MODELS, **TIER3_ARG_MODELS}
+ROUTE_ARG_MODELS = {**TIER1_ARG_MODELS, **TIER3_ARG_MODELS, **TIER2_ARG_MODELS}
 
 REFUSE = "REFUSE"
 
@@ -112,7 +132,10 @@ REFUSAL_MESSAGE = (
     "stage3, investor, high_ltv); "
     "(4) decompose_waterfall — the allowance movement decomposition between "
     "two reporting snapshots; "
-    "and one documentation tool, (5) query_model_docs — methodology / "
+    "(5) analyze_data — long-tail analytical questions (rankings, filters, "
+    "group-bys, ...) answered by generating pandas code that is EXECUTED in "
+    "a validated sandbox against the scored book, never by LLM arithmetic; "
+    "and one documentation tool, (6) query_model_docs — methodology / "
     "definition questions answered strictly from the model-development wiki "
     "and the IFRS 9 knowledge corpus, every claim cited to a real page or "
     "note section. "
@@ -123,7 +146,7 @@ REFUSAL_MESSAGE = (
 ROUTER_SYSTEM_PROMPT = """\
 You are the ROUTER of a validated IFRS 9 ECL model agent. You never compute
 numbers and you never state facts yourself. Your only job is to classify
-the user's question into EXACTLY ONE of five engine tools — or REFUSE —
+the user's question into EXACTLY ONE of six engine tools — or REFUSE —
 and emit the tool's arguments.
 
 Tools (args must satisfy these contracts exactly):
@@ -146,7 +169,21 @@ Tools (args must satisfy these contracts exactly):
 4. decompose_waterfall — "why did the allowance move between two dates".
    args: {"t0": <int 1..60>, "t1": <int 1..60>, t0 < t1}; defaults 20, 40.
 
-5. query_model_docs — FACTUAL "what does our documentation say" methodology
+5. analyze_data — long-tail ANALYTICAL questions over the scored loan book
+   that the four fixed tools above cannot answer because there is no fixed
+   parameter for them: rankings ("top 10 loans by allowance"), specific
+   filters/averages ("average LTV of Stage 2 loans", "how many investor
+   loans are in Stage 3"), cross-cuts ("which FICO band drives the most
+   allowance"), or anything else that needs an ad-hoc query over the book.
+   args: {} always (the question text itself drives a separate code-writer
+   step — never restate or rephrase it in args).
+   Disambiguation: if the question is EXACTLY one of the four fixed tools'
+   own jobs (a named macro shock, a scenario reweight, a named segment's
+   allowance, or a between-two-dates waterfall), route to THAT tool instead
+   — it is simpler and does not need generated code. Use analyze_data only
+   when none of tools 1-4 fit.
+
+6. query_model_docs — FACTUAL "what does our documentation say" methodology
    questions: "explain X", "how is Y defined here", "why did we choose Z",
    requests to define/explain a concept (SICR, PD, LGD, staging, the
    standard's mechanics, ...) using THIS project's own model-development
@@ -163,7 +200,7 @@ REFUSE anything else: general knowledge unrelated to this project, market
 or rate predictions, opinions/advice, arithmetic requests, HYPOTHETICAL
 methodology debates ("what do you think we should do instead", "is this the
 best approach"), poems or other creative writing, other portfolios,
-anything needing data or computation outside these five tools. When in
+anything needing data or computation outside these six tools. When in
 doubt, REFUSE — never guess.
 
 Respond with ONLY a JSON object, no prose, no code fences:
@@ -206,6 +243,51 @@ HARD RULES — violations are discarded by an automated check:
 - Do not invent, compute, or rescale any number. Only use a number if it
   appears verbatim in one of the passages' text.
 - Short answer (2-5 sentences), plain factual tone, for a bank risk analyst.
+"""
+
+CODE_WRITER_SYSTEM_PROMPT = """\
+You are the CODE-WRITER for a sandboxed pandas analysis tool over the
+frozen IFRS 9 ECL engine's t=60 scored book (Tier-2, agent/tools_tier2.py).
+You never state a number yourself — you write pandas CODE that is then
+EXECUTED in a validated sandbox, and only the EXECUTED result is ever shown
+to the user.
+
+Three read-only pandas DataFrames are already loaded for you — `pd` and
+`np` are already imported, do not re-import them:
+
+  book       one row per non-payoff loan at the t=60 reporting date:
+             id (int), stage (int, 1/2/3), balance (float USD),
+             updated_ltv (float, percent, may be NaN),
+             fico (float, origination FICO score, may be NaN),
+             investor (bool), allowance_up / allowance_base /
+             allowance_down (float USD, per-scenario reported allowance for
+             this loan), allowance_weighted (float USD, 50/25/25-weighted),
+             coverage (float, allowance_weighted / balance).
+
+  scenarios  one row per scenario ('up', 'base', 'down', 'weighted'):
+             scenario (str), weight (float), allowance (float USD, total
+             book allowance under that scenario), coverage (float).
+
+  z_path     one row per panel quarter, time = 1..60 (reporting-date
+             HISTORY): time (int), calendar (str, e.g. '2000Q2'),
+             n_at_risk (int), z (float, recovered systematic factor),
+             observed_default_rate (float), ttc_default_rate (float),
+             pit_default_rate (float).
+
+HARD RULES — violations are rejected before anything runs:
+- Only pandas/numpy operations on `book`, `scenarios`, `z_path`. No other
+  imports of any kind.
+- Never use exec, eval, compile, open, input, getattr, setattr, delattr,
+  globals, locals, vars, breakpoint, or any dunder attribute
+  (`__class__`, `__mro__`, ...).
+- Never call a `read_*` method (file I/O) or a `to_*` method other than
+  `to_dict`/`to_list`/`to_numpy`/`to_frame`/`to_series` (no `to_csv`,
+  `to_pickle`, ...).
+- Assign your final answer to a variable named EXACTLY `result` — a
+  DataFrame, Series, numpy array, dict, list, or plain scalar. This is the
+  only thing that is returned; nothing else you write is ever shown.
+- Output ONLY the Python code. No prose, no markdown code fences, no
+  explanation before or after it.
 """
 
 
@@ -283,6 +365,35 @@ def _llm_narrate_docs(tool_result: dict) -> tuple[str, str]:
         {"role": "system", "content": NARRATOR_DOCS_SYSTEM_PROMPT},
         {"role": "user", "content": json.dumps(payload)},
     ])
+
+
+def _llm_codegen(question: str, *, error: str | None = None,
+                 previous_code: str | None = None) -> tuple[str, str]:
+    """Raw code-writer completion (Tier-2); (text, model_used).
+
+    First attempt: just the question. Repair attempt (``error`` given):
+    the failing code and its error are handed back verbatim so the model
+    can fix the SAME approach rather than guess blind.
+    """
+    if error is None:
+        user = question
+    else:
+        user = (f"Original question: {question}\n\n"
+               f"Your previous code:\n{previous_code}\n\n"
+               f"That code FAILED with this error:\n{error}\n\n"
+               f"Fix it and try again. Output ONLY the corrected code.")
+    return _call_llm([
+        {"role": "system", "content": CODE_WRITER_SYSTEM_PROMPT},
+        {"role": "user", "content": user},
+    ])
+
+
+def _extract_code(text: str) -> str:
+    """Strip a markdown code fence off the code-writer's output, if any."""
+    s = text.strip()
+    if s.startswith("```"):
+        s = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", s).strip()
+    return s
 
 
 # ---------------------------------------------------------------------------
@@ -554,6 +665,76 @@ def _query_model_docs_node(state: AgentState) -> dict:
     return {"tool_result": result, "trace": [event]}
 
 
+def _analyze_data_node(state: AgentState) -> dict:
+    """Tier-2 tool node: code-writer LLM -> sandbox -> ONE repair attempt ->
+    else the question falls through to REFUSAL (module docstring; the
+    conditional edge out of this node in build_graph() reads
+    ``"error" in tool_result`` to make that call — never the narrator's
+    generic honest-failure path used by Tier-1/Tier-3).
+
+    ALWAYS codes against the user's own original question — never a
+    router-authored paraphrase (state["tool_args"] is empty by
+    construction, see agent.tools_tier2.AnalyzeDataArgs)."""
+    question = state["question"]
+    attempts: list[dict] = []
+
+    try:
+        raw, model_used = _llm_codegen(question)
+        code = _extract_code(raw)
+    except Exception as exc:                  # both code-gen models failed
+        detail = f"code-gen LLM unavailable: {type(exc).__name__}: {exc}"
+        return {"tool_result": {"error": detail, "tool": TIER2_ROUTE},
+                "trace": [{"node": TIER2_ROUTE, "ts": _now(),
+                           "status": "error", "detail": detail,
+                           "attempts": attempts}]}
+
+    sb = run_sandboxed(code)
+    attempts.append({"attempt": 1, "code": code, "ok": sb["ok"],
+                     "error": sb["error"]})
+
+    if not sb["ok"]:
+        try:
+            raw2, model_used2 = _llm_codegen(question, error=sb["error"],
+                                             previous_code=code)
+            code2 = _extract_code(raw2)
+            sb2 = run_sandboxed(code2)
+            attempts.append({"attempt": 2, "code": code2, "ok": sb2["ok"],
+                             "error": sb2["error"]})
+            if sb2["ok"]:
+                code, sb, model_used = code2, sb2, model_used2
+        except Exception as exc:              # repair LLM unavailable
+            attempts.append({
+                "attempt": 2, "code": None, "ok": False,
+                "error": f"repair LLM unavailable: {type(exc).__name__}: "
+                        f"{exc}"})
+
+    if not sb["ok"]:
+        detail = sb["error"]
+        return {"tool_result": {"error": detail, "tool": TIER2_ROUTE,
+                                "code": code},
+                "trace": [{"node": TIER2_ROUTE, "ts": _now(),
+                           "status": "error", "detail": detail,
+                           "attempts": attempts}]}
+
+    result_hash = hashlib.sha256(
+        json.dumps(sb["result_preview"], default=str,
+                   sort_keys=True).encode()).hexdigest()[:16]
+    headline = (f"analyze_data executed generated pandas code against the "
+               f"t=60 scored book (result shape {sb['result_shape']}); "
+               f"full code in the audit trail (result hash {result_hash}).")
+    tool_call_id = _log_call(
+        TIER2_ROUTE, {"question": question, "code": code,
+                     "result_hash": result_hash}, headline)
+    result = {"tool": TIER2_ROUTE, "question": question, "code": code,
+             "result_preview": sb["result_preview"],
+             "result_shape": sb["result_shape"], "result_hash": result_hash,
+             "headline": headline, "tool_call_id": tool_call_id}
+    return {"tool_result": result,
+            "trace": [{"node": TIER2_ROUTE, "ts": _now(), "status": "ok",
+                       "tool_call_id": tool_call_id, "headline": headline,
+                       "model": model_used, "attempts": attempts}]}
+
+
 def _narrator_node(state: AgentState) -> dict:
     result = state["tool_result"]
     if "error" in result:
@@ -611,7 +792,9 @@ def build_graph():
                          +-> rerun_ecl ----------------+-> narrator -> END
                          +-> decompose_waterfall ------+
                          +-> query_model_docs ---------+
-                         +-> refusal --------------------------------> END
+                         +-> analyze_data -+-> narrator ------------------> END
+                         |                 +-> refusal (repair failed) ----> END
+                         +-> refusal --------------------------------------> END
     """
     g = StateGraph(AgentState)
     g.add_node("router", _router_node)
@@ -620,13 +803,18 @@ def build_graph():
         g.add_edge(name, "narrator")
     g.add_node(TIER3_ROUTE, _query_model_docs_node)
     g.add_edge(TIER3_ROUTE, "narrator")
+    g.add_node(TIER2_ROUTE, _analyze_data_node)
+    g.add_conditional_edges(
+        TIER2_ROUTE,
+        lambda s: "refusal" if "error" in s["tool_result"] else "narrator",
+        {"refusal": "refusal", "narrator": "narrator"})
     g.add_node("narrator", _narrator_node)
     g.add_node("refusal", _refusal_node)
     g.add_edge(START, "router")
     g.add_conditional_edges(
         "router", lambda s: s["route"],
         {**{name: name for name in TOOL_ROUTES}, TIER3_ROUTE: TIER3_ROUTE,
-         REFUSE: "refusal"})
+         TIER2_ROUTE: TIER2_ROUTE, REFUSE: "refusal"})
     g.add_edge("narrator", END)
     g.add_edge("refusal", END)
     return g.compile()
