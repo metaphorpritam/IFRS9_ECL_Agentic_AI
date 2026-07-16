@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IFRS 9 ECL Copilot — Editorial direction (preview)</title>
+<script>
+  // Set the theme before first paint so there is no flash. This is the ONLY
+  // place light/dark is decided on load; the toggle button below just flips
+  // the same attribute afterwards.
+  (function () {
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  })();
+</script>
+<style>
+
+  /* ============================================================
+     TOKENS — see design_spec.md §1–§3 for provenance of every value.
+     Nothing here is eyeballed: palette hexes trace to the dataviz
+     skill's palette.md / this app's palette.js; contrast figures are
+     from the validator run recorded in design_spec.md §7.
+     ============================================================ */
+
+  :root {
+    --font-serif: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052,
+                  Palatino, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+                 Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;
+
+    --radius-sm: 2px; --radius-md: 3px; --radius-lg: 4px;
+
+    /* fixed, mode-invariant status + accent-mark family per §1.2 / §1.3 */
+    --status-good: #0ca30c;
+    --status-critical: #d03b3b;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
+    --page:        #f7f5f0;
+    --panel:       #fffcf6;
+    --ink:         #161512;
+    --ink-2:       #57534a;
+    --ink-muted:   #8a8579;
+    --hairline:    #e4e0d5;
+    --ring:        rgba(22,21,18,.10);
+    --accent-ui:   #184f95;   /* step 600 of the blue sequential ramp */
+    --accent-mark: #2a78d6;   /* categorical slot 1 — the app's existing c.accent */
+    --ord-up:      #86b6ef;
+    --ord-base:    #2a78d6;
+    --ord-down:    #104281;
+    --shadow-dock: 0 4px 16px rgba(22,21,18,.10);
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --page:        #15130f;
+    --panel:       #1c1a15;
+    --ink:         #f3f1ea;
+    --ink-2:       #c9c4b7;
+    --ink-muted:   #8a8579;
+    --hairline:    #332f27;
+    --ring:        rgba(243,241,234,.10);
+    --accent-ui:   #3987e5;   /* categorical slot 1, dark step */
+    --accent-mark: #3987e5;
+    --ord-up:      #6da7ec;
+    --ord-base:    #3987e5;
+    --ord-down:    #184f95;
+    --shadow-dock: 0 4px 20px rgba(0,0,0,.5);
+  }
+
+  /* ============================================================
+     BASE
+     ============================================================ */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .report {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-9) var(--space-9);
+  }
+  @media (max-width: 900px) {
+    .report { padding: var(--space-6) var(--space-5) var(--space-8); }
+  }
+
+  /* ============================================================
+     MASTHEAD
+     ============================================================ */
+  .masthead-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .kicker {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .display {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 2.5rem;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-3);
+  }
+  .masthead-sub {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+    margin: 0 0 var(--space-7);
+    max-width: 60ch;
+  }
+
+  /* theme toggle button — a quiet secondary button, not a UI toy */
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--ink-2);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--accent-ui); color: var(--accent-ui); }
+
+  /* ============================================================
+     TAB NAV — flat, rule-based, no pills (§4.4)
+     ============================================================ */
+  .tabnav {
+    display: flex;
+    gap: var(--space-7);
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: var(--space-8);
+  }
+  .tab {
+    position: relative;
+    display: inline-block;
+    padding: 0 0 var(--space-3);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    text-decoration: none;
+    cursor: default;
+  }
+  .tab.active {
+    color: var(--ink);
+  }
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 2px;
+    background: var(--accent-ui);
+  }
+
+  /* ============================================================
+     KPI ROW — stat tiles (§4.1)
+     ============================================================ */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+    margin-bottom: var(--space-8);
+  }
+  @media (max-width: 760px) { .kpi-row { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 460px) { .kpi-row { grid-template-columns: 1fr; } }
+
+  .stat-tile {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: var(--space-6) var(--space-5);
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: var(--space-3);
+  }
+  .stat-value {
+    font-family: var(--font-sans);   /* never serif — see design_spec.md §2 */
+    font-weight: 700;
+    font-size: 2.25rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    font-variant-numeric: proportional-nums; /* explicit: never tabular here */
+    margin-bottom: var(--space-2);
+  }
+  .stat-context {
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+
+  /* ============================================================
+     PANEL / EXHIBIT (§4.2)
+     ============================================================ */
+  .exhibit {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-8);
+  }
+  .exhibit-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-2);
+  }
+  .exhibit-kicker {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-ui);
+  }
+  .exhibit-title {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 1.25rem;
+    margin: var(--space-2) 0 var(--space-2);
+  }
+  .exhibit-subtitle {
+    font-size: 0.875rem;
+    color: var(--ink-2);
+    margin: 0 0 var(--space-6);
+  }
+  .exhibit-body { margin-bottom: var(--space-5); }
+  .exhibit-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    border-top: 1px solid var(--hairline);
+    padding-top: var(--space-3);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    flex-wrap: wrap;
+  }
+  .exhibit-foot .link-btn { flex-shrink: 0; }
+
+  /* ---- AI-explain chip (§4.6) ---- */
+  .explain-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--ink-muted);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
+    border-radius: 999px; /* the one deliberately round shape — a footnote-marker chip, not a button */
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .explain-chip svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+  .explain-chip:hover {
+    color: var(--accent-ui);
+    border-color: var(--accent-ui);
+    background: color-mix(in srgb, var(--accent-ui) 6%, transparent);
+  }
+
+  /* ---- buttons / links (§4.5) ---- */
+  .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent-ui);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: transparent;
+  }
+  .link-btn:hover { text-decoration-color: currentColor; }
+
+  /* ============================================================
+     WATERFALL — two-zone bridge chart, hand-built in CSS.
+     See design_spec.md §5 "Bar / waterfall" + rationale.md for why
+     the axis is deliberately broken (marked) rather than linear.
+     ============================================================ */
+  .wf-scale-note {
+    font-size: 0.75rem;
+    color: var(--ink-2); /* secondary, not muted — this note carries a data-quality flag, not decoration */
+    margin: 0 0 var(--space-5);
+  }
+  .waterfall {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    padding-top: var(--space-6);
+    border-bottom: 1px solid var(--hairline); /* the $0 baseline */
+  }
+  .wf-col {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+  }
+  .wf-track {
+    position: relative;
+    width: 100%;
+    height: 182px;
+  }
+  .wf-bar {
+    position: absolute;
+    left: 50%;
+    width: 22px;
+    max-width: 24px;
+    transform: translateX(-50%);
+    border: 2px solid var(--panel); /* the 2px surface-color spacer ring, per marks-and-anatomy.md */
+  }
+  .wf-bar.total  { background: var(--accent-mark); border-radius: 4px 4px 0 0; }
+  .wf-bar.up     { background: var(--status-critical); border-radius: 4px 4px 0 0; }
+  .wf-bar.down   { background: var(--status-good);     border-radius: 0 0 4px 4px; }
+  .wf-value {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums; /* a chart data-label column of numbers — tabular is correct here */
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  .wf-value.dim { color: var(--ink-2); font-weight: 400; }
+  .wf-cat {
+    margin-top: var(--space-3);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    text-align: center;
+    line-height: 1.3;
+    max-width: 92px;
+  }
+  /* the scale-break marker sitting between the two zones */
+  .wf-break {
+    flex: 0 0 28px;
+    align-self: stretch;
+    position: relative;
+  }
+  .wf-break .zig {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    height: 24px;
+    background: var(--ink-muted);
+    transform: translateX(-50%) skewX(-20deg);
+  }
+  .wf-break .zig:first-child { transform: translateX(-50%) skewX(-20deg) translateX(-4px); }
+  .wf-break .zig:last-child  { transform: translateX(-50%) skewX(-20deg) translateX(4px); }
+  .wf-break-label {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-90deg);
+    transform-origin: center;
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+  .wf-axis-label {
+    font-size: 0.6875rem;
+    color: var(--ink-muted);
+    margin-bottom: var(--space-2);
+  }
+
+  /* table-view twin for the waterfall (§5 "every chart ships a table-view twin") */
+  .wf-table { display: none; margin-top: var(--space-5); }
+  .wf-table.shown { display: block; }
+  .wf-chart.hidden { display: none; }
+
+  /* ============================================================
+     TABLE (§4.3) — used for the scenario exhibit and the waterfall's
+     table-view twin.
+     ============================================================ */
+  table.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  table.report-table thead th {
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding-bottom: var(--space-3);
+    border-bottom: 3px double var(--hairline); /* the printed-statement double rule */
+  }
+  table.report-table thead th.num,
+  table.report-table tbody td.num { text-align: right; }
+  table.report-table tbody td {
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--ink-2);
+    vertical-align: middle;
+  }
+  table.report-table tbody tr:last-child td { border-bottom: none; }
+  table.report-table tbody tr:hover td {
+    background: color-mix(in srgb, var(--accent-ui) 4%, transparent);
+  }
+  table.report-table td.num { font-variant-numeric: tabular-nums; }
+  .row-label { display: flex; align-items: center; gap: var(--space-3); color: var(--ink); font-weight: 600; }
+  .ord-chip { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .ord-chip.up   { background: var(--ord-up); }
+  .ord-chip.base { background: var(--ord-base); }
+  .ord-chip.down { background: var(--ord-down); }
+  .delta-good { color: var(--status-good); font-weight: 600; }
+  .delta-bad  { color: var(--status-critical); font-weight: 600; }
+  .delta-flat { color: var(--ink-muted); }
+
+  /* ============================================================
+     CHAT DOCK (§4.7)
+     ============================================================ */
+  .chat-dock {
+    position: fixed;
+    right: var(--space-6);
+    bottom: var(--space-6);
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-dock);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5) var(--space-3) var(--space-4);
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-size: 0.9375rem;
+    color: var(--ink);
+  }
+  .chat-dock svg { width: 18px; height: 18px; stroke: var(--accent-ui); flex-shrink: 0; }
+  .chat-dock .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent-ui);
+  }
+
+  footer.colophon {
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--hairline);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+  }
+
+</style>
+</head>
+<body>
+
+<div class="report">
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <div class="kicker">IFRS 9 · Expected Credit Loss Copilot</div>
+      <button class="theme-toggle" id="themeToggle" type="button">
+        <span id="themeToggleLabel">Dark mode</span>
+      </button>
+    </div>
+    <h1 class="display">Portfolio ECL Position</h1>
+    <p class="masthead-sub">Consolidated retail &amp; SME lending book — model run 16 Jul 2026, 09:14 UTC. Prepared for the credit risk committee.</p>
+  </header>
+
+  <nav class="tabnav" aria-label="Primary">
+    <span class="tab active">Executive</span>
+    <span class="tab">Model</span>
+    <span class="tab">Scenario Lab</span>
+    <span class="tab">Policy</span>
+    <span class="tab">Copilot</span>
+  </nav>
+
+  <!-- ============ KPI ROW — unnumbered headline stats ============ -->
+  <section class="kpi-row">
+    <div class="stat-tile">
+      <div class="stat-label">Total ECL allowance</div>
+      <div class="stat-value">$34.0m</div>
+      <div class="stat-context">Stage 1–3, coverage basis</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Coverage ratio</div>
+      <div class="stat-value">2.03%</div>
+      <div class="stat-context">Allowance ÷ gross carrying amount</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Jensen ratio</div>
+      <div class="stat-value">1.035×</div>
+      <div class="stat-context">Multi-scenario ECL ÷ single base-path ECL</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Loans in scope</div>
+      <div class="stat-value">7,849</div>
+      <div class="stat-context">Active retail &amp; SME accounts</div>
+    </div>
+  </section>
+
+  <!-- ============ EXHIBIT 1 — WATERFALL ============ -->
+  <section class="exhibit" id="exhibit-1">
+    <div class="exhibit-head">
+      <div>
+        <div class="exhibit-kicker">Exhibit 1</div>
+        <h2 class="exhibit-title">ECL allowance bridge</h2>
+      </div>
+      <button class="explain-chip" type="button" title="Ask the analyst to explain this exhibit">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l1.6 4.9L18.5 9l-4.9 1.6L12 15.5l-1.6-4.9L5.5 9l4.9-1.6L12 3z"/>
+          <path d="M19 15l.8 2.4L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.6L19 15z"/>
+        </svg>
+        Explain
+      </button>
+    </div>
+    <p class="exhibit-subtitle">Opening to closing allowance, by movement type — $ million</p>
+
+    <div class="exhibit-body">
+      <p class="wf-axis-label">Allowance ($m)</p>
+      <div class="waterfall wf-chart" id="wfChart">
+
+        <div class="wf-col">
+          <div class="wf-track">
+            <div class="wf-bar total" style="height:61px; bottom:0;"></div>
+            <div class="wf-value" style="bottom:69px;">$24.5m</div>
+          </div>
+          <div class="wf-cat">Opening allowance</div>
+        </div>
+
+        <div class="wf-col">
+          <div class="wf-track">
+            <div class="wf-bar up" style="height:10px; bottom:61px;"></div>
+            <div class="wf-value" style="bottom:79px;">+$3.9m</div>
+          </div>
+          <div class="wf-cat">FX &amp; macro update</div>
+        </div>
+
+        <div class="wf-col">
+          <div class="wf-track">
+            <div class="wf-bar up" style="height:65px; bottom:71px;"></div>
+            <div class="wf-value" style="bottom:144px;">+$26.0m</div>
+          </div>
+          <div class="wf-cat">New business</div>
+        </div>
+
+        <div class="wf-col">
+          <div class="wf-track">
+            <div class="wf-bar down" style="height:53px; bottom:83px;"></div>
+            <div class="wf-value" style="bottom:144px;">&minus;$21.2m</div>
+          </div>
+          <div class="wf-cat">Write-offs &amp; recoveries</div>
+        </div>
+
+        <div class="wf-break" aria-hidden="true">
+          <span class="zig"></span><span class="zig"></span>
+          <span class="wf-break-label">axis break</span>
+        </div>
+
+        <div class="wf-col">
+          <div class="wf-track">
+            <div class="wf-bar up" style="height:144px; bottom:5px;"></div>
+            <div class="wf-value" style="bottom:157px;">+$999.4m</div>
+          </div>
+          <div class="wf-cat">Stage transfers &amp; remeasurement</div>
+        </div>
+
+        <div class="wf-col">
+          <div class="wf-track">
+            <div class="wf-bar total" style="height:149px; bottom:0;"></div>
+            <div class="wf-value" style="bottom:157px;">$1032.6m</div>
+          </div>
+          <div class="wf-cat">Closing allowance</div>
+        </div>
+
+      </div>
+      <p class="wf-scale-note">Axis is compressed after the write-offs step (⌇⌇ marks the break) so the smaller early movements stay legible next to the much larger stage-transfer step — every bar's label is its exact value, not a scaled one. <strong>Data-quality flag:</strong> this bridge's closing figure ($1,032.6m) does not reconcile to the $34.0m headline allowance above it — the components were supplied for this layout exercise as-is; see rationale.md.</p>
+
+      <div class="wf-table" id="wfTable">
+        <table class="report-table">
+          <thead>
+            <tr><th>Movement</th><th class="num">Delta</th><th class="num">Running total</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="row-label"><span class="ord-chip base" style="background:var(--accent-mark)"></span>Opening allowance</td><td class="num">—</td><td class="num">$24.5m</td></tr>
+            <tr><td class="row-label"><span class="ord-chip" style="background:var(--status-critical)"></span>FX &amp; macro update</td><td class="num delta-bad">+$3.9m</td><td class="num">$28.4m</td></tr>
+            <tr><td class="row-label"><span class="ord-chip" style="background:var(--status-critical)"></span>New business</td><td class="num delta-bad">+$26.0m</td><td class="num">$54.4m</td></tr>
+            <tr><td class="row-label"><span class="ord-chip" style="background:var(--status-good)"></span>Write-offs &amp; recoveries</td><td class="num delta-good">&minus;$21.2m</td><td class="num">$33.2m</td></tr>
+            <tr><td class="row-label"><span class="ord-chip" style="background:var(--status-critical)"></span>Stage transfers &amp; remeasurement</td><td class="num delta-bad">+$999.4m</td><td class="num">$1032.6m</td></tr>
+            <tr><td class="row-label"><span class="ord-chip base" style="background:var(--accent-mark)"></span>Closing allowance</td><td class="num">—</td><td class="num">$1032.6m</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="exhibit-foot">
+      <span>Source: IFRS9 ECL Copilot model run · 16 Jul 2026</span>
+      <button class="link-btn" id="wfTableToggle" type="button" aria-pressed="false">View as table</button>
+    </div>
+  </section>
+
+  <!-- ============ EXHIBIT 2 — SCENARIO SENSITIVITY ============ -->
+  <section class="exhibit" id="exhibit-2">
+    <div class="exhibit-head">
+      <div>
+        <div class="exhibit-kicker">Exhibit 2</div>
+        <h2 class="exhibit-title">Scenario sensitivity</h2>
+      </div>
+      <button class="explain-chip" type="button" title="Ask the analyst to explain this exhibit">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l1.6 4.9L18.5 9l-4.9 1.6L12 15.5l-1.6-4.9L5.5 9l4.9-1.6L12 3z"/>
+          <path d="M19 15l.8 2.4L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.6L19 15z"/>
+        </svg>
+        Explain
+      </button>
+    </div>
+    <p class="exhibit-subtitle">Total ECL allowance under three macro-scenario paths — $ million</p>
+
+    <div class="exhibit-body">
+      <table class="report-table">
+        <thead>
+          <tr><th>Scenario</th><th class="num">Allowance</th><th class="num">vs. base</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label"><span class="ord-chip up"></span>Upside</td>
+            <td class="num">$27.7m</td>
+            <td class="num delta-good">&minus;$2.8m &nbsp;(&minus;9.2%)</td>
+          </tr>
+          <tr>
+            <td class="row-label"><span class="ord-chip base"></span>Base case</td>
+            <td class="num">$30.5m</td>
+            <td class="num delta-flat">—</td>
+          </tr>
+          <tr>
+            <td class="row-label"><span class="ord-chip down"></span>Downside</td>
+            <td class="num">$47.6m</td>
+            <td class="num delta-bad">+$17.1m &nbsp;(+56.1%)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="exhibit-foot">
+      <span>Source: IFRS9 ECL Copilot model run · 16 Jul 2026 · probability-weighted to the Base case for the headline allowance in Exhibit 1</span>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    IFRS9 ECL Copilot — Editorial direction preview. Static mock, not wired to the live application. See design_spec.md and rationale.md alongside this file.
+  </footer>
+
+</div>
+
+<!-- ============ CHAT DOCK (collapsed) ============ -->
+<div class="chat-dock" id="chatDock" role="button" tabindex="0" title="Ask the analyst about this page">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l1.6 4.9L18.5 9l-4.9 1.6L12 15.5l-1.6-4.9L5.5 9l4.9-1.6L12 3z"/>
+    <path d="M19 15l.8 2.4L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.6L19 15z"/>
+  </svg>
+  Ask the analyst
+  <span class="dot"></span>
+</div>
+
+<script>
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  var label = document.getElementById('themeToggleLabel');
+  function sync() {
+    label.textContent = root.getAttribute('data-theme') === 'dark' ? 'Light mode' : 'Dark mode';
+  }
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    sync();
+  });
+  sync();
+
+  // Table-view twin toggle for the waterfall (dataviz skill: every chart
+  // ships a table-view twin).
+  var chart = document.getElementById('wfChart');
+  var tbl = document.getElementById('wfTable');
+  var toggle = document.getElementById('wfTableToggle');
+  toggle.addEventListener('click', function () {
+    var showing = tbl.classList.toggle('shown');
+    chart.classList.toggle('hidden', showing);
+    toggle.textContent = showing ? 'View as chart' : 'View as table';
+    toggle.setAttribute('aria-pressed', String(showing));
+  });
+
+  // Chat dock is a static affordance in this mock — clicking it would open
+  // MiniChatDock and send a structured question through POST /api/agent/ask
+  // (see design_spec.md §4.6 for the prefix convention).
+  document.getElementById('chatDock').addEventListener('click', function () {
+    alert('Preview only — in the app this opens MiniChatDock and asks the Copilot via POST /api/agent/ask.');
+  });
+</script>
+
+</body>
+</html>

@@ -253,6 +253,57 @@ truth for every request/response shape (including the SSE trace-event
 schema), exercised field-by-field by `tests/test_contract.py` — the seam
 that broke silently in Day 4 now has a test.
 
+## UI v3: a design pass judged against three directions
+
+App v2 shipped the right information architecture; the operator judged its
+look twice underwhelming — "something a consultant would proudly send a
+client" was the bar, not yet cleared. UI v3 answers that with a real design
+competition, not a single restyle: three full candidate directions were
+built and scored on the same five criteria (north-star fit, information
+hierarchy, data-ink discipline, dark/light parity, implementability) —
+**editorial** (numbered exhibit apparatus, source footers), **fintech** (a
+modern risk-platform look: dense KPI rows, dark/light parity), and
+**terminal** (a grounding-status vocabulary — `GROUNDED` / `THINKING` / `OUT
+OF SCOPE` — plus adopted-row treatment). **fintech won** (42/50 vs 39 and
+37), and the losers weren't discarded: five grafts were merged in from the
+runners-up (the exhibit kickers and figure-recap explain-prefix from
+editorial; the grounding vocabulary, adopted-row treatment, and dock-scroll
+reserve from terminal). The merged decision lives in
+`outputs/design/FINAL_SPEC.md`; the three candidates are archived under
+`outputs/design/{editorial,fintech,terminal}/`.
+
+The same pass fixed two defects the judge caught on the way in:
+
+* **A real bug, not a style note**: `WaterfallChart.jsx`'s default
+  (historical) view was rendering empty. Historical mode fed the raw `GET
+  /api/ecl/waterfall` payload (`{components, period_t0, ...}`) straight to
+  `buildWaterfallOption`, which expects `{start, steps, end}` — the same
+  `adaptWaterfallRows()` adapter the tool-result modes already used was
+  missing from this one path. Fixed, and now guarded by a build-time
+  regression script (`npm run verify:waterfall`, wired into `prebuild`) that
+  feeds a captured payload through the adapter and asserts the option builder
+  produces non-empty series — and separately proves the *un-adapted* payload
+  would fail, so the check can't quietly stop testing anything.
+* **A failed color-contrast floor**: the shipped categorical palette order
+  put `#eb6834`/`#e87ba4` adjacent at ΔE 12.9, under the validator's
+  normal-vision floor of 15. `app/ui/src/palette.js` now uses the
+  judge-verified order (blue, green, magenta, yellow, aqua, orange, violet,
+  red) in both themes.
+
+On top of the winning direction, this pass also: made the default Executive
+Overview waterfall show the **latest quarter** (t0=59→t1=60) rather than an
+arbitrary historical window, with the Scenario Lab kept as the
+user-driven drill-down; moved the AI-explain answer strip out of the panel
+header (where it had been squeezed) to render **inline under the panel/tile
+body**, as a shared `useExplain()` hook + `ExplainStrip`/`SparkIcon` so the
+panel, tile, selection-popover, and Copilot-tab surfaces all render the same
+`THINKING` / `GROUNDED` (with citation chip) / `OUT OF SCOPE` states from one
+place; and added the small chrome the judge's grafts called for — hover/focus
+tooltips on icon-buttons, a loading ring on the explain button, status dots on
+the scenario table, and a tinted delta pill for the vs-adopted comparison.
+Net effect on the shipped bundle: 78.91 kB → 77.92 kB (the shared hook
+replaced three near-duplicate explain implementations).
+
 ## Eight-question demo script
 
 1. **"What happens to Stage 2 ECL if unemployment rises 2%?"** → routes to

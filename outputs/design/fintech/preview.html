@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Modern Risk Platform — Executive tab preview</title>
+<style>
+  /* ============================================================
+     TOKENS — see design_spec.md §1–3 for the full derivation and
+     the contrast math behind every one of these values.
+     ============================================================ */
+  :root, :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --panel: #1a1a19;
+    --panel-2: #232322;
+    --border: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.16);
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+
+    --accent: #3987e5;
+    --accent-solid: #3987e5;
+    --accent-on-solid: #0b0b0b;
+    --accent-text: #3987e5;
+    --accent-wash: rgba(57,135,229,0.10);
+
+    --increase: var(--accent);
+    --decrease: #e66767;
+    --level-fill: #c3c2b7;
+    --level-on-fill: #0b0b0b;
+
+    --good: #0ca30c;
+    --good-text: #0ca30c;
+    --good-wash: rgba(12,163,12,0.14);
+    --critical: #d03b3b;
+    --critical-text: #e66767;
+    --critical-wash: rgba(230,103,103,0.14);
+
+    --shadow-e1: 0 1px 2px rgba(0,0,0,.36);
+    --shadow-e2: 0 8px 24px rgba(0,0,0,.5);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:where(:not([data-theme="dark"])) {
+      color-scheme: light;
+      --page: #f9f9f7;
+      --panel: #fcfcfb;
+      --panel-2: #ffffff;
+      --border: rgba(11,11,11,0.10);
+      --border-strong: rgba(11,11,11,0.16);
+      --ink: #0b0b0b;
+      --ink-2: #52514e;
+      --ink-3: #898781;
+      --grid: #e1e0d9;
+      --baseline: #c3c2b7;
+
+      --accent: #2a78d6;
+      --accent-solid: #1c5cab;
+      --accent-on-solid: #ffffff;
+      --accent-text: #1c5cab;
+      --accent-wash: rgba(42,120,214,0.08);
+
+      --increase: var(--accent);
+      --decrease: #e34948;
+      --level-fill: #52514e;
+      --level-on-fill: #ffffff;
+
+      --good: #0ca30c;
+      --good-text: #006300;
+      --good-wash: rgba(0,99,0,0.10);
+      --critical: #d03b3b;
+      --critical-text: #d03b3b;
+      --critical-wash: rgba(208,59,59,0.10);
+
+      --shadow-e1: 0 1px 2px rgba(11,11,11,.06);
+      --shadow-e2: 0 8px 24px rgba(11,11,11,.12);
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page: #f9f9f7; --panel: #fcfcfb; --panel-2: #ffffff;
+    --border: rgba(11,11,11,0.10); --border-strong: rgba(11,11,11,0.16);
+    --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7;
+    --accent: #2a78d6; --accent-solid: #1c5cab; --accent-on-solid: #ffffff;
+    --accent-text: #1c5cab; --accent-wash: rgba(42,120,214,0.08);
+    --increase: var(--accent); --decrease: #e34948;
+    --level-fill: #52514e; --level-on-fill: #ffffff;
+    --good: #0ca30c; --good-text: #006300; --good-wash: rgba(0,99,0,0.10);
+    --critical: #d03b3b; --critical-text: #d03b3b; --critical-wash: rgba(208,59,59,0.10);
+    --shadow-e1: 0 1px 2px rgba(11,11,11,.06); --shadow-e2: 0 8px 24px rgba(11,11,11,.12);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --panel: #1a1a19; --panel-2: #232322;
+    --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.16);
+    --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+    --grid: #2c2c2a; --baseline: #383835;
+    --accent: #3987e5; --accent-solid: #3987e5; --accent-on-solid: #0b0b0b;
+    --accent-text: #3987e5; --accent-wash: rgba(57,135,229,0.10);
+    --increase: var(--accent); --decrease: #e66767;
+    --level-fill: #c3c2b7; --level-on-fill: #0b0b0b;
+    --good: #0ca30c; --good-text: #0ca30c; --good-wash: rgba(12,163,12,0.14);
+    --critical: #d03b3b; --critical-text: #e66767; --critical-wash: rgba(230,103,103,0.14);
+    --shadow-e1: 0 1px 2px rgba(0,0,0,.36); --shadow-e2: 0 8px 24px rgba(0,0,0,.5);
+  }
+
+  /* ============================================================
+     RESET + BASE
+     ============================================================ */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+  button { font: inherit; color: inherit; }
+  svg { display: block; }
+
+  /* ============================================================
+     SHELL / HEADER / TABNAV
+     ============================================================ */
+  .shell { max-width: 1180px; margin: 0 auto; padding: 24px 24px 96px; }
+
+  .topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding-bottom: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: var(--accent); color: var(--accent-on-solid);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px;
+  }
+  .brand-name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .grounded-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--ink-3);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 3px 10px 3px 8px; margin-left: 4px;
+  }
+  .grounded-badge .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--good); }
+  .meta {
+    margin-left: auto; font-size: 12px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .theme-toggle {
+    margin-left: 16px; display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 12px; font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  .theme-toggle:hover { background: var(--panel-2); }
+  .theme-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--accent); }
+  .theme-toggle__swatch {
+    width: 12px; height: 12px; border-radius: 999px;
+    background: linear-gradient(135deg, var(--ink) 50%, var(--panel) 50%);
+    border: 1px solid var(--border-strong);
+  }
+
+  .tabnav {
+    display: flex; gap: 24px; border-bottom: 1px solid var(--border);
+    margin-bottom: 28px; padding-bottom: 0;
+  }
+  .tab {
+    background: none; border: none; cursor: pointer;
+    padding: 10px 2px 12px; font-size: 14px; font-weight: 500;
+    color: var(--ink-2); border-bottom: 2px solid transparent;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab--active { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+  .tab:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--accent); border-radius: 4px; }
+  .tab__dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; opacity: .55; }
+  .tab--active .tab__dot { opacity: 1; background: var(--accent); }
+
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+
+  /* ============================================================
+     PANEL (E1) — the one box, no nested boxes inside
+     ============================================================ */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-e1);
+  }
+  .panel + .panel { margin-top: 20px; }
+  .panel__header {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel__heading { flex: 1; min-width: 0; }
+  .panel__title { font-size: 16px; font-weight: 600; }
+  .panel__subtitle { margin-top: 3px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .panel__actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .panel__body { padding: 20px; }
+  .panel__footer {
+    padding: 10px 20px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--ink-3); font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  /* icon buttons: ghost variant, incl. AI-explain */
+  .icon-btn {
+    width: 28px; height: 28px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--ink-3); position: relative;
+  }
+  .icon-btn:hover { background: var(--panel-2); color: var(--accent); }
+  .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
+  .icon-btn--table { border-radius: 6px; }
+  .icon-btn.is-active { color: var(--accent); background: var(--accent-wash); }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .icon-btn[data-tip] { }
+  .icon-btn[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; top: calc(100% + 6px); right: 0;
+    background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 5px 8px; font-size: 11px; font-weight: 400;
+    white-space: nowrap; box-shadow: var(--shadow-e2); z-index: 5;
+  }
+
+  /* ============================================================
+     KPI ROW / STAT TILE
+     ============================================================ */
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat-tile {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow-e1);
+    padding: 18px 18px 16px;
+  }
+  .stat-tile__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .stat-tile__label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .stat-tile__value {
+    margin-top: 10px; font-size: 32px; font-weight: 600; letter-spacing: -0.01em;
+    line-height: 1.1; font-variant-numeric: normal;
+  }
+  .stat-tile__sub { margin-top: 6px; font-size: 12.5px; color: var(--ink-2); }
+  .stat-answer {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--ink-2);
+  }
+  .stat-answer[hidden] { display: none; }
+
+  /* ============================================================
+     WATERFALL CHART
+     ============================================================ */
+  .wf-scroll { overflow-x: auto; }
+  .wf-figure { position: relative; width: 100%; min-width: 640px; aspect-ratio: 760 / 400; }
+  .wf-figure svg { width: 100%; height: 100%; overflow: visible; }
+  .bar--level  { fill: var(--level-fill); }
+  .bar--increase { fill: var(--increase); }
+  .bar--decrease { fill: var(--decrease); }
+  .wf-grid { stroke: var(--grid); stroke-width: 1; }
+  .wf-baseline { stroke: var(--baseline); stroke-width: 1.25; }
+  .wf-refline { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: none; opacity: .55; }
+
+  .wf-overlay { position: absolute; inset: 0; pointer-events: none; }
+  .wf-value {
+    position: absolute; transform: translate(-50%, -100%);
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+    font-variant-numeric: tabular-nums; padding-bottom: 5px;
+  }
+  .wf-value--level { font-weight: 700; }
+  .wf-value--increase { color: var(--increase); }
+  .wf-value--decrease { color: var(--decrease); }
+  .wf-cat {
+    position: absolute; transform: translate(-50%, 0); width: 108px; text-align: center;
+    font-size: 11px; color: var(--ink-2); line-height: 1.3;
+  }
+  .wf-tick {
+    position: absolute; transform: translate(0, -50%); left: 0;
+    width: 32px; text-align: right; font-size: 10px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wf-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 18px; }
+  .wf-legend__item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+  .wf-legend__swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .wf-caption { margin-top: 10px; font-size: 11.5px; color: var(--ink-3); max-width: 62ch; }
+
+  .wf-answer {
+    margin-top: 16px; padding: 14px 16px; border-radius: 8px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    display: flex; gap: 10px;
+  }
+  .wf-answer[hidden] { display: none; }
+  .wf-answer__avatar {
+    width: 22px; height: 22px; border-radius: 999px; background: var(--accent-wash);
+    color: var(--accent); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .wf-answer__avatar svg { width: 13px; height: 13px; }
+  .wf-answer__text { font-size: 13px; color: var(--ink-2); }
+  .wf-answer__text b, .wf-answer__text .num { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .citation-chip {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 9px;
+    font-size: 10.5px; color: var(--ink-3); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 9px 3px 7px;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  .wf-table-wrap[hidden] { display: none; }
+  .wf-chart-wrap[hidden] { display: none; }
+
+  /* ============================================================
+     TABLES (scenario table + waterfall table view)
+     ============================================================ */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 0 10px 10px; border-bottom: 1px solid var(--border-strong);
+  }
+  tbody td { padding: 13px 10px; border-top: 1px solid var(--border); }
+  tbody tr:hover td { background: var(--panel-2); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .scenario-name { display: flex; align-items: center; gap: 9px; font-weight: 500; }
+  .status-dot { width: 9px; height: 9px; border-radius: 999px; flex-shrink: 0; }
+  .status-dot--good { background: var(--good); }
+  .status-dot--critical { background: var(--critical); }
+  .status-dot--neutral { background: var(--ink-3); }
+  .delta-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .delta-pill--good { color: var(--good-text); background: var(--good-wash); }
+  .delta-pill--critical { color: var(--critical-text); background: var(--critical-wash); }
+  .delta-pill--neutral { color: var(--ink-3); background: transparent; border: 1px solid var(--border); }
+  .table-scroll { overflow-x: auto; }
+
+  /* ============================================================
+     CHAT DOCK
+     ============================================================ */
+  .chatdock {
+    position: fixed; right: 24px; bottom: 20px; z-index: 20;
+    width: min(420px, calc(100vw - 48px));
+    background: var(--panel-2); border: 1px solid var(--border-strong);
+    border-radius: 999px; box-shadow: var(--shadow-e2);
+    display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px;
+  }
+  .chatdock__status { width: 8px; height: 8px; border-radius: 999px; background: var(--good); flex-shrink: 0; }
+  .chatdock__input {
+    flex: 1; border: none; background: transparent; color: var(--ink);
+    font-size: 13px; font-family: inherit; outline: none;
+  }
+  .chatdock__input::placeholder { color: var(--ink-3); }
+  .chatdock__send {
+    width: 34px; height: 34px; border-radius: 999px; flex-shrink: 0;
+    background: var(--accent-solid); color: var(--accent-on-solid);
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .chatdock__send:hover { filter: brightness(1.06); }
+  .chatdock__send svg { width: 15px; height: 15px; }
+
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 620px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .meta { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">Σ</span>
+      <span class="brand-name">IFRS 9 ECL Copilot</span>
+      <span class="grounded-badge"><span class="dot"></span>every figure cites its source</span>
+    </div>
+    <span class="meta">as of 2015Q1 (t=60) · 7,849 loans · $1.67bn book</span>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme">
+      <span class="theme-toggle__swatch"></span>
+      <span id="themeLabel">Light mode</span>
+    </button>
+  </header>
+
+  <nav class="tabnav" role="tablist" aria-label="Primary">
+    <button role="tab" aria-selected="true" class="tab tab--active"><span class="tab__dot"></span>Executive</button>
+    <button role="tab" aria-selected="false" class="tab"><span class="tab__dot"></span>Model</button>
+    <button role="tab" aria-selected="false" class="tab"><span class="tab__dot"></span>Scenario Lab</button>
+    <button role="tab" aria-selected="false" class="tab"><span class="tab__dot"></span>Policy</button>
+    <button role="tab" aria-selected="false" class="tab"><span class="tab__dot"></span>Copilot</button>
+  </nav>
+
+  <main>
+
+    <!-- ===================== KPI ROW ===================== -->
+    <section class="kpi-row" aria-label="Headline figures">
+
+      <div class="stat-tile">
+        <div class="stat-tile__row">
+          <span class="stat-tile__label">Weighted allowance</span>
+          <button class="icon-btn ai-explain" data-tip="Ask Copilot to explain this" data-target="ans-allowance" aria-expanded="false" aria-label="Ask Copilot to explain weighted allowance">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg>
+          </button>
+        </div>
+        <div class="stat-tile__value tabular">$34.0M</div>
+        <div class="stat-tile__sub">25/50/25 scenario mix</div>
+        <div class="stat-answer" id="ans-allowance" hidden>
+          The engine blends three macro paths — up (25%), base (50%), down (25%) — into one weighted
+          allowance of <span class="num">$34,046,378</span>. Stage 3 alone — just <span class="num">43</span>
+          loans, 0.5% of the book — carries <span class="num">$6.07m</span> of that, <span class="num">17.8%</span> of the total.
+        </div>
+      </div>
+
+      <div class="stat-tile">
+        <div class="stat-tile__row">
+          <span class="stat-tile__label">Coverage</span>
+          <button class="icon-btn ai-explain" data-tip="Ask Copilot to explain this" data-target="ans-coverage" aria-expanded="false" aria-label="Ask Copilot to explain coverage">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg>
+          </button>
+        </div>
+        <div class="stat-tile__value tabular">2.03%</div>
+        <div class="stat-tile__sub">of $1,673.7m gross book</div>
+        <div class="stat-answer" id="ans-coverage" hidden>
+          Coverage is allowance ÷ gross balance: <span class="num">$34.05m</span> over
+          <span class="num">$1,673.7m</span> = <span class="num">2.034%</span>. It ranges from
+          <span class="num">1.65%</span> under the up scenario to <span class="num">2.84%</span> under the
+          down scenario — a band that isn't symmetric in dollars (<span class="num">$27.7m</span> vs
+          <span class="num">$47.6m</span>).
+        </div>
+      </div>
+
+      <div class="stat-tile">
+        <div class="stat-tile__row">
+          <span class="stat-tile__label">Jensen ratio</span>
+          <button class="icon-btn ai-explain" data-tip="Ask Copilot to explain this" data-target="ans-jensen" aria-expanded="false" aria-label="Ask Copilot to explain the Jensen ratio">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg>
+          </button>
+        </div>
+        <div class="stat-tile__value tabular">1.035x</div>
+        <div class="stat-tile__sub">weighted vs. average-path ECL</div>
+        <div class="stat-answer" id="ans-jensen" hidden>
+          Weighting three discrete scenarios (<span class="num">$34.0m</span>) sits <span class="num">3.5%</span>
+          above running the model once at the probability-weighted average macro path
+          (<span class="num">$32.9m</span>). That gap is the cost of ignoring convexity: losses don't scale
+          linearly with the economy, so averaging the inputs first understates the output.
+        </div>
+      </div>
+
+      <div class="stat-tile">
+        <div class="stat-tile__row">
+          <span class="stat-tile__label">Loans in scope</span>
+          <button class="icon-btn ai-explain" data-tip="Ask Copilot to explain this" data-target="ans-loans" aria-expanded="false" aria-label="Ask Copilot to explain loans in scope">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg>
+          </button>
+        </div>
+        <div class="stat-tile__value tabular">7,849</div>
+        <div class="stat-tile__sub">stage 1 / 2 / 3: 7,803 / 3 / 43</div>
+        <div class="stat-answer" id="ans-loans" hidden>
+          7,849 loans carry <span class="num">$1,673.7m</span> of balance as of 2015Q1. 7,803 sit in Stage 1,
+          3 in Stage 2, and just <span class="num">43</span> — 0.5% of the book — in Stage 3, yet that
+          handful accounts for <span class="num">$6.07m</span> of allowance.
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================== WATERFALL ===================== -->
+    <section class="panel" aria-label="Allowance bridge">
+      <div class="panel__header">
+        <div class="panel__heading">
+          <h2 class="panel__title">Allowance bridge</h2>
+          <div class="panel__subtitle">2005Q1 → 2010Q1 (t=20 → t=40)</div>
+        </div>
+        <div class="panel__actions">
+          <button class="icon-btn icon-btn--table" id="wfTableToggle" data-tip="View as table" aria-label="Toggle table view" aria-pressed="false">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.2" y="2.2" width="13.6" height="11.6" rx="1.6"/><line x1="1.2" y1="7.6" x2="14.8" y2="7.6"/><line x1="6.6" y1="2.2" x2="6.6" y2="13.8"/></svg>
+          </button>
+          <button class="icon-btn ai-explain" data-tip="Ask Copilot to explain this" data-target="ans-waterfall" aria-expanded="false" aria-label="Ask Copilot to explain the allowance bridge">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="panel__body">
+
+        <div class="wf-chart-wrap" id="wfChartWrap">
+          <div class="wf-scroll">
+          <div class="wf-figure">
+            <svg viewBox="0 0 760 400" preserveAspectRatio="none" aria-hidden="true">
+              <line class="wf-grid" x1="35" y1="261.82" x2="755" y2="261.82"/>
+              <line class="wf-grid" x1="35" y1="193.64" x2="755" y2="193.64"/>
+              <line class="wf-grid" x1="35" y1="125.45" x2="755" y2="125.45"/>
+              <line class="wf-grid" x1="35" y1="57.27"  x2="755" y2="57.27"/>
+              <line class="wf-baseline" x1="35" y1="330" x2="755" y2="330"/>
+              <line class="wf-refline" x1="35" y1="318" x2="755" y2="318"/>
+              <line class="wf-refline" x1="35" y1="48"  x2="755" y2="48"/>
+
+              <path class="bar bar--level"    d="M35,330 L35,321 Q35,318 38,318 L127,318 Q130,318 130,321 L130,330 Z"/>
+              <path class="bar bar--increase" d="M160,316 L160,309 Q160,306 163,306 L252,306 Q255,306 255,309 L255,316 Z"/>
+              <path class="bar bar--increase" d="M285,304 L285,294 Q285,291 288,291 L377,291 Q380,291 380,294 L380,304 Z"/>
+              <path class="bar bar--decrease" d="M410,289 L410,280 Q410,277 413,277 L502,277 Q505,277 505,280 L505,289 Z"/>
+              <path class="bar bar--increase" d="M535,275 L535,51 Q535,48 538,48 L627,48 Q630,48 630,51 L630,275 Z"/>
+              <path class="bar bar--level"    d="M660,330 L660,51 Q660,48 663,48 L752,48 Q755,48 755,51 L755,330 Z"/>
+            </svg>
+            <div class="wf-overlay">
+              <span class="wf-tick" style="top:82.5%">0</span>
+              <span class="wf-tick" style="top:65.455%">250</span>
+              <span class="wf-tick" style="top:48.41%">500</span>
+              <span class="wf-tick" style="top:31.36%">750</span>
+              <span class="wf-tick" style="top:14.32%">1,000</span>
+
+              <span class="wf-value wf-value--level"    style="left:10.855%; top:79.5%">$24.5m</span>
+              <span class="wf-value wf-value--increase" style="left:27.303%; top:76.5%">+$3.9m</span>
+              <span class="wf-value wf-value--increase" style="left:43.75%;  top:72.75%">+$26.0m</span>
+              <span class="wf-value wf-value--decrease" style="left:60.197%; top:69.25%">−$21.2m</span>
+              <span class="wf-value wf-value--increase" style="left:76.645%; top:12%">+$999.4m</span>
+              <span class="wf-value wf-value--level"    style="left:93.092%; top:12%">$1,032.6m</span>
+
+              <span class="wf-cat" style="left:10.855%; top:84%">Opening<br>allowance</span>
+              <span class="wf-cat" style="left:27.303%; top:84%">Stage<br>migration</span>
+              <span class="wf-cat" style="left:43.75%;  top:84%">Remeasurement</span>
+              <span class="wf-cat" style="left:60.197%; top:84%">Derecognitions</span>
+              <span class="wf-cat" style="left:76.645%; top:84%">New loans</span>
+              <span class="wf-cat" style="left:93.092%; top:84%">Closing<br>allowance</span>
+            </div>
+          </div>
+          </div>
+
+          <div class="wf-legend">
+            <span class="wf-legend__item"><span class="wf-legend__swatch" style="background:var(--level-fill)"></span>Running total</span>
+            <span class="wf-legend__item"><span class="wf-legend__swatch" style="background:var(--increase)"></span>Adds to allowance</span>
+            <span class="wf-legend__item"><span class="wf-legend__swatch" style="background:var(--decrease)"></span>Reduces allowance</span>
+          </div>
+          <p class="wf-caption">Values in $m. Stage migration, remeasurement and derecognitions are shown at a minimum visible height — their true magnitudes (≤$26m) are dwarfed by new-loan originations (+$999.4m) on this axis. Bar height is compressed for legibility only; every label is the exact figure.</p>
+        </div>
+
+        <div class="wf-table-wrap table-scroll" id="wfTableWrap" hidden>
+          <table>
+            <thead><tr><th>Component</th><th class="num">Amount ($m)</th><th class="num">Loans</th></tr></thead>
+            <tbody>
+              <tr><td>Opening allowance</td><td class="num">24.5</td><td class="num">8,662</td></tr>
+              <tr><td>Stage migration</td><td class="num">+3.9</td><td class="num">498</td></tr>
+              <tr><td>Remeasurement</td><td class="num">+26.0</td><td class="num">1,948</td></tr>
+              <tr><td>Derecognitions</td><td class="num">−21.2</td><td class="num">6,714</td></tr>
+              <tr><td>New loans</td><td class="num">+999.4</td><td class="num">11,915</td></tr>
+              <tr><td>Closing allowance</td><td class="num">1,032.6</td><td class="num">13,863</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="wf-answer" id="ans-waterfall" hidden>
+          <span class="wf-answer__avatar"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg></span>
+          <div>
+            <div class="wf-answer__text">
+              Between 2005Q1 and 2010Q1 the book grew from <span class="num">8,662</span> to
+              <span class="num">13,863</span> loans as new originations (<span class="num">+$999.4m</span>)
+              swamped every other movement combined (<span class="num">+$3.9m</span> stage migration,
+              <span class="num">+$26.0m</span> remeasurement, <span class="num">−$21.2m</span>
+              derecognitions). Read the three smaller bars from their labels, not their height — they're
+              floored for visibility on this axis.
+            </div>
+            <span class="citation-chip">⚙ decompose_waterfall(t0=20, t1=40)</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="panel__footer">GET /api/ecl/waterfall?t0=20&amp;t1=40</div>
+    </section>
+
+    <!-- ===================== SCENARIO TABLE ===================== -->
+    <section class="panel" aria-label="Scenario allowance">
+      <div class="panel__header">
+        <div class="panel__heading">
+          <h2 class="panel__title">Scenario allowance</h2>
+          <div class="panel__subtitle">adopted weights 25 / 50 / 25</div>
+        </div>
+        <div class="panel__actions">
+          <button class="icon-btn ai-explain" data-tip="Ask Copilot to explain this" data-target="ans-scenario" aria-expanded="false" aria-label="Ask Copilot to explain scenario allowance">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="panel__body">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th class="num">Weight</th>
+                <th class="num">Allowance</th>
+                <th class="num">Coverage</th>
+                <th class="num">Δ vs base</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="scenario-name"><span class="status-dot status-dot--good"></span>Up</span></td>
+                <td class="num">25%</td>
+                <td class="num">$27.7M</td>
+                <td class="num">1.65%</td>
+                <td class="num"><span class="delta-pill delta-pill--good">▼ 9.1%</span></td>
+              </tr>
+              <tr>
+                <td><span class="scenario-name"><span class="status-dot status-dot--neutral"></span>Base</span></td>
+                <td class="num">50%</td>
+                <td class="num">$30.5M</td>
+                <td class="num">1.82%</td>
+                <td class="num"><span class="delta-pill delta-pill--neutral">adopted</span></td>
+              </tr>
+              <tr>
+                <td><span class="scenario-name"><span class="status-dot status-dot--critical"></span>Down</span></td>
+                <td class="num">25%</td>
+                <td class="num">$47.6M</td>
+                <td class="num">2.84%</td>
+                <td class="num"><span class="delta-pill delta-pill--critical">▲ 56.3%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="wf-answer" id="ans-scenario" hidden>
+          <span class="wf-answer__avatar"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z"/></svg></span>
+          <div>
+            <div class="wf-answer__text">
+              The adopted weights are 25% up / 50% base / 25% down. The down scenario alone would push the
+              allowance from <span class="num">$30.5m</span> to <span class="num">$47.6m</span>
+              (<span class="num">+56.3%</span>); the up scenario would pull it to
+              <span class="num">$27.7m</span> (<span class="num">−9.1%</span>). The blended
+              <span class="num">$34.0m</span> sits above the base case because the down tail is fatter in
+              dollars than the up tail is thin.
+            </div>
+            <span class="citation-chip">⚙ GET /api/ecl/summary</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel__footer">GET /api/ecl/summary — scenarios[]</div>
+    </section>
+
+  </main>
+</div>
+
+<div class="chatdock">
+  <span class="chatdock__status" aria-hidden="true"></span>
+  <input class="chatdock__input" type="text" placeholder="Ask the Copilot about this view…" aria-label="Ask the Copilot">
+  <button class="chatdock__send" aria-label="Send">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1,8 L15,1 L9,15 L7,9 L1,8 Z"/></svg>
+  </button>
+</div>
+
+<script>
+  // Theme toggle — flips the explicit data-theme attribute both ways.
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var label = document.getElementById('themeLabel');
+    function sync() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      label.textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    btn.addEventListener('click', function () {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      root.setAttribute('data-theme', dark ? 'light' : 'dark');
+      sync();
+    });
+    sync();
+  })();
+
+  // AI-explain affordance — toggles the grounded answer beneath its panel/tile.
+  document.querySelectorAll('.ai-explain').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      var open = target.hasAttribute('hidden');
+      target.toggleAttribute('hidden', !open);
+      btn.classList.toggle('is-active', open);
+      btn.setAttribute('aria-expanded', String(open));
+    });
+  });
+
+  // Waterfall table-view toggle — same data, twin presentation.
+  (function () {
+    var toggle = document.getElementById('wfTableToggle');
+    var chart = document.getElementById('wfChartWrap');
+    var tbl = document.getElementById('wfTableWrap');
+    toggle.addEventListener('click', function () {
+      var showingTable = !tbl.hasAttribute('hidden');
+      tbl.toggleAttribute('hidden', showingTable);
+      chart.toggleAttribute('hidden', !showingTable);
+      toggle.classList.toggle('is-active', !showingTable);
+      toggle.setAttribute('aria-pressed', String(!showingTable));
+    });
+  })();
+</script>
+</body>
+</html>

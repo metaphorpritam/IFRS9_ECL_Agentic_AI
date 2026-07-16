@@ -82,6 +82,33 @@ export const TOOL_FN = {
 
 export const askAgent = (question) => post('/api/agent/ask', { question });
 
+// ---------------------------------------------------- explain-prefix conventions
+// docs/api_contract.md §"AI-explain question prefixes" — both conventions
+// REUSE POST /api/agent/ask (never a bespoke endpoint) so every explain
+// click passes the same tools/Tier-2/Tier-3/refusal governance
+// (FINAL_SPEC.md §7.5). Keep these two builders as the single source of the
+// exact wire text so the UI and the contract-test stay byte-identical.
+
+/** Panel/tile explain convention (FINAL_SPEC §7.5, graft 4): a bracketed
+ * routing tag with live params, an Exhibit label, and a CODE-GENERATED recap
+ * of the exact figures the panel/tile is rendering right now (built from the
+ * same payload that drew it — never free text). */
+export const explainPanelQuestion = ({ panelId, params = {}, exhibitLabel, title, recap }) => {
+  const paramStr = Object.entries(params)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(' ');
+  const tag = `[explain:${panelId}${paramStr ? ` ${paramStr}` : ''}]`;
+  const label = exhibitLabel ? `${exhibitLabel} — ${title}` : title;
+  return `${tag} ${label}: ${recap} What should I take from this?`;
+};
+
+/** Selection-explain convention: the user highlighted text anywhere in the
+ * main area; ground the question in which tab they were reading. */
+export const explainSelectionQuestion = (tabLabel, selectedText) => {
+  const trimmed = String(selectedText || '').trim().slice(0, 300);
+  return `Explain, in the context of the ${tabLabel} tab: "${trimmed}"`;
+};
+
 export const AGENT_STREAM_URL = '/api/agent/stream';
 
 /** Auto-interpretation: {tool, result} -> {interpretation, grounded, mode}. */

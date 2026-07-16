@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { AGENT_STREAM_URL } from '../api.js';
+import { AGENT_STREAM_URL, explainPanelQuestion } from '../api.js';
 import { fmtTime } from '../format.js';
+import Panel from './Panel.jsx';
 
 const MAX_EVENTS = 200;
 
@@ -79,17 +80,25 @@ export default function AgentTrace() {
   }, [events]);
 
   return (
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Agent trace</h2>
+    <Panel
+      title="Agent trace"
+      subtitle="Router decisions, typed tool calls, engine results, narration — the LLM never does arithmetic."
+      dense={false}
+      actions={
         <span class={`conn conn-${status}`}>
-          <span class="conn-dot" /> {status}
+          <span class="status-dot" /> {status}
         </span>
-      </div>
-      <p class="panel-sub">
-        Router decisions, typed tool calls, engine results, narration — the LLM
-        never does arithmetic.
-      </p>
+      }
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'agent_trace',
+          title: 'Agent trace',
+          recap: events.length
+            ? `${events.length} trace events this connection; most recent: ${eventText(events.at(-1))}.`
+            : 'no trace events received yet this connection',
+        })
+      }
+    >
       <ul class="trace-list" ref={listRef}>
         {events.length === 0 && (
           <li class="empty-note">Waiting for agent activity…</li>
@@ -98,6 +107,6 @@ export default function AgentTrace() {
           <EventRow ev={ev} key={i} />
         ))}
       </ul>
-    </section>
+    </Panel>
   );
 }

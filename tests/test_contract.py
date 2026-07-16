@@ -20,6 +20,7 @@ text, exactly like tests/test_router.py does for the live copilot.
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
@@ -447,6 +448,81 @@ def test_interpret_rejects_result_missing_required_fields(client):
                      json={"tool": "query_model_docs",
                            "result": {"question": "x"}})
     assert r2.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Section 5: UI v3 AI-explain question-prefix conventions (docs §5)
+#
+# Both prefixes are pure wire-text conventions on top of the EXISTING
+# POST /api/agent/ask — the router must see them as ordinary free text.
+# Exercised against the real agent.graph router (agent.graph.run_agent),
+# exactly like tests/test_router.py and tests/test_tier3.py: the LLM seams
+# (_llm_route / _llm_narrate_docs / _chat_once) are monkeypatched, the graph
+# wiring is real. The point of these tests is NOT to pin one "correct"
+# route — it's that a bracketed-tag, figure-recap-laden question never
+# crashes the router and always lands on a sensible route: the Tier-3
+# documentation tool (a real LLM would plausibly read "explain this
+# exhibit" as a methodology question) or a clean refusal — never an
+# unhandled exception, and never a silently wrong Tier-1 tool call the
+# router wasn't told to make.
+# ---------------------------------------------------------------------------
+
+_EXPLAIN_PANEL_QUESTION = (
+    "[explain:waterfall t0=59 t1=60] Exhibit 1 — Allowance bridge: opening "
+    "$30.0m, stage migration +1.0m, remeasurement +2.0m, derecognitions "
+    "-1.5m, new loans +0.5m, closing $32.0m. What should I take from this?"
+)
+_EXPLAIN_SELECTION_QUESTION = (
+    "Explain, in the context of the Executive Overview tab: "
+    '"scenario-weighted allowance is $34.0m"'
+)
+
+
+@pytest.fixture
+def _no_network_llm(monkeypatch, tmp_path):
+    """Guard against any real network call, and keep the audit trail clean
+    (mirrors tests/test_router.py's `_offline` fixture)."""
+    def _no_net(model, messages):
+        raise AssertionError("network LLM call attempted in pytest")
+    monkeypatch.setattr(graph, "_chat_once", _no_net)
+    monkeypatch.setattr(graph, "RUNS_LOG_PATH", tmp_path / "agent_runs.jsonl")
+
+
+def _mock_docs_route(monkeypatch):
+    monkeypatch.setattr(
+        graph, "_llm_route",
+        lambda question: (json.dumps({"route": "query_model_docs", "args": {}}),
+                          "mock-router"))
+    monkeypatch.setattr(
+        graph, "_llm_narrate_docs",
+        lambda result: (f"Per {result['passages'][0]['citation']}, that is "
+                        "the documented read.", "mock-narrator"))
+
+
+def _mock_refuse_route(monkeypatch):
+    monkeypatch.setattr(
+        graph, "_llm_route",
+        lambda question: (json.dumps({"route": "REFUSE", "args": {}}),
+                          "mock-router"))
+
+
+@pytest.mark.parametrize("question", [_EXPLAIN_PANEL_QUESTION, _EXPLAIN_SELECTION_QUESTION])
+def test_explain_prefix_routes_to_docs_without_crashing(question, monkeypatch, _no_network_llm):
+    _mock_docs_route(monkeypatch)
+    final = graph.run_agent(question)          # must not raise
+    assert final["route"] == "query_model_docs"
+    assert [e["node"] for e in final["trace"]] == \
+        ["router", "query_model_docs", "narrator"]
+    assert final["answer"]                      # never blank
+
+
+@pytest.mark.parametrize("question", [_EXPLAIN_PANEL_QUESTION, _EXPLAIN_SELECTION_QUESTION])
+def test_explain_prefix_can_refuse_cleanly_without_crashing(question, monkeypatch, _no_network_llm):
+    _mock_refuse_route(monkeypatch)
+    final = graph.run_agent(question)          # must not raise
+    assert final["route"] == "REFUSE"
+    assert final["answer"] == graph.REFUSAL_MESSAGE
+    assert [e["node"] for e in final["trace"]] == ["router", "refusal"]
 
 
 # ---------------------------------------------------------------------------

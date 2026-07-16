@@ -4,10 +4,12 @@ import {
   reweightScenarios,
   rerunEcl,
   decomposeWaterfall,
+  explainPanelQuestion,
 } from '../api.js';
-import { fmtPct, fmtMillions, fmtRatio } from '../format.js';
+import { fmtPct, fmtMillions, fmtRatio, runDate } from '../format.js';
 import WaterfallChart from '../components/WaterfallChart.jsx';
 import Interpretation from '../components/Interpretation.jsx';
+import Panel from '../components/Panel.jsx';
 
 const SCENARIOS = [
   { key: 'up', label: 'Upside' },
@@ -111,9 +113,19 @@ export default function ScenarioLabTab() {
 
       <div class="scenario-grid">
         <div class="scenario-controls-col">
-          <section class="panel">
-            <h2>Reweight scenarios</h2>
-            <p class="panel-sub">reweight_scenarios — probability weights must sum to 1.</p>
+          <Panel
+            title="Reweight scenarios"
+            subtitle="reweight_scenarios — probability weights must sum to 1."
+            dense={false}
+            buildExplainQuestion={() =>
+              explainPanelQuestion({
+                panelId: 'reweight_control',
+                params: norm,
+                title: 'Reweight scenarios',
+                recap: `Control currently set to ${fmtPct(norm.up, 0)}/${fmtPct(norm.base, 0)}/${fmtPct(norm.down, 0)} up/base/down.`,
+              })
+            }
+          >
             {SCENARIOS.map(({ key, label }) => (
               <label class="slider-row" key={key}>
                 <span class="slider-label">{label}</span>
@@ -144,11 +156,21 @@ export default function ScenarioLabTab() {
             >
               Run reweight
             </button>
-          </section>
+          </Panel>
 
-          <section class="panel">
-            <h2>Macro shock</h2>
-            <p class="panel-sub">shock_macro — coherent shock of the base scenario.</p>
+          <Panel
+            title="Macro shock"
+            subtitle="shock_macro — coherent shock of the base scenario."
+            dense={false}
+            buildExplainQuestion={() =>
+              explainPanelQuestion({
+                panelId: 'shock_control',
+                params: { var: shockVar, shock: shockPp, shape: shockShape },
+                title: 'Macro shock',
+                recap: `Control currently set to ${shockVar} ${shockPp >= 0 ? '+' : ''}${shockPp.toFixed(1)}pp (${shockShape}).`,
+              })
+            }
+          >
             <div class="control-row">
               <select value={shockVar} onInput={(e) => setShockVar(e.currentTarget.value)}>
                 <option value="UER">UER (unemployment level)</option>
@@ -186,11 +208,21 @@ export default function ScenarioLabTab() {
             >
               Run shock
             </button>
-          </section>
+          </Panel>
 
-          <section class="panel">
-            <h2>Rerun by segment</h2>
-            <p class="panel-sub">rerun_ecl — decomposition of the already-computed book, no refit.</p>
+          <Panel
+            title="Rerun by segment"
+            subtitle="rerun_ecl — decomposition of the already-computed book, no refit."
+            dense={false}
+            buildExplainQuestion={() =>
+              explainPanelQuestion({
+                panelId: 'segment_control',
+                params: { segment },
+                title: 'Rerun by segment',
+                recap: `Control currently set to segment "${segment}".`,
+              })
+            }
+          >
             <select value={segment} onInput={(e) => setSegment(e.currentTarget.value)}>
               {SEGMENTS.map((s) => (
                 <option value={s} key={s}>{s}</option>
@@ -204,11 +236,21 @@ export default function ScenarioLabTab() {
             >
               Run segment
             </button>
-          </section>
+          </Panel>
 
-          <section class="panel">
-            <h2>Decompose waterfall</h2>
-            <p class="panel-sub">decompose_waterfall — movement between two panel snapshots (t=1..60).</p>
+          <Panel
+            title="Decompose waterfall"
+            subtitle="decompose_waterfall — movement between two panel snapshots (t=1..60)."
+            dense={false}
+            buildExplainQuestion={() =>
+              explainPanelQuestion({
+                panelId: 'decompose_control',
+                params: { t0, t1 },
+                title: 'Decompose waterfall',
+                recap: `Control currently set to t0=${t0}, t1=${t1}.`,
+              })
+            }
+          >
             <div class="control-row">
               <label>
                 t0
@@ -242,18 +284,33 @@ export default function ScenarioLabTab() {
             >
               Run decomposition
             </button>
-          </section>
+          </Panel>
 
           {busy && <div class="status muted">Engine running…</div>}
           {err && <div class="status status-err">{err}</div>}
         </div>
 
         <div class="scenario-result-col">
-          <section class="panel">
-            <h2>Result &amp; interpretation</h2>
+          <Panel
+            exhibit={1}
+            title="Result & interpretation"
+            source={
+              action
+                ? { endpoint: `POST /api/tools/${action.tool}`, runDate: runDate() }
+                : undefined
+            }
+            buildExplainQuestion={() =>
+              explainPanelQuestion({
+                panelId: 'scenario_result',
+                exhibitLabel: 'Exhibit 1',
+                title: 'Result & interpretation',
+                recap: action ? action.result.headline : 'no control has been run yet',
+              })
+            }
+          >
             <ResultCard action={action} />
-          </section>
-          <WaterfallChart action={action} t0={t0} t1={t1} />
+          </Panel>
+          <WaterfallChart action={action} t0={t0} t1={t1} exhibit={2} />
         </div>
       </div>
     </div>

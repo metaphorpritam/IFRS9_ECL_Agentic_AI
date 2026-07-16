@@ -1,13 +1,16 @@
 import { Fragment } from 'preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import {
+  explainPanelQuestion,
   getModelCoefficients,
   getVariableDictionary,
   getLgd,
   getExhibitsList,
 } from '../api.js';
+import { runDate } from '../format.js';
 import SearchableTable from '../components/SearchableTable.jsx';
 import ExhibitImage from '../components/ExhibitImage.jsx';
+import Panel from '../components/Panel.jsx';
 
 const FAMILY_LABEL = {
   baseline: 'Baseline (seasoning)',
@@ -33,9 +36,9 @@ function CoefficientsTable({ model }) {
         <thead>
           <tr>
             <th>Variable</th>
-            <th>Hazard ratio</th>
-            <th>95% CI</th>
-            <th>p</th>
+            <th class="num">Hazard ratio</th>
+            <th class="num">95% CI</th>
+            <th class="num">p</th>
           </tr>
         </thead>
         <tbody>
@@ -49,11 +52,11 @@ function CoefficientsTable({ model }) {
                 .map((c) => (
                   <tr key={c.variable}>
                     <td>{c.variable}</td>
-                    <td class={c.hazard_ratio > 1 ? 'hr-up' : 'hr-down'}>
+                    <td class={`num ${c.hazard_ratio > 1 ? 'hr-up' : 'hr-down'}`}>
                       {c.hazard_ratio.toFixed(4)}
                     </td>
-                    <td>[{c.ci[0].toFixed(3)}, {c.ci[1].toFixed(3)}]</td>
-                    <td>{c.p_display}</td>
+                    <td class="num">[{c.ci[0].toFixed(3)}, {c.ci[1].toFixed(3)}]</td>
+                    <td class="num">{c.p_display}</td>
                   </tr>
                 ))}
               <tr class="story-row">
@@ -82,22 +85,22 @@ function FitStats({ fitStats }) {
           <thead>
             <tr>
               <th>Model</th>
-              <th>n fit</th>
-              <th>Events</th>
-              <th>Train AUC</th>
-              <th>OOT AUC</th>
-              <th>McFadden R²</th>
+              <th class="num">n fit</th>
+              <th class="num">Events</th>
+              <th class="num">Train AUC</th>
+              <th class="num">OOT AUC</th>
+              <th class="num">McFadden R²</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
                 <td>{r.label}</td>
-                <td>{r.n_fit.toLocaleString()}</td>
-                <td>{r.events.toLocaleString()}</td>
-                <td>{r.train_auc.toFixed(4)}</td>
-                <td>{r.oot_auc.toFixed(4)}</td>
-                <td>{r.mcfadden_r2.toFixed(4)}</td>
+                <td class="num">{r.n_fit.toLocaleString()}</td>
+                <td class="num">{r.events.toLocaleString()}</td>
+                <td class="num">{r.train_auc.toFixed(4)}</td>
+                <td class="num">{r.oot_auc.toFixed(4)}</td>
+                <td class="num">{r.mcfadden_r2.toFixed(4)}</td>
               </tr>
             ))}
           </tbody>
@@ -162,10 +165,10 @@ function LgdSection({ lgd, exhibits }) {
   }));
   const coefCols = [
     { key: 'variable', label: 'Variable' },
-    { key: 'coef', label: 'Coef', render: (r) => r.coef.toFixed(4) },
-    { key: 'se', label: 'SE', render: (r) => (r.se ?? r.se_hc1)?.toFixed(4) },
-    { key: 'z', label: 'z', render: (r) => r.z.toFixed(3) },
-    { key: 'p', label: 'p', render: (r) => r.p.toFixed(4) },
+    { key: 'coef', label: 'Coef', align: 'right', render: (r) => r.coef.toFixed(4) },
+    { key: 'se', label: 'SE', align: 'right', render: (r) => (r.se ?? r.se_hc1)?.toFixed(4) },
+    { key: 'z', label: 'z', align: 'right', render: (r) => r.z.toFixed(3) },
+    { key: 'p', label: 'p', align: 'right', render: (r) => r.p.toFixed(4) },
   ];
   return (
     <>
@@ -190,14 +193,14 @@ function LgdSection({ lgd, exhibits }) {
       <div class="table-scroll">
         <table class="data-table">
           <thead>
-            <tr><th>Metric</th><th>Train</th><th>OOT</th></tr>
+            <tr><th>Metric</th><th class="num">Train</th><th class="num">OOT</th></tr>
           </thead>
           <tbody>
             {calRows.map((r) => (
               <tr key={r.metric}>
                 <td class="cap">{r.metric}</td>
-                <td>{r.train.toFixed(4)}</td>
-                <td>{r.oot.toFixed(4)}</td>
+                <td class="num">{r.train.toFixed(4)}</td>
+                <td class="num">{r.oot.toFixed(4)}</td>
               </tr>
             ))}
           </tbody>
@@ -260,6 +263,8 @@ export default function ModelTab() {
     [exhibits],
   );
 
+  const model = coeffs?.models?.[selected];
+
   return (
     <div class="tab-body">
       <header class="tab-intro">
@@ -271,9 +276,12 @@ export default function ModelTab() {
         <div class="empty-note">Engine API offline ({error}).</div>
       )}
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Hazard-ratio coefficients</h2>
+      <Panel
+        exhibit={1}
+        title="Hazard-ratio coefficients"
+        subtitle="Hazard ratio > 1 = risk-increasing; < 1 = risk-reducing (exp(coef) of a cloglog hazard). Each family's intuition story is below its rows."
+        source={{ endpoint: 'GET /api/model/coefficients', runDate: runDate() }}
+        actions={
           <div class="segmented">
             <button
               class={selected === 'default' ? 'active' : ''}
@@ -288,37 +296,93 @@ export default function ModelTab() {
               Prepayment hazard
             </button>
           </div>
-        </div>
-        <p class="panel-sub">
-          Hazard ratio &gt; 1 = risk-increasing; &lt; 1 = risk-reducing (exp(coef) of a
-          cloglog hazard). Each family's intuition story is below its rows.
-        </p>
-        <CoefficientsTable model={coeffs?.models?.[selected]} />
-      </section>
+        }
+        buildExplainQuestion={() =>
+          explainPanelQuestion({
+            panelId: 'hazard_coefficients',
+            params: { model: selected },
+            exhibitLabel: 'Exhibit 1',
+            title: 'Hazard-ratio coefficients',
+            recap: model
+              ? `${selected} hazard model: n=${model.n_fit.toLocaleString()}, ${model.coefficients.length} coefficients, McFadden R² ${model.mcfadden_r2.toFixed(4)}. Largest hazard ratio: ${model.coefficients.reduce((a, b) => (Math.abs(Math.log(b.hazard_ratio)) > Math.abs(Math.log(a.hazard_ratio)) ? b : a)).variable}.`
+              : 'no data rendered yet',
+          })
+        }
+      >
+        <CoefficientsTable model={model} />
+      </Panel>
 
-      <section class="panel">
-        <h2>Fit statistics</h2>
+      <Panel
+        exhibit={2}
+        title="Fit statistics"
+        source={{ endpoint: 'GET /api/model/coefficients', runDate: runDate() }}
+        buildExplainQuestion={() =>
+          explainPanelQuestion({
+            panelId: 'fit_stats',
+            exhibitLabel: 'Exhibit 2',
+            title: 'Fit statistics',
+            recap: coeffs?.fit_stats
+              ? `Default hazard: train AUC ${coeffs.fit_stats.default.train_auc.toFixed(4)}, OOT AUC ${coeffs.fit_stats.default.oot_auc.toFixed(4)}. Prepayment hazard: train AUC ${coeffs.fit_stats.prepay.train_auc.toFixed(4)}, OOT AUC ${coeffs.fit_stats.prepay.oot_auc.toFixed(4)}.`
+              : 'no data rendered yet',
+          })
+        }
+      >
         <FitStats fitStats={coeffs?.fit_stats} />
-      </section>
+      </Panel>
 
-      <section class="panel">
-        <h2>Seasoning &amp; term-structure exhibits</h2>
+      <Panel
+        exhibit={3}
+        title="Seasoning & term-structure exhibits"
+        source={{ endpoint: 'GET /api/exhibits/list', runDate: runDate() }}
+        buildExplainQuestion={() =>
+          explainPanelQuestion({
+            panelId: 'seasoning_exhibits',
+            exhibitLabel: 'Exhibit 3',
+            title: 'Seasoning & term-structure exhibits',
+            recap: `${seasoningExhibits.length} seasoning/term-structure exhibits rendered: ${seasoningExhibits.map((e) => e.title).join(', ')}.`,
+          })
+        }
+      >
         <div class="exhibit-grid">
           {seasoningExhibits.map((e) => (
             <ExhibitImage key={e.id} {...e} />
           ))}
         </div>
-      </section>
+      </Panel>
 
-      <section class="panel">
-        <h2>Variable dictionary</h2>
+      <Panel
+        exhibit={4}
+        title="Variable dictionary"
+        source={{ endpoint: 'GET /api/model/variable_dictionary', runDate: runDate() }}
+        buildExplainQuestion={() =>
+          explainPanelQuestion({
+            panelId: 'variable_dictionary',
+            exhibitLabel: 'Exhibit 4',
+            title: 'Variable dictionary',
+            recap: dict ? `${dict.rows.length} model variables documented, spanning baseline, borrower, collateral, macro and incentive families.` : 'no data rendered yet',
+          })
+        }
+      >
         <VariableDictionary dict={dict} />
-      </section>
+      </Panel>
 
-      <section class="panel">
-        <h2>LGD — two-stage workout model</h2>
+      <Panel
+        exhibit={5}
+        title="LGD — two-stage workout model"
+        source={{ endpoint: 'GET /api/model/lgd', runDate: runDate() }}
+        buildExplainQuestion={() =>
+          explainPanelQuestion({
+            panelId: 'lgd',
+            exhibitLabel: 'Exhibit 5',
+            title: 'LGD — two-stage workout model',
+            recap: lgd
+              ? `Cure rate ${(lgd.cure_rate * 100).toFixed(1)}%, cure AUC (train/OOT) ${lgd.cure_auc.train.toFixed(3)}/${lgd.cure_auc.oot.toFixed(3)}, excess-loss loading ${(lgd.excess_loss_loading * 100).toFixed(2)}%.`
+              : 'no data rendered yet',
+          })
+        }
+      >
         <LgdSection lgd={lgd} exhibits={exhibits} />
-      </section>
+      </Panel>
     </div>
   );
 }

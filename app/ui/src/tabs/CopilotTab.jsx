@@ -1,7 +1,9 @@
 import { useState } from 'preact/hooks';
 import ChatPanel from '../components/ChatPanel.jsx';
 import AgentTrace from '../components/AgentTrace.jsx';
+import Panel from '../components/Panel.jsx';
 import { fmtTime } from '../format.js';
+import { explainPanelQuestion } from '../api.js';
 
 const SUGGESTIONS = [
   'What is the reported allowance under the downside scenario?',
@@ -38,13 +40,20 @@ function AuditLogRow({ entry }) {
  * built from each ChatPanel resolution via onResult. */
 function AuditLog({ entries }) {
   return (
-    <section class="panel">
-      <h2>Session audit log</h2>
-      <p class="panel-sub">
-        Every question asked in this Copilot session, most recent first —
-        click a row for the full trace. (No server-side history endpoint;
-        this is this browser session's own runs.)
-      </p>
+    <Panel
+      title="Session audit log"
+      subtitle="Every question asked in this Copilot session, most recent first — click a row for the full trace. (No server-side history endpoint; this is this browser session's own runs.)"
+      dense={false}
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'session_audit_log',
+          title: 'Session audit log',
+          recap: entries.length
+            ? `${entries.length} question(s) asked this session; most recent route: ${entries.at(-1).route}.`
+            : 'no questions asked yet this session',
+        })
+      }
+    >
       <ul class="audit-list">
         {entries.length === 0 && (
           <li class="empty-note">No questions asked yet this session.</li>
@@ -56,7 +65,7 @@ function AuditLog({ entries }) {
             <AuditLogRow entry={e} key={i} />
           ))}
       </ul>
-    </section>
+    </Panel>
   );
 }
 

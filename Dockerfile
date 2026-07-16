@@ -25,6 +25,7 @@ COPY app/ui/package.json app/ui/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY app/ui/index.html app/ui/vite.config.js ./
 COPY app/ui/src ./src
+COPY app/ui/scripts ./scripts
 RUN npm run build
 
 # ----------------------------------------------------------- stage 2: runtime

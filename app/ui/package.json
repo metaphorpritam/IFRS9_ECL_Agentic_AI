@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "verify:waterfall": "node scripts/verify-waterfall.mjs",
+    "prebuild": "npm run verify:waterfall",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-08T14:59:39+00:00",
+  "generated": "2026-07-16T23:55:10+00:00",
   "wiki_dir": "wiki",
   "pages": 19,
   "nodes": [
@@ -64,6 +64,10 @@
         },
         {
           "line": 76,
+          "text": "UI v3 AI-explain prefixes (contract §5)"
+        },
+        {
+          "line": 90,
           "text": "Known caveats"
         }
       ],

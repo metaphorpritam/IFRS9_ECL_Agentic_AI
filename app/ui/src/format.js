@@ -41,3 +41,7 @@ export const fmtSigned = (v, dp = 1) =>
   v == null || Number.isNaN(Number(v))
     ? '—'
     : `${Number(v) >= 0 ? '+' : '−'}${Math.abs(Number(v)).toFixed(dp)}`;
+
+// Exhibit-footer "run <date>" stamp (FINAL_SPEC §5.2) — the client's own
+// clock; the app has no server-side "as-of build" timestamp endpoint.
+export const runDate = () => new Date().toISOString().slice(0, 10);

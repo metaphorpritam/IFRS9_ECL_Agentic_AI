@@ -73,6 +73,20 @@ events are `{"node": ...}` dicts — documented there). Tier-2
 EXECUTES it (AST-validated, one repair attempt, else refusal); tests in
 `tests/test_tier2.py`. Suite 481/481 green at review time.
 
+## UI v3 AI-explain prefixes (contract §5)
+
+Two UI-side wire-text conventions on top of the EXISTING `POST
+/api/agent/ask` (zero new endpoints, FINAL_SPEC §7.5): the panel/tile
+explain prefix `[explain:<panel_id> <params>] <Exhibit label> — <title>:
+<code-generated figure recap> What should I take from this?` and the
+selection-explain prefix `Explain, in the context of the <tab> tab:
+"<selection, ≤300 chars>"`. Single source of the wire text:
+`app/ui/src/api.js` (`explainPanelQuestion` / `explainSelectionQuestion`);
+documented in `docs/api_contract.md` §5 and exercised by 4
+`tests/test_contract.py` router-wiring tests (both prefixes × docs-route
+and clean-refusal, LLM seams mocked, graph wiring real — never a crash,
+never an unrequested Tier-1 call).
+
 ## Known caveats
 
 Narrations may quote unrounded floats (verbatim-number check is strict); single-worker SSE demo

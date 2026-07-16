@@ -1,16 +1,28 @@
 import { useEffect, useState } from 'preact/hooks';
-import { getStagingSensitivity, getWeightsTable } from '../api.js';
-import { fmtMillions, fmtPct, fmtPctScale } from '../format.js';
+import { explainPanelQuestion, getStagingSensitivity, getWeightsTable } from '../api.js';
+import { fmtMillions, fmtPct, fmtPctScale, runDate } from '../format.js';
 import DecisionHeader from '../components/DecisionHeader.jsx';
 import ExhibitImage from '../components/ExhibitImage.jsx';
 import StageGuide from '../components/StageGuide.jsx';
 import WeightsBarChart from '../components/WeightsBarChart.jsx';
+import Panel from '../components/Panel.jsx';
 
 function StagingSensitivityPanel({ data }) {
   if (!data) return null;
   return (
-    <section class="panel">
-      <h2>Stage-2 share vs SICR threshold</h2>
+    <Panel
+      exhibit={1}
+      title="Stage-2 share vs SICR threshold"
+      source={{ endpoint: 'GET /api/policy/staging_sensitivity', runDate: runDate() }}
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'staging_sensitivity',
+          exhibitLabel: 'Exhibit 1',
+          title: 'Stage-2 share vs SICR threshold',
+          recap: `Thresholds shown: ${data.thresholds.join(', ')}; add-on held at ${data.add_on_pp}pp across every threshold. ${data.reading}`,
+        })
+      }
+    >
       <DecisionHeader>
         Where would you set the SICR (significant-increase-in-credit-risk) ratio
         threshold that triggers Stage 2? — the 2.0× adopted convention vs the
@@ -24,7 +36,7 @@ function StagingSensitivityPanel({ data }) {
               <th>t</th>
               <th>Period</th>
               {data.thresholds.map((th) => (
-                <th key={th}>{th}</th>
+                <th class="num" key={th}>Stage 2 share ({th}) (%)</th>
               ))}
             </tr>
           </thead>
@@ -34,7 +46,7 @@ function StagingSensitivityPanel({ data }) {
                 <td>{r.t}</td>
                 <td>{r.period}</td>
                 {data.thresholds.map((th) => (
-                  <td key={th}>{fmtPctScale(r.stage2_share_pct[th])}</td>
+                  <td class="num" key={th}>{fmtPctScale(r.stage2_share_pct[th])}</td>
                 ))}
               </tr>
             ))}
@@ -42,15 +54,29 @@ function StagingSensitivityPanel({ data }) {
         </table>
       </div>
       <p class="panel-sub">Add-on held at {data.add_on_pp}pp across every threshold shown.</p>
-    </section>
+    </Panel>
   );
 }
 
 function WeightsTablePanel({ data }) {
   if (!data) return null;
+  const adopted = data.weight_sets.find((w) => w.id === 'adopted');
   return (
-    <section class="panel">
-      <h2>Scenario-weight sensitivity</h2>
+    <Panel
+      exhibit={2}
+      title="Scenario-weight sensitivity"
+      source={{ endpoint: 'GET /api/policy/weights_table', runDate: runDate() }}
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'weights_table',
+          exhibitLabel: 'Exhibit 2',
+          title: 'Scenario-weight sensitivity',
+          recap: data.weight_sets
+            .map((w) => `${w.label} (${fmtPct(w.weights.up, 0)}/${fmtPct(w.weights.base, 0)}/${fmtPct(w.weights.down, 0)}): allowance ${fmtMillions(w.weighted_allowance / 1e6)}, ${w.delta_vs_adopted_pct >= 0 ? '+' : ''}${w.delta_vs_adopted_pct.toFixed(1)}% vs adopted`)
+            .join('; '),
+        })
+      }
+    >
       <DecisionHeader>
         Management judgment: which probability weighting across up / base / down
         scenarios best reflects "reasonable and supportable" forward-looking
@@ -62,25 +88,42 @@ function WeightsTablePanel({ data }) {
           <thead>
             <tr>
               <th>Weight set</th>
-              <th>Up / Base / Down</th>
-              <th>Weighted allowance</th>
-              <th>Coverage</th>
-              <th>Jensen ratio</th>
-              <th>Δ vs adopted</th>
+              <th>Up / Base / Down (%)</th>
+              <th class="num">Weighted allowance ($m)</th>
+              <th class="num">Coverage (%)</th>
+              <th class="num">Jensen ratio (x)</th>
+              <th class="num">Δ vs adopted (%)</th>
             </tr>
           </thead>
           <tbody>
             {data.weight_sets.map((w) => (
               <tr key={w.id} class={w.id === 'adopted' ? 'row-adopted' : ''}>
-                <td>{w.label}</td>
+                <td>
+                  {w.label}
+                  {w.id === 'adopted' && <span class="adopted-tag">ADOPTED</span>}
+                </td>
                 <td>
                   {fmtPct(w.weights.up, 0)} / {fmtPct(w.weights.base, 0)} /{' '}
                   {fmtPct(w.weights.down, 0)}
                 </td>
-                <td>{fmtMillions(w.weighted_allowance / 1e6)}</td>
-                <td>{fmtPct(w.coverage)}</td>
-                <td>{w.jensen_ratio.toFixed(4)}×</td>
-                <td>{w.delta_vs_adopted_pct >= 0 ? '+' : ''}{w.delta_vs_adopted_pct.toFixed(1)}%</td>
+                <td class="num">{fmtMillions(w.weighted_allowance / 1e6)}</td>
+                <td class="num">{fmtPct(w.coverage)}</td>
+                <td class="num">{w.jensen_ratio.toFixed(4)}×</td>
+                <td class="num">
+                  {w.id === 'adopted' ? (
+                    '—'
+                  ) : (
+                    /* Δ-vs-adopted pill (§5.3): ▲/▼ inside the same text run —
+                       one coherent string for screen readers. Up = allowance
+                       above the adopted basis (a provisions cost increase). */
+                    <span
+                      class={`delta-pill ${w.delta_vs_adopted_pct >= 0 ? 'delta-pill-bad' : 'delta-pill-good'}`}
+                    >
+                      {w.delta_vs_adopted_pct >= 0 ? '▲' : '▼'}{' '}
+                      {Math.abs(w.delta_vs_adopted_pct).toFixed(1)}% vs adopted
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -91,28 +134,49 @@ function WeightsTablePanel({ data }) {
         tool for each of the three sets and appends to the audit trail —
         every reweighting the app has ever shown a user is logged, including
         from this convenience view.
+        {adopted ? ` Adopted basis: ${fmtMillions(adopted.weighted_allowance / 1e6)}.` : ''}
       </p>
-    </section>
+    </Panel>
   );
 }
 
 function StageGuidePanel() {
   return (
-    <section class="panel">
-      <h2>Stage → ECL horizon guide</h2>
+    <Panel
+      title="Stage → ECL horizon guide"
+      dense={false}
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'stage_guide',
+          title: 'Stage → ECL horizon guide',
+          recap:
+            'Stage 1 (performing) = 12-month ECL; Stage 2 (SICR, lifetime PD > 2x origination + 0.5pp add-on) = lifetime ECL over the remaining contractual life; Stage 3 (impaired) = LGD x current exposure.',
+        })
+      }
+    >
       <DecisionHeader>
         How does a loan's stage translate into the ECL horizon — 12-month vs
         full lifetime — that the allowance is computed over?
       </DecisionHeader>
       <StageGuide />
-    </section>
+    </Panel>
   );
 }
 
 function OverlayNotePanel() {
   return (
-    <section class="panel">
-      <h2>When judgment overrides the model — the overlay question</h2>
+    <Panel
+      title="When judgment overrides the model — the overlay question"
+      dense={false}
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'overlay_note',
+          title: 'When judgment overrides the model — the overlay question',
+          recap:
+            'This engine reports a model-driven allowance; a defensible management overlay needs a named trigger, an evidence-based quantification basis, allocation to the stages/segments it affects, and exit criteria.',
+        })
+      }
+    >
       <DecisionHeader>
         When does experienced credit judgment override the modelled number —
         and how is that override governed, quantified and eventually retired?
@@ -147,7 +211,7 @@ function OverlayNotePanel() {
         overlay-sized stress look like" before reaching for a judgmental
         add-on.
       </p>
-    </section>
+    </Panel>
   );
 }
 

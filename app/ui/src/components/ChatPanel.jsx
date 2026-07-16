@@ -1,24 +1,17 @@
 import { useState } from 'preact/hooks';
-import { askAgent } from '../api.js';
-
-function ToolCitation({ node }) {
-  const tool = node.tool || node.node;
-  if (!tool) return null;
-  return (
-    <code class="citation" title="Engine tool call backing this answer">
-      {tool}
-      {node.args ? JSON.stringify(node.args) : ''}
-    </code>
-  );
-}
+import { askAgent, explainPanelQuestion } from '../api.js';
+import { renderWithNums } from '../numText.jsx';
+import { useExplain } from './ExplainButton.jsx';
 
 // The live LangGraph router emits route "REFUSE" (agent/graph.py's REFUSE
 // constant); the offline keyword fallback router emits "refusal" (see
 // app/api/main.py). Both mean the same thing to the UI — match either,
 // case-insensitively, rather than assume one contract spelling.
-const isRefusalRoute = (route) => /^refus(e|al)$/i.test(route || '');
+export const isRefusalRoute = (route) => /^refus(e|al)$/i.test(route || '');
 
-function AgentMessage({ msg }) {
+/** Shared agent-message bubble — used by ChatPanel's own log AND by
+ * MiniChatDock's expanded log, so the two chat surfaces render identically. */
+export function AgentMessage({ msg }) {
   const isRefusal = isRefusalRoute(msg.route);
   if (isRefusal) {
     return (
@@ -30,11 +23,11 @@ function AgentMessage({ msg }) {
   }
   return (
     <div class="msg msg-agent">
-      <p>{msg.answer}</p>
+      <p>{renderWithNums(msg.answer)}</p>
       {msg.route && (
         <div class="citations">
           <span class="citations-label">via</span>
-          <code class="citation">{msg.route}</code>
+          <code class="citation">⚙ {msg.route}</code>
         </div>
       )}
     </div>
@@ -53,6 +46,26 @@ export default function ChatPanel({ mode = 'full', contextLabel, suggestions, on
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Every panel heading carries the AI-explain affordance — including this
+  // one (operator request #3); here it recaps the session's own state
+  // rather than an exhibit payload.
+  const { button: explainBtn, strip: explainStrip } = useExplain({
+    label: 'Ask the copilot',
+    buildQuestion:
+      mode === 'full'
+        ? () =>
+            explainPanelQuestion({
+              panelId: 'copilot_chat',
+              title: 'Ask the copilot',
+              recap: messages.length
+                ? `${messages.filter((m) => m.role === 'user').length} question(s) asked this session; last route: ${
+                    messages.filter((m) => m.role === 'agent').at(-1)?.route ?? 'none yet'
+                  }.`
+                : 'no questions asked yet this session — the five validated routes are the four numeric engine tools plus the cited documentation retriever.',
+            })
+        : undefined,
+  });
 
   const send = async (q) => {
     const trimmed = q.trim();
@@ -91,11 +104,15 @@ export default function ChatPanel({ mode = 'full', contextLabel, suggestions, on
     <section class={`panel chat-panel chat-panel-${mode}`}>
       {mode === 'full' && (
         <>
-          <h2>Ask the copilot</h2>
+          <div class="panel-head">
+            <h2>Ask the copilot</h2>
+            {explainBtn}
+          </div>
           <p class="panel-sub">
             Narrated, data-grounded answers — every number traces to an engine
             tool call; out-of-scope questions are refused by design.
           </p>
+          {explainStrip}
         </>
       )}
       <div class="chat-log">
@@ -127,7 +144,11 @@ export default function ChatPanel({ mode = 'full', contextLabel, suggestions, on
             <AgentMessage msg={msg} key={i} />
           ),
         )}
-        {busy && <div class="empty-note">Copilot thinking…</div>}
+        {busy && (
+          <div class="explain-status">
+            <span class="status-dot status-dot-warn pulse" /> THINKING
+          </div>
+        )}
       </div>
       <form class="chat-form" onSubmit={submit}>
         <input

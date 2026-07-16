@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IFRS9 ECL Copilot — Precision Instrument (Executive tab mock)</title>
+<style>
+  /* ============================================================
+     TOKENS — validated dataviz categorical order (see design_spec.md §1)
+     ============================================================ */
+  :root {
+    --cat-1: #2a78d6; /* blue      */
+    --cat-2: #008300; /* green     */
+    --cat-3: #e87ba4; /* magenta   */
+    --cat-4: #eda100; /* yellow    */
+    --cat-5: #1baf7a; /* aqua      */
+    --cat-6: #eb6834; /* orange    */
+    --cat-7: #4a3aa7; /* violet    */
+    --cat-8: #e34948; /* red       */
+
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+
+    --accent: var(--cat-1);
+    --up: #2a78d6;
+    --down: #e34948;
+
+    --surface: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-muted: #52514e;
+    --axis-muted: #898781;
+    --gridline: #e1e0d9;
+    --baseline: #c3c2b7;
+    --good-text: #006300;
+
+    --rule: rgba(11,11,11,.16);
+    --rule-strong: rgba(11,11,11,.32);
+    --border: rgba(11,11,11,.10);
+
+    --font-sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, "Liberation Mono", monospace;
+
+    --radius: 2px;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --cat-1: #3987e5;
+    --cat-2: #008300;
+    --cat-3: #d55181;
+    --cat-4: #c98500;
+    --cat-5: #199e70;
+    --cat-6: #d95926;
+    --cat-7: #9085e9;
+    --cat-8: #e66767;
+
+    --up: #3987e5;
+    --down: #e66767;
+
+    --surface: #1a1a19;
+    --page: #0d0d0d;
+    --ink: #ffffff;
+    --ink-muted: #c3c2b7;
+    --axis-muted: #898781;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+    --good-text: #0ca30c;
+
+    --rule: rgba(255,255,255,.16);
+    --rule-strong: rgba(255,255,255,.32);
+    --border: rgba(255,255,255,.10);
+
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cat-1: #3987e5;
+      --cat-2: #008300;
+      --cat-3: #d55181;
+      --cat-4: #c98500;
+      --cat-5: #199e70;
+      --cat-6: #d95926;
+      --cat-7: #9085e9;
+      --cat-8: #e66767;
+      --up: #3987e5;
+      --down: #e66767;
+      --surface: #1a1a19;
+      --page: #0d0d0d;
+      --ink: #ffffff;
+      --ink-muted: #c3c2b7;
+      --axis-muted: #898781;
+      --gridline: #2c2c2a;
+      --baseline: #383835;
+      --good-text: #0ca30c;
+      --rule: rgba(255,255,255,.16);
+      --rule-strong: rgba(255,255,255,.32);
+      --border: rgba(255,255,255,.10);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: var(--font-mono); }
+  .tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  .micro {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  a { color: inherit; }
+
+  /* ============================================================
+     SHELL
+     ============================================================ */
+  /* Generous bottom reserve: the fixed corner dock sits at the same
+     viewport-relative spot at max scroll on any page — this reserve keeps
+     that corner over blank page-plane, never over the last table row. */
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 var(--sp-6) 220px; }
+
+  header.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-6);
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+  }
+  .brand-mark {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .02em;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .telemetry {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-5);
+  }
+  .telemetry-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--status-good);
+    display: inline-block;
+    flex: none;
+  }
+  .theme-btn {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    height: 28px;
+    padding: 0 var(--sp-3);
+    cursor: pointer;
+  }
+  .theme-btn:hover { border-color: var(--rule-strong); }
+  .theme-btn:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ============================================================
+     TAB NAV
+     ============================================================ */
+  nav.tabnav {
+    display: flex;
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 0 var(--sp-6);
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-2);
+    margin-right: var(--sp-5);
+    border-bottom: 2px solid transparent;
+    cursor: default;
+    user-select: none;
+  }
+  .tab .idx {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--axis-muted);
+  }
+  .tab .label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .tab.active { border-bottom-color: var(--rule-strong); }
+  .tab.active .idx { color: var(--accent); }
+  .tab.active .label { color: var(--ink); }
+  .tab:not(.active):hover .label { color: var(--ink); }
+
+  /* ============================================================
+     PAGE HEAD
+     ============================================================ */
+  .tab-intro { padding: var(--sp-6) 0 var(--sp-5); }
+  .tab-intro h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 var(--sp-2);
+  }
+  .tab-intro p { margin: 0; color: var(--ink-muted); max-width: 62ch; }
+
+  /* ============================================================
+     STAT TILES
+     ============================================================ */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-5);
+  }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: var(--sp-4);
+  }
+  .tile-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-2);
+    padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--rule);
+  }
+  .tile-label { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); max-width: 15ch; }
+  .unit-chip {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 2px 5px;
+    white-space: nowrap;
+    flex: none;
+  }
+  .tile-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 32px;
+    font-weight: 600;
+    padding: var(--sp-3) 0 var(--sp-2);
+    line-height: 1.05;
+  }
+  .tile-foot {
+    border-top: 1px solid var(--rule);
+    padding-top: var(--sp-2);
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+
+  /* ============================================================
+     PANELS
+     ============================================================ */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    margin-bottom: var(--sp-5);
+  }
+  .panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-4) var(--sp-3);
+    border-bottom: 2px solid var(--rule-strong);
+  }
+  .panel-head-left h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+  }
+  .panel-sub { font-size: 12px; color: var(--ink-muted); margin: 0; max-width: 60ch; }
+  .panel-head-right {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex: none;
+    padding-top: 2px;
+  }
+  .provenance {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  /* AI-explain affordance: bracketed probe chip */
+  .ai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 3px 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: color .1s linear, border-color .1s linear;
+    white-space: nowrap;
+  }
+  .ai-chip .brk { color: var(--axis-muted); }
+  .ai-chip:hover, .ai-chip.open { color: var(--ink); border-color: var(--rule-strong); }
+  .ai-chip .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity .1s linear;
+  }
+  .ai-chip:hover .live-dot, .ai-chip.open .live-dot { opacity: 1; }
+
+  .ai-strip {
+    display: none;
+    border-top: 1px solid var(--rule);
+    padding: var(--sp-4);
+    background: var(--page);
+  }
+  .ai-strip.open { display: block; }
+  .ai-strip p {
+    margin: 0 0 var(--sp-2);
+    font-size: 13px;
+    color: var(--ink);
+    max-width: 74ch;
+  }
+  .ai-strip .src {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    border-top: 1px solid var(--rule);
+    padding-top: var(--sp-2);
+  }
+
+  .panel-body { padding: var(--sp-4); }
+
+  /* ============================================================
+     STAGE MIX BAR (status colors — risk state, not identity)
+     ============================================================ */
+  .stagebar-wrap { padding: var(--sp-2) 0 var(--sp-1); }
+  .stagebar {
+    display: flex;
+    height: 22px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--gridline);
+  }
+  .stagebar-seg { height: 100%; }
+  .stagebar-legend {
+    display: flex;
+    gap: var(--sp-5);
+    margin-top: var(--sp-3);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
+  .legend-swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .legend-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); margin-left: 2px; }
+
+  /* ============================================================
+     WATERFALL
+     ============================================================ */
+  .waterfall-scale { color: var(--ink-muted); font-size: 11px; margin-bottom: var(--sp-4); }
+  .waterfall {
+    display: flex;
+    align-items: flex-end;
+    height: 240px;
+    border-bottom: 1px solid var(--gridline);
+    position: relative;
+    margin-top: var(--sp-6);
+    padding-left: 2px;
+  }
+  .wf-col {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .wf-bar {
+    position: absolute;
+    width: 44px;
+    border-radius: 3px 3px 0 0;
+  }
+  .wf-bar.level { background: var(--baseline); }
+  .wf-bar.up { background: var(--up); }
+  .wf-bar.down { background: var(--down); }
+  .wf-connector {
+    position: absolute;
+    height: 1px;
+    background: var(--gridline);
+    width: calc(100% - 44px);
+    left: calc(50% + 22px);
+  }
+  .wf-value {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .wf-value.pos { color: var(--up); }
+  .wf-value.neg { color: var(--down); }
+  .wf-value.level { color: var(--ink); }
+  .wf-labels {
+    display: flex;
+    margin-top: var(--sp-3);
+  }
+  .wf-label-col {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 0 2px;
+  }
+  .waterfall-foot {
+    margin-top: var(--sp-3);
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+
+  /* ============================================================
+     TABLE
+     ============================================================ */
+  .table-scroll { overflow-x: auto; }
+  table.data-table { width: 100%; min-width: 480px; border-collapse: collapse; }
+  .data-table thead th {
+    text-align: right;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border-bottom: 2px solid var(--rule-strong);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .data-table thead th:first-child { text-align: left; }
+  .data-table tbody td {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    padding: var(--sp-3);
+    border-bottom: 1px solid var(--rule);
+  }
+  .data-table tbody td:first-child {
+    text-align: left;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .data-table tbody tr.adopted { position: relative; }
+  .data-table tbody tr.adopted td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .data-table tbody tr.adopted td:first-child { border-left: 2px solid var(--accent); padding-left: calc(var(--sp-3) - 2px); }
+  .data-table tbody tr:hover td { background: var(--page); }
+  .data-table tbody tr.adopted:hover td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .scenario-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-left: var(--sp-2);
+  }
+
+  /* ============================================================
+     MINI CHAT DOCK
+     ============================================================ */
+  .dock {
+    position: fixed;
+    right: var(--sp-6);
+    bottom: var(--sp-6);
+    width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: none;
+    z-index: 20;
+    cursor: pointer;
+    transition: width .12s linear;
+  }
+  .dock.expanded { width: 320px; }
+  /* Collapsed default state — a mini dock is a corner pill, not a permanently
+     open panel; it must never sit on top of real numbers by default. Expand
+     is an explicit click, same as the AI-explain chip's disclosure model. */
+  .dock:not(.expanded) .dock-body,
+  .dock:not(.expanded) .dock-input-row { display: none; }
+  .dock.expanded { cursor: default; }
+  .dock-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-2) var(--sp-3);
+    border-bottom: 1px solid var(--rule);
+  }
+  .dock:not(.expanded) .dock-head { border-bottom: none; }
+  .dock-caret { font-family: var(--font-mono); font-size: 10px; color: var(--ink-muted); }
+  .dock-head-left { display: flex; align-items: center; gap: 6px; }
+  .dock-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .dock-status { font-size: 10px; color: var(--ink-muted); font-family: var(--font-mono); letter-spacing: .03em; }
+  .dock-body { padding: var(--sp-3); }
+  .dock-msg { margin-bottom: var(--sp-3); }
+  .dock-msg .who { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .dock-swatch { width: 6px; height: 6px; background: var(--accent); flex: none; }
+  .dock-msg p { margin: 0; font-size: 12px; line-height: 1.4; }
+  .dock-msg .src {
+    font-family: var(--font-mono); font-size: 9px; color: var(--ink-muted);
+    margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule);
+  }
+  .dock-msg.user { text-align: right; }
+  .dock-msg.user p { color: var(--ink); }
+  .dock-input-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    border-top: 1px solid var(--rule);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .dock-input {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-muted);
+    background: transparent;
+    border: none;
+    outline: none;
+  }
+  .dock-send {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: transparent;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+
+  footer.spec-footer {
+    margin-top: var(--sp-7);
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--rule);
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+
+  @media (max-width: 860px) {
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .telemetry { display: none; }
+    .dock { display: none; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">IFRS9 ECL COPILOT</span>
+      <span class="brand-sub">Precision Instrument — Executive</span>
+    </div>
+    <div class="telemetry">
+      <span class="telemetry-item"><span class="dot"></span>ENGINE WARM</span>
+      <span class="telemetry-item">AS OF 2015Q1 · T=60/60</span>
+      <button class="theme-btn" id="themeToggle" onclick="toggleTheme()">☾ DARK</button>
+    </div>
+  </header>
+
+  <nav class="tabnav">
+    <div class="tab active"><span class="idx mono">01</span><span class="label">Executive</span></div>
+    <div class="tab"><span class="idx mono">02</span><span class="label">Model</span></div>
+    <div class="tab"><span class="idx mono">03</span><span class="label">Scenario Lab</span></div>
+    <div class="tab"><span class="idx mono">04</span><span class="label">Policy</span></div>
+    <div class="tab"><span class="idx mono">05</span><span class="label">Copilot</span></div>
+  </nav>
+
+  <div class="shell">
+
+    <div class="tab-intro">
+      <h1>Executive Overview</h1>
+      <p>The consultant's headline read of the book as reported — every figure below is an engine number as of the 2015Q1 reporting date.</p>
+    </div>
+
+    <div class="tiles">
+      <div class="tile">
+        <div class="tile-head">
+          <span class="tile-label">Scenario-weighted allowance</span>
+          <span class="unit-chip">USD m</span>
+        </div>
+        <div class="tile-value tabular">34.0</div>
+        <div class="tile-foot">7,849 loans · $1,673.7m balance</div>
+      </div>
+      <div class="tile">
+        <div class="tile-head">
+          <span class="tile-label">Coverage</span>
+          <span class="unit-chip">%</span>
+        </div>
+        <div class="tile-value tabular">2.03</div>
+        <div class="tile-foot">allowance / balance</div>
+      </div>
+      <div class="tile">
+        <div class="tile-head">
+          <span class="tile-label">Jensen ratio</span>
+          <span class="unit-chip">×</span>
+        </div>
+        <div class="tile-value tabular">1.035</div>
+        <div class="tile-foot">weighted ECL vs avg-path ECL ($32.9m)</div>
+      </div>
+      <div class="tile">
+        <div class="tile-head">
+          <span class="tile-label">Reporting date</span>
+          <span class="unit-chip">period</span>
+        </div>
+        <div class="tile-value tabular">2015Q1</div>
+        <div class="tile-foot">t = 60 of 60</div>
+      </div>
+    </div>
+
+    <!-- Panel heading demonstrating the AI-explain chip treatment -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-head-left">
+          <h2>Stage mix of allowance</h2>
+          <p class="panel-sub">Part-to-whole share of the reported allowance by IFRS 9 stage (colour = risk state, not identity).</p>
+        </div>
+        <div class="panel-head-right">
+          <button class="ai-chip" id="aiChip" onclick="toggleAI()">
+            <span class="brk">⟨</span>ASK AI<span class="brk">⟩</span>
+            <span class="live-dot"></span>
+          </button>
+          <span class="provenance mono">SOURCE · /api/ecl/summary</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="stagebar-wrap">
+          <div class="stagebar">
+            <div class="stagebar-seg" style="width:80.7%;background:var(--status-good)"></div>
+            <div class="stagebar-seg" style="width:1.4%;background:var(--status-warning)"></div>
+            <div class="stagebar-seg" style="width:17.8%;background:var(--status-critical)"></div>
+          </div>
+          <div class="stagebar-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--status-good)"></span>Stage 1 (performing)<span class="legend-value">80.7% · 7,803 loans</span></span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--status-warning)"></span>Stage 2 (SICR)<span class="legend-value">1.4% · 3 loans</span></span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--status-critical)"></span>Stage 3 (credit-impaired)<span class="legend-value">17.8% · 43 loans</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="ai-strip" id="aiStrip">
+        <p>Stage 1 carries 80.7% of allowance from 7,803 performing loans — a calm-quarter book where the reported number is set almost entirely by 12-month ECL. Stage 3 contributes 17.8% of allowance from just 43 defaulted loans (0.5% of the book by count), and Stage 2 carries 1.4% from 3 loans — this is exactly where scenario weights and macro shocks act; see Scenario Lab.</p>
+        <div class="src mono">SOURCE · /api/ecl/summary · via POST /api/agent/ask</div>
+      </div>
+    </section>
+
+    <!-- Waterfall -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-head-left">
+          <h2>Allowance roll-forward</h2>
+          <p class="panel-sub">Movement decomposition, t=20 (2005Q1) → t=40 (2010Q1).</p>
+        </div>
+        <div class="panel-head-right">
+          <span class="provenance mono">SOURCE · /api/ecl/waterfall?t0=20&amp;t1=40</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="waterfall-scale mono">USD m · linear scale</div>
+        <div class="waterfall">
+          <!-- Opening: 0-6 -->
+          <div class="wf-col">
+            <div class="wf-value level" style="bottom:12px">24.5</div>
+            <div class="wf-bar level" style="bottom:0px;height:6px"></div>
+          </div>
+          <!-- stage_migration: 6-12 -->
+          <div class="wf-col">
+            <div class="wf-value pos" style="bottom:18px">+3.9</div>
+            <div class="wf-bar up" style="bottom:6px;height:6px"></div>
+          </div>
+          <!-- remeasurement: 12-18 -->
+          <div class="wf-col">
+            <div class="wf-value pos" style="bottom:24px">+26.0</div>
+            <div class="wf-bar up" style="bottom:12px;height:6px"></div>
+          </div>
+          <!-- derecognitions: 12-18 (hanging down) -->
+          <div class="wf-col">
+            <div class="wf-value neg" style="bottom:24px">−21.2</div>
+            <div class="wf-bar down" style="bottom:12px;height:6px"></div>
+          </div>
+          <!-- new_loans: 12-240 -->
+          <div class="wf-col">
+            <div class="wf-value pos" style="bottom:242px">+999.4</div>
+            <div class="wf-bar up" style="bottom:12px;height:228px"></div>
+          </div>
+          <!-- closing: 0-240 -->
+          <div class="wf-col">
+            <div class="wf-value level" style="bottom:242px">1,032.6</div>
+            <div class="wf-bar level" style="bottom:0px;height:240px"></div>
+          </div>
+        </div>
+        <div class="wf-labels">
+          <div class="wf-label-col">Opening</div>
+          <div class="wf-label-col">Stage migration</div>
+          <div class="wf-label-col">Remeasurement</div>
+          <div class="wf-label-col">Derecognitions</div>
+          <div class="wf-label-col">New loans</div>
+          <div class="wf-label-col">Closing</div>
+        </div>
+        <div class="waterfall-foot">Opening, stage migration, and remeasurement bars are floored at 6px for legibility (true heights 5.6px / 0.9px / 5.9px on this scale) — labeled values above each bar are exact. New-loan origination dominates this 20-quarter window; identity gap 0.00.</div>
+      </div>
+    </section>
+
+    <!-- Scenario table -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-head-left">
+          <h2>Scenario table</h2>
+          <p class="panel-sub">Adopted weights: 25/50/25 (up/base/down).</p>
+        </div>
+        <div class="panel-head-right">
+          <span class="provenance mono">SOURCE · /api/ecl/summary</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Weight (%)</th>
+              <th>Allowance (USD m)</th>
+              <th>Coverage (%)</th>
+              <th>UER peak (pp)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Up</td>
+              <td>25</td>
+              <td>27.7</td>
+              <td>1.65</td>
+              <td>6.4</td>
+            </tr>
+            <tr class="adopted">
+              <td>Base<span class="scenario-tag">ADOPTED</span></td>
+              <td>50</td>
+              <td>30.5</td>
+              <td>1.82</td>
+              <td>6.4</td>
+            </tr>
+            <tr>
+              <td>Down</td>
+              <td>25</td>
+              <td>47.6</td>
+              <td>2.84</td>
+              <td>11.2</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <footer class="spec-footer">
+      Precision Instrument direction — static mock, real engine numbers as of 2015Q1. See <span class="mono">design_spec.md</span> and <span class="mono">rationale.md</span> in this directory.
+    </footer>
+
+  </div>
+
+  <!-- Mini chat dock — collapsed by default (a corner pill), expands on click.
+       Collapsed state never occludes page content; expanded is a deliberate
+       user action, same disclosure model as the AI-explain chip. -->
+  <div class="dock" id="dock" onclick="expandDock(event)">
+    <div class="dock-head">
+      <div class="dock-head-left">
+        <span class="dot"></span>
+        <span class="dock-title">Copilot</span>
+      </div>
+      <span class="dock-head-left">
+        <span class="dock-status">GROUNDED</span>
+        <span class="dock-caret" id="dockCaret">▲</span>
+      </span>
+    </div>
+    <div class="dock-body">
+      <div class="dock-msg">
+        <div class="who"><span class="dock-swatch"></span></div>
+        <p>Coverage is 2.03% — a $34.0m allowance against $1,673.7m balance across 7,849 loans.</p>
+        <div class="src mono">SOURCE · /api/ecl/summary</div>
+      </div>
+      <div class="dock-msg user">
+        <p>what's driving Stage 2?</p>
+      </div>
+    </div>
+    <div class="dock-input-row">
+      <input class="dock-input" placeholder="Ask about the book…" />
+      <button class="dock-send">[ ⏎ ]</button>
+    </div>
+  </div>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('themeToggle').textContent = isDark ? '☾ DARK' : '☀ LIGHT';
+  }
+  function toggleAI() {
+    document.getElementById('aiChip').classList.toggle('open');
+    document.getElementById('aiStrip').classList.toggle('open');
+  }
+  function expandDock(e) {
+    const dock = document.getElementById('dock');
+    const caret = document.getElementById('dockCaret');
+    if (!dock.classList.contains('expanded')) {
+      dock.classList.add('expanded');
+      caret.textContent = '▼';
+      return;
+    }
+    // Already expanded: only the header collapses it back — clicking the
+    // transcript or the input must not dismiss the dock.
+    if (e.target.closest('.dock-head')) {
+      dock.classList.remove('expanded');
+      caret.textContent = '▲';
+    }
+  }
+</script>
+
+</body>
+</html>

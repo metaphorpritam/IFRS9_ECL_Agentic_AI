@@ -575,6 +575,72 @@ output shape:
 
 ---
 
+## 5. NEW: UI v3 AI-explain question-prefix conventions
+
+Both conventions below are **UI-side wire-text conventions layered on top of
+the existing `POST /api/agent/ask`** (§1) — they add ZERO new endpoints and
+change no response shape. `POST /api/agent/ask` already accepts any
+1–2000 char free-text `question`; these are simply two disciplined ways the
+v3 UI composes that string so an "explain" click gets the exact same
+tools/Tier-2/Tier-3/refusal governance as a typed question (FINAL_SPEC.md
+§7.5, design-judge grafts 4). The router sees ordinary text — a bracketed
+tag, a colon, and a trailing question — and is free to route it to any of
+the five paths, including `REFUSE`, exactly as it would any other message.
+
+### 5.1 Panel/tile explain prefix
+
+Every panel/tile heading in the UI carries a small AI-explain icon
+(`app/ui/src/components/ExplainButton.jsx`). Clicking it composes:
+
+```
+[explain:<panel_id> <live params>] <Exhibit label> — <panel title>: <CODE-GENERATED
+recap of the exact figures the panel is showing right now> What should I take
+from this?
+```
+
+* `<panel_id>` is a short stable slug (e.g. `waterfall`, `hazard_coefficients`,
+  `kpi_coverage`) — never free text, always the same value for the same
+  panel across renders.
+* `<live params>` (when present) are `key=value` pairs reflecting the
+  panel's CURRENT inputs (e.g. `t0=59 t1=60`), space-separated inside the
+  same brackets.
+* `<Exhibit label>` is omitted for un-numbered panels (KPI tiles, control
+  panels, guides).
+* The recap sentence is built from the SAME payload object that rendered
+  the panel — never hand-typed prose — so the router/narrator always has
+  the rendered numbers in front of it.
+
+Example (`app/ui/src/api.js`'s `explainPanelQuestion`, used by
+`WaterfallChart.jsx`):
+
+```
+[explain:waterfall t0=59 t1=60] Exhibit 1 — Allowance bridge: opening $X.Xm,
+stage migration +$X.Xm, remeasurement +$X.Xm, derecognitions −$X.Xm, new
+loans +$X.Xm, closing $X.Xm. What should I take from this?
+```
+
+### 5.2 Selection-explain prefix
+
+Highlighting any text in the main app area (outside inputs and both chat
+surfaces) shows a floating "Explain with AI" chip
+(`app/ui/src/components/SelectionExplain.jsx`); clicking it composes:
+
+```
+Explain, in the context of the <tab label> tab: "<selected text, trimmed, <=300 chars>"
+```
+
+`<tab label>` is one of the five tab names (`Executive Overview`, `The
+Model`, `Scenario Lab`, `Policy`, `Copilot`). The selected text is quoted
+verbatim (truncated, never paraphrased) so the router sees exactly what the
+user highlighted.
+
+Both builders live in `app/ui/src/api.js` (`explainPanelQuestion`,
+`explainSelectionQuestion`) as the single source of the exact wire text, so
+the UI and `tests/test_contract.py`'s router-wiring test stay
+byte-identical with this doc.
+
+---
+
 ## Summary table (every endpoint the v2 UI may call)
 
 | Method | Path | Purpose |
