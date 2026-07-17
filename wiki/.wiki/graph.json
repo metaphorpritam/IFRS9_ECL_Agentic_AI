@@ -1,7 +1,7 @@
 {
-  "generated": "2026-07-16T23:55:10+00:00",
+  "generated": "2026-07-17T03:20:50+00:00",
   "wiki_dir": "wiki",
-  "pages": 19,
+  "pages": 20,
   "nodes": [
     {
       "id": "agent-layer",
@@ -384,20 +384,20 @@
           "text": "Modules"
         },
         {
-          "line": 37,
+          "line": 38,
           "text": "Entities"
         },
         {
-          "line": 42,
+          "line": 43,
           "text": "Concepts (contd.)"
         },
         {
-          "line": 46,
+          "line": 47,
           "text": "Decisions & open questions"
         }
       ],
       "in_degree": 0,
-      "out_degree": 18
+      "out_degree": 19
     },
     {
       "id": "knowledge-pipeline",
@@ -536,7 +536,7 @@
           "text": "Loan Panel"
         }
       ],
-      "in_degree": 7,
+      "in_degree": 8,
       "out_degree": 4
     },
     {
@@ -570,7 +570,7 @@
           "text": "Key synthesis findings"
         }
       ],
-      "in_degree": 11,
+      "in_degree": 12,
       "out_degree": 8
     },
     {
@@ -708,6 +708,62 @@
       ],
       "in_degree": 3,
       "out_degree": 6
+    },
+    {
+      "id": "sflld-panel",
+      "path": "pages/sflld-panel.md",
+      "title": "SFLLD Panel (Rung 3)",
+      "type": "module",
+      "tags": [
+        "freddie",
+        "rung3",
+        "data",
+        "eda"
+      ],
+      "aliases": [
+        "freddie panel",
+        "rung 3",
+        "sflld",
+        "freddie mac data"
+      ],
+      "status": "active",
+      "sources": [
+        "../outputs/freddie/ingest/dq_report.md",
+        "../outputs/freddie/eda/eda_report.md",
+        "../outputs/freddie/gate_phaseA.md"
+      ],
+      "code": [
+        "../freddie/ingest.py",
+        "../freddie/build_panel.py",
+        "../freddie/macro.py",
+        "../freddie/eda.py",
+        "../tests/test_freddie_ingest.py",
+        "../tests/test_freddie_macro.py"
+      ],
+      "headings": [
+        {
+          "line": 23,
+          "text": "SFLLD Panel (Rung 3)"
+        },
+        {
+          "line": 32,
+          "text": "Panel (freddie/ingest.py, build_panel.py)"
+        },
+        {
+          "line": 43,
+          "text": "State macro (freddie/macro.py)"
+        },
+        {
+          "line": 51,
+          "text": "EDA headlines (outputs/freddie/eda/)"
+        },
+        {
+          "line": 67,
+          "text": "Phase B (not started)"
+        }
+      ],
+      "in_degree": 1,
+      "out_degree": 2
     },
     {
       "id": "staging-model",
@@ -973,7 +1029,7 @@
       "src": "index",
       "dst": "bootstrap-decisions",
       "type": "mentions",
-      "line": 48
+      "line": 49
     },
     {
       "src": "index",
@@ -985,25 +1041,25 @@
       "src": "index",
       "dst": "ead-model",
       "type": "mentions",
-      "line": 31
+      "line": 32
     },
     {
       "src": "index",
       "dst": "ecl-engine",
       "type": "mentions",
-      "line": 33
+      "line": 34
     },
     {
       "src": "index",
       "dst": "golden-fixtures",
       "type": "mentions",
-      "line": 28
+      "line": 29
     },
     {
       "src": "index",
       "dst": "hazard-model",
       "type": "mentions",
-      "line": 35
+      "line": 36
     },
     {
       "src": "index",
@@ -1015,25 +1071,25 @@
       "src": "index",
       "dst": "knowledge-pipeline",
       "type": "mentions",
-      "line": 29
+      "line": 30
     },
     {
       "src": "index",
       "dst": "lgd-model",
       "type": "mentions",
-      "line": 30
+      "line": 31
     },
     {
       "src": "index",
       "dst": "llm-wiki-skill",
       "type": "mentions",
-      "line": 39
+      "line": 40
     },
     {
       "src": "index",
       "dst": "loan-panel",
       "type": "mentions",
-      "line": 34
+      "line": 35
     },
     {
       "src": "index",
@@ -1045,7 +1101,7 @@
       "src": "index",
       "dst": "pageindex-plus-skill",
       "type": "mentions",
-      "line": 40
+      "line": 41
     },
     {
       "src": "index",
@@ -1061,15 +1117,21 @@
     },
     {
       "src": "index",
+      "dst": "sflld-panel",
+      "type": "mentions",
+      "line": 28
+    },
+    {
+      "src": "index",
       "dst": "staging-model",
       "type": "mentions",
-      "line": 32
+      "line": 33
     },
     {
       "src": "index",
       "dst": "variable-dictionary",
       "type": "mentions",
-      "line": 44
+      "line": 45
     },
     {
       "src": "knowledge-pipeline",
@@ -1318,6 +1380,18 @@
       "line": 61
     },
     {
+      "src": "sflld-panel",
+      "dst": "loan-panel",
+      "type": "derived-from",
+      "line": 20
+    },
+    {
+      "src": "sflld-panel",
+      "dst": "master-plan",
+      "type": "uses",
+      "line": 19
+    },
+    {
       "src": "staging-model",
       "dst": "ecl-engine",
       "type": "used-by",
@@ -1459,6 +1533,12 @@
     "scenarios": "scenario-layer",
     "jensen exhibit": "scenario-layer",
     "credit cycle": "scenario-layer",
+    "sflld panel (rung 3)": "sflld-panel",
+    "sflld-panel": "sflld-panel",
+    "freddie panel": "sflld-panel",
+    "rung 3": "sflld-panel",
+    "sflld": "sflld-panel",
+    "freddie mac data": "sflld-panel",
     "staging model": "staging-model",
     "staging-model": "staging-model",
     "staging": "staging-model",

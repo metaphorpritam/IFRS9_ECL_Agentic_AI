@@ -10,6 +10,7 @@
 data/raw/
 data/processed/
 data/scenarios/
+data/SFLLD/
 !data/**/.gitkeep
 !data/**/README.md
 
