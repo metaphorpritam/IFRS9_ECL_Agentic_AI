@@ -5,11 +5,12 @@ import Panel from './Panel.jsx';
 
 const MAX_EVENTS = 200;
 
-// Trace events are dicts {"node": router|<tool name>|narrator|refusal, ...}
-// (docs/api_contract.md, GET /api/agent/stream) — NOT a `type` field. Any
-// node that isn't router/narrator/refusal is a tool-execution node named
-// after the tool itself (shock_macro, query_model_docs, analyze_data, ...);
-// the offline fallback router also emits node "tool".
+// Trace events are dicts {"node": router|<tool name>|narrator|REASONED|
+// refusal, ...} (docs/api_contract.md, GET /api/agent/stream) — NOT a
+// `type` field. Any node that isn't router/narrator/REASONED/refusal is a
+// tool-execution node named after the tool itself (shock_macro,
+// query_model_docs, analyze_data, ...); the offline fallback router also
+// emits node "tool".
 function eventMeta(ev) {
   if (ev.status === 'error') return { label: 'ERROR', cls: 'badge-error' };
   switch (ev.node) {
@@ -17,6 +18,8 @@ function eventMeta(ev) {
       return { label: 'ROUTER', cls: 'badge-router' };
     case 'narrator':
       return { label: 'NARRATION', cls: 'badge-narration' };
+    case 'REASONED':
+      return { label: 'REASONED', cls: 'badge-reasoned' };
     case 'refusal':
       return { label: 'REFUSAL', cls: 'badge-error' };
     case undefined:
@@ -35,7 +38,7 @@ const eventText = (ev) =>
 function EventRow({ ev }) {
   const meta = eventMeta(ev);
   const isToolNode =
-    ev.node && !['router', 'narrator', 'refusal', 'tool'].includes(ev.node);
+    ev.node && !['router', 'narrator', 'REASONED', 'refusal', 'tool'].includes(ev.node);
   const toolName = ev.tool || ev.route || (isToolNode ? ev.node : null);
   return (
     <li class="trace-row">

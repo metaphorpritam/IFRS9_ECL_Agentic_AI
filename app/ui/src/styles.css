@@ -622,6 +622,10 @@ input[type='range'] {
 .status-dot-warn { background: var(--warning); }
 .status-dot-crit { background: var(--critical); }
 .status-dot-muted { background: var(--ink-3); }
+/* REASONED: a cited interpretation, never a fresh engine number — its own
+   hue (accent blue), distinct from good/warn/crit/muted so it never reads
+   as either "grounded success" or "trouble". */
+.status-dot-accent { background: var(--accent); }
 
 @media (prefers-reduced-motion: no-preference) {
   .status-dot-warn.pulse { animation: dot-pulse 1.1s ease-in-out infinite; }
@@ -1318,6 +1322,9 @@ input[type='range'] {
 .badge-narration { background: var(--cat-7); }
 .badge-error { background: var(--status-critical); }
 .badge-other { background: var(--ink-3); }
+/* REASONED (Stretch 3): a cited interpretation, not a fresh engine
+   number — its own hue, distinct from badge-tool/badge-error. */
+.badge-reasoned { background: var(--cat-5); }
 
 .trace-body {
   min-width: 0;
@@ -1491,6 +1498,26 @@ input[type='range'] {
   color: var(--ink-3);
   background: var(--panel);
   border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-bottom: 4px;
+}
+
+/* REASONED answer bubble: same shape as a grounded bubble, but its own
+   accent-colored tag so it never reads as a fresh engine number. */
+.msg-reasoned {
+  border-color: var(--accent);
+}
+
+.reasoned-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-text);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent);
   border-radius: 3px;
   padding: 1px 6px;
   margin-bottom: 4px;

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-17T03:20:50+00:00",
+  "generated": "2026-07-17T14:20:40+00:00",
   "wiki_dir": "wiki",
   "pages": 20,
   "nodes": [
@@ -68,6 +68,10 @@
         },
         {
           "line": 90,
+          "text": "REASONED route (post-UI-v3 addition)"
+        },
+        {
+          "line": 105,
           "text": "Known caveats"
         }
       ],

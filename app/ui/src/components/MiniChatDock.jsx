@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { askAgent } from '../api.js';
-import { AgentMessage, isRefusalRoute } from './ChatPanel.jsx';
+import { AgentMessage, isRefusalRoute, isReasonedRoute } from './ChatPanel.jsx';
 
 const SPARK_PATH = 'M8,0 L10,6 L16,8 L10,10 L8,16 L6,10 L0,8 L6,6 Z';
 
@@ -22,13 +22,14 @@ function useNarrowViewport() {
  * tabs 1-4 (Copilot has its own full-page chat). Collapsed by default —
  * the agent is front-and-centre, never a drawer to discover. The status
  * dot + word are the REAL agent state (graft 2): GROUNDED after a cited
- * answer, THINKING in flight, OUT OF SCOPE after a refusal.
+ * answer, REASONED after a cited-but-not-computed interpretation, THINKING
+ * in flight, OUT OF SCOPE after a refusal.
  */
 export default function MiniChatDock({ tabLabel }) {
   const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | thinking | grounded | refused
+  const [status, setStatus] = useState('idle'); // idle | thinking | grounded | reasoned | refused
   const narrow = useNarrowViewport();
   const [narrowOpen, setNarrowOpen] = useState(false);
 
@@ -43,7 +44,9 @@ export default function MiniChatDock({ tabLabel }) {
       const wire = `[${tabLabel}] ${trimmed}`;
       const res = await askAgent(wire);
       setMessages((m) => [...m, { role: 'agent', ...res }]);
-      setStatus(isRefusalRoute(res.route) ? 'refused' : 'grounded');
+      const mode = res.mode
+        || (isRefusalRoute(res.route) ? 'refusal' : isReasonedRoute(res.route) ? 'reasoned' : 'grounded');
+      setStatus(mode === 'refusal' ? 'refused' : mode === 'reasoned' ? 'reasoned' : 'grounded');
     } catch (err) {
       setMessages((m) => [...m, { role: 'error', text: `Request failed: ${err.message}` }]);
       setStatus('refused');
@@ -59,6 +62,7 @@ export default function MiniChatDock({ tabLabel }) {
     idle: { cls: 'status-dot-muted', word: 'ASK COPILOT' },
     thinking: { cls: 'status-dot-warn pulse', word: 'THINKING' },
     grounded: { cls: 'status-dot-good', word: 'GROUNDED' },
+    reasoned: { cls: 'status-dot-accent', word: 'REASONED' },
     refused: { cls: 'status-dot-muted', word: 'OUT OF SCOPE' },
   }[status];
 

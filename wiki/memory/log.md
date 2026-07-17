@@ -73,3 +73,7 @@ Rung 3 Phase A COMPLETE (7-agent workflow, gate PASSED): freddie/{ingest,build_p
 ## 2026-07-17 07:29 UTC — tags: ui, deploy
 
 UI v3 LIVE on the Space (build finally cleared HF's ~7.5h builder backlog at 07:27; bump-commit lever worked, zero downtime throughout). Live verification passed: new bundle hash served (index-CJhtEWcl.js), /api/ecl/waterfall?t0=59&t1=60 returns the new default window (2014Q4->2015Q1) with full components, and the explain-prefix ask routes to query_model_docs returning a grounded cited answer with verbatim engine numbers. UI v3 cycle closed: 6eca8b4 + live.
+
+## 2026-07-17 14:20 UTC — tags: agent, reasoned
+
+REASONED route SHIPPED + live-verified: 3-way router split (computable/reasoned/refuse); reasoned answers labeled + cited via Tier-3 retrieval; adversarial review CONFIRMED live spelled-out-number bypass (router LLM verbalised its own subtraction 'tens of millions' to dodge the digit regex) -> _spelled_number_violation() wired into all 3 guards + regression tests; inherent magnitude-vs-attribution limitation recorded. Suite 582/582, frozen five NONE, Space commit 544bcbe built in ~1 min (no queue backlog), live round-trip: motivating interaction-term question -> route=REASONED with hazard-model.md citation; pizza control -> REFUSE. NEXT: Phase B launching (SFLLD hazard/LGD refit + COVID regime + ALFRED backtest).

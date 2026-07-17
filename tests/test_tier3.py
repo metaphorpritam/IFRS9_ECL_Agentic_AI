@@ -301,6 +301,12 @@ def test_docs_answer_ok_unit_checks():
         result)
     # no passages at all -> trivially fails (nothing to cite)
     assert not graph.docs_answer_ok("anything", {"passages": []})
+    # ADVERSARIAL: cites correctly, but the number is SPELLED OUT rather
+    # than a digit — a digit-only token regex would miss this entirely
+    # (see `_spelled_number_violation`); must still fail
+    assert not graph.docs_answer_ok(
+        "Per pages/ecl-engine.md#Headline numbers, allowance is roughly "
+        "twenty-four point five million dollars.", result)
 
 
 def test_deterministic_docs_narration_lists_every_passage_and_audit_ref():

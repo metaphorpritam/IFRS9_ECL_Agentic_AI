@@ -415,6 +415,25 @@ def test_number_check_rejects_foreign_or_recomputed_numbers():
         "that is a 1.351x increase", res)
 
 
+def test_number_check_rejects_spelled_out_numbers():
+    """ADVERSARIAL: a digit-only token regex is blind to a number spelled
+    out in words — 'two hundred million dollars' has no digit characters
+    at all, so a naive check would trivially call it number-free. Guard
+    against that hole explicitly (see `_spelled_number_violation`)."""
+    res = CANNED_RESULTS["shock_macro"]
+    assert not graph.narration_numbers_ok(
+        "the allowance would rise by roughly two hundred million dollars",
+        res)
+    assert not graph.narration_numbers_ok(
+        "that is a forty-seven percent jump", res)
+    assert not graph.narration_numbers_ok(
+        "the impact would land somewhere in the tens of millions", res)
+    # ordinary small-number words with NO adjacent unit word stay legal —
+    # the guard must not cripple normal prose over an incidental "one"/"two"
+    assert graph.narration_numbers_ok(
+        "the model has one satellite equation and two macro drivers", res)
+
+
 # ---------------------------------------------------------------------------
 # 4. model fallback: primary API error -> FALLBACK_MODEL, same messages
 # ---------------------------------------------------------------------------

@@ -140,13 +140,49 @@ def test_ask_and_stream_shape(client, monkeypatch):
 
     monkeypatch.setattr(main, "AGENT_ASK", fake_router)
     body = client.post("/api/agent/ask", json={"question": "how much allowance?"}).json()
-    assert set(body) == {"answer", "route", "trace"}
+    assert set(body) == {"answer", "route", "mode", "trace"}
+    # the mock agent returns no "mode" -- main.py derives it from "route"
+    assert body["mode"] == "grounded"
     assert isinstance(body["trace"], list)
     # contract: every trace event is keyed by "node" (the SSE feed replays
     # these same dicts — the UI's AgentTrace badges key off this field)
     assert body["trace"], "trace must not be empty"
     for ev in body["trace"]:
         assert "node" in ev, f"trace event missing 'node': {ev}"
+
+
+@pytest.mark.parametrize("route,expected_mode", [
+    ("REASONED", "reasoned"),
+    ("REFUSE", "refusal"),
+    ("refusal", "refusal"),
+    ("shock_macro", "grounded"),
+])
+def test_ask_mode_is_derived_from_route_when_agent_omits_it(
+        client, monkeypatch, route, expected_mode):
+    """REASONED (Stretch 3): `mode` is additive on /api/agent/ask. When the
+    resolved agent callable doesn't return one itself, main.py derives it
+    from `route` — this is what the offline fallback router (and any
+    minimal test mock) relies on."""
+    def fake_router(question, emit):
+        return {"answer": "ok", "route": route}
+
+    monkeypatch.setattr(main, "AGENT_ASK", fake_router)
+    body = client.post("/api/agent/ask",
+                       json={"question": "anything"}).json()
+    assert body["route"] == route
+    assert body["mode"] == expected_mode
+
+
+def test_ask_mode_passes_through_when_agent_provides_it(client, monkeypatch):
+    """When the agent callable already returns its own `mode` (the real
+    agent.graph.run_agent does), main.py must not override it."""
+    def fake_router(question, emit):
+        return {"answer": "ok", "route": "REASONED", "mode": "reasoned"}
+
+    monkeypatch.setattr(main, "AGENT_ASK", fake_router)
+    body = client.post("/api/agent/ask",
+                       json={"question": "anything"}).json()
+    assert body["mode"] == "reasoned"
 
 
 # ---------------------------------------------------------------------------

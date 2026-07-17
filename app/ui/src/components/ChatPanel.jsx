@@ -9,15 +9,39 @@ import { useExplain } from './ExplainButton.jsx';
 // case-insensitively, rather than assume one contract spelling.
 export const isRefusalRoute = (route) => /^refus(e|al)$/i.test(route || '');
 
+// The REASONED route (agent/graph.py's REASONED constant): a cited,
+// number-disciplined LLM interpretation of a conceptually relevant
+// question no tool computes — grounded, never a fresh engine number.
+// Prefer the response's own `mode === 'reasoned'` field (docs/
+// api_contract.md §POST /api/agent/ask) when it is present; this route
+// check is the fallback for callers that only have `route`.
+export const isReasonedRoute = (route) => /^reasoned$/i.test(route || '');
+
+// agent/graph.py's REASONED_PREFIX — every reasoned answer's wire text
+// starts with this machine-readable marker (belt-and-suspenders alongside
+// `mode === 'reasoned'`). The badge below already labels the bubble, so
+// strip the marker from the DISPLAYED text rather than show it twice.
+const REASONED_PREFIX_RE = /^\[REASONED\s*—\s*interpretation, not engine output\]\s*/;
+
 /** Shared agent-message bubble — used by ChatPanel's own log AND by
  * MiniChatDock's expanded log, so the two chat surfaces render identically. */
 export function AgentMessage({ msg }) {
-  const isRefusal = isRefusalRoute(msg.route);
+  const isRefusal = msg.mode ? msg.mode === 'refusal' : isRefusalRoute(msg.route);
+  const isReasoned = msg.mode ? msg.mode === 'reasoned' : isReasonedRoute(msg.route);
   if (isRefusal) {
     return (
       <div class="msg msg-refusal">
         <span class="refusal-tag">Outside validated scope</span>
         <p>{msg.answer}</p>
+      </div>
+    );
+  }
+  if (isReasoned) {
+    const text = (msg.answer || '').replace(REASONED_PREFIX_RE, '');
+    return (
+      <div class="msg msg-agent msg-reasoned">
+        <span class="reasoned-tag">Reasoned — interpretation, not engine output</span>
+        <p>{renderWithNums(text)}</p>
       </div>
     );
   }
@@ -62,7 +86,7 @@ export default function ChatPanel({ mode = 'full', contextLabel, suggestions, on
                 ? `${messages.filter((m) => m.role === 'user').length} question(s) asked this session; last route: ${
                     messages.filter((m) => m.role === 'agent').at(-1)?.route ?? 'none yet'
                   }.`
-                : 'no questions asked yet this session — the five validated routes are the four numeric engine tools plus the cited documentation retriever.',
+                : 'no questions asked yet this session — the validated routes are six numeric/documentation tools plus a reasoned-interpretation pass for conceptually relevant questions with no fixed tool.',
             })
         : undefined,
   });

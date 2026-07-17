@@ -87,6 +87,21 @@ documented in `docs/api_contract.md` §5 and exercised by 4
 and clean-refusal, LLM seams mocked, graph wiring real — never a crash,
 never an unrequested Tier-1 call).
 
+## REASONED route (post-UI-v3 addition)
+
+Third router outcome between computable and refuse: relevant-but-uncomputable questions
+(model-design rationale, interaction terms, economic intuition) get a **labeled reasoned
+interpretation** — grounded via the Tier-3 retriever + the `rerun_ecl` baseline whitelist,
+prefixed `[REASONED — interpretation, not engine output]`, `mode=reasoned` in the API/UI
+status. Hard guard unchanged in spirit and extended in mechanics: adversarial review
+CONFIRMED a live spelled-out-number bypass ("tens of millions" — the router LLM did its
+own subtraction and verbalised it to dodge the digit regex) and fixed it with
+`_spelled_number_violation()` wired into ALL THREE guards (reasoned/narration/docs), with
+regression tests. Recorded inherent limitation (pre-existing, all tiers): guards check a
+number's magnitude exists in a legal source, not its semantic attribution. Refusal class
+unchanged (prompt-injection regression-tested); refusal text now points conceptual
+questions toward rephrasing. Suite 582/582.
+
 ## Known caveats
 
 Narrations may quote unrounded floats (verbatim-number check is strict); single-worker SSE demo

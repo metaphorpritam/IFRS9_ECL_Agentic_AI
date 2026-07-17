@@ -550,9 +550,11 @@ def test_analyze_data_is_named_in_the_refusal_message():
 
 
 def test_all_routes_present_and_the_five_prior_routes_untouched():
+    # REASONED (Stretch 3) is additive alongside the six prior routes.
     assert set(graph.ROUTE_ARG_MODELS) == {
         "shock_macro", "reweight_scenarios", "rerun_ecl",
-        "decompose_waterfall", "query_model_docs", "analyze_data"}
+        "decompose_waterfall", "query_model_docs", "analyze_data",
+        graph.REASONED}
     # TOOL_ROUTES (the Tier-1 registry order) is exactly the original four
     assert set(graph.TOOL_ROUTES) == {
         "shock_macro", "reweight_scenarios", "rerun_ecl",

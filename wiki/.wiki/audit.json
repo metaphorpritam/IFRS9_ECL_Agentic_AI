@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-17T07:29:06+00:00",
+  "generated": "2026-07-17T14:20:41+00:00",
   "errors": {
     "broken_links": [],
     "missing_frontmatter": [],
@@ -9,7 +9,9 @@
   "warnings": {
     "unhashed_sources": [],
     "orphans": [],
-    "uncovered_sources": [],
+    "uncovered_sources": [
+      "tests/test_reasoned.py"
+    ],
     "todos": [],
     "duplicates": [],
     "unknown_type": [],
@@ -17,7 +19,7 @@
   },
   "counts": {
     "errors": 0,
-    "warnings": 0,
+    "warnings": 1,
     "pages": 20,
     "edges": 102
   }

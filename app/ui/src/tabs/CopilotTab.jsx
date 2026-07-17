@@ -4,6 +4,7 @@ import AgentTrace from '../components/AgentTrace.jsx';
 import Panel from '../components/Panel.jsx';
 import { fmtTime } from '../format.js';
 import { explainPanelQuestion } from '../api.js';
+import { isRefusalRoute, isReasonedRoute } from '../components/ChatPanel.jsx';
 
 const SUGGESTIONS = [
   'What is the reported allowance under the downside scenario?',
@@ -11,13 +12,21 @@ const SUGGESTIONS = [
   'Why does the double-trigger LTV × UER coefficient come out negative?',
 ];
 
+function _routeBadgeClass(entry) {
+  const isRefusal = entry.mode ? entry.mode === 'refusal' : isRefusalRoute(entry.route);
+  const isReasoned = entry.mode ? entry.mode === 'reasoned' : isReasonedRoute(entry.route);
+  if (isRefusal) return 'badge-error';
+  if (isReasoned) return 'badge-reasoned';
+  return 'badge-tool';
+}
+
 function AuditLogRow({ entry }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <li class="audit-row">
       <div class="audit-row-head" onClick={() => setExpanded((v) => !v)}>
         <span class="audit-time">{fmtTime(entry.at)}</span>
-        <span class={`badge ${/^refus(e|al)$/i.test(entry.route || '') ? 'badge-error' : 'badge-tool'}`}>
+        <span class={`badge ${_routeBadgeClass(entry)}`}>
           {entry.route}
         </span>
         <span class="audit-question">{entry.question}</span>
@@ -77,10 +86,13 @@ export default function CopilotTab() {
       <header class="tab-intro">
         <h1>Copilot</h1>
         <p>
-          Ask anything about the book. The router picks one of five
-          validated paths — four numeric tools plus a documentation
-          retriever — and the LLM narrates the result; it never computes a
-          number itself. Out-of-scope questions are refused by design.
+          Ask anything about the book. The router picks a validated path —
+          four numeric tools, a cited documentation retriever, or (for
+          conceptually relevant questions no tool computes, like a
+          model-design or interaction-term question) a REASONED
+          interpretation grounded in the same documentation and the
+          engine's own baseline — and the LLM never computes a number
+          itself. Out-of-scope questions are refused by design.
         </p>
       </header>
 

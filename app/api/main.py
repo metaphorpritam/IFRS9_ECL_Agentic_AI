@@ -10,7 +10,7 @@ One process serves three things on port 7860 (HF Spaces Docker convention):
 
   2. The agent
        POST /api/tools/{tool}          the four Tier-1 tools, pydantic-guarded
-       POST /api/agent/ask             {question} -> {answer, route, trace}
+       POST /api/agent/ask             {question} -> {answer, route, mode, trace}
        GET  /api/agent/stream          SSE replay/live feed of the latest trace
 
   3. The built SPA: StaticFiles mount of app/ui/dist at / (a graceful
@@ -27,13 +27,22 @@ Agent seam
 ----------
 The Day-4 LangGraph router plugs in by either
   * exposing `ask(question: str, emit: Callable[[dict], None] | None = None)
-    -> {"answer": str, "route": str, "trace": list[dict]}` in agent/graph.py
-    or agent/router.py (resolved at lifespan startup), or
+    -> {"answer": str, "route": str, "mode": str, "trace": list[dict]}` in
+    agent/graph.py or agent/router.py (resolved at lifespan startup), or
   * setting `app.api.main.AGENT_ASK` directly (what the tests do to mock it).
 Until it lands, a deterministic keyword fallback router answers: it routes
 to the same four Tier-1 tools, narrates ONLY the engine-built headline
 strings, and refuses everything else ("outside my validated scope"). It
 makes no LLM call, so the app runs fully offline.
+
+`mode` classifies the answer for the UI's status indicator: `"grounded"`
+(a numeric tool or the cited docs retriever answered), `"reasoned"` (the
+REASONED route — a cited, number-disciplined LLM interpretation, never a
+fresh engine number), or `"refusal"`. If the resolved agent callable
+already returns a `mode`, it is passed through untouched; if it does not
+(e.g. the offline fallback router, or a minimal test mock), `_run_agent`
+derives it from `route` (REASONED -> "reasoned", a refusal spelling ->
+"refusal", else "grounded") so the field is ALWAYS present.
 
 Trace events are dicts {"node": router|tool|narrator|refusal, "label", ...}.
 Every /ask resets an in-memory ring buffer (TraceBroker) and publishes its
@@ -315,6 +324,26 @@ def _resolve_agent() -> Callable | None:
     return None
 
 
+#: mirrors the UI's own `isRefusalRoute` regex (app/ui/src/components/
+#: ChatPanel.jsx) so client and server never disagree on what counts as a
+#: refusal: the live LangGraph router emits route "REFUSE", the offline
+#: keyword fallback router emits "refusal".
+_REFUSAL_ROUTE_RE = re.compile(r"^refus(e|al)$", re.IGNORECASE)
+
+
+def _mode_from_route(route: str) -> str:
+    """Fallback `mode` derivation for an agent callable that does not
+    itself return one (the offline deterministic fallback router, or a
+    minimal test mock) — "reasoned" for the REASONED route, "refusal" for
+    either refusal spelling, else "grounded" (a numeric tool or the cited
+    docs retriever)."""
+    if _REFUSAL_ROUTE_RE.match(route or ""):
+        return "refusal"
+    if route == getattr(agent_graph, "REASONED", "REASONED"):
+        return "reasoned"
+    return "grounded"
+
+
 def _run_agent(question: str) -> dict:
     """Synchronous agent run (called in the threadpool by /ask)."""
     events: list[dict] = []
@@ -335,12 +364,14 @@ def _run_agent(question: str) -> dict:
         answer = str(raw.get("answer", ""))
         route = str(raw.get("route", "unknown"))
         trace = raw.get("trace") or events
+        mode = str(raw["mode"]) if raw.get("mode") else _mode_from_route(route)
     else:
         answer, route, trace = str(raw), "unknown", events
+        mode = _mode_from_route(route)
     if not events and trace:          # agent returned a trace without emitting
         for ev in trace:              # -> replay it so /stream still shows it
             BROKER.publish(dict(ev))
-    return {"answer": answer, "route": route, "trace": trace}
+    return {"answer": answer, "route": route, "mode": mode, "trace": trace}
 
 
 # ---------------------------------------------------------------------------

@@ -201,9 +201,26 @@ shape as `GET /api/ecl/waterfall`.
 ### `POST /api/agent/ask`
 
 Body `{"question": "..."}` (1–2000 chars, `extra="forbid"`) →
-`{"answer": str, "route": str, "trace": [{"node": ..., ...}, ...]}`.
-`route` is one of the five tool names or `"refusal"`. `429` if another
-question is mid-flight (single-worker demo limit).
+`{"answer": str, "route": str, "mode": str, "trace": [{"node": ..., ...}, ...]}`.
+`route` is one of the six tool/retriever names, `"REASONED"`, or a refusal
+spelling (`"REFUSE"` from the live LangGraph router, `"refusal"` from the
+offline fallback router — match either, case-insensitively). `429` if
+another question is mid-flight (single-worker demo limit).
+
+`mode` (added additively; every prior field is unchanged) is the UI's
+status-indicator classification of `answer`:
+
+| `mode` | when | UI status word (§5.5) |
+|---|---|---|
+| `"grounded"` | a numeric tool ran, or the cited docs retriever (`query_model_docs`) answered | `GROUNDED` |
+| `"reasoned"` | the REASONED route — a cited, number-disciplined LLM interpretation grounded in retrieved passages + the engine's own baseline snapshot, but NOT a fresh engine computation | `REASONED` |
+| `"refusal"` | the question was out of scope | `OUT OF SCOPE` |
+
+Every `"reasoned"` answer's `answer` string is ALSO prefixed with the
+literal marker `"[REASONED — interpretation, not engine output] "` — a
+second, redundant signal (never the UI's only one; branch on `mode`,
+treat the prefix as display text like any other narration) in case the
+answer is ever rendered somewhere that has only the raw string.
 
 ### `GET /api/agent/stream`
 
@@ -214,17 +231,19 @@ comments every 15s.
 **Trace event shape** (same dicts as `POST /api/agent/ask`'s `trace` array;
 the UI must key off `node`, not any other field): every event is a JSON
 object with a `"node"` string — one of `"router"`, `"narrator"`,
-`"refusal"`, or a tool name (`"shock_macro"`, `"reweight_scenarios"`,
-`"rerun_ecl"`, `"decompose_waterfall"`, `"query_model_docs"`,
-`"analyze_data"`; the offline fallback router emits the generic `"tool"`)
-— plus node-dependent optional fields. The ones the UI may render:
+`"REASONED"`, `"refusal"`, or a tool name (`"shock_macro"`,
+`"reweight_scenarios"`, `"rerun_ecl"`, `"decompose_waterfall"`,
+`"query_model_docs"`, `"analyze_data"`; the offline fallback router emits
+the generic `"tool"`) — plus node-dependent optional fields. The ones the
+UI may render:
 
 | field | on | meaning |
 |---|---|---|
 | `ts` | live router events | ISO-8601 UTC timestamp |
 | `route`, `args`, `model`, `detail` | `router` | chosen route + validated args |
 | `status` (`"ok"`/`"error"`), `tool_call_id`, `headline`, `detail` | tool nodes | execution outcome |
-| `mode`, `model`, `number_check_passed` / `citation_check_passed` | `narrator` | grounding-check outcome |
+| `mode`, `model`, `number_check_passed` / `citation_check_passed` | `narrator` | grounding-check outcome (a PER-EVENT diagnostic — `"llm"` / `"template_*"` — distinct from the top-level response's `mode` field above, which classifies the whole answer for the UI status indicator) |
+| `mode`, `model`, `number_check_passed`, `attempts` | `"REASONED"` | same per-event diagnostic, plus `"llm_repaired"` when the one regeneration attempt fixed an ungrounded number |
 | `message` / `answer` | `refusal`, fallback events | display text |
 | `label`, `tool`, `answer` | fallback-router events | display text |
 | `_id` | every streamed event | monotonic replay-dedup id (ignore) |

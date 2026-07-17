@@ -1,6 +1,7 @@
-"""LangGraph orchestration for the IFRS 9 ECL copilot (Day 4 + Tier-3 + Tier-2).
+"""LangGraph orchestration for the IFRS 9 ECL copilot (Day 4 + Tier-3 + Tier-2
++ REASONED).
 
-Graph shape (deliberately small — seven kinds of node, one loop-free pass):
+Graph shape (deliberately small — eight kinds of node, one loop-free pass):
 
     START -> router -+-> shock_macro ------------+
                      +-> reweight_scenarios ------+
@@ -9,6 +10,7 @@ Graph shape (deliberately small — seven kinds of node, one loop-free pass):
                      +-> query_model_docs ---------+
                      +-> analyze_data -+-> narrator ------------------> END
                      |                 +-> refusal (repair also failed) -> END
+                     +-> REASONED -------------------------------------> END
                      +-> refusal --------------------------------------> END
 
 THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic and never
@@ -50,6 +52,30 @@ result. Every LLM output is distrusted mechanically:
     code-writer); still failing, the question falls through to REFUSAL —
     never a guessed number. Every successful run's code (and a hash of its
     executed result) is shown in the trace and audited.
+  * REASONED answers a CONCEPTUAL question none of the six tools/retriever
+    above computes or simply quotes verbatim — model-design rationale,
+    interaction-term / joint-effect reasoning, "why is X modeled this way",
+    standard credit-risk economic intuition. The node (a) retrieves Tier-3
+    passages for grounding, (b) reads the engine's own baseline snapshot
+    (``rerun_ecl(segment="all")``) as a second validated number source, then
+    (c) an LLM reasons from both plus ordinary credit-risk economics, citing
+    passages where used. A post-check (``reasoned_answer_ok``) — the same
+    verbatim-number discipline as Tier-1/Tier-3, extended with a third
+    legal source (the user's own question) — requires every number in the
+    answer to appear in a passage, the baseline snapshot, or the question;
+    on a miss the node makes ONE regeneration attempt with an explicit
+    no-new-numerics instruction, then falls back to a deterministic
+    qualitative template pointing at the closest validated tool. Every
+    verbatim-number guard in this module (Tier-1's ``narration_numbers_ok``,
+    Tier-3's ``docs_answer_ok``, and this route's ``reasoned_answer_ok``)
+    ALSO rejects a number spelled out in words ("two hundred million
+    dollars", "forty-seven percent") via ``_spelled_number_violation`` — a
+    digit-only token regex is blind to word-form numbers, which an
+    adversarial probe confirmed is otherwise a live way to state an
+    invented magnitude while passing every check that only looks at
+    digits. Every REASONED answer is prefixed with a machine-readable mode
+    marker (``REASONED_PREFIX``) so the API/UI can label it distinctly from
+    a grounded engine/documentation answer.
 
 The REFUSAL path is a feature, not an error state: out-of-scope questions
 get a fixed message naming the validated tool families and offering to
@@ -84,7 +110,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, TypedDict
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from agent.tier3_retrieval import TIER3_ARG_MODELS, query_model_docs
 from agent.tools_tier1 import TIER1_ARG_MODELS, TIER1_TOOLS, _log_call
@@ -115,10 +141,31 @@ TIER3_ROUTE = "query_model_docs"
 #: TOOL_ROUTES/TIER3_ROUTE for the same reason
 TIER2_ROUTE = "analyze_data"
 
-#: every valid non-REFUSE route -> its pydantic argument model
-ROUTE_ARG_MODELS = {**TIER1_ARG_MODELS, **TIER3_ARG_MODELS, **TIER2_ARG_MODELS}
-
 REFUSE = "REFUSE"
+
+#: the reasoned-interpretation route: conceptually-relevant questions this
+#: model's fixed tools/documentation retriever cannot directly compute or
+#: quote verbatim, but that a grounded, cited, number-disciplined LLM answer
+#: CAN responsibly address (model-design rationale, interaction-term /
+#: economic-intuition questions, "why is X modeled this way", what-if
+#: REASONING that needs no new number). Kept as its own uppercase sentinel
+#: alongside REFUSE — it has no registry tool to execute, only a grounded
+#: reasoning pass (see _reasoned_node), so it is NOT added to TOOL_ROUTES.
+REASONED = "REASONED"
+
+
+class ReasonedArgs(BaseModel):
+    """Deliberately EMPTY (extra='forbid') — same contract as Tier-3's
+    QueryModelDocsArgs: the router only classifies; _reasoned_node always
+    reasons over the user's own original question text, never a
+    router-authored paraphrase."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+#: every valid non-REFUSE route -> its pydantic argument model
+ROUTE_ARG_MODELS = {**TIER1_ARG_MODELS, **TIER3_ARG_MODELS, **TIER2_ARG_MODELS,
+                    REASONED: ReasonedArgs}
 
 REFUSAL_MESSAGE = (
     "That question is outside my validated scope, so I will not answer it "
@@ -140,14 +187,24 @@ REFUSAL_MESSAGE = (
     "and the IFRS 9 knowledge corpus, every claim cited to a real page or "
     "note section. "
     "Rephrase your question into one of those, or ask the model owners to "
-    "extend the validated toolset."
+    "extend the validated toolset. Conceptually-related questions about "
+    "this model's methodology or design get a reasoned interpretation "
+    "automatically, so rephrasing your question toward the model or its "
+    "methodology may help."
 )
 
 ROUTER_SYSTEM_PROMPT = """\
 You are the ROUTER of a validated IFRS 9 ECL model agent. You never compute
 numbers and you never state facts yourself. Your only job is to classify
-the user's question into EXACTLY ONE of six engine tools — or REFUSE —
-and emit the tool's arguments.
+the user's question into EXACTLY ONE of three CLASSES:
+  (a) COMPUTABLE — one of six engine tools that returns a fresh number;
+  (b) REASONED — a conceptually relevant question about credit risk, IFRS 9,
+      or this model's own methodology that NO tool computes or the
+      documentation retriever simply quotes verbatim, but that a grounded,
+      cited, number-disciplined reasoning pass can responsibly address;
+  (c) REFUSE — everything else (no connection to this model or credit
+      risk, or a request for a fresh number/fact with no tool for it).
+and emit that route's arguments.
 
 Tools (args must satisfy these contracts exactly):
 
@@ -194,18 +251,76 @@ Tools (args must satisfy these contracts exactly):
    actual allowance movement or waterfall NUMBERS (e.g. "walk me through
    the allowance waterfall") is decompose_waterfall (tool 4), never this
    route. Use this route only for what the documentation SAYS — definitions,
-   methodology, rationale.
+   methodology, rationale ALREADY written down, quotable near-verbatim.
 
-REFUSE anything else: general knowledge unrelated to this project, market
-or rate predictions, opinions/advice, arithmetic requests, HYPOTHETICAL
-methodology debates ("what do you think we should do instead", "is this the
-best approach"), poems or other creative writing, other portfolios,
-anything needing data or computation outside these six tools. When in
-doubt, REFUSE — never guess.
+7. REASONED — relevant CONCEPTUAL questions about credit risk, IFRS 9, or
+   this model's own methodology that NONE of tools 1-6 computes or simply
+   quotes: model-design rationale ("does the satellite need a UER x HPI
+   interaction, or do the main effects and momentum already account for
+   the joint stress response?"), "why is X modeled this way" / "why
+   does coefficient Y come out negative" questions, standard credit-risk
+   economic intuition, and what-if REASONING that needs no new NUMBER (as
+   opposed to analyze_data's what-if COMPUTATION, or shock_macro/
+   reweight_scenarios's what-if RE-RUN). args: {} always (the question text
+   itself is reused verbatim by a grounded reasoning pass — never restate
+   or rephrase it in args).
+   Disambiguation vs query_model_docs (6): route to 6 ONLY when the answer
+   is a plain lookup the documentation already states outright (a
+   definition, a stated methodology fact). Route to REASONED when the
+   question needs REASONING — combining what's documented with ordinary
+   credit-risk logic (interaction/joint-effect judgment, a "does X already
+   cover Y" synthesis, a "why" that isn't just a quoted rationale). When
+   genuinely torn between the two, prefer REASONED — it still cites its
+   sources and never invents a number, so it is never the unsafe choice.
+   Disambiguation vs REFUSE: REASONED is for questions ABOUT this model or
+   IFRS 9 / credit risk generally, even ones with no fixed tool or exact
+   documented answer. REFUSE is for questions with NO connection to either.
+
+REFUSE anything else: general knowledge unrelated to credit risk or this
+project, market or rate predictions, opinions/advice unconnected to this
+model, arithmetic requests, poems or other creative writing, other
+portfolios, anything needing data or computation outside these seven
+routes. When in doubt between REASONED and REFUSE for a question that IS
+at least about credit risk / IFRS 9 / this model, prefer REASONED — never
+invent a number, but do not refuse a legitimate conceptual question either.
+When a question has no connection at all to this model or credit risk,
+REFUSE. Never guess an argument.
 
 Respond with ONLY a JSON object, no prose, no code fences:
-  {"route": "<tool name or REFUSE>", "args": {...}}
+  {"route": "<tool name, REASONED, or REFUSE>", "args": {...}}
 For REFUSE use {"route": "REFUSE", "args": {}}.
+For REASONED use {"route": "REASONED", "args": {}}.
+
+EXAMPLES (three per class — study the PATTERN, not just these questions):
+
+-- COMPUTABLE (a tool route; a fresh engine number is needed) --
+Q: "What happens to the allowance if unemployment rises 2 percentage
+    points?"
+A: {"route": "shock_macro", "args": {"var": "UER", "shock": 2.0, "shape":
+    "parallel"}}
+Q: "How much of the allowance sits in Stage 2?"
+A: {"route": "rerun_ecl", "args": {"segment": "stage2"}}
+Q: "What are the top 5 loans by weighted allowance?"
+A: {"route": "analyze_data", "args": {}}
+
+-- REASONED (conceptually relevant; no tool computes or quotes it) --
+Q: "Does the satellite need a UER x HPI interaction, or do the main
+    effects and momentum already account for the joint stress response?"
+A: {"route": "REASONED", "args": {}}
+Q: "Why does the double-trigger LTV x UER coefficient come out negative?"
+A: {"route": "REASONED", "args": {}}
+Q: "If unemployment and house prices both deteriorate at once, would you
+    expect the combined hit to default risk to be additive, or worse than
+    additive?"
+A: {"route": "REASONED", "args": {}}
+
+-- REFUSE (no connection to this model or credit risk) --
+Q: "What's your view on Bitcoin as a hedge for our book?"
+A: {"route": "REFUSE", "args": {}}
+Q: "What will the Fed do with rates next year?"
+A: {"route": "REFUSE", "args": {}}
+Q: "Please compute 123 * 456 for me."
+A: {"route": "REFUSE", "args": {}}
 """
 
 NARRATOR_SYSTEM_PROMPT = """\
@@ -244,6 +359,49 @@ HARD RULES — violations are discarded by an automated check:
   appears verbatim in one of the passages' text.
 - Short answer (2-5 sentences), plain factual tone, for a bank risk analyst.
 """
+
+REASONED_SYSTEM_PROMPT = """\
+You are the REASONING narrator for a validated IFRS 9 ECL model agent,
+answering a CONCEPTUAL question this model's fixed tools do not compute and
+its documentation retriever does not simply quote verbatim: model-design
+rationale, interaction-term / joint-effect reasoning, "why is X modeled
+this way" questions, and standard credit-risk economic intuition. You will
+receive a JSON object with "question", a list of "passages" (each
+{"source", "citation", "text"}, retrieved from this project's own wiki and
+IFRS 9 knowledge corpus), and a "baseline" object (the engine's own
+validated whole-book snapshot — numbers you may quote VERBATIM, never
+rescale or recompute).
+
+HARD RULES — violations are discarded by an automated check:
+- Reason from the retrieved passages plus ordinary credit-risk economics.
+  When a claim is this project's own documented design or data, cite the
+  exact passage citation string, in square brackets, that supports it. It
+  is fine to reason WITHOUT a citation when explaining general credit-risk
+  economics rather than this project's own specifics — but never present
+  something as this project's own finding without a citation backing it.
+- State a number ONLY if it appears verbatim in a passage's text, in the
+  "baseline" object, or in the "question" text itself. NEVER compute,
+  estimate, rescale, or recall a number from your own general knowledge —
+  if no grounded number is available, answer qualitatively and say so
+  honestly rather than inventing one. This applies EQUALLY to a number
+  spelled out in words ("two hundred million dollars", "forty-seven
+  percent", "tens of millions") — an automated check treats a word-form
+  estimate exactly like a digit one, so never use one to work around the
+  no-new-numbers rule; if you are asked for "just intuition, no exact
+  numbers," give a qualitative answer with no magnitude words at all.
+- If the documentation is silent or ambiguous on the specific question,
+  say that honestly; general credit-risk economic reasoning is welcome, but
+  label it as general reasoning, not this project's own documented result.
+- Short answer (2-5 sentences), plain factual tone, for a bank risk analyst
+  who wants an honest, informed opinion — not a hedge-everything non-answer.
+"""
+
+#: prefix every REASONED answer with this machine-readable marker (spec:
+#: "answer is prefixed with a machine-readable mode marker so the API/UI
+#: can label it") — belt-and-suspenders alongside the API's own top-level
+#: `mode` field (see app/api/main.py), never the ONLY signal the UI relies
+#: on, since a template fallback answer carries it too.
+REASONED_PREFIX = "[REASONED — interpretation, not engine output] "
 
 CODE_WRITER_SYSTEM_PROMPT = """\
 You are the CODE-WRITER for a sandboxed pandas analysis tool over the
@@ -367,6 +525,33 @@ def _llm_narrate_docs(tool_result: dict) -> tuple[str, str]:
     ])
 
 
+def _llm_reason(question: str, passages: list[dict], baseline: dict,
+                *, retry: bool = False) -> tuple[str, str]:
+    """Raw REASONED-narrator completion; (text, model_used).
+
+    First attempt: the question + retrieved passages + baseline whitelist.
+    Retry (only after a numeric-guard miss on the first attempt): an
+    explicit no-new-numerics instruction is appended so the model reasons
+    over the SAME grounding material again, rather than guess blind.
+    """
+    payload = {"question": question, "passages": passages,
+              "baseline": baseline}
+    user = json.dumps(payload)
+    if retry:
+        user += (
+            "\n\nYour previous answer stated at least one number — digit or "
+            "SPELLED OUT IN WORDS (e.g. 'two hundred million', 'forty-seven "
+            "percent') — that does not appear verbatim in the passages, the "
+            "baseline object, or the question above. Regenerate your answer "
+            "WITHOUT stating any new number in EITHER form — reason "
+            "qualitatively with no magnitude words at all, or quote a "
+            "number only if it is verbatim in the material given.")
+    return _call_llm([
+        {"role": "system", "content": REASONED_SYSTEM_PROMPT},
+        {"role": "user", "content": user},
+    ])
+
+
 def _llm_codegen(question: str, *, error: str | None = None,
                  previous_code: str | None = None) -> tuple[str, str]:
     """Raw code-writer completion (Tier-2); (text, model_used).
@@ -477,6 +662,63 @@ def _number_tokens(text: str) -> list[str]:
     return _NUM_TOKEN_RE.findall(text)
 
 
+#: SPELLED-OUT numbers are a digit-blind hole in the guard above: a token
+#: regex can only ever see digit characters, so "two hundred million
+#: dollars" or "forty-seven percent" sail through `_number_tokens` with
+#: ZERO tokens to check — an adversarially-probed, LIVE-confirmed way to
+#: state an entirely invented magnitude while still passing every guard
+#: that only inspects `_number_tokens`. This is a SEPARATE, word-level
+#: check, applied alongside (never instead of) the digit check above by
+#: every narration guard in this module.
+_MAGNITUDE_WORDS = {
+    "hundred", "hundreds", "thousand", "thousands", "million", "millions",
+    "billion", "billions", "trillion", "trillions", "dozen", "dozens",
+    "score", "scores",
+}
+_SMALL_NUMBER_WORDS = {
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+    "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+    "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "thirty",
+    "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+}
+_UNIT_WORDS = {
+    "percent", "percentage", "pp", "bps", "dollars", "dollar", "usd",
+    "cents", "cent", "basis",
+}
+_ALPHA_WORD_RE = re.compile(r"[A-Za-z]+")
+_SPELLED_NUMBER_WINDOW = 4      # tokens either side to look for a unit word
+
+
+def _spelled_number_violation(text: str) -> bool:
+    """True iff TEXT states a spelled-out numeric magnitude the digit-only
+    `_number_tokens` check cannot see.
+
+    Two independently sufficient triggers, both case-insensitive:
+      1. any MAGNITUDE noun (hundred/thousand/million/billion/trillion/
+         dozen/score, singular or plural) appears at all — these words are
+         essentially never used non-numerically in this financial domain,
+         so their mere presence already states a magnitude ("tens of
+         millions" is itself an estimate, with no digit and no leading
+         number word);
+      2. a small cardinal word (zero..ninety) appears within
+         ``_SPELLED_NUMBER_WINDOW`` tokens of a unit word (percent/pp/bps/
+         dollars/cents/basis) — catches "forty-seven percent" while NOT
+         flagging ordinary prose uses of small number words elsewhere
+         ("one interaction term", "the two main effects").
+    """
+    words = _ALPHA_WORD_RE.findall(text.lower())
+    if any(w in _MAGNITUDE_WORDS for w in words):
+        return True
+    for i, w in enumerate(words):
+        if w not in _SMALL_NUMBER_WORDS:
+            continue
+        lo = max(0, i - _SPELLED_NUMBER_WINDOW)
+        hi = min(len(words), i + _SPELLED_NUMBER_WINDOW + 1)
+        if any(words[j] in _UNIT_WORDS for j in range(lo, hi) if j != i):
+            return True
+    return False
+
+
 def _allowed_numbers(tool_result: dict) -> list[float]:
     """Every number a faithful narration may contain.
 
@@ -516,8 +758,13 @@ def narration_numbers_ok(text: str, tool_result: dict) -> bool:
 
     A token matches if it equals — or is a plain rounding at its own
     printed precision of — an allowed number (sign-insensitive, so 'fell
-    by $2.8m' matches a delta of -2.8). One miss fails the whole text.
+    by $2.8m' matches a delta of -2.8). One miss fails the whole text. A
+    SPELLED-OUT magnitude ("two hundred million dollars") is also a miss
+    — see `_spelled_number_violation` — since the narrator's only legal
+    numbers are the tool JSON's own digits, never a word-form estimate.
     """
+    if _spelled_number_violation(text):
+        return False
     allowed = _allowed_numbers(tool_result)
     for tok in _number_tokens(text):
         n = float(tok.replace(",", ""))
@@ -554,10 +801,13 @@ def _numbers_in_passages(passages: list[dict]) -> list[float]:
 def docs_answer_ok(text: str, tool_result: dict) -> bool:
     """True iff the narration cites a real passage AND invents no numbers.
 
-    Two checks, both required (a single miss fails the whole text):
+    Three checks, all required (a single miss fails the whole text):
       1. at least one passage's `citation` string appears verbatim in the
          answer (the narrator must show its work);
-      2. every number token in the answer equals — or is a plain rounding
+      2. no SPELLED-OUT magnitude ("two hundred million dollars") — see
+         `_spelled_number_violation`; a word-form estimate is exactly as
+         invented as a digit one the passages never state;
+      3. every number token in the answer equals — or is a plain rounding
          of — a number that appears somewhere in the passages' own text (a
          number is only legitimate if it was actually IN the documentation
          quoted back, never computed or recalled from the model's memory).
@@ -567,6 +817,8 @@ def docs_answer_ok(text: str, tool_result: dict) -> bool:
         return False
     citations = [p["citation"] for p in passages if p.get("citation")]
     if not any(c and c in text for c in citations):
+        return False
+    if _spelled_number_violation(text):
         return False
     allowed = _numbers_in_passages(passages)
     for tok in _number_tokens(text):
@@ -602,6 +854,90 @@ def deterministic_docs_narration(tool_result: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# REASONED-route guard (the mechanical anti-hallucination guard, extended
+# with a THIRD legal number source — the user's own question text — on top
+# of the Tier-3 guard's two: retrieved passages and the engine's baseline)
+# ---------------------------------------------------------------------------
+
+def _question_numbers(question: str) -> list[float]:
+    """Numbers the user's own question already contains verbatim — legal
+    for the REASONED narrator to echo back (e.g. a rate the user names),
+    never a number it computed or recalled itself."""
+    out: list[float] = []
+    for tok in _number_tokens(question or ""):
+        try:
+            out.append(float(tok.replace(",", "")))
+        except ValueError:                        # pragma: no cover
+            pass
+    return out
+
+
+def reasoned_answer_ok(text: str, tool_result: dict) -> bool:
+    """True iff EVERY number in a REASONED answer is grounded.
+
+    A number is legal iff it appears verbatim (or as a plain rounding at
+    its own printed precision, sign-insensitive — the same tolerance rule
+    as the Tier-1/Tier-3 guards) in one of three places: a retrieved
+    passage's own text, the engine's baseline snapshot
+    (``tool_result["baseline"]``, e.g. ``rerun_ecl(segment="all")``), or the
+    user's own question. No citation is required (unlike the Tier-3 guard)
+    — a REASONED answer may legitimately be pure credit-risk economic
+    reasoning with nothing to cite — only the numeric discipline is a hard
+    gate. One miss fails the whole text.
+
+    A SPELLED-OUT magnitude ("two hundred million dollars", "forty-seven
+    percent", "tens of millions") is ALSO a hard miss, unconditionally —
+    see `_spelled_number_violation`. This route is the one most exposed to
+    "just give me intuition, no exact numbers" scope-gaming, and a
+    word-form estimate is exactly as invented as a digit one when it
+    doesn't come from the passages/baseline/question; it is not whitelisted
+    against an echoed question number either, deliberately, to close off
+    the whole class rather than special-case it.
+    """
+    if _spelled_number_violation(text):
+        return False
+    passages = tool_result.get("passages") or []
+    baseline = tool_result.get("baseline") or {}
+    question = tool_result.get("question") or ""
+    allowed = (_numbers_in_passages(passages) + _allowed_numbers(baseline)
+              + _question_numbers(question))
+    for tok in _number_tokens(text):
+        n = float(tok.replace(",", ""))
+        decimals = len(tok.split(".")[1]) if "." in tok else 0
+        tol = 0.5 * 10.0 ** (-decimals) + 1e-9
+        if not any(abs(n - a) <= tol or abs(abs(n) - abs(a)) <= tol
+                  for a in allowed):
+            return False
+    return True
+
+
+def deterministic_reasoned_fallback(tool_result: dict) -> str:
+    """Engine-authored fallback: a qualitative passage listing (never a new
+    number) plus a pointer to the closest validated tool — used whenever
+    the REASONED narrator's own prose fails the numeric guard on both
+    attempts, or the reasoning LLM itself errors both times."""
+    passages = tool_result.get("passages") or []
+    ref = tool_result.get("tool_call_id")
+    if passages:
+        lines = ["I can offer a qualitative interpretation grounded in the "
+                 "retrieved documentation, without stating a new number:"]
+        for p in passages[:3]:
+            snippet = " ".join(p.get("text", "").split())
+            if len(snippet) > 220:
+                snippet = snippet[:220].rsplit(" ", 1)[0] + "…"
+            lines.append(f"- [{p['citation']}] {snippet}")
+    else:
+        lines = ["I have no documentation passage directly on point, so I "
+                 "will not speculate with numbers."]
+    lines.append(
+        "For an exact figure, the closest validated tool is analyze_data "
+        "(an ad-hoc query over the scored book) or query_model_docs (a "
+        "cited documentation lookup) — ask me to run one of those.")
+    lines.append(f"[engine-computed; audit ref {ref}]")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # graph state + nodes
 # ---------------------------------------------------------------------------
 
@@ -611,6 +947,11 @@ class AgentState(TypedDict):
     tool_args: dict
     tool_result: dict
     answer: str
+    #: top-level API-facing classification of `answer` — "grounded" (a tool/
+    #: docs answer), "reasoned" (the REASONED route), or "refusal". Set by
+    #: whichever terminal node (narrator/REASONED/refusal) produces `answer`
+    #: — never inferred elsewhere, so it always matches what actually ran.
+    mode: str
     trace: Annotated[list, operator.add]
 
 
@@ -663,6 +1004,80 @@ def _query_model_docs_node(state: AgentState) -> dict:
         event = {"node": TIER3_ROUTE, "ts": _now(), "status": "error",
                  "detail": result["error"]}
     return {"tool_result": result, "trace": [event]}
+
+
+def _reasoned_node(state: AgentState) -> dict:
+    """REASONED route: a conceptual question no tool computes and the docs
+    retriever does not simply quote. Self-contained — unlike the Tier-1/
+    Tier-3 tool nodes it does NOT hand off to ``_narrator_node``; it
+    produces the final ``answer`` (and ``mode: "reasoned"``) itself, then
+    the graph edges straight to END (see build_graph()), mirroring how
+    ``_refusal_node`` also produces a final answer directly.
+
+    Grounding sources: (a) Tier-3 retrieval on the user's own original
+    question (never a router paraphrase — same discipline as
+    ``_query_model_docs_node``), and (b) the engine's own baseline snapshot
+    (``rerun_ecl(segment="all")``, read through the live TIER1_TOOLS
+    registry so offline tests can monkeypatch it exactly like every other
+    Tier-1 call). Either source failing is honest, not fatal — an empty
+    passages list / empty baseline just narrows what the reasoning LLM may
+    legally state a number about; it never blocks the qualitative answer.
+    """
+    question = state["question"]
+    try:
+        passages = query_model_docs(question=question).get("passages", [])
+    except Exception:                          # retrieval failure: honest
+        passages = []
+    try:
+        baseline = TIER1_TOOLS["rerun_ecl"](segment="all")
+    except Exception:                          # engine failure: honest
+        baseline = {}
+
+    tool_result = {"tool": REASONED, "question": question,
+                   "passages": passages, "baseline": baseline}
+
+    def _attempt(retry: bool) -> tuple[str | None, str | None, bool, str]:
+        try:
+            text, model_used = _llm_reason(question, passages, baseline,
+                                           retry=retry)
+        except Exception as exc:
+            return (None, None, False,
+                    f"template_llm_error:{type(exc).__name__}")
+        ok = reasoned_answer_ok(text, tool_result)
+        return text, model_used, ok, ("llm" if ok
+                                      else "template_number_check_failed")
+
+    text, model_used, ok, mode = _attempt(retry=False)
+    attempts = [{"attempt": 1, "ok": ok, "mode": mode}]
+    if not ok:
+        text2, model_used2, ok2, mode2 = _attempt(retry=True)
+        attempts.append({"attempt": 2, "ok": ok2, "mode": mode2})
+        if ok2:
+            text, model_used, ok, mode = text2, model_used2, True, \
+                "llm_repaired"
+        else:
+            mode = mode2
+
+    headline = (f"reasoned interpretation grounded in {len(passages)} "
+               f"documentation passage(s) and the baseline engine snapshot "
+               f"for {question!r} — no new number was stated.")
+    tool_call_id = _log_call(
+        REASONED, {"question": question, "n_passages": len(passages)},
+        headline)
+    tool_result["headline"] = headline
+    tool_result["tool_call_id"] = tool_call_id
+
+    body = text.strip() if ok else deterministic_reasoned_fallback(tool_result)
+    answer = f"{REASONED_PREFIX}{body}"
+    return {
+        "answer": answer,
+        "tool_result": tool_result,
+        "mode": "reasoned",
+        "trace": [{"node": REASONED, "ts": _now(), "mode": mode,
+                   "model": model_used, "number_check_passed": bool(ok),
+                   "attempts": attempts, "tool_call_id": tool_call_id,
+                   "headline": headline}],
+    }
 
 
 def _analyze_data_node(state: AgentState) -> dict:
@@ -742,11 +1157,13 @@ def _narrator_node(state: AgentState) -> dict:
                   f"failed ({result['error']}); no numbers were produced, "
                   f"so I have none to report. Please retry or contact the "
                   f"model owners.")
-        return {"answer": answer,
+        return {"answer": answer, "mode": "grounded",
                 "trace": [{"node": "narrator", "ts": _now(),
                            "mode": "tool_error"}]}
     if result.get("tool") == TIER3_ROUTE:
-        return _narrate_docs(result)
+        out = _narrate_docs(result)
+        out["mode"] = "grounded"
+        return out
     try:
         text, model_used = _llm_narrate(result)
         ok = narration_numbers_ok(text, result)
@@ -755,7 +1172,7 @@ def _narrator_node(state: AgentState) -> dict:
         text, model_used, ok = None, None, False
         mode = f"template_llm_error:{type(exc).__name__}"
     answer = text.strip() if ok else deterministic_narration(result)
-    return {"answer": answer,
+    return {"answer": answer, "mode": "grounded",
             "trace": [{"node": "narrator", "ts": _now(), "mode": mode,
                        "model": model_used,
                        "number_check_passed": bool(ok)}]}
@@ -779,13 +1196,13 @@ def _narrate_docs(result: dict) -> dict:
 
 
 def _refusal_node(state: AgentState) -> dict:
-    return {"answer": REFUSAL_MESSAGE, "tool_result": {},
+    return {"answer": REFUSAL_MESSAGE, "tool_result": {}, "mode": "refusal",
             "trace": [{"node": "refusal", "ts": _now(),
                        "message": "fixed refusal issued"}]}
 
 
 def build_graph():
-    """Compile the StateGraph (router -> tool -> narrator | refusal).
+    """Compile the StateGraph (router -> tool -> narrator | REASONED | refusal).
 
         START -> router -+-> shock_macro ------------+
                          +-> reweight_scenarios ------+
@@ -794,6 +1211,7 @@ def build_graph():
                          +-> query_model_docs ---------+
                          +-> analyze_data -+-> narrator ------------------> END
                          |                 +-> refusal (repair failed) ----> END
+                         +-> REASONED -------------------------------------> END
                          +-> refusal --------------------------------------> END
     """
     g = StateGraph(AgentState)
@@ -809,12 +1227,14 @@ def build_graph():
         lambda s: "refusal" if "error" in s["tool_result"] else "narrator",
         {"refusal": "refusal", "narrator": "narrator"})
     g.add_node("narrator", _narrator_node)
+    g.add_node(REASONED, _reasoned_node)
+    g.add_edge(REASONED, END)
     g.add_node("refusal", _refusal_node)
     g.add_edge(START, "router")
     g.add_conditional_edges(
         "router", lambda s: s["route"],
         {**{name: name for name in TOOL_ROUTES}, TIER3_ROUTE: TIER3_ROUTE,
-         TIER2_ROUTE: TIER2_ROUTE, REFUSE: "refusal"})
+         TIER2_ROUTE: TIER2_ROUTE, REASONED: REASONED, REFUSE: "refusal"})
     g.add_edge("narrator", END)
     g.add_edge("refusal", END)
     return g.compile()
@@ -852,12 +1272,14 @@ def run_agent(question: str) -> dict:
     """Answer one question through the graph; audit the full trace.
 
     Returns the final state dict (question, route, tool_args, tool_result,
-    answer, trace) and appends {ts, question, route, answer, trace} to
-    outputs/agent_log/agent_runs.jsonl.
+    answer, mode, trace) and appends {ts, question, route, answer, trace} to
+    outputs/agent_log/agent_runs.jsonl (mode is intentionally NOT added to
+    the on-disk audit record — it is redundant with route there and adding
+    it would be a breaking change to that log's schema).
     """
     final = get_graph().invoke({
         "question": question, "route": "", "tool_args": {},
-        "tool_result": {}, "answer": "", "trace": [],
+        "tool_result": {}, "answer": "", "mode": "", "trace": [],
     })
     _log_run({"ts": _now(), "question": question, "route": final["route"],
               "answer": final["answer"], "trace": final["trace"]})
