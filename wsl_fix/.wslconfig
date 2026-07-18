@@ -1,0 +1,17 @@
+# WSL2 VM settings for CHONDEEPA - see WSL_CRASH_FIXES.md section 3.5
+# Manual install: copy this file to C:\Users\<you>\.wslconfig  then run:  wsl --shutdown
+# (Fix-WSL.ps1 installs it for you automatically.)
+
+[wsl2]
+# Cap the VM at 12GB so heavy model fits cannot starve Windows (32GB host)
+memory=12GB
+processors=8
+swap=16GB
+# Keep the VM alive ~24h after the last console/VSCode window disconnects
+# (default is ~60s idle teardown; -1 "never" is rejected on some builds)
+vmIdleTimeout=86400000
+
+[experimental]
+# Gradually return freed Linux memory to Windows. Delete this section if it
+# misbehaves on this build - it is an optimization, not a fix.
+autoMemoryReclaim=gradual

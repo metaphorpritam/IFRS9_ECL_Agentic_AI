@@ -1,0 +1,13 @@
+{
+  "asof": "2015-12-01",
+  "train_n": 15814045,
+  "train_events": 25541,
+  "fit_n": 713027,
+  "fit_events": 23732,
+  "n_active_loans": 121861,
+  "realized_cum_d90": 0.013974938659620387,
+  "predicted_cum_d90_frozen": 0.01856748237465763,
+  "predicted_cum_d90_actual": 0.018546140130412742,
+  "miss_ratio_frozen": 0.752656627195429,
+  "miss_ratio_actual": 0.753522757908191
+}

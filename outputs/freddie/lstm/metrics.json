@@ -1,0 +1,18 @@
+{
+  "train_n": 16059126,
+  "train_events": 24611,
+  "train_champion_auc": 0.8535911902958723,
+  "train_lstm_auc": 0.9964490594214324,
+  "oot_n": 20621912,
+  "oot_events": 16832,
+  "oot_champion_auc": 0.6847251436480823,
+  "oot_lstm_auc": 0.9924998553122111,
+  "oot_prior_dlq_n": 977978,
+  "oot_prior_dlq_events": 16792,
+  "oot_prior_dlq_champion_auc": 0.5698246326781929,
+  "oot_prior_dlq_lstm_auc": 0.9570336218094414,
+  "oot_clean_history_n": 19643934,
+  "oot_clean_history_events": 40,
+  "oot_clean_history_champion_auc": 0.5385541163579888,
+  "oot_clean_history_lstm_auc": 0.5287356531754855
+}

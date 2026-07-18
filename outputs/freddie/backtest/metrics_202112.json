@@ -1,0 +1,13 @@
+{
+  "asof": "2021-12-01",
+  "train_n": 28681137,
+  "train_events": 39166,
+  "fit_n": 1298615,
+  "fit_events": 35707,
+  "n_active_loans": 173838,
+  "realized_cum_d90": 0.011608509071664424,
+  "predicted_cum_d90_frozen": 0.01733963868732328,
+  "predicted_cum_d90_actual": 0.012290078358215651,
+  "miss_ratio_frozen": 0.6694781408652541,
+  "miss_ratio_actual": 0.944543129288056
+}

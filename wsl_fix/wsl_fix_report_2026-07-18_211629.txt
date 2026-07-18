@@ -1,0 +1,276 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260718211629
+Username: CHONDEEPA\Pritam
+RunAs User: CHONDEEPA\Pritam
+Configuration Name: 
+Machine: CHONDEEPA (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File D:\Python-UV\IFRS9_ECL_Agentic_AI\wsl_fix\Fix-WSL.ps1
+Process ID: 9500
+PSVersion: 5.1.26100.8875
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8875
+BuildVersion: 10.0.26100.8875
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+========================================================================
+  PHASE A1 - Event Viewer evidence (last 48h, read-only)
+========================================================================
+
+--- Service failures (Service Control Manager: WSL / vmcompute / Hyper-V) ---
+  (none found)
+
+--- Application crashes (wslservice / vmcompute / vmwp / docker) ---
+  (none found)
+
+--- Sleep / resume / unexpected reboot (Kernel-Power, Power-Troubleshooter) ---
+  (none found)
+
+--- Dedicated WSL / Hyper-V logs (Critical, Error, Warning) ---
+  [16-07-2026 21:40:27] Microsoft-Windows-Hyper-V-VMMS #14100 (Warning): Shut down physical computer. Stopping/saving all virtual machines...
+  [16-07-2026 21:42:51] Microsoft-Windows-Hyper-V-VMMS #14100 (Warning): Shut down physical computer. Stopping/saving all virtual machines...
+  [18-07-2026 19:43:23] Microsoft-Windows-Hyper-V-VMMS #14100 (Warning): Shut down physical computer. Stopping/saving all virtual machines...
+  [18-07-2026 20:46:54] Microsoft-Windows-Hyper-V-VMMS #14100 (Warning): Shut down physical computer. Stopping/saving all virtual machines...
+
+--- Generic sweep (query from case file 3.2) ---
+  [18-07-2026 19:44:05] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Delete' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)), Instance Id {9a781a43-bbf9-472c-9d08-da5a6956ee50}.
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #292 (Information): RSC offload modified for Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) Previous: Disabled, Current: Enabled. Reason: Port create
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC create
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Create' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully connected to port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) on switch 790E58B4-7939-4434-9358-89AE7DDBE87E(Friendly Name: WSL (Hype ...
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #9 (Information): Switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully initialized.
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #264 (Information): Internal or External Port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC create
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Create' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC start
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #7 (Information): Miniport NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully initialized.
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Enabled, Previous IPv6: Disabled, Current IPv6: Enabled. Reason: RSC OID
+  [18-07-2026 19:45:27] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Enabled, Current IPv4: Enabled, Previous IPv6: Enabled, Current IPv6: Enabled. Reason: RSC OID
+  [18-07-2026 19:45:28] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully connected to port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) on switch 790E58B4-7939-4434-9358-89AE7DDBE87E( ...
+  [18-07-2026 19:45:28] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C (Friendly Name: F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 19:45:28] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 53AF0752-BA38-4FC8-8ABD-9998DBC2E3BC--F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C (Friendly Name: ) successfully connected to port F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C (Friendly Name: F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C) on switch 790E58B4-7939-4434-9358-89AE7DD ...
+  [18-07-2026 19:51:17] Microsoft-Windows-Hyper-V-VmSwitch #69 (Information): Port F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C (Friendly Name: F6A73635-B8C6-44C4-B0D8-B5B70F6C3A6C) successfully deleted - switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 19:52:37] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port 109DD7F5-71F3-4047-BC59-34877F58361F (Friendly Name: 109DD7F5-71F3-4047-BC59-34877F58361F) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 19:52:37] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC DF8E3653-6208-4669-93ED-EBDF8EC837C4--109DD7F5-71F3-4047-BC59-34877F58361F (Friendly Name: ) successfully connected to port 109DD7F5-71F3-4047-BC59-34877F58361F (Friendly Name: 109DD7F5-71F3-4047-BC59-34877F58361F) on switch 790E58B4-7939-4434-9358-89AE7DD ...
+  [18-07-2026 20:01:42] Microsoft-Windows-Hyper-V-VmSwitch #69 (Information): Port 109DD7F5-71F3-4047-BC59-34877F58361F (Friendly Name: 109DD7F5-71F3-4047-BC59-34877F58361F) successfully deleted - switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:01:51] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port 3C51AE97-F822-4A9F-A3AB-D20786FEF9E2 (Friendly Name: 3C51AE97-F822-4A9F-A3AB-D20786FEF9E2) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:01:51] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 087EA4D5-0FDD-4F24-8898-583E331F93A4--3C51AE97-F822-4A9F-A3AB-D20786FEF9E2 (Friendly Name: ) successfully connected to port 3C51AE97-F822-4A9F-A3AB-D20786FEF9E2 (Friendly Name: 3C51AE97-F822-4A9F-A3AB-D20786FEF9E2) on switch 790E58B4-7939-4434-9358-89AE7DD ...
+  [18-07-2026 20:21:51] Microsoft-Windows-Hyper-V-VmSwitch #69 (Information): Port 3C51AE97-F822-4A9F-A3AB-D20786FEF9E2 (Friendly Name: 3C51AE97-F822-4A9F-A3AB-D20786FEF9E2) successfully deleted - switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:21:58] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port 68DEA97B-04AA-455A-9B5F-839D1220285D (Friendly Name: 68DEA97B-04AA-455A-9B5F-839D1220285D) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:21:58] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 84E54CBD-01E5-4457-950D-4E6B4A7CB523--68DEA97B-04AA-455A-9B5F-839D1220285D (Friendly Name: ) successfully connected to port 68DEA97B-04AA-455A-9B5F-839D1220285D (Friendly Name: 68DEA97B-04AA-455A-9B5F-839D1220285D) on switch 790E58B4-7939-4434-9358-89AE7DD ...
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #292 (Information): RSC offload modified for Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) Previous: Disabled, Current: Enabled. Reason: Port create
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC create
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Create' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully connected to port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) on switch 790E58B4-7939-4434-9358-89AE7DDBE87E(Friendly Name: WSL (Hype ...
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #9 (Information): Switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully initialized.
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #264 (Information): Internal or External Port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC create
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Create' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC start
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #7 (Information): Miniport NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully initialized.
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully connected to port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) on switch 790E58B4-7939-4434-9358-89AE7DDBE87E( ...
+  [18-07-2026 20:47:42] Microsoft-Windows-Hyper-V-VmSwitch #5 (Information): Miniport NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully enabled
+  [18-07-2026 20:47:59] Microsoft-Windows-Hyper-V-VmSwitch #69 (Information): Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully deleted - switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:47:59] Microsoft-Windows-Hyper-V-VmSwitch #69 (Information): Port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) successfully deleted - switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:47:59] Microsoft-Windows-Hyper-V-VmSwitch #71 (Information): Delete complete for port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:47:59] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Delete' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 20:47:59] Microsoft-Windows-Hyper-V-VmSwitch #62 (Information): Switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully deleted.
+  [18-07-2026 20:47:59] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Delete' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)), Instance Id {be913dce-eb97-47e8-a0ec-584db5ae6501}.
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #292 (Information): RSC offload modified for Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) Previous: Disabled, Current: Enabled. Reason: Port create
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC create
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Create' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully connected to port 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) on switch 790E58B4-7939-4434-9358-89AE7DDBE87E(Friendly Name: WSL (Hype ...
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #9 (Information): Switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)) successfully initialized.
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #264 (Information): Internal or External Port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC create
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #233 (Information): The operation 'Create' succeeded on nic 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)), Instance Id {00000000-0000-0000-0000-000000000000}.
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #291 (Information): RSC offload modified for NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) Previous IPv4: Disabled, Current IPv4: Disabled, Previous IPv6: Disabled, Current IPv6: Disabled. Reason: NIC start
+  [18-07-2026 20:48:32] Microsoft-Windows-Hyper-V-VmSwitch #7 (Information): Miniport NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully initialized.
+  [18-07-2026 20:48:33] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: WSL (Hyper-V firewall)) successfully connected to port 790E58B4-7939-4434-9358-89AE7DDBE87F (Friendly Name: Host Vnic 790E58B4-7939-4434-9358-89AE7DDBE87E) on switch 790E58B4-7939-4434-9358-89AE7DDBE87E( ...
+  [18-07-2026 20:48:33] Microsoft-Windows-Hyper-V-VmSwitch #67 (Information): Port EBFDCC4B-0162-45FF-9900-5320CA97A7E1 (Friendly Name: EBFDCC4B-0162-45FF-9900-5320CA97A7E1) successfully created on switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+  [18-07-2026 20:48:33] Microsoft-Windows-Hyper-V-VmSwitch #232 (Information): NIC 15F6393C-BA55-4CE7-80DB-6F0762137CDC--EBFDCC4B-0162-45FF-9900-5320CA97A7E1 (Friendly Name: ) successfully connected to port EBFDCC4B-0162-45FF-9900-5320CA97A7E1 (Friendly Name: EBFDCC4B-0162-45FF-9900-5320CA97A7E1) on switch 790E58B4-7939-4434-9358-89AE7DD ...
+  [18-07-2026 21:02:25] Microsoft-Windows-Hyper-V-VmSwitch #69 (Information): Port EBFDCC4B-0162-45FF-9900-5320CA97A7E1 (Friendly Name: EBFDCC4B-0162-45FF-9900-5320CA97A7E1) successfully deleted - switch 790E58B4-7939-4434-9358-89AE7DDBE87E (Friendly Name: WSL (Hyper-V firewall)).
+
+--- Quick read of the evidence ---
+  * No crash or sleep events found -> idle teardown is the likely cause; the .wslconfig vmIdleTimeout fix (case file 3.5) matters most.
+  (Full interpretation: share this report file back with Claude.)
+
+========================================================================
+  PHASE A2 - System snapshot (read-only)
+========================================================================
+
+--- Windows version ---
+
+
+ProductName    : Windows 10 Pro
+DisplayVersion : 25H2
+CurrentBuild   : 26200
+UBR            : 8875
+--- WSL version ---
+  WSL version: 2.7.10.0
+  Kernel version: 6.18.33.2-2
+  WSLg version: 1.0.73.2
+  MSRDC version: 1.2.6676
+  Direct3D version: 1.611.1-81528511
+  DXCore version: 10.0.26100.1-240331-1435.ge-release
+  Windows version: 10.0.26200.8875
+
+--- Distros ---
+    NAME              STATE           VERSION
+  * Ubuntu            Stopped         2
+    docker-desktop    Stopped         2
+
+--- Existing .wslconfig ---
+  (none at C:\Users\Pritam\.wslconfig)
+
+--- WSL-related services ---
+
+Name        Status StartType
+----        ------ ---------
+hns        Running    Manual
+vmcompute  Running    Manual
+WslService Running Automatic
+--- Antivirus products registered (AV/VPN can crash the WSL service) ---
+
+displayName      productState
+-----------      ------------
+Windows Defender       397568
+--- Network adapters (look for VPN/TAP adapters) ---
+
+Name                               InterfaceDescription                       Status      
+----                               --------------------                       ------      
+OpenVPN Connect DCO Adapter        OpenVPN Data Channel Offload               Disconnected
+Ethernet                           Realtek PCIe GbE Family Controller         Up          
+Local Area Connection              TAP-Windows Adapter V9 for OpenVPN Connect Disconnected
+Bluetooth Network Connection       Bluetooth Device (Personal Area Network)   Disconnected
+vEthernet (WSL (Hyper-V firewall)) Hyper-V Virtual Ethernet Adapter #2        Up          
+Wi-Fi                              Intel(R) Wi-Fi 6E AX211 160MHz             Disconnected
+vEthernet (Default Switch)         Hyper-V Virtual Ethernet Adapter           Up
+--- Docker Desktop ---
+  Docker Desktop is not running right now.
+  Docker Desktop IS set to start at login -> turn off in Docker Desktop, Settings, General.
+
+--- Fast Startup / sleep current values ---
+  HiberbootEnabled (Fast Startup) = 1   (1 = on, 0 = off)
+  standby Current AC Power Setting Index: 0x00000000
+  standby Current DC Power Setting Index: 0x00000e10
+
+========================================================================
+  PHASE B - Apply fixes (case file 3.1 - 3.5)
+========================================================================
+
+Phase B will:
+  1. Update the WSL platform (wsl --update)
+  2. Restart the WslService and vmcompute services
+  3. Set sleep timeouts to Never (AC + battery) and turn off Fast Startup
+  4. Write C:\Users\Pritam\.wslconfig (backing up any existing file)
+  5. Disable network-adapter power saving (best effort)
+  6. Restart WSL (wsl --shutdown) and run a 5x stability test
+
+Anything running inside WSL will stop and auto-resume from its checkpoints.
+VSCode will reconnect after a minute. This is expected.
+
+========================================================================
+  B1 - WSL platform update (case file 3.1)
+========================================================================
+  Checking for updates.
+  The most recent version of Windows Subsystem for Linux is already installed.
+
+  Version now:
+  WSL version: 2.7.10.0
+  Kernel version: 6.18.33.2-2
+  WSLg version: 1.0.73.2
+  MSRDC version: 1.2.6676
+  Direct3D version: 1.611.1-81528511
+  DXCore version: 10.0.26100.1-240331-1435.ge-release
+  Windows version: 10.0.26200.8875
+
+========================================================================
+  B2 - Restart WSL services (case file 3.3)
+========================================================================
+  vmcompute: restarted (now Running)
+  WslService: restarted (now Running)
+  LxssManager: not present on this build (fine)
+
+========================================================================
+  B3 - Power policy (case file 3.4)
+========================================================================
+
+
+
+
+  Sleep + hibernate timeouts set to Never (both AC and battery).
+  Fast Startup disabled (HiberbootEnabled = 0).
+  (Revert later: powercfg /change standby-timeout-ac 30, etc. - see script header.)
+
+========================================================================
+  B4 - Write .wslconfig (case file 3.5)
+========================================================================
+  Wrote C:\Users\Pritam\.wslconfig:
+    # WSL2 VM settings - written by Fix-WSL.ps1 (see WSL_CRASH_FIXES.md section 3.5)
+
+    [wsl2]
+    # Cap the VM at 12GB so heavy model fits cannot starve Windows (32GB host)
+    memory=12GB
+    processors=8
+    swap=16GB
+    # Keep the VM alive ~24h after the last console/VSCode window disconnects
+    # (default is ~60s idle teardown; -1 "never" is rejected on some builds)
+    vmIdleTimeout=86400000
+
+    [experimental]
+    # Gradually return freed Linux memory to Windows. Delete this section if it
+    # misbehaves on this build - it is an optimization, not a fix.
+    autoMemoryReclaim=gradual
+
+========================================================================
+  B5 - Network adapter power saving (case file 3.4, best effort)
+========================================================================
+PS>TerminatingError(Set-NetAdapterPowerManagement): "A parameter cannot be found that matches parameter name 'AllowComputerToTurnOffDevice'."
+  Ethernet: could not change automatically - do it in Device Manager -> adapter -> Power Management tab.
+
+========================================================================
+  B6 - Restart WSL + stability test (case file 3.1 / section 5)
+========================================================================
+  Restarting WSL now (running jobs checkpoint and auto-resume)...
+  Test distro: Ubuntu
+  Launch 1/5: OK
+  Launch 2/5: OK
+  Launch 3/5: OK
+  Launch 4/5: OK
+  Launch 5/5: OK
+
+  Verifying .wslconfig took effect inside the VM:
+    MemTotal:       12248692 kB   (expect roughly 12,000,000 kB)
+    CPUs: 8   (expect 8)
+
+  STABILITY TEST PASSED - wsl launched cleanly 5/5 times, no E_UNEXPECTED.
+
+========================================================================
+  DONE - what remains manual
+========================================================================
+  1. Docker Desktop: Settings -> General -> uncheck "Start Docker Desktop when
+     you log in", and quit Docker from the tray when not using it
+     (Docker is a documented source of the E_UNEXPECTED crashes).
+  2. If any adapter in B5 said "could not change automatically": Device Manager
+     -> adapter -> Power Management -> uncheck "Allow the computer to turn off
+     this device to save power".
+  3. Verification over the next hours (case file section 5):
+     - close every WSL window + VSCode, wait 10+ min, reopen, run: uptime -s
+       (the boot time should NOT have changed)
+     - run a heavy fit: vmmem should plateau near 12GB, Windows stays responsive.
+
+  Full report saved to: D:\Python-UV\IFRS9_ECL_Agentic_AI\wsl_fix\wsl_fix_report_2026-07-18_211629.txt
+  Tell Claude the script has run - the report is inside the project folder and
+  Claude will read and interpret it from there.
+**********************
+Windows PowerShell transcript end
+End time: 20260718211805
+**********************

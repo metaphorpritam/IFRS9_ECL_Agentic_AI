@@ -1,0 +1,18 @@
+{
+  "cure_auc_train": 0.6990779017654384,
+  "cure_auc_oot": 0.4769228790591173,
+  "n_resolved_train": 26896,
+  "n_cure_train": 12422,
+  "n_liquidation_train": 14474,
+  "n_severity_fit_train": 13444,
+  "excess_loading": 0.0148469852283597,
+  "floor_mass": 0.021050282653972033,
+  "lgd_upper_bound": 1.0148469852283597,
+  "denominator_reconciliation": {
+    "n": 13840,
+    "corr": 0.994806465550206,
+    "mean_ratio_removal_over_default": 1.0017712116241455
+  },
+  "n_severity_fit": 13444,
+  "share_gt_cap": 0.0787711990479024
+}

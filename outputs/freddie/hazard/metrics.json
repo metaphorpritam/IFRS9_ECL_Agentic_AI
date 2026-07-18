@@ -1,0 +1,13 @@
+{
+  "train_auc": 0.8535911902958723,
+  "oot_auc": 0.6847251436480823,
+  "train_n": 17703723,
+  "train_events": 26284,
+  "oot_n": 21818842,
+  "oot_events": 18309,
+  "champion_fit_n": 826476,
+  "champion_fit_events": 24611,
+  "control_sample_rate": 0.05,
+  "mcfadden_r2": 0.11966452683311235,
+  "rows_dropped_nan_fit": 83680
+}

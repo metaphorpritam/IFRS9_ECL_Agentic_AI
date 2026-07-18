@@ -1,0 +1,13 @@
+{
+  "asof": "2009-12-01",
+  "train_n": 6160606,
+  "train_events": 10161,
+  "fit_n": 264774,
+  "fit_events": 6843,
+  "n_active_loans": 165978,
+  "realized_cum_d90": 0.06568942871946884,
+  "predicted_cum_d90_frozen": 0.05553775223045237,
+  "predicted_cum_d90_actual": 0.04657626110967737,
+  "miss_ratio_frozen": 1.182788753259087,
+  "miss_ratio_actual": 1.4103628576966267
+}

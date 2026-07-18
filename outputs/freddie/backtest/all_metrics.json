@@ -1,0 +1,67 @@
+[
+  {
+    "asof": "2007-12-01",
+    "train_n": 2364456,
+    "train_events": 1125,
+    "fit_n": 86188,
+    "fit_events": 610,
+    "n_active_loans": 124235,
+    "realized_cum_d90": 0.08749547229041735,
+    "predicted_cum_d90_frozen": 0.009284749766834936,
+    "predicted_cum_d90_actual": 0.046133269657947416,
+    "miss_ratio_frozen": 9.423568161519073,
+    "miss_ratio_actual": 1.8965807743337444
+  },
+  {
+    "asof": "2009-12-01",
+    "train_n": 6160606,
+    "train_events": 10161,
+    "fit_n": 264774,
+    "fit_events": 6843,
+    "n_active_loans": 165978,
+    "realized_cum_d90": 0.06568942871946884,
+    "predicted_cum_d90_frozen": 0.05553775223045237,
+    "predicted_cum_d90_actual": 0.04657626110967737,
+    "miss_ratio_frozen": 1.182788753259087,
+    "miss_ratio_actual": 1.4103628576966267
+  },
+  {
+    "asof": "2015-12-01",
+    "train_n": 15814045,
+    "train_events": 25541,
+    "fit_n": 713027,
+    "fit_events": 23732,
+    "n_active_loans": 121861,
+    "realized_cum_d90": 0.013974938659620387,
+    "predicted_cum_d90_frozen": 0.01856748237465763,
+    "predicted_cum_d90_actual": 0.018546140130412742,
+    "miss_ratio_frozen": 0.752656627195429,
+    "miss_ratio_actual": 0.753522757908191
+  },
+  {
+    "asof": "2019-12-01",
+    "train_n": 24051791,
+    "train_events": 28922,
+    "fit_n": 1067328,
+    "fit_events": 26491,
+    "n_active_loans": 193308,
+    "realized_cum_d90": 0.04600947710389637,
+    "predicted_cum_d90_frozen": 0.009198148398939846,
+    "predicted_cum_d90_actual": 0.7151895709255173,
+    "miss_ratio_frozen": 5.00203683484812,
+    "miss_ratio_actual": 0.06433186245201551
+  },
+  {
+    "asof": "2021-12-01",
+    "train_n": 28681137,
+    "train_events": 39166,
+    "fit_n": 1298615,
+    "fit_events": 35707,
+    "n_active_loans": 173838,
+    "realized_cum_d90": 0.011608509071664424,
+    "predicted_cum_d90_frozen": 0.01733963868732328,
+    "predicted_cum_d90_actual": 0.012290078358215651,
+    "miss_ratio_frozen": 0.6694781408652541,
+    "miss_ratio_actual": 0.944543129288056
+  }
+]

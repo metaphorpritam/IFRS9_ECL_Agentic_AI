@@ -26,6 +26,7 @@ Never re-orient by re-reading raw sources. Every page gets one line here.
 - [[Agent Layer]] — LangGraph copilot + Tier-1 tools, LIVE public HF Space; refusal path; coherent-shock convention.
 - [[Scenario Layer]] — Vasicek ρ=0.0227, DFAST paths, satellite, Jensen 1.035×, challenger scorecard; Day-3 gate PASS.
 - [[SFLLD Panel (Rung 3)]] — 837k-loan Freddie panel (17 vintages, real dates/states/losses), D90 absorbing, 54-state macro, COVID-regime EDA; Phase-A gate PASS.
+- [[SFLLD Models (Phase B)]] — hazard 0.854/0.685, COVID=exclude (review overturn), realized LGD, 9.42× backtest honesty exhibit, LSTM lift decomposition; gate 659/659.
 - [[Golden Fixtures]] — the 8 recreated `compute_*.py` scripts; 133/133 golden values pass; the engine freeze gate.
 - [[Knowledge Pipeline]] — preprocess → ingest → index → caption chain; hard-won ingestion lessons.
 - [[LGD Model]] — two-stage cure × severity on resolved workouts; excess-loss loading +0.0255, never clipped.

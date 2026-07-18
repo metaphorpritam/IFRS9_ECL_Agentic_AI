@@ -1,0 +1,386 @@
+{
+  "asof": "2007-12-01",
+  "n_states": 54,
+  "n_ur_national_fallback": 3,
+  "hpi_note": "FHFA STHPI (state AND national) carries NO ALFRED vintage archive -- every HPI 'as known at T' value is a publication-lag TRUNCATION of the single current-vintage series (HPI_PUBLICATION_LAG_MONTHS=5), not a genuine historical revision.",
+  "per_state": [
+    {
+      "state": "AK",
+      "ur_series_requested": "AKUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "AL",
+      "ur_series_requested": "ALUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "AR",
+      "ur_series_requested": "ARUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "AZ",
+      "ur_series_requested": "AZUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "CA",
+      "ur_series_requested": "CAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "CO",
+      "ur_series_requested": "COUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "CT",
+      "ur_series_requested": "CTUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "DC",
+      "ur_series_requested": "DCUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "DE",
+      "ur_series_requested": "DEUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "FL",
+      "ur_series_requested": "FLUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "GA",
+      "ur_series_requested": "GAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "GU",
+      "ur_series_requested": "UNRATE",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": true,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "HI",
+      "ur_series_requested": "HIUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "IA",
+      "ur_series_requested": "IAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "ID",
+      "ur_series_requested": "IDUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "IL",
+      "ur_series_requested": "ILUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "IN",
+      "ur_series_requested": "INUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "KS",
+      "ur_series_requested": "KSUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "KY",
+      "ur_series_requested": "KYUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "LA",
+      "ur_series_requested": "LAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MA",
+      "ur_series_requested": "MAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MD",
+      "ur_series_requested": "MDUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "ME",
+      "ur_series_requested": "MEUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MI",
+      "ur_series_requested": "MIUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MN",
+      "ur_series_requested": "MNUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MO",
+      "ur_series_requested": "MOUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MS",
+      "ur_series_requested": "MSUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "MT",
+      "ur_series_requested": "MTUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NC",
+      "ur_series_requested": "NCUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "ND",
+      "ur_series_requested": "NDUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NE",
+      "ur_series_requested": "NEUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NH",
+      "ur_series_requested": "NHUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NJ",
+      "ur_series_requested": "NJUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NM",
+      "ur_series_requested": "NMUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NV",
+      "ur_series_requested": "NVUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "NY",
+      "ur_series_requested": "NYUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "OH",
+      "ur_series_requested": "OHUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "OK",
+      "ur_series_requested": "OKUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "OR",
+      "ur_series_requested": "ORUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "PA",
+      "ur_series_requested": "PAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "PR",
+      "ur_series_requested": "PRUR",
+      "ur_alfred_available": false,
+      "ur_national_fallback_used": true,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "RI",
+      "ur_series_requested": "RIUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "SC",
+      "ur_series_requested": "SCUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "SD",
+      "ur_series_requested": "SDUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "TN",
+      "ur_series_requested": "TNUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "TX",
+      "ur_series_requested": "TXUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "UT",
+      "ur_series_requested": "UTUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "VA",
+      "ur_series_requested": "VAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "VI",
+      "ur_series_requested": "UNRATE",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": true,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "VT",
+      "ur_series_requested": "VTUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "WA",
+      "ur_series_requested": "WAUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "WI",
+      "ur_series_requested": "WIUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "WV",
+      "ur_series_requested": "WVUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    },
+    {
+      "state": "WY",
+      "ur_series_requested": "WYUR",
+      "ur_alfred_available": true,
+      "ur_national_fallback_used": false,
+      "hpi_alfred_available": false
+    }
+  ]
+}

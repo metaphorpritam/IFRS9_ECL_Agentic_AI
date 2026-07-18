@@ -1,0 +1,8 @@
+variable,dcr_variable,dcr_expected_sign
+fico_s,fico_s,-
+dti_s,,n/a (DCR has no DTI field at this rung)
+ltv10,ltv10,+
+uer_lag1,uer_lag1,"+ (net, level+momentum -- see DCR variable dictionary)"
+delta_uer_lag1,uer_chg4_lag1,+
+hpi_growth_lag1,hpi_growth_lag1,-
+"cr(loan_age, df=5)","cr(loan_age, df=5)",hump (DCR peak ~12 QUARTERS ~= 36 months)

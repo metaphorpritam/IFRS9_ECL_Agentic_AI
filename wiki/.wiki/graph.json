@@ -1,7 +1,7 @@
 {
-  "generated": "2026-07-17T14:20:40+00:00",
+  "generated": "2026-07-18T20:47:53+00:00",
   "wiki_dir": "wiki",
-  "pages": 20,
+  "pages": 21,
   "nodes": [
     {
       "id": "agent-layer",
@@ -317,7 +317,7 @@
           "text": "EDA verification (outputs/eda/, 5 PASS / 0 FAIL / 1 INFO)"
         }
       ],
-      "in_degree": 6,
+      "in_degree": 7,
       "out_degree": 3
     },
     {
@@ -388,20 +388,20 @@
           "text": "Modules"
         },
         {
-          "line": 38,
+          "line": 39,
           "text": "Entities"
         },
         {
-          "line": 43,
+          "line": 44,
           "text": "Concepts (contd.)"
         },
         {
-          "line": 47,
+          "line": 48,
           "text": "Decisions & open questions"
         }
       ],
       "in_degree": 0,
-      "out_degree": 19
+      "out_degree": 20
     },
     {
       "id": "knowledge-pipeline",
@@ -475,7 +475,7 @@
           "text": "Fit quality"
         }
       ],
-      "in_degree": 4,
+      "in_degree": 5,
       "out_degree": 3
     },
     {
@@ -714,6 +714,71 @@
       "out_degree": 6
     },
     {
+      "id": "sflld-models",
+      "path": "pages/sflld-models.md",
+      "title": "SFLLD Models (Phase B)",
+      "type": "module",
+      "tags": [
+        "freddie",
+        "rung3",
+        "hazard",
+        "lgd",
+        "backtest",
+        "lstm"
+      ],
+      "aliases": [
+        "freddie models",
+        "rung 3 phase b",
+        "sflld hazard",
+        "sflld lgd",
+        "alfred backtest",
+        "lstm challenger"
+      ],
+      "status": "active",
+      "sources": [
+        "../outputs/freddie/hazard/hazard_report.md",
+        "../outputs/freddie/lgd/lgd_report.md",
+        "../outputs/freddie/backtest/backtest_report.md",
+        "../outputs/freddie/gate_phaseB.md"
+      ],
+      "code": [
+        "../freddie/fit_hazard.py",
+        "../freddie/lgd.py",
+        "../freddie/fit_lgd.py",
+        "../freddie/backtest.py",
+        "../freddie/lstm.py",
+        "../freddie/fit_lstm.py",
+        "../tests/test_freddie_hazard.py",
+        "../tests/test_freddie_lgd.py",
+        "../tests/test_freddie_backtest.py",
+        "../tests/test_freddie_lstm.py"
+      ],
+      "headings": [
+        {
+          "line": 28,
+          "text": "SFLLD Models (Phase B)"
+        },
+        {
+          "line": 35,
+          "text": "Champion hazard (monthly cloglog, state macro)"
+        },
+        {
+          "line": 48,
+          "text": "Realized-loss LGD"
+        },
+        {
+          "line": 55,
+          "text": "ALFRED-vintage honest backtest (the model-risk centerpiece)"
+        },
+        {
+          "line": 66,
+          "text": "LSTM challenger (challenger-never-champion)"
+        }
+      ],
+      "in_degree": 1,
+      "out_degree": 3
+    },
+    {
       "id": "sflld-panel",
       "path": "pages/sflld-panel.md",
       "title": "SFLLD Panel (Rung 3)",
@@ -766,7 +831,7 @@
           "text": "Phase B (not started)"
         }
       ],
-      "in_degree": 1,
+      "in_degree": 2,
       "out_degree": 2
     },
     {
@@ -1033,7 +1098,7 @@
       "src": "index",
       "dst": "bootstrap-decisions",
       "type": "mentions",
-      "line": 49
+      "line": 50
     },
     {
       "src": "index",
@@ -1045,25 +1110,25 @@
       "src": "index",
       "dst": "ead-model",
       "type": "mentions",
-      "line": 32
+      "line": 33
     },
     {
       "src": "index",
       "dst": "ecl-engine",
       "type": "mentions",
-      "line": 34
+      "line": 35
     },
     {
       "src": "index",
       "dst": "golden-fixtures",
       "type": "mentions",
-      "line": 29
+      "line": 30
     },
     {
       "src": "index",
       "dst": "hazard-model",
       "type": "mentions",
-      "line": 36
+      "line": 37
     },
     {
       "src": "index",
@@ -1075,25 +1140,25 @@
       "src": "index",
       "dst": "knowledge-pipeline",
       "type": "mentions",
-      "line": 30
+      "line": 31
     },
     {
       "src": "index",
       "dst": "lgd-model",
       "type": "mentions",
-      "line": 31
+      "line": 32
     },
     {
       "src": "index",
       "dst": "llm-wiki-skill",
       "type": "mentions",
-      "line": 40
+      "line": 41
     },
     {
       "src": "index",
       "dst": "loan-panel",
       "type": "mentions",
-      "line": 35
+      "line": 36
     },
     {
       "src": "index",
@@ -1105,7 +1170,7 @@
       "src": "index",
       "dst": "pageindex-plus-skill",
       "type": "mentions",
-      "line": 41
+      "line": 42
     },
     {
       "src": "index",
@@ -1121,6 +1186,12 @@
     },
     {
       "src": "index",
+      "dst": "sflld-models",
+      "type": "mentions",
+      "line": 29
+    },
+    {
+      "src": "index",
       "dst": "sflld-panel",
       "type": "mentions",
       "line": 28
@@ -1129,13 +1200,13 @@
       "src": "index",
       "dst": "staging-model",
       "type": "mentions",
-      "line": 33
+      "line": 34
     },
     {
       "src": "index",
       "dst": "variable-dictionary",
       "type": "mentions",
-      "line": 45
+      "line": 46
     },
     {
       "src": "knowledge-pipeline",
@@ -1384,6 +1455,24 @@
       "line": 61
     },
     {
+      "src": "sflld-models",
+      "dst": "hazard-model",
+      "type": "derived-from",
+      "line": 25
+    },
+    {
+      "src": "sflld-models",
+      "dst": "lgd-model",
+      "type": "derived-from",
+      "line": 25
+    },
+    {
+      "src": "sflld-models",
+      "dst": "sflld-panel",
+      "type": "uses",
+      "line": 24
+    },
+    {
       "src": "sflld-panel",
       "dst": "loan-panel",
       "type": "derived-from",
@@ -1537,6 +1626,14 @@
     "scenarios": "scenario-layer",
     "jensen exhibit": "scenario-layer",
     "credit cycle": "scenario-layer",
+    "sflld models (phase b)": "sflld-models",
+    "sflld-models": "sflld-models",
+    "freddie models": "sflld-models",
+    "rung 3 phase b": "sflld-models",
+    "sflld hazard": "sflld-models",
+    "sflld lgd": "sflld-models",
+    "alfred backtest": "sflld-models",
+    "lstm challenger": "sflld-models",
     "sflld panel (rung 3)": "sflld-panel",
     "sflld-panel": "sflld-panel",
     "freddie panel": "sflld-panel",
