@@ -318,7 +318,7 @@ $\lambda_t$ (default in $t$ given survival to $t-1$); <em>marginal PD</em> $S(t-
 (&sect;2.3) runs $t$ in whole years with an annual $EIR$. This project's production engine
 (<code>engine/ecl.py</code>) runs $t$ in quarters and writes the same theorem as
 $\mathrm{ECL}=\sum_t S(t-1)\lambda_t\, LGD_t\, EAD_t\,(1+EIR_q)^{-t}$ (<code>wiki/pages/ecl-engine.md</code>),
-where $EIR_q$ is the loan's note rate compounded to a quarterly rate ($EIR_q=\text{note\_rate}/400$,
+where $EIR_q$ is the loan's note rate compounded to a quarterly rate ($EIR_q=\text{note_rate}/400$,
 matching the divisor already used to build the EAD annuity — <code>outputs/ecl/ecl_report.md</code>). The
 algebra is identical either way; only the meaning of one unit of $t$ changes.
 </div>
@@ -700,7 +700,7 @@ not a unique decomposition.
 "Movement decomposition" table; all figures in USD millions, the DCR book's reporting currency).
 <div class="table-wrap">
 <table>
-<tr><th>Component</th><th>$m</th><th>Loans</th><th>Running total ($m)</th></tr>
+<tr><th>Component</th><th>\$m</th><th>Loans</th><th>Running total (\$m)</th></tr>
 <tr><td>Opening (t=20)</td><td class="num">+24.54</td><td class="num">8,662</td><td class="num">24.54</td></tr>
 <tr><td>Stage migration</td><td class="num">+3.88</td><td class="num">498</td><td class="num">28.42</td></tr>
 <tr><td>Remeasurement</td><td class="num">+26.01</td><td class="num">1,948</td><td class="num">54.43</td></tr>
@@ -1080,5 +1080,6 @@ Chapter&nbsp;4) &rarr; discount and sum (this chapter). Regenerated in matplotli
 Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;3 &amp; &sect;9.4, <code>tests/fixtures/compute_ecl.py</code>, <code>tests/fixtures/compute_grossup.py</code>, <code>outputs/ecl/ecl_report.md</code>, and <code>outputs/ead/ead_report.md</code> / <code>wiki/pages/ead-model.md</code> on 2026-07-19.
 </div>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

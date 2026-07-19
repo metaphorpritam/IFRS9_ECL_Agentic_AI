@@ -923,7 +923,7 @@ Putting both terms over the common denominator $(1+r)^n-1$ and expanding the num
 $(1+r)^k\big[(1+r)^n-1\big] - (1+r)^n\big[(1+r)^k-1\big] = (1+r)^n-(1+r)^k$ (the $(1+r)^{n+k}$ cross-terms
 cancel exactly):
 $$ \boxed{\;B_k = B_0\,\frac{(1+r)^n - (1+r)^k}{(1+r)^n-1}\;} \qquad k=0,1,\ldots,n. $$
-This is exactly <code>engine/ead.py</code>'s closed form, with $r=r_q=\text{annual\_rate}/400$ (nominal annual
+This is exactly <code>engine/ead.py</code>'s closed form, with $r=r_q=\text{annual_rate}/400$ (nominal annual
 rate in percent, quarterly compounding) and $EAD_t = B_{t-1}$ (the balance <em>entering</em> period $t$, after
 $t-1$ payments — the same start-of-period convention as the compute_ecl.py flagship loan in Chapter&nbsp;2
 &sect;2.3).</div>
@@ -1339,5 +1339,6 @@ Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;10
 on 2026-07-19.
 </div>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

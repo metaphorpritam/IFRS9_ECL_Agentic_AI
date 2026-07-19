@@ -479,9 +479,9 @@ less useful) question.
 
 <div class="note">
 <b>The prior-correction detail.</b> Class-weighted BCE (<code>pos_weight</code> = 35.9, correcting the
-~2.7% event rate) shifts the fitted logit upward by exactly $\ln(\text{pos\_weight})$ relative to the true,
+~2.7% event rate) shifts the fitted logit upward by exactly $\ln(\text{pos_weight})$ relative to the true,
 unweighted-population logit — a standard case-control bias-correction result. Predictions therefore apply
-$\text{sigmoid}(z-\ln(\text{pos\_weight}))$ before use, undoing that shift so the challenger's output is a
+$\text{sigmoid}(z-\ln(\text{pos_weight}))$ before use, undoing that shift so the challenger's output is a
 properly calibrated hazard, not merely a correctly RANKED score. Every AUC in this chapter is rank-invariant
 to this correction (AUC only depends on ordering), but every reliability and PSI number in
 &sect;<a href="#s7-5">7.5</a>&ndash;<a href="#s7-6">7.6</a> depends on getting the correction right.
@@ -512,7 +512,7 @@ still satisfy the like-for-like law?
 <li>Why does the pos_weight prior correction not affect any of the AUC numbers in &sect;7.4?
   <details><summary>Answer</summary>
   <div class="answer">AUC is a purely RANK-based statistic (it only asks whether event rows score higher
-  than non-event rows) — subtracting a constant, $\ln(\text{pos\_weight})$, from every logit before the
+  than non-event rows) — subtracting a constant, $\ln(\text{pos_weight})$, from every logit before the
   sigmoid preserves the ordering of scores exactly, so it can shift where reliability curves and PSI bands
   sit (&sect;7.5&ndash;7.6) but cannot change any AUC.</div>
   </details>
@@ -1353,5 +1353,6 @@ lift-split tables) — cited here only for the forward pointer; not re-derived i
 })();
 </script>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

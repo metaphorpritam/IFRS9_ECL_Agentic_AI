@@ -635,8 +635,8 @@ progressively less to both legs, compressing the ratio slightly below the raw ha
 </div>
 <p>Applying the project's own annualisation and add-on convention (&sect;1.6 below; here $R=4$ quarters, so
 $4/R=1$, i.e. no rescaling is needed for this particular toy window) to the CORRECT comparison:</p>
-$$\text{ann\_pd}_{\text{orig}} = 1-(1-0.077670)^{4/4}=0.077670\ (7.7670\%\text{ p.a.}),\quad
-\text{ann\_pd}_{\text{now}} = 1-(1-0.149308)^{4/4}=0.149308\ (14.9308\%\text{ p.a.})$$
+$$\text{ann_pd}_{\text{orig}} = 1-(1-0.077670)^{4/4}=0.077670\ (7.7670\%\text{ p.a.}),\quad
+\text{ann_pd}_{\text{now}} = 1-(1-0.149308)^{4/4}=0.149308\ (14.9308\%\text{ p.a.})$$
 $$\text{addon}=14.9308\%-7.7670\%=7.1638\text{pp} > 0.5\text{pp}\ \Rightarrow\ \text{passes the add-on test},$$
 $$\text{but ratio}=1.9223 \le 2.0\ \Rightarrow\ \textbf{Stage 1}\ \text{(fails the ratio test &mdash; a genuine borderline case)}.$$
 <p class="src">Recomputed in full: scratch derivation script (not a project fixture &mdash;
@@ -701,7 +701,7 @@ quantified at portfolio scale in &sect;1.7's threshold-sensitivity exhibit.</div
 <h3 id="s1-6">1.6 The project's SICR implementation: thresholds, probation, the inert 30-DPD backstop</h3>
 
 <p>The DCR engine (<code>engine/staging.py</code>) implements the &sect;1.5 rule exactly, at portfolio
-scale: for every loan at reporting quarter $t$ with remaining contractual life $R=\text{mat\_time}-t$
+scale: for every loan at reporting quarter $t$ with remaining contractual life $R=\text{mat_time}-t$
 (floored at 1 quarter), it computes <code>lifetime_pd_now</code> and <code>lifetime_pd_orig</code> over
 the <em>identical</em> age window $t{+}1,\dots,t{+}R$ &mdash; the same age baseline $\lambda_0(a)$ enters
 both legs, so only the frozen covariate offset differs between them, exactly matching the derivation in
@@ -712,8 +712,8 @@ rate, and lagged macro at origination time), with two documented approximation f
 
 <div class="thm">
 <b>Result.</b> <strong>The project's Stage-2 rule (StagingConfig defaults).</strong>
-$$\text{Stage 2 iff}\quad \underbrace{\text{lifetime\_pd\_now} > 2.0\times\text{lifetime\_pd\_orig}}_{\text{ratio\_threshold}=2.0}\ \ \textbf{AND}\ \ \underbrace{\text{ann\_pd\_now}-\text{ann\_pd\_orig} > 0.5\text{pp}}_{\text{abs\_addon}=0.005}$$
-$$\text{where}\quad \text{ann\_pd} = 1-(1-\text{lifetime\_pd})^{4/R}\quad\text{(quarters}\to\text{per-annum equivalent)}$$
+$$\text{Stage 2 iff}\quad \underbrace{\text{lifetime_pd_now} > 2.0\times\text{lifetime_pd_orig}}_{\text{ratio_threshold}=2.0}\ \ \textbf{AND}\ \ \underbrace{\text{ann_pd_now}-\text{ann_pd_orig} > 0.5\text{pp}}_{\text{abs_addon}=0.005}$$
+$$\text{where}\quad \text{ann_pd} = 1-(1-\text{lifetime_pd})^{4/R}\quad\text{(quarters}\to\text{per-annum equivalent)}$$
 $$\textbf{OR}\quad \text{the 30-DPD backstop (STRUCTURALLY INERT &mdash; see below)}.$$
 Probation (<code>cure_quarters</code>=2): a Stage-2 loan returns to Stage 1 only after the trigger has
 been off for 2 consecutive quarters; because the quantitative trigger is a pure (memoryless) function of
@@ -726,7 +726,7 @@ each quarter's covariates, the sticky state machine is exactly equivalent to the
 from 0.05% to 0.12% at origination has technically &ldquo;more than doubled&rdquo;, but the 0.5pp
 annualised add-on floor stops that kind of noise-level move from flipping stage &mdash; exactly the
 &sect;1.5 pitfall box's point that thresholds must be risk-grade-sensitive. The annualisation
-$\text{ann\_pd}=1-(1-\text{PD}_{\text{life}})^{4/R}$ exists purely so the same 0.5pp add-on threshold is
+$\text{ann_pd}=1-(1-\text{PD}_{\text{life}})^{4/R}$ exists purely so the same 0.5pp add-on threshold is
 comparable across loans with different remaining lives $R$ &mdash; without it, a loan with 40 quarters
 remaining would need a much larger cumulative-PD move to clear the same add-on than a loan with 4 quarters
 remaining, for the same underlying annual risk change.</div>
@@ -1073,5 +1073,6 @@ outputs/ecl/ecl_report.md, engine/staging.py on 2026-07-19.
 })();
 </script>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

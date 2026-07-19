@@ -394,9 +394,9 @@ project's convention keeps that shape and discards the absolute levels.</p>
 <b>Derivation — the rebasing convention (shape transplant).</b>
 <div class="step"><span class="stepno">1.</span> <strong>Identify the DFAST jump-off.</strong> The DFAST
 supervisory paths begin one quarter after the last historic actual — call that actual quarter's concept value
-$\text{dfast\_jumpoff}(c)$ for concept $c\in\{uer,\ hpi\_growth,\ gdp\_growth,\ mortgage\_rate\}$.</div>
+$\text{dfast_jumpoff}(c)$ for concept $c\in\{uer,\ hpi\_growth,\ gdp\_growth,\ mortgage\_rate\}$.</div>
 <div class="step"><span class="stepno">2.</span> <strong>Take the DFAST path as a sequence of DELTAS from that
-jump-off,</strong> not as levels: $\delta_h(c) = \text{dfast}_h(c) - \text{dfast\_jumpoff}(c)$ for horizon
+jump-off,</strong> not as levels: $\delta_h(c) = \text{dfast}_h(c) - \text{dfast_jumpoff}(c)$ for horizon
 quarter $h=1,\dots,13$. This is the piece of DFAST worth keeping — it is purely about SHAPE (how far and how
 fast each concept moves relative to where DFAST itself started), with no reference to DFAST's own calendar.</div>
 <div class="step"><span class="stepno">3.</span> <strong>Add that delta onto the PANEL's own $t=60$ level,</strong>
@@ -611,8 +611,8 @@ identical.
 Base scenario, $hpi\_growth$ concept. Let $v_{13}$ be the R&amp;S window's final ($h=13$) value and $\bar{v}$
 the panel's long-run mean (the reversion target).
 <div class="step"><span class="stepno">1.</span> Read the two endpoints directly from the built scenario set:
-$$ v_{13} = 0.011772, \qquad \bar{v} = 0.009585\ \text{(panel long-run mean, &sect;6.2's table, more precisely
-0.0095851)}. $$</div>
+$$ v_{13} = 0.011772, \qquad \bar{v} = 0.009585 $$ (panel long-run mean, &sect;6.2's table, more precisely
+0.0095851).</div>
 <div class="step"><span class="stepno">2.</span> The per-quarter linear step over the 8-quarter ramp:
 $$ \Delta = \frac{\bar{v}-v_{13}}{8} = \frac{0.009585-0.011772}{8} = \frac{-0.002187}{8} = -0.00027338\ \text{per quarter.} $$</div>
 <div class="step"><span class="stepno">3.</span> Each ramp quarter is the PREVIOUS value plus the constant step
@@ -974,7 +974,7 @@ concepts, in the SAME relative proportions the DFAST severely-adverse path itsel
 <b>The coherent-shock convention.</b> Define the co-movement loading of concept $c$ onto a $1$-unit move of
 the named shock variable $v$ as
 $$ \beta_{v\to c} \;=\; \frac{\langle \delta_v,\ \delta_c\rangle}{\langle \delta_v,\ \delta_v\rangle}, \qquad
-\delta_c = \text{severe}_c - \text{base}_c\ \text{over the 13q R\&S window (&sect;6.2's deltas)}, $$
+\delta_c = \text{severe}_c - \text{base}_c $$ over the 13q R&amp;S window (&sect;6.2's deltas),
 the ordinary-least-squares loading of concept $c$'s severe-minus-base delta path onto concept $v$'s own
 severe-minus-base delta path (by construction $\beta_{v\to v}=1$). A named shock of size $s$ in variable $v$ is
 then applied as a co-moving perturbation to EVERY concept: $$ \Delta_h(c) = s\cdot\beta_{v\to c}\cdot
@@ -1334,7 +1334,7 @@ to displayed precision.
 <b>Worked example — probability-weighted ECL vs single-averaged-path ECL.</b>
 <div class="step"><span class="stepno">1.</span> <strong>Probability-weighted ECL</strong> (&sect;6.1's
 $ECL_{PW}$ — average the RESULTS): $$ ECL_{PW} = 0.25(0.2102)+0.50(0.5715)+0.25(5.5897) = 0.05255+0.28575+1.39743
-= 1.7357\text{m} \to \boldsymbol{\text{\euro}1.74\text{m}}. $$</div>
+= 1.7357\text{m} $$ &rarr; <b>&euro;1.74m</b>.</div>
 <div class="step"><span class="stepno">2.</span> <strong>Weighted-average GDP growth path:</strong>
 $$ \bar g = 0.25(3.5)+0.50(2.0)+0.25(-2.5) = 0.875+1.0-0.625 = 1.25\%. $$</div>
 <div class="step"><span class="stepno">3.</span> <strong>$Z$ and $PD_{PIT}$ AT that averaged path</strong> (the
@@ -1342,10 +1342,10 @@ lemma, &sect;6.7: this is identically $\sum_s w_s Z_s$, computed here directly f
 substitution): $$ \bar Z = (1.25-2.0)/1.5 = -0.5, \qquad \text{numerator}=-2.053749-(0.346410)(-0.5)=-1.880544,
 $$ $$ \text{ratio}=-1.880544/0.938083=-2.004667, \qquad PD_{PIT}(-0.5)=\Phi(-2.004667)=2.2499\%. $$</div>
 <div class="step"><span class="stepno">4.</span> <strong>Single-path ECL</strong> (&sect;6.1's $ECL(\bar s)$):
-$$ ECL(\bar s) = 0.022499\times0.40\times100 = 0.9000\text{m} \to \boldsymbol{\text{\euro}0.90\text{m}}. $$</div>
+$$ ECL(\bar s) = 0.022499\times0.40\times100 = 0.9000\text{m} $$ &rarr; <b>&euro;0.90m</b>.</div>
 <div class="step"><span class="stepno">5.</span> <strong>The Jensen gap, quantified:</strong>
 $$ \text{understatement} = 100\times\Big(1-\frac{0.9000}{1.7357}\Big) = 100\times(1-0.51849) =
-\boldsymbol{48.15\%}, \qquad \frac{ECL_{PW}}{ECL(\bar s)} = \frac{1.7357}{0.9000} = \boldsymbol{1.9286\times}. $$
+\mathbf{48.15\%}, \qquad \frac{ECL_{PW}}{ECL(\bar s)} = \frac{1.7357}{0.9000} = \mathbf{1.9286\times}. $$
 Both figures match <code>RESULTS['understatement_pct']</code> ($48.15$, notes' own printed "$48\%$") and
 <code>RESULTS['weighted_over_single_ratio']</code> ($1.9286$, notes' own printed "$\sim1.9\times$").</div>
 </div>
@@ -1368,7 +1368,7 @@ example is engineered to show the mechanism in its purest, most exaggerated form
 
 <div class="gotcha">
 <b>Gotcha — the downside scenario alone drives almost the entire weighted ECL.</b>
-$0.25\times$&euro;$5.59$m$=$&euro;$1.397$m$$ out of the total weighted &euro;$1.7357$m — over $80\%$ of the
+$0.25\times$&euro;$5.59$m$=$&euro;$1.397$m out of the total weighted &euro;$1.7357$m — over $80\%$ of the
 probability-weighted ECL comes from the downside scenario's own contribution, even though it carries only a
 $25\%$ weight. This is the direct arithmetic consequence of $PD_{PIT}$'s convexity: the tail scenario's PD is
 disproportionately large ($13.97\%$, roughly $10\times$ the base case's $1.43\%$), so even a modest weight on
@@ -1393,8 +1393,8 @@ the weighted ECL rise or fall, and roughly by how much (order of magnitude)?
   <details><summary>Answer</summary>
   <div class="answer">It would FALL, since less weight sits on the highest-ECL scenario. Roughly: the downside's
   contribution would drop from $0.25\times5.59=1.397$ to $0.10\times5.59=0.559$ (a fall of about
-  &euro;$0.84$m), while the extra $0.15$ weight moving to the base case adds only $0.15\times0.57\approx
-  \text{\euro}0.086$m — a net fall of roughly &euro;$0.75$m, illustrating just how much of the weighted total the
+  &euro;$0.84$m), while the extra $0.15$ weight moving to the base case adds only $0.15\times0.57\approx$
+  &euro;$0.086$m — a net fall of roughly &euro;$0.75$m, illustrating just how much of the weighted total the
   downside weight alone controls.</div>
   </details>
 </li>
@@ -1886,5 +1886,6 @@ producing it are behaving as claimed.
 Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;9, <code>tests/fixtures/compute_scenarios.py</code>, <code>engine/scenarios.py</code>, <code>engine/satellite.py</code>, <code>agent/tools_tier1.py</code>, <code>outputs/scenarios/scenarios_report.md</code>, <code>outputs/satellite/satellite_report.md</code>, <code>outputs/scenario_ecl/scenario_ecl_report.md</code>, and <code>docs/api_contract.md</code> on 2026-07-19.
 </div>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

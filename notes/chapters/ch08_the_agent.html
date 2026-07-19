@@ -396,7 +396,7 @@ already accept.</p>
 <p><code>shock_macro(var, shock, shape)</code> perturbs the base scenario's macro path and reruns the
 satellite&rarr;Z&rarr;PIT&rarr;ECL chain (Chapters&nbsp;5&ndash;6) for the t=60 book. The interesting design
 decision is what happens to a UNIVARIATE shock: the project's fitted satellite is
-$Z=f(\text{hpi\_growth\_lag1},\ \text{gdp\_growth\_lag2})$ — the unemployment driver was EXCLUDED by the
+$Z=f(\text{hpi_growth_lag1},\ \text{gdp_growth_lag2})$ — the unemployment driver was EXCLUDED by the
 economic-sign governance constraint on this one-cycle panel (Chapter&nbsp;6, <code>outputs/satellite/
 satellite_report.md</code>). A UER-only path move would therefore be entirely invisible to the credit-cycle
 factor $Z$ — not because unemployment doesn't matter economically, but because of a small-sample
@@ -404,9 +404,9 @@ identification artifact in THIS fitted satellite. <code>shock_macro</code> close
 shock as a CO-MOVING multivariate move along the DFAST severe-minus-base direction:</p>
 
 $$ \beta_c \;=\; \frac{\langle d_v,\, d_c\rangle}{\langle d_v,\, d_v\rangle}, \qquad
-   d_v = \text{path}_{\text{down}}[v] - \text{path}_{\text{base}}[v] \ \text{over the 13q R\&S window} $$
+   d_v = \text{path}_{\text{down}}[v] - \text{path}_{\text{base}}[v] \ \text{over the 13q R&S window} $$
 
-<p>for each concept $c\in\{\text{uer},\ \text{hpi\_growth},\ \text{gdp\_growth}\}$, where $v$ is the named
+<p>for each concept $c\in\{\text{uer},\ \text{hpi_growth},\ \text{gdp_growth}\}$, where $v$ is the named
 shock variable ($\beta_v=1$ by construction). A named shock of size <code>shock</code> pp therefore drags
 the OTHER two concepts along by their empirically co-moving amount, not by zero — the applied per-concept
 deltas are returned in full for transparency, never hidden inside an opaque re-run.</p>
@@ -1547,5 +1547,6 @@ picks up from the app's own Copilot tab, where these same six routes surface beh
 Compiled from <code>agent/graph.py</code>, <code>agent/tools_tier1.py</code>, <code>agent/tools_tier2.py</code>, <code>agent/tier3_retrieval.py</code>, <code>agent/mcp_server.py</code>, <code>wiki/pages/agent-layer.md</code>, <code>wiki/memory/log.md</code>, <code>outputs/agent_log/{tool_calls,agent_runs}.jsonl</code>, <code>outputs/demo/{e2e_trace,live_b_tier2,live_c_tier3}.json</code>, <code>outputs/gate/reasoned_route_gate.md</code>, <code>outputs/mcp/README_section.md</code>, <code>tests/test_tier2.py</code>, and live reproduction against the local engine on 2026-07-19.
 </div>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

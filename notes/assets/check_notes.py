@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""
+r"""
 check_notes.py — the shared QA gate for IFRS9 study-notes HTML chapters.
 
 Usage:
@@ -26,6 +26,24 @@ full rationale of each):
                                    covers it) parses: `node --check` if node is on
                                    PATH, else a comment-stripping brace/paren/
                                    bracket balance check.
+  7. No `\_`/`\&` inside \text{} — fast static screen (no Node/MathJax needed)
+                                   for the "visible-backslash" defect: an
+                                   escaped underscore or ampersand used
+                                   INSIDE a MathJax `\text{...}` block
+                                   renders as a literal backslash glyph
+                                   (the chapters' plain
+                                   `tex-svg.js` bundle does not expand `\_`
+                                   there — see notes/assets/verify_math.py's
+                                   docstring for the full root-cause writeup
+                                   and notes/assets/fix_math_escapes.py for
+                                   the mechanical fix). `\_` OUTSIDE
+                                   `\text{}` (bare math mode) is fine and is
+                                   not flagged. This is a cheap substring
+                                   screen; notes/assets/verify_math.py is
+                                   the authoritative deep gate (actually
+                                   renders every expression through the
+                                   real MathJax bundle) and should be run
+                                   before every ship, not just this check.
 
 Exit code: 0 if every file PASSes every check, else 1. Prints a per-file
 PASS/FAIL line and, on FAIL, the specific failing checks with details.
@@ -38,6 +56,9 @@ import subprocess
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from verify_math import iter_math_spans_raw  # noqa: E402
 
 VOID_ELEMENTS = {
     "area", "base", "br", "col", "embed", "hr", "img", "input",
@@ -254,6 +275,40 @@ def check_js_parses(js_path: Path) -> list[str]:
     return errors
 
 
+# ---------------------------------------------------------------------------
+# Check 7 — no escaped `_`/`&` inside `\text{}`  (the visible-backslash defect)
+# ---------------------------------------------------------------------------
+_TEXT_BLOCK_RE = re.compile(r"\\text\{([^{}]*)\}")
+_ESCAPED_SPECIAL_RE = re.compile(r"\\([_&])")
+
+
+def check_no_escaped_underscore_in_text(html: str) -> list[str]:
+    """Static screen for the root-cause pattern documented in
+    verify_math.py: `\\_` (or `\\&`) used INSIDE a `\\text{...}` block
+    renders as a literal backslash in the chapters' MathJax config (no
+    `textmacros` package loaded). `\\_`/`\\&` OUTSIDE `\\text{}` is fine
+    (ordinary math mode expands them via core TeX macros) and not
+    flagged. Cheap substring check — does not require Node;
+    verify_math.py is the authoritative deep gate that actually renders
+    through MathJax, and is the one to extend first if a future chapter
+    introduces another escaped special character inside `\\text{}` (see
+    fix_math_escapes.py's docstring for how to verify a new one).
+    """
+    errors = []
+    for span in iter_math_spans_raw(html):
+        raw = html[span["start"] : span["end"]]
+        for tm in _TEXT_BLOCK_RE.finditer(raw):
+            bad = _ESCAPED_SPECIAL_RE.findall(tm.group(1))
+            if bad:
+                line = html.count("\n", 0, span["start"] + tm.start()) + 1
+                shown = ", ".join(f"'\\{c}'" for c in bad)
+                errors.append(
+                    f"line {line}: {shown} inside \\text{{...}} will render as a "
+                    f"literal backslash — found in \\text{{{tm.group(1)}}}"
+                )
+    return errors
+
+
 def _local_js_srcs(html: str, base_dir: Path) -> list[Path]:
     paths = []
     for m in re.finditer(r'<script\b[^>]*\bsrc\s*=\s*"([^"]+)"', html, re.IGNORECASE):
@@ -277,6 +332,7 @@ def check_file(path: Path) -> dict[str, list[str]]:
     results["mathjax delimiters"] = check_mathjax_delimiters(html)
     results["no leftover placeholders"] = check_no_placeholders(html)
     results["quiz answers"] = check_quiz_answers(html)
+    results["no '\\_' inside \\text{}"] = check_no_escaped_underscore_in_text(html)
 
     js_errors: list[str] = []
     checked_js: set[Path] = set()

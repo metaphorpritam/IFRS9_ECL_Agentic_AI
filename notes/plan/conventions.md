@@ -337,7 +337,7 @@ uv run --no-sync python notes/assets/check_notes.py notes/assets/widget_demo.htm
 
 No extra dependencies (stdlib only: `html.parser`, `re`), so it runs fine
 inside the project's `--no-sync` venv. Exit code `0` iff every file passes
-every check; otherwise `1`. Six checks per HTML file:
+every check; otherwise `1`. Seven checks per HTML file:
 
 1. **HTML tag balance** — every non-void opening tag has a matching close
    (browser-style tolerant matching against the last few open tags, so one
@@ -359,6 +359,9 @@ every check; otherwise `1`. Six checks per HTML file:
    brace/paren/bracket balance check (a heuristic — flags gross syntax
    breakage, not full JS-grammar validity; good enough for widget-sized
    files written by hand).
+7. **No `\_`/`\&` inside `\text{...}`** — fast static screen (stdlib only,
+   no Node) for the "visible-backslash" MathJax defect: see the dedicated
+   subsection right below for the full root cause and the escaping rule.
 
 `check_notes.py` also accepts a bare `.js` file as an argument (it runs
 check 6 standalone on that file) — useful for gating `widgets.js` itself
@@ -371,6 +374,86 @@ uv run --no-sync python notes/assets/check_notes.py notes/assets/js/widgets.js
 **Every chapter ends green through this script before it ships.** Run it
 after every substantive edit, not just once at the end — cheap and fast
 (no external calls, pure text/DOM parsing).
+
+### 8b. The visible-backslash MathJax defect — root cause, fix, and the deep gate
+
+**Symptom.** Rendered MathJax shows a literal backslash before a
+snake_case identifier's underscores — e.g. `lifetime\_pd\_now` displays
+WITH the backslashes visible — even though surrounding math (e.g.
+`\underbrace{...}_{...}`) renders correctly on the same page.
+
+**Root cause.** The chapters load MathJax's plain `tex-svg.js` CDN bundle
+with no `packages:` override in `window.MathJax.tex`. That bundle does
+**not** include the `textmacros` extension package, so MathJax's core
+`\text{...}` command does not expand TeX macros inside its own argument —
+it inserts the literal characters between the braces verbatim, backslash
+included. `\text{lifetime\_pd\_now}` therefore renders the literal glyph
+sequence `l i f e t i m e \ _ p d \ _ n o w`. The same `\_` used in
+*ordinary* math mode (outside any `\text{...}`, e.g. `$hpi\_growth$`) is a
+perfectly valid core TeX macro there and renders a clean underscore — so
+only identifiers wrapped in `\text{...}` are affected, which is why the
+defect looked like an isolated glitch rather than a systematic one. The
+same failure mode was independently confirmed for `\&` used inside
+`\text{...}` (e.g. `\text{...13q R\&S window...}`) — any escaped special
+character inside base `\text{}` fails the same way; `\_` and `\&` are the
+only two that occur in this corpus, verified by a full-corpus scan.
+
+**The escaping rule.**
+
+| Where | Write it as | Renders |
+|---|---|---|
+| Inside `\text{...}` | bare `_` / `&` (no backslash) | clean |
+| Outside `\text{...}` (ordinary math mode) | `\_` / `\&` (backslash required) | clean |
+
+Do not "fix" the outside-`\text{}` form — stripping its backslash turns a
+literal underscore into a live math-mode subscript trigger, a different
+construct.
+
+**The two-layer gate.**
+- `notes/assets/check_notes.py` check 7 (above) is the fast, static,
+  Node-free screen — it flags `\_`/`\&` inside `\text{...}` by substring
+  match on the same math-span extraction `verify_math.py` uses. Run it on
+  every edit.
+- `notes/assets/verify_math.py` is the deep, authoritative gate: it
+  extracts every math expression from a chapter and actually renders each
+  one through the SAME browser bundle the chapters reference
+  (`mathjax@3`'s `es5/tex-svg.js`, vendored via `npm install mathjax@3`
+  into `notes/assets/.mathjax_env/node_modules/`) inside a jsdom window,
+  using the SAME `window.MathJax` config block every chapter uses
+  (`notes/assets/.mathjax_env/render_cli.js` is the Node driver). It fails
+  an expression if MathJax reports a parse error, an `merror` node
+  appears, or the rendered SVG glyph stream contains a literal backslash
+  character — catching not just the underscore/ampersand defect but any
+  other math-rendering break (a stray `$$` where a single `$` was meant, a
+  currency `$` that should have been `\$`, etc.). Run it before every ship
+  — it needs Node and takes real time (each file spawns a fresh jsdom +
+  MathJax load, dominated by loading a ~3MB bundle from the filesystem —
+  budget on the order of tens of seconds per file, more on a slow/mounted
+  drive):
+  ```bash
+  cd /mnt/d/Python-UV/IFRS9_ECL_Agentic_AI/notes/assets/.mathjax_env && npm install mathjax@3 jsdom
+  uv run --no-sync python notes/assets/verify_math.py notes/chapters/*.html notes/index.html
+  ```
+  A known harness-only gap: any macro the `autoload` package maps to a
+  *separately fetched* MathJax component file (e.g. `\boldsymbol`, not
+  bundled inside `tex-svg.js` itself) can never resolve in this jsdom
+  setup (`runScripts:"outside-only"` never executes the `<script>` tag
+  MathJax's own loader would inject to fetch it), and `render_cli.js`
+  reports it as a bounded-timeout failure with that explanation rather
+  than hanging. Treat it as a signal to prefer a macro that ships in the
+  base bundle (e.g. `\mathbf` instead of `\boldsymbol`) — this corpus does
+  exactly that (§6's three `\boldsymbol` uses were `\mathbf`, all purely
+  presentational bolding, no semantic change) rather than as something to
+  special-case away.
+- `notes/assets/fix_math_escapes.py` is the mechanical fix for the
+  underscore/ampersand-in-`\text{}` case specifically: dry-run by default
+  (prints every planned change), `--apply` to write. Idempotent. It does
+  **not** touch anything outside `\text{...}`, and does not add/remove/
+  reorder any expression — identifiers only.
+  ```bash
+  uv run --no-sync python notes/assets/fix_math_escapes.py notes/chapters/*.html          # dry run
+  uv run --no-sync python notes/assets/fix_math_escapes.py --apply notes/chapters/*.html   # apply
+  ```
 
 ## 9. Theming and print
 

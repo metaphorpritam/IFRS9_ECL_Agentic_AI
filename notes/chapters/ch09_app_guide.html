@@ -399,8 +399,8 @@ call, 2026-07-19.</div>
 <dt>Shows</dt><dd>Four headline stats read directly off <code>GET /api/ecl/summary</code>:
 <code>weighted_allowance</code> (raw USD, UI divides by 1e6), <code>coverage</code> (a ratio, UI multiplies by
 100), <code>jensen_ratio</code> (a ratio, shown as "×"), and <code>as_of.period</code>/<code>as_of.t</code>.</dd>
-<dt>How to read it</dt><dd>Live capture: allowance <b>$34.0m</b> across 7,849 loans, $1,673.7m balance;
-coverage <b>2.03%</b> (allowance / balance); Jensen ratio <b>1.0353×</b> (weighted allowance $34.0m vs $32.9m
+<dt>How to read it</dt><dd>Live capture: allowance <b>\$34.0m</b> across 7,849 loans, \$1,673.7m balance;
+coverage <b>2.03%</b> (allowance / balance); Jensen ratio <b>1.0353×</b> (weighted allowance \$34.0m vs \$32.9m
 at the single weighted-average macro path — the scenario-weighted number runs <em>above</em> the
 single-path number, the convexity signature Chapter&nbsp;6 derives); reporting date <b>2015Q1</b> (t=60 of
 60).</dd>
@@ -409,8 +409,8 @@ and run a control there; Scenario Lab's controls act on its own separate result 
 this tab's tiles (see the scenario-controls-vs-historical-waterfall gotcha below).</dd>
 <dt>AI affordances</dt><dd>Each tile carries its own ✦ explain icon (top-right of the tile, per
 <code>StatTile.jsx</code>) with a panel-specific recap — e.g. the Jensen-ratio tile's question recaps
-"Jensen ratio is 1.0353× — scenario-weighted allowance $34.0m vs allowance at the averaged macro path
-$32.9m." Full mechanics in §9.9.</dd>
+"Jensen ratio is 1.0353× — scenario-weighted allowance \$34.0m vs allowance at the averaged macro path
+\$32.9m." Full mechanics in §9.9.</dd>
 <dt>Gotchas</dt><dd>The Jensen-ratio tile's hint text ("weighted ECL vs avg-path ECL") is easy to misread as
 "weighted ECL vs a SINGLE scenario's ECL" — it is specifically the ECL at the PROBABILITY-WEIGHTED AVERAGE
 macro path, not any one of the three named scenarios (Chapter&nbsp;6's Jensen's-inequality construction).</dd>
@@ -474,13 +474,13 @@ not this panel.</dd>
 <div class="pdoc-head"><h5>Scenario table</h5><span class="exh-tag">Exhibit 2</span></div>
 <dl>
 <dt>Shows</dt><dd>One row per named scenario (up/base/down) from <code>GET /api/ecl/summary</code>'s
-<code>scenarios[]</code> array: weight, allowance ($m), coverage (%), UER peak (pp). A leading coloured dot
+<code>scenarios[]</code> array: weight, allowance (\$m), coverage (%), UER peak (pp). A leading coloured dot
 per row (FINAL_SPEC §5.3/§1.3 convention) — up=good, base=neutral, down=critical — carries STATUS semantics,
 same discipline as the stage-mix bar.</dd>
-<dt>How to read it</dt><dd>Live capture: <b>up</b> 25% weight, $27.7m allowance, 1.65% coverage, UER peak
-6.4pp; <b>base</b> 50% weight, $30.5m allowance, 1.82% coverage, UER peak 6.4pp (up and base share the same
+<dt>How to read it</dt><dd>Live capture: <b>up</b> 25% weight, \$27.7m allowance, 1.65% coverage, UER peak
+6.4pp; <b>base</b> 50% weight, \$30.5m allowance, 1.82% coverage, UER peak 6.4pp (up and base share the same
 UER peak by construction — the DFAST base and the project's "upside" macro path do not diverge on this one
-driver); <b>down</b> 25% weight, $47.6m allowance, 2.84% coverage, UER peak 11.2pp — nearly 4pp higher
+driver); <b>down</b> 25% weight, \$47.6m allowance, 2.84% coverage, UER peak 11.2pp — nearly 4pp higher
 unemployment stress than the other two scenarios, which is most of why its allowance nearly doubles the base
 case.</dd>
 <dt>Controls</dt><dd>None on THIS panel — it is the adopted 25/50/25 basis, read-only. The panel's own caveat
@@ -507,10 +507,10 @@ On the Executive tab specifically, <code>WaterfallChart</code> is invoked with f
 Lab drill-down, never the executive default"). Endpoint: <code>GET
 /api/ecl/waterfall?t0=59&amp;t1=60</code>, six components (opening/stage_migration/remeasurement/
 derecognitions/new_loans/closing) that sum exactly (<code>identity_gap ≈ 0</code>).</dd>
-<dt>How to read it</dt><dd>Live capture, t=59 (2014Q4) → t=60 (2015Q1): opening <b>$18.8m</b>, stage migration
-<b>+$0.9m</b> (43 loans), remeasurement <b>+$4.7m</b> (7,804 loans — nearly the whole live book re-measured),
-derecognitions <b>−$8.9m</b> (269 loans paid off/wrote off), new loans <b>+$0.1m</b> (45 loans), closing
-<b>$15.5m</b>. Identity gap: 5.6×10⁻⁹ (floating-point noise, not a reconciliation failure).</dd>
+<dt>How to read it</dt><dd>Live capture, t=59 (2014Q4) → t=60 (2015Q1): opening <b>\$18.8m</b>, stage migration
+<b>+\$0.9m</b> (43 loans), remeasurement <b>+\$4.7m</b> (7,804 loans — nearly the whole live book re-measured),
+derecognitions <b>−\$8.9m</b> (269 loans paid off/wrote off), new loans <b>+\$0.1m</b> (45 loans), closing
+<b>\$15.5m</b>. Identity gap: 5.6×10⁻⁹ (floating-point noise, not a reconciliation failure).</dd>
 <dt>How to use it</dt><dd>A <code>⊞</code> icon top-right toggles chart↔table view (same six rows, tabular).
 No sliders here — this is a FIXED historical exhibit.</dd>
 <dt>AI affordances</dt><dd>Standard explain icon; recap states opening, every step delta, and closing in one
@@ -810,8 +810,8 @@ shock-size slider whose bounds change per variable (<code>SHOCK_BOUNDS</code>: U
 same pydantic bounds Chapter&nbsp;8's <code>ShockMacroArgs</code> enforces server-side, mirrored client-side so
 an invalid drag is never even possible). A caveat box states the coherent-shock convention inline, every time.</dd>
 <dt>How to use it</dt><dd>Pick a variable, shape, and size; click "Run shock" → <code>POST
-/api/tools/shock_macro</code>. Live capture, UER +2.0pp parallel: baseline allowance $30.5m → shocked $31.7m
-(delta <b>+$1.24m, +4.07%</b>), coverage 1.82% → 1.89%. The co-moving deltas applied alongside the named UER
+/api/tools/shock_macro</code>. Live capture, UER +2.0pp parallel: baseline allowance \$30.5m → shocked \$31.7m
+(delta <b>+\$1.24m, +4.07%</b>), coverage 1.82% → 1.89%. The co-moving deltas applied alongside the named UER
 shock: HPI growth −0.826pp/q, GDP growth −0.109pp/q (both negative — a rising-unemployment shock coherently
 drags house-price and GDP growth down too, the DFAST severe scenario's own direction).</dd>
 <dt>AI affordances</dt><dd>Standard explain icon on the control, recapping the CURRENT (unrun) selection
@@ -867,10 +867,10 @@ run: the tool's own <code>headline</code> string, a metrics strip (allowance, co
 delta-vs-baseline — whichever fields the specific tool's result carries), and an auto-interpretation card
 fed by <code>POST /api/agent/interpret</code>.</dd>
 <dt>How to read it</dt><dd>Live capture after running the UER +2pp shock: headline "UER +2pp (parallel)
-coherent shock of the base scenario: reported allowance $30.5m -&gt; $31.7m (delta +1.2m, +4.1%), shocked
-coverage 1.89%"; metrics strip shows <b>$31.7m</b> allowance, <b>1.89%</b> coverage, <b>+4.1%</b> vs
+coherent shock of the base scenario: reported allowance \$30.5m -&gt; \$31.7m (delta +1.2m, +4.1%), shocked
+coverage 1.89%"; metrics strip shows <b>\$31.7m</b> allowance, <b>1.89%</b> coverage, <b>+4.1%</b> vs
 baseline. The auto-interpretation card, called live: <code>interpretation</code> = "UER +2pp (parallel)
-coherent shock of the base scenario: reported allowance $30.5m -&gt; $31.7m (delta +1.2m, +4.1%), shocked
+coherent shock of the base scenario: reported allowance \$30.5m -&gt; \$31.7m (delta +1.2m, +4.1%), shocked
 coverage 1.89%. The shocked allowance is 31694012.25." with <code>grounded: true, mode: "llm"</code> —
 badged "AI interpretation" (not the "Engine summary" fallback badge, since the LLM's own narration passed
 the number-verbatim check this time).</dd>
@@ -899,8 +899,8 @@ is live — the chart resolves one of THREE modes: <code>shock_macro</code> mode
 (<code>result.components</code>, the custom t0/t1 window just run), or — for <code>reweight_scenarios</code>,
 <code>rerun_ecl</code>, or before any control has run — falls back to the SAME fixed historical t0/t1 window
 (props default 20/40 on this tab) as any other instance of this component.</dd>
-<dt>How to read it</dt><dd>See Exhibit&nbsp;9.5b above (the shock_macro-mode reading: opening $30.5m,
-remeasurement +$1.2m only, closing $31.7m — the always-100%-remeasurement pattern visualised directly).</dd>
+<dt>How to read it</dt><dd>See Exhibit&nbsp;9.5b above (the shock_macro-mode reading: opening \$30.5m,
+remeasurement +\$1.2m only, closing \$31.7m — the always-100%-remeasurement pattern visualised directly).</dd>
 <dt>Controls</dt><dd>Same <code>⊞</code> chart↔table toggle; the chart's own subtitle text changes per mode
 so a reader always knows which of the three modes they are looking at ("Effect of ... vs the baseline
 scenario," "Movement decomposition ... — every bar is an engine number," or the fixed-history phrasing).</dd>
@@ -959,11 +959,11 @@ and supportable' information?"), a bar chart, and a table of 3 canned weight set
 per row. Endpoint: <code>GET /api/policy/weights_table</code> — <b>calling this endpoint appends THREE lines
 to the audit trail</b> (one per weight set), a deliberate governance choice so every reweighting this app has
 ever shown a user is logged, even from this read-only convenience view.</dd>
-<dt>How to read it</dt><dd>Live capture: <b>Adopted (25/50/25)</b> — $34.0m, coverage 2.034%, Jensen ratio
+<dt>How to read it</dt><dd>Live capture: <b>Adopted (25/50/25)</b> — \$34.0m, coverage 2.034%, Jensen ratio
 1.0353×, Δ 0% (the reported basis, tagged "ADOPTED," accent-highlighted bar and a 2px accent-border row).
-<b>Equal-thirds (33/33/33)</b> — $35.2m, coverage 2.106%, Jensen 1.0437×, <b>+3.52%</b> vs adopted.
-<b>Downside-tilted (15/35/50)</b> — $38.6m, coverage 2.307%, Jensen 1.0426×, <b>+13.39%</b> vs adopted — over
-$4.5m more provision than the adopted basis from weight alone, no macro assumption changed.</dd>
+<b>Equal-thirds (33/33/33)</b> — \$35.2m, coverage 2.106%, Jensen 1.0437×, <b>+3.52%</b> vs adopted.
+<b>Downside-tilted (15/35/50)</b> — \$38.6m, coverage 2.307%, Jensen 1.0426×, <b>+13.39%</b> vs adopted — over
+\$4.5m more provision than the adopted basis from weight alone, no macro assumption changed.</dd>
 <dt>Controls</dt><dd>None interactive from the UI's perspective — the three weight sets are fixed
 illustrative alternatives (not user-adjustable sliders; that live-adjustable version of the SAME question is
 Scenario Lab's "Reweight scenarios" control, §9.5).</dd>
@@ -1262,8 +1262,8 @@ surfaces to a user.</div>
 <code>{answer, route, mode, trace}</code>.</dd>
 <dt>How to read it</dt><dd>Full worked GROUNDED example, live: question "What is the reported allowance under
 the downside scenario?" → route <code>reweight_scenarios</code>, mode <code>grounded</code>, answer: "The
-weighted allowance is $47.6m, representing a +39.8% increase versus the adopted 25/50/25 weight of $34.0m. The
-Jensen ratio is 1.000x compared to $47.6m at the averaged path. This result is based on weights up/base/down =
+weighted allowance is \$47.6m, representing a +39.8% increase versus the adopted 25/50/25 weight of \$34.0m. The
+Jensen ratio is 1.000x compared to \$47.6m at the averaged path. This result is based on weights up/base/down =
 0.00/0.00/1.00." — the router correctly interpreted "the downside scenario" as a 0/0/1 reweight, not a lookup
 of the existing scenario-table row. REASONED example: question "Why does the double-trigger LTV × UER
 coefficient come out negative?" → route <code>REASONED</code>, mode <code>reasoned</code>, answer prefixed
@@ -1359,7 +1359,7 @@ router always has the rendered numbers directly in front of it.
 <b>Live worked example — clicking ✦ on the Jensen-ratio tile.</b> Composed question (built exactly as the
 convention above specifies, from the live summary payload):
 <pre class="trace">[explain:kpi_jensen_ratio] Jensen ratio: Jensen ratio is 1.0353x — scenario-weighted allowance
-$34.0m vs allowance at the averaged macro path $32.9m. What should I take from this?</pre>
+\$34.0m vs allowance at the averaged macro path \$32.9m. What should I take from this?</pre>
 This is a real, reproducible question string — posting it to <code>POST /api/agent/ask</code> live this
 session routed to <code>REASONED</code> (a conceptual "what should I take from this" question, no fixed tool
 computes a fresh number for it) and returned a cited interpretation grounded in the recap's own numbers.
@@ -1780,5 +1780,6 @@ every other tab works fine. Where would you look first?
 full stage-by-stage <code>Dockerfile</code> read this chapter's §9.11 only bridged to), building directly on
 the linkage table above.</p>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>

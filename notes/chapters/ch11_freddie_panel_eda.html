@@ -476,7 +476,7 @@ more than running them once against a single vintage?
 <!-- ============================================================== -->
 <p>The primary default event modeled in this panel is <strong>D90</strong>: the FIRST loan-month where
 <code>current_delinquency_status</code> corresponds to 90+ days delinquent — formally,
-$$ \text{severe}_t = (\text{dlq\_num}_t \ge 3)\ \text{OR}\ \text{is\_reo\_acquisition}_t, $$
+$$ \text{severe}_t = (\text{dlq_num}_t \ge 3)\ \text{OR}\ \text{is_reo_acquisition}_t, $$
 where <code>dlq_num</code> is the parsed numeric delinquency-status ladder and <code>is_reo_acquisition</code>
 flags the literal string <code>"RA"</code> (REO Acquisition — the field's own escape hatch for "days-delinquent no
 longer means anything, the property has already been acquired"). D90 is modeled as an <strong>absorbing</strong>
@@ -509,17 +509,17 @@ D180 OR LIQUIDATION"); the 31.0% figure from <code>outputs/freddie/eda/eda_repor
 <b>The tie-break, derived from the panel-construction code (no skipped steps)</b>
 (<code>freddie/build_panel.py</code>'s <code>_build_monthly_panel</code>).
 <div class="step"><span class="stepno">1.</span> <strong>Flag every severe row.</strong> For each loan-month $t$,
-$\text{severe}_t = (\text{dlq\_num}_t\ge3)\ \text{OR}\ \text{is\_reo\_acquisition}_t$, computed over the FULL,
+$\text{severe}_t = (\text{dlq_num}_t\ge3)\ \text{OR}\ \text{is_reo_acquisition}_t$, computed over the FULL,
 un-truncated servicing history for the loan.</div>
 <div class="step"><span class="stepno">2.</span> <strong>Count prior severe rows, strictly before $t$.</strong>
 Let $\text{cumsum}_t=\sum_{s\le t}\text{severe}_s$ (an inclusive running count, computed per loan). Then
-$\text{prior\_severe\_count}_t=\text{cumsum}_t-\text{severe}_t$ removes the CURRENT row's own contribution, leaving
+$\text{prior_severe_count}_t=\text{cumsum}_t-\text{severe}_t$ removes the CURRENT row's own contribution, leaving
 exactly the count of severe rows strictly before $t$. This is the key construction: a plain
 $\text{cumsum}_t\le1$ filter would incorrectly keep every row after the first severe month too (cumsum stays at
 1 forever once triggered); subtracting the current row's own flag is what makes the filter stop AT the event, not
 after it.</div>
 <div class="step"><span class="stepno">3.</span> <strong>Truncate.</strong> Keep row $t$ iff
-$\text{prior\_severe\_count}_t=0$ — every loan-month up to and including its first severe month survives; everything
+$\text{prior_severe_count}_t=0$ — every loan-month up to and including its first severe month survives; everything
 strictly after is dropped from the modeling panel. This is the absorbing property.</div>
 <div class="step"><span class="stepno">4.</span> <strong>The tie-break.</strong> On the surviving rows, check
 whether a terminal <code>zero_balance_code</code> is ALSO populated on the exact same row that triggered
@@ -527,7 +527,7 @@ $\text{severe}_t$ (empirically real, roughly 0.1&ndash;0.2% of loans per vintage
 <code>F07Q10009844</code>, <code>F07Q40358784</code> in the 2007 vintage — most often a <code>zero_balance_code=='01'</code>
 Prepaid-or-Matured disposition, a DDLPI/MBA-method delinquency-status artifact at final payoff, not a genuine
 ongoing default):
-$$ \text{d90\_event}_t = \text{severe}_t\ \text{AND NOT}\ \text{has\_zero\_balance\_code}_t. $$
+$$ \text{d90_event}_t = \text{severe}_t\ \text{AND NOT}\ \text{has_zero_balance_code}_t. $$
 When both fire on the same row, the zero-balance disposition code WINS and <code>d90_event</code> is suppressed on
 that row — this is exactly what keeps <code>d90_event</code> and <code>prepay_event</code> (or any other
 zero-balance-derived flag) mutually exclusive AS MODELED, never both firing on the same loan-month.</div>
@@ -709,7 +709,7 @@ panel's native monthly (not quarterly) frequency.</li>
 unemployment $=5.6\%$, not $5.6\%\%$ or $0.056$. No decimal-vs-percentage-point trap here (contrast &sect;11.6's
 sibling <code>hpi_growth_lag1</code> below, which IS a decimal log-difference).</li>
 <li><strong>Coefficient reading — worked example (python-computed).</strong> Champion hazard fit coefficient
-$\beta_{\text{uer\_lag1}}=0.0950$ (<code>outputs/freddie/hazard/hazard_report.md</code>). A $+1$pp rise in state
+$\beta_{\text{uer_lag1}}=0.0950$ (<code>outputs/freddie/hazard/hazard_report.md</code>). A $+1$pp rise in state
 unemployment: $$ HR = \exp(0.0950\times1) = 1.0997, $$ a $9.97\%$ proportional increase in the monthly default
 hazard, holding every other covariate fixed.</li>
 <li><strong>Economic channel.</strong> Labour-income / cash-flow channel: a higher state unemployment rate directly
@@ -730,7 +730,7 @@ worsening right now), distinct from the LEVEL term above.</li>
 1 full percentage point month-on-month — a large, COVID-era-scale move in normal times (contrast the April&nbsp;2020
 state UER jumps of roughly $+10$pp month-on-month that saturate this term, &sect;3 of
 <code>hazard_report.md</code>).</li>
-<li><strong>Coefficient reading — worked example (python-computed).</strong> $\beta_{\text{delta\_uer\_lag1}}=0.6671$.
+<li><strong>Coefficient reading — worked example (python-computed).</strong> $\beta_{\text{delta_uer_lag1}}=0.6671$.
 A genuine $+1$pp LABOUR-MARKET SHOCK moves both <code>uer_lag1</code> and <code>delta_uer_lag1</code> by $+1$pp
 simultaneously (a real unemployment shock is a level move that IS a momentum move in the same month), so the net
 effect combines both coefficients: $$ HR_{\text{net}} = \exp(0.0950+0.6671) = \exp(0.7621) = 2.1428, $$ more than
@@ -761,7 +761,7 @@ underlying series is step-function-forward-filled, $hpi\_growth$ is $\approx0$ f
 carries the WHOLE quarter's growth in the first month of each new quarter — a visible artifact, not noise, and the
 reason the EDA exhibits (&sect;11.14 in a related context) use a trailing 12-month sum rather than reading a single
 month's value.</li>
-<li><strong>Coefficient reading — worked example (python-computed).</strong> $\beta_{\text{hpi\_growth\_lag1}}=-3.3442$.
+<li><strong>Coefficient reading — worked example (python-computed).</strong> $\beta_{\text{hpi_growth_lag1}}=-3.3442$.
 Read PER FULL LOG-UNIT (a 100% monthly house-price move — never observed), the hazard ratio looks catastrophic:
 $\exp(-3.3442)=0.0353$. Rescaled to a realistic $+1$pp ($0.01$) monthly HPI-growth move:
 $$ HR = \exp(-3.3442\times0.01) = \exp(-0.033442) = 0.9671, $$ a $3.3\%$ REDUCTION in monthly default hazard per
@@ -867,16 +867,16 @@ state-level HPI:</p>
 <div class="derivation">
 <b>Updated LTV, derived from the collateral-indexation idea (no skipped steps).</b>
 <div class="step"><span class="stepno">1.</span> <strong>Start from the definition of LTV.</strong> $LTV=
-\text{balance}/\text{property value}$. At origination, $LTV_{\text{orig}}=\text{orig\_upb}/\text{orig\_value}$, so
-$\text{orig\_value}=\text{orig\_upb}/LTV_{\text{orig}}$.</div>
+\text{balance}/\text{property value}$. At origination, $LTV_{\text{orig}}=\text{orig_upb}/\text{orig_value}$, so
+$\text{orig_value}=\text{orig_upb}/LTV_{\text{orig}}$.</div>
 <div class="step"><span class="stepno">2.</span> <strong>Index the property value forward using the state HPI.</strong>
 Assume the property's value moves in line with its state's house-price index between origination and the current
-reporting month: $\text{current\_value} = \text{orig\_value}\times(hpi_{\text{now}}/hpi_{\text{orig}})$.</div>
+reporting month: $\text{current_value} = \text{orig_value}\times(hpi_{\text{now}}/hpi_{\text{orig}})$.</div>
 <div class="step"><span class="stepno">3.</span> <strong>Substitute the current balance and current value into the
 LTV definition.</strong>
-$$ updated\_ltv = \frac{\text{current\_upb}}{\text{current\_value}} = \frac{\text{current\_upb}}
-{(\text{orig\_upb}/LTV_{\text{orig}})\times(hpi_{\text{now}}/hpi_{\text{orig}})}
-= LTV_{\text{orig}}\times\frac{\text{current\_upb}}{\text{orig\_upb}}\times\frac{hpi_{\text{orig}}}{hpi_{\text{now}}}. $$
+$$ updated\_ltv = \frac{\text{current_upb}}{\text{current_value}} = \frac{\text{current_upb}}
+{(\text{orig_upb}/LTV_{\text{orig}})\times(hpi_{\text{now}}/hpi_{\text{orig}})}
+= LTV_{\text{orig}}\times\frac{\text{current_upb}}{\text{orig_upb}}\times\frac{hpi_{\text{orig}}}{hpi_{\text{now}}}. $$
 The three factors read as: original leverage, times amortization paydown, times the collateral-value INDEX
 correction (house prices FELL $\Rightarrow hpi_{\text{orig}}/hpi_{\text{now}}>1\Rightarrow$ updated LTV rises above
 what paydown alone would suggest).</div>
@@ -891,7 +891,7 @@ data.</div>
 <b>Worked example 1 — NV, 2006 vintage, observed 2009-03 (the crash).</b> Real loan values
 (<code>tests/test_freddie_macro.py::test_updated_ltv_formula_matches_documented_derivation</code>'s fixture, cross-
 checked live this session against <code>data/processed/freddie/macro/state_macro_panel.parquet</code>'s cached, real
-FRED-derived NV HPI index): $LTV_{\text{orig}}=80.0$, $\text{orig\_upb}=\$254{,}000$, $\text{current\_upb}
+FRED-derived NV HPI index): $LTV_{\text{orig}}=80.0$, $\text{orig_upb}=\$254{,}000$, $\text{current_upb}
 =\$245{,}566.35$ (2009-03), $hpi_{\text{orig}}$ read at 2006-03, $hpi_{\text{now}}$ at 2009-03.
 <div class="table-wrap">
 <table>
@@ -914,7 +914,7 @@ real 2006-vintage NV loan (<code>updated_ltv &gt; orig_ltv</code>, post-crash).
 <b>Worked example 2 — NV, real loan <code>F10Q10019125</code>, 2010 vintage, 2010-06 vs 2019-06 (the recovery).</b>
 Read live this session directly from <code>freddie.ingest.read_orig_vintage(2010)</code> /
 <code>read_svcg_vintage(2010)</code> (the first NV loan in that vintage's orig table) and the real cached NV HPI
-series: $LTV_{\text{orig}}=44.0$, $\text{orig\_upb}=\$110{,}000$, first payment 2010-03.
+series: $LTV_{\text{orig}}=44.0$, $\text{orig_upb}=\$110{,}000$, first payment 2010-03.
 <div class="table-wrap">
 <table>
 <tr><th>date</th><th>current_upb</th><th>state HPI index</th><th>amort. ratio</th><th>HPI ratio</th><th>updated_ltv</th></tr>
@@ -1112,7 +1112,7 @@ matrices use from first principles, then (&sect;11.9) walks the generic textbook
 <code>mat.div(mat.sum(axis=1), axis=0)</code>; this derivation justifies it.)
 <div class="step"><span class="stepno">1.</span> <strong>Set up the model.</strong> Assume (a first-order Markov
 assumption, stated explicitly rather than silently relied on) that, conditional on being in bucket $i$ this month, a
-loan-month's NEXT bucket $j\in B=\{\text{current},30,60,90+,\text{prepaid},\text{default\_terminal}\}$ is drawn i.i.d.
+loan-month's NEXT bucket $j\in B=\{\text{current},30,60,90+,\text{prepaid},\text{default_terminal}\}$ is drawn i.i.d.
 from a categorical distribution with true (unknown) probabilities $p_{i1},\ldots,p_{i|B|}$, $\sum_j p_{ij}=1$.</div>
 <div class="step"><span class="stepno">2.</span> <strong>Write the row's likelihood.</strong> Observing $N_{ij}$
 loan-months that transition from $i$ to $j$ (over some window, e.g. "GFC 2007&ndash;2009"), the multinomial
@@ -1672,7 +1672,7 @@ exactly the "not cosmetic" framing &sect;11.12's interpretation box promises, no
 <div class="warn">
 <b>Tying this to SFLLD's own realized-loss field — a conceptual match, not a formula reproduction, stated
 honestly.</b> <code>outputs/freddie/eda/eda_report.md</code> Exhibit&nbsp;5 defines realized LGD on the SFLLD panel
-as $LGD=-\text{actual\_loss\_calculation}/\text{zero\_balance\_removal\_upb}$ (negated because Freddie's own
+as $LGD=-\text{actual_loss_calculation}/\text{zero_balance_removal_upb}$ (negated because Freddie's own
 <code>actual_loss_calculation</code> field is NEGATIVE for an economic loss to the trust, per the User Guide,
 confirmed empirically). This is the SAME accounting concept as &sect;11.12's derivation — net recoveries against
 exposure, net of workout expenses — but SFLLD exposes it as a single, already-computed, AUDITED number per loan,
@@ -1924,5 +1924,6 @@ Compiled from <code>outputs/freddie/ingest/dq_report.md</code>, <code>outputs/fr
 session) on 2026-07-19.
 </div>
 
+<script src="../assets/js/toc.js" defer></script>
 </body>
 </html>
