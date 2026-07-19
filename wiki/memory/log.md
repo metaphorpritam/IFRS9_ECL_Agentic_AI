@@ -105,3 +105,7 @@ Notes batch B COMPLETE (10/10 agents): ch03 hazard (cloglog derived, left-trunca
 ## 2026-07-19 08:21 UTC — tags: app, req12
 
 Req-12 macro interpretation SHIPPED: 7 interpretation fields on all coefficient rows + /api/model/macro_glossary (10 rows) + HR columns + How-to-read panels + coherent-shock notes. Review caught 2 HIGH: DCR rows falsely badged as live FRED series (vendor-premerged on anonymized clock - badges nulled, honesty clause added) + DOUBLE TRIGGER leaked a misleading per-unit HR where contract promised null (interaction branch added). 665+ tests.
+
+## 2026-07-19 12:10 UTC — tags: notes, batchC
+
+Notes batch C COMPLETE (10/10): ch06 scenarios/satellite/Jensen (coherent-shock chain reproduced the recorded $30.5m->$31.7m agent trace TO THE DOLLAR via live rerun; Vasicek convexity inflections computed; renderQA CLEAN), ch07 challengers, ch08 agent. Reindexed + coverage updated. NEXT: batch D = ch09 APP GUIDE (req11) + ch10 docker + ch11 Freddie panel.

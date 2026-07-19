@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.6 — Scenarios, Satellite Models &amp; Jensen's Inequality | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 6: SCENARIOS, SATELLITE MODELS & JENSEN'S
+  INEQUALITY
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md), CSS
+  block copied verbatim from ch05_vasicek.html for visual consistency across
+  the compendium. widgets.js loaded RELATIVE ("../assets/js/widgets.js") --
+  this chapter lives in notes/chapters/, widgets.js lives in notes/assets/js/
+  (conventions.md "Inlined vs relative widgets.js"). Standalone deliverable
+  for this build phase (notes/chapters/ holds independent chapter files, not
+  yet spliced into one compendium) -- own <h1>/TOC/closing <hr>; <h2 id="s6">
+  is written so a later merge into the single-file compendium is a straight
+  splice. MathJax SVG renderer is the only external dependency (CDN, accepted
+  project exception); everything else here is self-contained/inline.
+  Derivation D-6 (Jensen's inequality -> convexity of PD_PIT(Z) -> convexity
+  of ECL) fully expanded per notes/plan/derivation_backlog.md. Requirement 12
+  (macro/coefficient interpretation) is binding here: every macro variable in
+  the satellite model carries the full source/transformation/units/
+  coefficient-reading/economic-channel card, honestly stating the DCR panel's
+  macro columns are a vendor-premerged national series on an anonymized
+  clock (calendar-verified vs FRED UNRATE, corr 0.996) -- NOT a live FRED
+  pull -- contrasted against the genuinely FRED-sourced SFLLD state series
+  Chapter 11-12 use. Numbers throughout are pasted from tests/fixtures/
+  compute_scenarios.py (toy example), and from live re-runs of
+  agent/tools_tier1.py against the project's own frozen engine + warm model
+  cache (outputs/models/tier1_models.joblib) for the real coherent-shock
+  worked example -- both cited inline, nothing hand-typed (conventions.md §5).
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+  .converter { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-end; margin-top: 8px; }
+  .converter-readout { flex: 1 1 260px; background: var(--page-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 12px; font-size: 12.8px; }
+  .converter-readout b { color: var(--accent-soft); }
+
+  .bar-outer { position: relative; height: 34px; background: var(--code-bg); border-radius: 4px; overflow: hidden; margin: 10px 0 4px 0; border: 1px solid var(--rule); }
+  .bar-seg-12m { position: absolute; top:0; left:0; height:100%; background: var(--warn); opacity: 0.75; transition: width 0.12s; }
+  .bar-seg-life { position: absolute; top:0; height:100%; background: var(--accent); opacity: 0.55; transition: width 0.12s, left 0.12s; }
+  .bar-label { display:flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 2px;}
+  .bar-legend { display:flex; gap: 18px; font-size: 11.5px; margin-top: 4px; }
+  .bar-legend span.swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align: -1px; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 6 — Scenarios, Satellite Models &amp; Jensen's Inequality</h1>
+<div class="subtitle">From DFAST supervisory paths through a fitted satellite model to a proof that probability-weighted ECL exceeds single-path ECL</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 6 of 13. Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;9, <code>tests/fixtures/compute_scenarios.py</code>, <code>engine/scenarios.py</code>, <code>engine/satellite.py</code>, <code>agent/tools_tier1.py</code>, <code>outputs/scenarios/scenarios_report.md</code>, <code>outputs/satellite/satellite_report.md</code>, <code>outputs/scenario_ecl/scenario_ecl_report.md</code>, and <code>docs/api_contract.md</code> on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s6-1">6.1 Why a single base case is not enough</a></li>
+<li><a href="#s6-2">6.2 DFAST ingestion and the rebasing convention</a></li>
+<li><a href="#s6-3">6.3 The judgmental upside construction</a></li>
+<li><a href="#s6-4">6.4 Extending to 40 quarters: the R&amp;S window and reversion</a></li>
+<li><a href="#s6-5">6.5 The satellite macro-link model</a></li>
+<li><a href="#s6-6">6.6 The missing UER term and the coherent-shock convention</a></li>
+<li><a href="#s6-7">6.7 Jensen's inequality, proved</a></li>
+<li><a href="#s6-8">6.8 The toy fixture: quantifying a 1.9&times; understatement</a></li>
+<li><a href="#s6-9">6.9 The project's honest 1.035&times;</a></li>
+<li><a href="#s6-10">6.10 Interactive: scenario weights and a Z-shock explorer</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s6">6&nbsp; Scenarios, Satellite Models &amp; Jensen's Inequality</h2>
+<p>Chapter&nbsp;5 built the machine that turns a systematic factor $Z$ into a point-in-time PD — but never said
+where $Z$ comes from when you are trying to look <em>forward</em> rather than recover it from history. IFRS&nbsp;9
+&sect;5.5.17(c) requires ECL to reflect <em>reasonable and supportable</em> information about future conditions,
+and &sect;5.5.18/B5.5.42 goes further: it must be an <strong>unbiased, probability-weighted</strong> estimate
+evaluated across a <em>range</em> of outcomes, not the single most-likely path. This chapter builds the whole
+forward-looking rung end to end — ingesting supervisory stress-test paths, fitting a small regression that maps
+macro drivers onto the credit cycle, and then proving rigorously (not just asserting) why averaging scenario
+<em>outcomes</em> is not the same as evaluating the outcome of the averaged scenario. That gap has a name —
+Jensen's inequality — and by the end of this chapter it is derived from first principles, verified on a toy
+example, and then measured honestly on the project's own 7,849-loan book. Source anchor:
+<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;9 (all sections); project evidence from
+<code>engine/scenarios.py</code>, <code>engine/satellite.py</code>, <code>agent/tools_tier1.py</code>, and the
+three <code>outputs/{scenarios,satellite,scenario_ecl}/</code> reports.</p>
+
+<!-- ============================================================== -->
+<h3 id="s6-1">6.1 Why a single base case is not enough</h3>
+<!-- ============================================================== -->
+<p>Every hazard model up to this point produces one number per loan-quarter. Feed it one macro path and you get
+one ECL. IFRS&nbsp;9's answer to "which macro path?" is deliberately not "the most likely one" — it is
+<em>several</em>, weighted by their probability of occurring.</p>
+
+<div class="defn">
+<b>Definitions.</b>
+<ul>
+<li><strong>Scenario</strong> — a full, internally-coherent macro path (unemployment, house prices, GDP, rates
+all moving together sensibly) over some horizon, standing in for one possible future state of the economy.</li>
+<li><strong>Probability weight</strong> $w_s$ — the bank's own governance-committee judgment of how likely
+scenario $s$ is, with $\sum_s w_s = 1$; &sect;6.1's closing note explains why these weights are judgmental by
+construction, not statistically estimated.</li>
+<li><strong>Probability-weighted ECL</strong> — $ECL_{PW} = \sum_s w_s \cdot ECL(s)$: run the full ECL engine
+once <em>per scenario</em>, then average the resulting ECL figures.</li>
+<li><strong>Single-path ECL</strong> — $ECL(\bar{s})$: average the macro <em>paths</em> first (weight-average
+GDP growth, unemployment, etc. across scenarios into one blended path), then run the ECL engine once on that
+blended path.</li>
+</ul>
+</div>
+
+<div class="thm">
+<b>Theorem (quoted, &sect;9.2) — Jensen's inequality applied to ECL.</b> ECL is a convex function of the macro
+state. For convex $f$, $\mathbb{E}[f(X)]\ge f(\mathbb{E}[X])$. Hence $ECL_{PW} \ge ECL(\bar{s})$ — measuring on
+the single most-likely path systematically <em>understates</em> expected loss. This is the analytical reason
+IFRS&nbsp;9 &sect;5.5.17&ndash;18/B5.5.42 demands a probability-weighted evaluation of a range of outcomes, not
+a point estimate. &sect;6.7 proves this rigorously; &sect;6.8&ndash;6.9 quantify it, first on a toy example,
+then on the project's own book.
+</div>
+
+<p>The two quantities $ECL_{PW}$ and $ECL(\bar{s})$ look almost interchangeable — both are "some kind of
+average" — and that resemblance is exactly what makes the mistake easy to make. The rest of this chapter builds
+the full machinery needed to compute both correctly: &sect;6.2&ndash;6.4 build the scenario <em>paths</em>
+themselves (where do three internally-coherent 40-quarter macro paths even come from), &sect;6.5&ndash;6.6 build
+the <em>satellite model</em> that turns a macro path into a $Z$ path, and &sect;6.7&ndash;6.9 close the loop with
+the Jensen's-inequality proof and its two concrete numeric instances.</p>
+
+<div class="gotcha">
+<b>Gotcha — "probability-weighted" does not mean "statistically estimated".</b> There is no dataset of "how
+likely was the severe scenario" — scenario probabilities are a governance-committee judgment, documented and
+audited, not a maximum-likelihood fit. &sect;6.2's closing box returns to this with the project's own adopted
+50/25/25 weighting and a documented sensitivity check; the deliverable an auditor tests is the
+<em>rationale</em>, not the third decimal place of the weight.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does IFRS&nbsp;9 require multiple scenarios rather than one "best estimate" macro forecast?
+  <details><summary>Answer</summary>
+  <div class="answer">Because &sect;5.5.18/B5.5.42 requires an unbiased, probability-weighted estimate across
+  a range of outcomes, and (the analytical reason, &sect;6.7) ECL is convex in the macro state — a convex
+  function's average value across outcomes exceeds its value at the average outcome (Jensen's inequality), so
+  scoring only the single most-likely path systematically understates expected loss.</div>
+  </details>
+</li>
+<li>What is the difference between $ECL_{PW}$ and $ECL(\bar{s})$, in one sentence each?
+  <details><summary>Answer</summary>
+  <div class="answer">$ECL_{PW}=\sum_s w_s\,ECL(s)$ runs the ECL engine once per scenario and weight-averages
+  the RESULTS; $ECL(\bar{s})=ECL\big(\sum_s w_s\cdot\text{path}_s\big)$ weight-averages the macro PATHS first
+  and runs the ECL engine once on that single blended path. Jensen's inequality says the first is always
+  $\ge$ the second whenever ECL is convex in the macro state.</div>
+  </details>
+</li>
+<li>A colleague argues scenario weights should be back-solved from historical recession frequency. What is the
+practical objection?
+  <details><summary>Answer</summary>
+  <div class="answer">There is only one credit cycle of usable history in most bank panels (this project's DCR
+  panel included, &sect;6.5's stationarity discussion) — one realised recession is not a sample from which a
+  frequency can be estimated with any precision. Scenario weights are therefore, necessarily, a governance
+  judgment documented and sensitivity-tested (&sect;6.9's weights table), not a statistical estimate.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-2">6.2 DFAST ingestion and the rebasing convention</h3>
+<!-- ============================================================== -->
+<p>Hand-rolling three internally-coherent macro paths (unemployment, house prices, GDP and rates all moving
+together the way a real recession or boom actually moves them) is genuinely hard to do credibly from scratch.
+The project's answer: ingest the shapes a supervisor already designed. <strong>DFAST</strong> (the Dodd-Frank
+Act Stress Test) publishes 28-variable macro paths built for exactly this kind of coherence check —
+<code>data/ingest/dfast.py</code> parses the 2026 vintage's Baseline and Severely-Adverse 13-quarter CSVs
+(2026Q1&ndash;2029Q1) plus a 200-quarter historic-actuals file, and maps four of those columns onto the panel's
+own concepts.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>DFAST column</th><th>panel concept</th><th>transformation</th></tr>
+<tr><td>Unemployment rate</td><td><code>uer</code> (pp)</td><td>level, as-is</td></tr>
+<tr><td>House Price Index (Level)</td><td><code>hpi_growth</code> (decimal/q)</td><td>quarterly log-diff; the first supervisory quarter is differenced against the last historic actual level</td></tr>
+<tr><td>Real GDP growth</td><td><code>gdp_growth</code> (%/q)</td><td>$100\big((1+g/100)^{1/4}-1\big)$ — SAAR de-annualised to a plain quarterly rate</td></tr>
+<tr><td>Mortgage rate</td><td><code>mortgage_rate</code> (pp)</td><td>level, as-is</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/scenarios/scenarios_report.md</code> "DFAST column -&gt; panel concept -&gt;
+transformation"; <code>data/ingest/dfast.py</code>.</p>
+
+<div class="gotcha">
+<b>Gotcha — SAAR is an ANNUALISED rate, not a quarterly one.</b> DFAST publishes GDP growth as a
+seasonally-adjusted annual rate (SAAR): "4.0% SAAR" means the economy is growing at a pace that, sustained for
+four quarters, would compound to 4.0% for the year — it is NOT "4.0% this quarter". Applying $g_{SAAR}$
+directly as a quarterly figure overstates the quarterly move roughly 4$\times$; the fourth-root de-annualisation
+above ($100\times((1+g/100)^{1/4}-1)$) converts it correctly — e.g. $g_{SAAR}=4.0\%\Rightarrow$ quarterly
+$\approx0.985\%$, not $4.0\%$.
+</div>
+
+<h4>The rebasing problem: two clocks that do not overlap</h4>
+<p>The project's DCR loan panel ends its own clock at $t=60\sim$2015Q1 (calendar-verified against FRED UNRATE,
+&sect;5.7) — but the DFAST 2026 paths run 2026Q1&ndash;2029Q1, eleven years later. Splicing DFAST's raw
+<em>levels</em> onto the panel would create a nonsensical jump (unemployment does not teleport from a 2015
+value to whatever the 2026 print happens to be) purely as an artefact of two unrelated calendars meeting. DFAST's
+real value is not its absolute levels in 2026 — it is the <strong>coherent multivariate shape</strong> a
+supervisor designed (unemployment, HPI, GDP and rates moving together the way a real stress episode does). The
+project's convention keeps that shape and discards the absolute levels.</p>
+
+<div class="derivation">
+<b>Derivation — the rebasing convention (shape transplant).</b>
+<div class="step"><span class="stepno">1.</span> <strong>Identify the DFAST jump-off.</strong> The DFAST
+supervisory paths begin one quarter after the last historic actual — call that actual quarter's concept value
+$\text{dfast\_jumpoff}(c)$ for concept $c\in\{uer,\ hpi\_growth,\ gdp\_growth,\ mortgage\_rate\}$.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Take the DFAST path as a sequence of DELTAS from that
+jump-off,</strong> not as levels: $\delta_h(c) = \text{dfast}_h(c) - \text{dfast\_jumpoff}(c)$ for horizon
+quarter $h=1,\dots,13$. This is the piece of DFAST worth keeping — it is purely about SHAPE (how far and how
+fast each concept moves relative to where DFAST itself started), with no reference to DFAST's own calendar.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Add that delta onto the PANEL's own $t=60$ level,</strong>
+not onto DFAST's jump-off:
+$$ \text{scenario}_h(c) \;=\; \text{panel}_{t=60}(c) \;+\; \delta_h(c). $$
+The additive delta is applied UNIFORMLY to every concept — levels ($uer$, $mortgage\_rate$) and quarterly growth
+rates ($hpi\_growth$, $gdp\_growth$) alike — which is exactly what preserves DFAST's co-movement structure
+(a $+5.5$pp unemployment move stays a $+5.5$pp move) while anchoring the whole path at the panel's own reporting
+date instead of DFAST's.</div>
+<div class="step"><span class="stepno">4.</span> <strong>This is a shape transplant, not a forecast made in
+2015.</strong> The resulting path is not "what the panel's macro variables were predicted to do in 2015" (DFAST
+2026 did not exist in 2015) — it is "what the panel's macro state would look like today if it moved the way
+DFAST's supervisors judged a severe/base episode moves", read starting from the panel's own actual reporting-date
+level. <code>engine/scenarios.py</code>'s own docstring is explicit about this framing.</div>
+</div>
+
+<div class="ex">
+<b>Worked example — one variable, one quarter, every number shown.</b> National unemployment, DFAST
+Severely-Adverse, 2026Q1 (<code>data/ingest/dfast.py</code>, <code>engine/scenarios.py</code>, re-run and
+printed directly):
+<div class="table-wrap">
+<table>
+<tr><th>quantity</th><th>value</th><th>source</th></tr>
+<tr><td>DFAST severely-adverse UER, 2026Q1</td><td class="num">5.90pp</td><td>DFAST CSV, first supervisory row</td></tr>
+<tr><td>DFAST jump-off UER, 2025Q4 (last historic actual)</td><td class="num">4.50pp</td><td>DFAST historic-actuals CSV, last row</td></tr>
+<tr><td>delta from jump-off, step&nbsp;2: $5.90-4.50$</td><td class="num">$+1.40$pp</td><td>computed</td></tr>
+<tr><td>panel's own $t=60$ (2015Q1) UER level</td><td class="num">5.70pp</td><td><code>outputs/scenarios/scenarios_report.md</code></td></tr>
+<tr><td><strong>rebased scenario level, step&nbsp;3: $5.70+1.40$</strong></td><td class="num"><strong>7.10pp</strong></td><td>computed, matches <code>engine.scenarios.build_scenario_set()</code>'s own <code>down</code> path, $h=1$ (calendar 2015Q2)</td></tr>
+</table>
+</div>
+For context, the peak of that same severely-adverse UER path arrives at DFAST's own 2027Q3 ($h=7$): DFAST level
+$10.00$pp, delta $10.00-4.50=+5.50$pp, rebased $5.70+5.50=\mathbf{11.20}$pp — the "severe peak 11.2pp (+5.5pp vs
+jump-off)" figure <code>outputs/scenarios/scenarios_report.md</code> reports. Both rows use the identical
+2-step delta-then-rebase mechanism; only the DFAST quarter and level change.
+</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>concept</th><th>panel jump-off, $t{=}60$</th><th>panel long-run mean (reversion target, &sect;6.4)</th></tr>
+<tr><td><code>uer</code> (pp)</td><td class="num">5.70</td><td class="num">6.39</td></tr>
+<tr><td><code>hpi_growth</code> (%/q)</td><td class="num">1.15</td><td class="num">0.96</td></tr>
+<tr><td><code>gdp_growth</code> (%/q)</td><td class="num">0.70</td><td class="num">0.46</td></tr>
+<tr><td><code>mortgage_rate</code> (pp)</td><td class="num">4.62</td><td class="num">4.63</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/scenarios/scenarios_report.md</code> "Rebasing convention" table.</p>
+
+<div class="interpretation">
+<b>Interpretation — why deltas, never levels.</b> The rebasing convention deliberately throws away everything
+DFAST-specific about the ABSOLUTE level of each series and keeps only the SHAPE of the co-movement. This is a
+principled choice, not a shortcut: a supervisor's real analytical work is in getting unemployment, house
+prices, GDP and rates to move together in a way that is jointly plausible (the "coherent multivariate shape" the
+scenarios report emphasises) — that structure is exactly what survives the rebasing untouched, while the
+calendar mismatch (2015 panel vs 2026 DFAST) is exactly what the rebasing removes.
+</div>
+
+<div class="warn">
+<b>Do not read the rebased path as "the panel's own 2015 forecast".</b> The panel's $t=60$ reporting date is a
+fixed historical fact (2015Q1); the rebased scenario paths that begin at $h=1$ (2015Q2) are a purely synthetic
+construction built for this teaching/demonstration exercise, using a 2026-vintage supervisory stress design
+applied to a book with a 2015 reporting date. In a live production system the DFAST vintage and the reporting
+date would be contemporaneous; here they are deliberately not, and every number downstream inherits that
+documented simplification.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why can't the DFAST 2026Q1 unemployment LEVEL (5.90pp) simply be spliced directly onto the panel's own
+$t=61$ quarter?
+  <details><summary>Answer</summary>
+  <div class="answer">The panel's clock ends at $t=60\sim$2015Q1 and DFAST's clock begins at 2026Q1 — the two
+  calendars are eleven years apart and have no causal relationship. Splicing the raw level would create a
+  meaningless jump driven purely by which two unrelated years happen to be adjacent in the panel's own index,
+  not by any economic mechanism.</div>
+  </details>
+</li>
+<li>In the worked example, why is the rebased level $7.10$pp rather than DFAST's own $5.90$pp or the panel's own
+$5.70$pp?
+  <details><summary>Answer</summary>
+  <div class="answer">$7.10$pp is neither of those numbers alone — it is the panel's own jump-off level
+  ($5.70$pp) PLUS DFAST's shape-only delta from ITS jump-off ($+1.40$pp $=5.90-4.50$). Using DFAST's raw level
+  ($5.90$pp) would silently import DFAST's 2026 starting point instead of the panel's 2015 one; using the
+  panel's level alone ($5.70$pp) would throw away the entire stress shape and just repeat the jump-off.</div>
+  </details>
+</li>
+<li>Is the rebasing convention applied differently to level concepts ($uer$) versus growth-rate concepts
+($hpi\_growth$)?
+  <details><summary>Answer</summary>
+  <div class="answer">No — step&nbsp;3 states the additive-delta rule is applied UNIFORMLY across every
+  concept, levels and growth rates alike. Applying a special-cased transformation to growth-rate concepts would
+  distort the co-movement DFAST built between them, which is the entire point of preserving deltas rather than
+  levels.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-3">6.3 The judgmental upside construction</h3>
+<!-- ============================================================== -->
+<p>DFAST publishes a Baseline and a Severely-Adverse path — no upside. IFRS&nbsp;9's probability-weighted
+range of outcomes still needs one (the project adopts three named scenarios: base/down/up), so an upside has to
+be constructed rather than ingested.</p>
+
+<div class="defn">
+<b>The damped-mirror convention.</b> $$ \delta^{up}_h(c) \;=\; \kappa \cdot \delta^{down}_h(c), \qquad
+\kappa = -0.35 \ \text{(the damping factor)}, $$ applied to the SAME severely-adverse deltas $\delta^{down}_h(c)$
+&sect;6.2 already computed, for every concept $c$ and every horizon quarter $h$. The upside's unemployment path
+is additionally floored at $3.5$pp (roughly the postwar full-employment trough) so the mirror cannot mechanically
+drive unemployment through an implausible floor.
+</div>
+
+<div class="ex">
+<b>Worked example — the same $h=1$ quarter as &sect;6.2, mirrored.</b>
+<div class="table-wrap">
+<table>
+<tr><th>quantity</th><th>value</th></tr>
+<tr><td>down (severe) delta, $h=1$: $uer$</td><td class="num">$+1.40$pp</td></tr>
+<tr><td>mirror factor $\kappa$</td><td class="num">$-0.35$</td></tr>
+<tr><td>up delta, $h=1$: $\kappa\times(+1.40)$</td><td class="num">$-0.49$pp</td></tr>
+<tr><td>rebased up level, $h=1$: $5.70+(-0.49)$</td><td class="num">$5.21$pp</td></tr>
+</table>
+</div>
+Over the full 13-quarter R&amp;S window the up path's unemployment TROUGHS at $3.775$pp ($h=7$, the same
+quarter the down path peaks) — above the $3.5$pp floor, so the floor is not binding for this vintage; a mild
+boom, not an implausible one. All four figures re-derived directly from <code>engine.scenarios.build_scenario_set()</code>.
+</div>
+
+<div class="interpretation">
+<b>Interpretation — why mirror the SEVERE path rather than the baseline, and why damp it.</b> Mirroring the
+severely-adverse path (rather than, say, the mild baseline) inherits DFAST's real analytical work: the
+supervisor already worked out a jointly-plausible multivariate shape for a stress episode, and the mirror
+reuses that same internal coherence for a boom, just with the sign flipped. The damping factor
+$\kappa=-0.35$ (rather than $-1.0$, a symmetric mirror) encodes a real empirical asymmetry of the credit cycle:
+booms are shallower and more gradual than busts (recoveries build slowly; downturns can be sharp), so a boom
+built by fully mirroring a severe recession would overstate how good a plausible upside actually gets.
+</div>
+
+<div class="note">
+<b>Governance framing — an honestly-labelled placeholder, with its upgrade path named.</b>
+<code>outputs/scenarios/scenarios_report.md</code> and <code>engine/scenarios.py</code>'s docstring both flag
+the damped mirror as a NAMED ENHANCEMENT opportunity: anchor the upside instead to Philadelphia Fed
+Survey-of-Professional-Forecasters (SPF) percentile data — e.g. take the upside path from the 25th percentile of
+the SPF's own unemployment-forecast distribution, which would ground the upside in an externally-collected
+forecaster consensus rather than a judgmental transform of the downside. The damped mirror is the
+governance-documented placeholder for that upgrade, not a claim that $-0.35$ is empirically estimated.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a mirrored path is not a symmetric RISK statement.</b> It is tempting to read the up/down pair as
+"equally likely opposite outcomes" because one is built from the other. They are not treated as such: the
+project's adopted weights are $0.25$ (up) / $0.50$ (base) / $0.25$ (down) — SYMMETRIC probability weight on the
+two tails, deliberately — but the damping factor already makes the up path's MAGNITUDE smaller than the down
+path's, so equal probability weight is being placed on a milder upside and a sharper downside. That asymmetry
+is intentional (the interpretation box above) and is a separate design choice from the weights themselves.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is the upside built as a mirror of the DOWNSIDE path specifically, rather than an independent judgmental
+construction?
+  <details><summary>Answer</summary>
+  <div class="answer">Mirroring reuses the DFAST supervisor's own coherent multivariate shape (the hard part —
+  getting unemployment, HPI, GDP and rates to move together plausibly) rather than requiring a second
+  from-scratch coherence exercise; only the sign and magnitude (via the damping factor) are new judgment calls,
+  which is a much smaller surface to defend to an auditor than an independently constructed path.</div>
+  </details>
+</li>
+<li>What would $\kappa=-1.0$ (no damping) imply about the relative severity of booms and busts, and why does the
+project reject it?
+  <details><summary>Answer</summary>
+  <div class="answer">$\kappa=-1.0$ would assert the upside is EXACTLY as extreme as the downside, just in the
+  opposite direction — a fully symmetric cycle. The project rejects this because it contradicts the well-known
+  empirical asymmetry of credit cycles (busts are typically sharper/deeper than booms are strong), so
+  $\kappa=-0.35$ deliberately produces a milder upside than a naive full mirror would.</div>
+  </details>
+</li>
+<li>Is the $3.5$pp unemployment floor binding on the adopted upside path?
+  <details><summary>Answer</summary>
+  <div class="answer">No — the worked example shows the up path's unemployment trough is $3.775$pp, above the
+  $3.5$pp floor. The floor exists as a physical guard against an implausible mechanical result, not because the
+  damped-mirror construction is expected to need it under the current DFAST vintage.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-4">6.4 Extending to 40 quarters: the R&amp;S window and reversion</h3>
+<!-- ============================================================== -->
+<p>&sect;6.2&ndash;6.3 built 13 quarters of rebased path per scenario — the length of the DFAST supervisory
+window. A mortgage book's remaining contractual life can run far longer than 13 quarters, and IFRS&nbsp;9's own
+&sect;9.4 R&amp;S-horizon logic (Chapter&nbsp;2's gross-up factor is the other half of this same idea) is explicit
+that forward-looking macro information is only reasonable and supportable over a limited window — commonly
+two to three years — beyond which forecast errors compound and instability sets in. The standard response,
+applied here: condition PIT over the R&amp;S window, then revert to the long-run TTC level over a further
+ramp, then hold.</p>
+
+<div class="defn">
+<b>The extension convention.</b> R&amp;S window $=13$ quarters ($h=1..13$, the DFAST length); reversion ramp
+$=8$ quarters ($h=14..21$), LINEAR from the R&amp;S window's final value to the panel's own long-run mean for
+that concept; then HOLD at the long-run mean for the remainder of the 40-quarter horizon ($h=21..40$). All three
+scenarios share the identical reversion target (the panel's own long-run means, &sect;6.2's table) — so scenario
+DIFFERENTIATION lives entirely in the 13q path plus the 8q ramp; by $h=21$ every scenario's macro state is
+identical.
+</div>
+
+<div class="derivation">
+<b>Derivation — the reversion arithmetic, one series shown in full.</b>
+Base scenario, $hpi\_growth$ concept. Let $v_{13}$ be the R&amp;S window's final ($h=13$) value and $\bar{v}$
+the panel's long-run mean (the reversion target).
+<div class="step"><span class="stepno">1.</span> Read the two endpoints directly from the built scenario set:
+$$ v_{13} = 0.011772, \qquad \bar{v} = 0.009585\ \text{(panel long-run mean, &sect;6.2's table, more precisely
+0.0095851)}. $$</div>
+<div class="step"><span class="stepno">2.</span> The per-quarter linear step over the 8-quarter ramp:
+$$ \Delta = \frac{\bar{v}-v_{13}}{8} = \frac{0.009585-0.011772}{8} = \frac{-0.002187}{8} = -0.00027338\ \text{per quarter.} $$</div>
+<div class="step"><span class="stepno">3.</span> Each ramp quarter is the PREVIOUS value plus the constant step
+$j$ steps from $v_{13}$: $v_{13+j} = v_{13} + \dfrac{j}{8}(\bar{v}-v_{13})$ for $j=1,\dots,8$. Substituting the
+first three:
+<div class="table-wrap">
+<table>
+<tr><th>$h$</th><th>13 (R&amp;S end)</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21 (target)</th></tr>
+<tr><td>$hpi\_growth$ (%/q)</td><td class="num">0.011772</td><td class="num">0.011499</td><td class="num">0.011225</td><td class="num">0.010952</td><td class="num">0.010679</td><td class="num">0.010405</td><td class="num">0.010132</td><td class="num">0.009858</td><td class="num">0.009585</td></tr>
+</table>
+</div>
+Each successive column drops by the constant $\Delta\approx-0.000273$ computed in step&nbsp;2, landing EXACTLY
+on the long-run mean at $h=21$ ($j=8$: $v_{13}+\tfrac{8}{8}(\bar v-v_{13})=\bar v$ by construction).</div>
+<div class="step"><span class="stepno">4.</span> From $h=21$ to $h=40$ the value simply HOLDS at $\bar{v}$ — no
+further computation, the path is flat for the remaining 19 quarters.</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The reversion ramp is a straight line in concept-space, not in PD- or ECL-space — it is
+the MACRO DRIVER that reverts linearly; because &sect;6.7 proves $PD_{PIT}(Z)$ is convex in $Z$ (and $Z$ is
+itself linear in these drivers, &sect;6.5), the resulting PD path reverts along a curve, not a straight line,
+even though the macro inputs feeding it are ramping linearly. This is the same convexity mechanism the whole
+back half of this chapter is built around — it shows up here too, one layer upstream of where &sect;6.7&ndash;6.9
+put it under a magnifying glass.
+</div>
+
+<img class="fig" src="../assets/img/ch06/01_scenario_ecl_pipeline.png" alt="Flowchart: DFAST supervisory CSVs branch into up/base/down delta paths, converge into a uniform rebase-and-extend step producing 40-quarter scenario paths, feed the satellite model producing a Z path per scenario, condition the frozen default hazard via the Vasicek PIT transform, run through the frozen ECL engine to produce three per-scenario reported allowances (upside USD 27.7m, base USD 30.5m, severe USD 47.6m), which are then probability-weighted into a USD 34.0m weighted allowance, with a Jensen-inequality caution box noting this exceeds the USD 32.9m ECL of the weighted-average path">
+<div class="figcap"><b>Exhibit 6.1</b> — The full scenario-conditional ECL pipeline this chapter builds,
+DFAST CSV to probability-weighted allowance. Regenerated in matplotlib
+(<code>notes/assets/img/ch06/build_diagrams.py</code>, numbers from <code>outputs/scenario_ecl/scenario_ecl_report.md</code>).</div>
+
+<img class="fig" src="../assets/img/ch06/02_z_paths.png" alt="Line chart: recovered historical Z from 2000 to 2015 troughing at the GFC, then three scenario Z paths fanning out from the 2015Q1 reporting date -- upside rising toward -0.3, base staying near -0.9, severe plunging to -3.16 before recovering -- all three converging to the same long-run tail around -1.23 by 2020">
+<div class="figcap"><b>Exhibit 6.2</b> — Scenario $Z$ paths from the satellite (&sect;6.5): the recovered
+historical $Z_t$ (Ch.5) feeds the satellite's own fit, then three scenario paths fan out from the reporting
+date and converge onto the shared long-run tail exactly as &sect;6.4 derives. Already in the project's own
+house matplotlib style — embedded, not redrawn
+(<code>outputs/scenario_ecl/z_paths.png</code>, <code>outputs/scenario_ecl/scenario_z_paths.csv</code>).</div>
+
+<div class="warn">
+<b>All three scenarios share the same long-run tail — do not expect differentiation past $h\approx21$.</b>
+Because the reversion target ($\bar v$, the panel's own long-run mean) does not depend on which scenario is
+being extended, up/base/down macro paths are numerically IDENTICAL from $h=21$ onward. Any scenario
+DIFFERENTIATION visible in downstream ECL beyond that horizon comes only from differences already baked into
+the loan population's state as of $h=21$ (e.g. which loans have already defaulted or prepaid differently across
+scenarios) — not from any further macro divergence. &sect;6.9's lifetime-vs-12m discussion returns to exactly
+this point.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does the reversion ramp use a LINEAR interpolation rather than, say, an exponential decay toward the
+long-run mean?
+  <details><summary>Answer</summary>
+  <div class="answer">Linear reversion is the simplest defensible construction that guarantees landing EXACTLY
+  on the long-run mean at a chosen horizon ($h=21$ here) with no free decay-rate parameter to calibrate or
+  justify — consistent with the R&amp;S-window doctrine's own framing (Chapter&nbsp;2's &sect;9.4) of "PIT over
+  the window, TTC in the tail" as a documented convention rather than a fitted dynamic.</div>
+  </details>
+</li>
+<li>At $h=25$, is the base and the down scenario's $hpi\_growth$ value the same or different?
+  <details><summary>Answer</summary>
+  <div class="answer">The same — $h=25>21$, so both paths have already reached and are holding at the shared
+  panel long-run mean $\bar v = 0.009585$ (the warning box above). Any ECL difference between scenarios visible
+  at that late a horizon comes from earlier-accumulated differences in the loan population, not from the macro
+  path itself.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-5">6.5 The satellite macro-link model</h3>
+<!-- ============================================================== -->
+<p>&sect;6.2&ndash;6.4 built 40-quarter macro PATHS. None of that is usable by the Vasicek machinery from
+Chapter&nbsp;5 until it is converted into a $Z$ path — the "satellite" (macro-link) model is exactly that
+converter: a small regression of the RECOVERED credit-cycle factor $Z_t$ (Chapter&nbsp;5's Belkin inversion) on
+lagged macro drivers, standard architecture per &sect;9.1: "regress a credit index&hellip; on macro drivers
+(GDP growth, unemployment, HPI, rates)".</p>
+
+<div class="thm">
+<b>The fitted satellite model.</b>
+$$ Z_t \;=\; -1.6942 \;+\; 13.6424\cdot hpi\_growth\_lag1_t \;+\; 0.7302\cdot gdp\_growth\_lag2_t \;+\; e_t $$
+OLS, $n=57$ quarters (2001Q1&ndash;2015Q1 &mdash; the common estimation sample; the deepest candidate lag
+consumes 3 leading quarters), adjusted $R^2=0.466$, Durbin&ndash;Watson $=1.39$, AIC $=117.05$.
+</div>
+<div class="table-wrap">
+<table>
+<tr><th>term</th><th>coef</th><th>std err</th><th>$t$</th><th>$p$</th></tr>
+<tr><td>const</td><td class="num">&minus;1.6942</td><td class="num">0.1223</td><td class="num">&minus;13.85</td><td class="num">0.0000</td></tr>
+<tr><td>$hpi\_growth\_lag1$</td><td class="num">+13.6424</td><td class="num">2.7312</td><td class="num">+5.00</td><td class="num">0.0000</td></tr>
+<tr><td>$gdp\_growth\_lag2$</td><td class="num">+0.7302</td><td class="num">0.2050</td><td class="num">+3.56</td><td class="num">0.0008</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/satellite/satellite_report.md</code> "The model".</p>
+
+<h4>Variable cards (Requirement&nbsp;12 — every macro term, full honesty)</h4>
+<p>Both regressors below are curated from the same source of truth the app's own
+<code>/api/model/macro_glossary</code> endpoint serves (<code>docs/api_contract.md</code>,
+<code>app/api/main.py</code>) — the notes and the app cannot silently disagree on what these terms mean.</p>
+
+<div class="defn">
+<b>Variable card — <code>hpi_growth_lag1</code> (National HPI, log-growth, 1-quarter lag).</b>
+<ul>
+<li><strong>Source.</strong> The DCR panel's own national House Price Index series. <strong>Honesty check:</strong>
+this is <em>NOT</em> a live FRED pull — the DCR panel's macro columns (UER, HPI, GDP) are a
+vendor-premerged national series on the panel's own ANONYMIZED quarterly clock
+(<code>data/panel/build_panel.py</code>: "macros pre-merged"). The clock's CALENDAR alignment to real quarters
+was independently verified via correlation against FRED UNRATE ($\text{corr}=0.996$, Chapter&nbsp;5 &sect;5.7)
+— that is an anchoring check on the TIMING, not a sourcing claim about the series itself. Identical series and
+transform to the DCR default hazard's own $hpi\_growth\_lag1$ term (Chapter&nbsp;3) — the satellite reuses the
+hazard model's own HPI column exactly, at the same 1-quarter lag.</li>
+<li><strong>Transformation + lag rationale.</strong> $hpi\_growth = \Delta\log(HPI)$, a one-quarter LOG
+difference of the index level (not a percentage difference — the log form is what makes small growth rates
+additive across periods, the same convention DFAST's own HPI-level-to-growth conversion uses, &sect;6.2). Lag
+$=1$ quarter: macro variables act on credit with a documented 1&ndash;2 quarter transmission lag (&sect;9.1);
+1 quarter won the AIC-minimising, sign-admissible specification search below over the candidate 2-quarter lag.</li>
+<li><strong>Units and scale — the log-growth trap.</strong> One "unit" of $hpi\_growth$ (as fed to the
+regression) is a DECIMAL log-difference: $0.0115$ means $+1.15\%$ quarterly HPI growth, NOT $0.0115\%$. This
+is the classic $0.01$-vs-$1$pp misread requirement&nbsp;12 flags — worse here because the SAME satellite
+equation's OTHER driver, $gdp\_growth\_lag2$, is scaled the opposite way (already in whole percentage-point
+units, see that card below): reading both coefficients as if they used the same scale is a real, easy-to-make
+error in this specific model.</li>
+<li><strong>Coefficient reading — worked example (python-computed).</strong> A $+1$pp rise in quarterly HPI
+growth is $\Delta hpi\_growth=0.01$ in the regression's own decimal units. Substituting into the fitted
+coefficient: $$ \Delta Z = 13.6424 \times 0.01 = 0.136424. $$ A one-percentage-point acceleration in house-price
+growth pushes the credit-cycle factor up by about $0.136$ — roughly $14\%$ of a full standard deviation of $Z$
+(recall $Z\sim N(0,1)$ by construction, Chapter&nbsp;5), a non-trivial swing from a single percentage point of
+HPI growth.</li>
+<li><strong>Economic channel.</strong> Collateral / negative-equity channel: rising house prices rebuild
+borrower equity, restoring the option to sell or refinance out of trouble and easing the strategic-default
+incentive that emerges once a mortgage is underwater — the SAME channel Chapter&nbsp;4's LGD model and
+Chapter&nbsp;3's hazard model both cite for their own HPI/LTV terms; this is one economic story told three
+times across three different models in this compendium.</li>
+</ul>
+</div>
+
+<div class="defn">
+<b>Variable card — <code>gdp_growth_lag2</code> (National real GDP growth, 2-quarter lag).</b>
+<ul>
+<li><strong>Source.</strong> Same DCR panel, national real GDP growth series — same honesty statement as the HPI
+card above: vendor-premerged, anonymized-clock, NOT a live FRED pull. This is the ONE series in this compendium
+consumed at two DIFFERENT lags by two different models: the DCR default hazard (Chapter&nbsp;3) uses
+$gdp\_lag1$; the satellite uses $gdp\_growth\_lag2$ — both legitimate, chosen independently by each model's own
+AIC search.</li>
+<li><strong>Transformation + lag rationale.</strong> A plain quarterly growth RATE (not log-differenced, unlike
+HPI) — already the panel's own native concept. Lag $=2$ quarters: the 2-quarter lag is what WON the
+AIC-minimising, sign-admissible specification search (below) over the candidate 1-quarter lag — GDP's effect on
+the credit cycle shows up slightly slower than HPI's in this fit.</li>
+<li><strong>Units and scale.</strong> One "unit" of $gdp\_growth$ here is ALREADY a whole percentage point (a
+value of $0.70$ means $+0.70\%$ quarterly growth, not $70\%$) — the opposite scale convention from
+$hpi\_growth\_lag1$ above. This asymmetry inside one small regression is exactly the trap the units card above
+warns about.</li>
+<li><strong>Coefficient reading — worked example (python-computed).</strong> A $+1$ percentage-point rise in
+quarterly GDP growth is $\Delta gdp\_growth=1.0$ in this term's own (already-percentage-point) units:
+$$ \Delta Z = 0.7302 \times 1.0 = 0.7302. $$ Note this is a MUCH larger $\Delta Z$ per "one unit" than the HPI
+card's $0.136$ — but the two "one units" mean different-sized real-world moves ($1$pp of GDP growth is a large,
+rare quarterly move; $1$pp of HPI growth is a much more common one), so the raw coefficient magnitudes
+($13.64$ vs $0.73$) cannot be compared directly as "HPI matters 19$\times$ more" without first putting both on
+the same real-world unit — exactly what these two worked examples do.</li>
+<li><strong>Economic channel.</strong> Labour-income / general economic-activity channel: GDP growth is the
+broadest available signal of aggregate borrower income and employment prospects — a expanding economy raises
+household income and lowers job-loss risk, both of which reduce the credit-cycle factor's downside pressure. The
+2-quarter (rather than 1-quarter) lag is consistent with GDP being a coincident-to-lagging macro release that
+reaches household balance sheets and behaviour with a delay.</li>
+</ul>
+</div>
+
+<div class="gotcha">
+<b>Gotcha — mixed scales inside one regression are not a bug, but they ARE a live misreading risk.</b>
+$hpi\_growth\_lag1$ enters as a decimal ($0.0115$) and $gdp\_growth\_lag2$ enters as a whole percentage point
+($0.70$) in the SAME fitted equation — both conventions are individually correct (each matches that concept's
+native panel representation, &sect;6.2's ingestion table) but a reader substituting "1.15" for HPI growth
+instead of "0.0115" (mistaking the percentage-point NUMBER for the regression's own decimal unit) would compute
+a $\Delta Z$ 100$\times$ too large from the HPI term alone. Always check which of the two worked-example
+conventions above a given number belongs to before substituting.
+</div>
+
+<h4>Stationarity and lag-selection hygiene</h4>
+<p>Before any coefficient can be trusted, the driver candidates need the standard time-series hygiene check
+&sect;9.1 lists: ADF (null: unit root) and KPSS (null: stationarity) run together (they are complementary, not
+redundant — agreement between opposite-null tests is much stronger evidence than either alone), Durbin-Watson
+for residual autocorrelation, and AIC-based lag/spec selection.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>series</th><th>$n$</th><th>ADF $p$</th><th>KPSS $p$</th><th>verdict</th></tr>
+<tr><td>$Z$ (recovered)</td><td class="num">60</td><td class="num">0.521</td><td class="num">0.033</td><td>unit root — I(1); difference before use</td></tr>
+<tr><td>$uer$ level</td><td class="num">60</td><td class="num">0.458</td><td class="num">0.018</td><td>unit root — I(1); difference before use</td></tr>
+<tr><td>$duer$ (first difference)</td><td class="num">59</td><td class="num">0.222</td><td class="num">0.100</td><td>inconclusive — low power on 59 quarters; economics decides</td></tr>
+<tr><td>$hpi\_growth$</td><td class="num">59</td><td class="num">0.470</td><td class="num">0.100</td><td>inconclusive — low power; economics decides</td></tr>
+<tr><td>$gdp\_growth$</td><td class="num">60</td><td class="num">0.015</td><td class="num">0.100</td><td>stationary — safe to use as-is</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/satellite/satellite_report.md</code> "Stationarity hygiene". KPSS $p$-values
+are table-bounded to $[0.01,0.10]$.</p>
+
+<div class="interpretation">
+<b>Reading the table plainly.</b> The unemployment LEVEL is the one clear-cut I(1) case (ADF cannot reject a
+unit root AND KPSS rejects stationarity — both tests agree), so it enters the candidate driver set only as its
+first difference $duer$, never as a level. $gdp\_growth$ is the one clear-cut stationary case (ADF rejects the
+unit root, KPSS cannot reject stationarity) — safe to use as-is, which is exactly how it enters the chosen
+satellite spec. $Z$ itself and $hpi\_growth$ land in the INCONCLUSIVE middle: on 57&ndash;60 quarters (one
+credit cycle plus a short tail) the tests simply lack the statistical power to distinguish a genuine unit root
+from a highly persistent but stationary process — a real small-sample limitation, not a modelling error, and one
+the report is explicit about rather than silently picking whichever verdict is convenient.
+</div>
+
+<div class="note">
+<b>Specification search — AIC over 26 candidate specs, under a sign-governance constraint.</b> Every non-empty
+subset of $\{duer,\ hpi\_growth,\ gdp\_growth\}$, each driver at lag 1 or 2, estimated on the common sample
+(so AICs are directly comparable) — 26 specifications total. A spec is ADMISSIBLE only if every fitted driver
+coefficient carries its economically expected sign ($duer<0$: rising unemployment should push $Z$ down;
+$hpi\_growth>0$, $gdp\_growth>0$: both should push $Z$ up).
+<div class="table-wrap">
+<table>
+<tr><th>spec</th><th>AIC</th><th>adj $R^2$</th><th>DW</th><th>signs OK</th></tr>
+<tr><td>$hpi\_growth\_lag1$ + $gdp\_growth\_lag2$ <strong>(chosen)</strong></td><td class="num">117.05</td><td class="num">0.466</td><td class="num">1.39</td><td>yes</td></tr>
+<tr><td>$duer\_lag1$ + $hpi\_growth\_lag1$ + $gdp\_growth\_lag1$</td><td class="num">117.38</td><td class="num">0.472</td><td class="num">1.56</td><td><strong>no</strong></td></tr>
+<tr><td>$duer\_lag2$ + $hpi\_growth\_lag1$ + $gdp\_growth\_lag2$</td><td class="num">117.54</td><td class="num">0.470</td><td class="num">1.46</td><td><strong>no</strong></td></tr>
+<tr><td>$hpi\_growth\_lag2$ + $gdp\_growth\_lag2$</td><td class="num">117.86</td><td class="num">0.459</td><td class="num">1.44</td><td>yes</td></tr>
+<tr><td>$hpi\_growth\_lag1$ + $gdp\_growth\_lag1$</td><td class="num">118.21</td><td class="num">0.455</td><td class="num">1.46</td><td>yes</td></tr>
+<tr><td>&hellip; 21 further specs (full grid, nothing hidden)</td><td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td><td>&hellip;</td></tr>
+<tr><td>$gdp\_growth\_lag1$ (driver alone)</td><td class="num">133.12</td><td class="num">0.280</td><td class="num">1.00</td><td>yes</td></tr>
+<tr><td>$duer\_lag2$ (driver alone)</td><td class="num">148.49</td><td class="num">0.058</td><td class="num">0.71</td><td>yes</td></tr>
+</table>
+</div>
+<p class="src">Full 26-row grid: <code>outputs/satellite/satellite_report.md</code> "Specification search".</p>
+The chosen spec is the AIC minimum over the WHOLE grid, not just the sign-admissible subset — it would have won
+either way. Every spec that pairs $duer$ WITH $gdp\_growth$ fits a wrong-signed (positive), insignificant $duer$
+coefficient — a collinearity artefact of a one-cycle sample where the unemployment surge and the GDP contraction
+are the same 2008&ndash;09 episode, not two independent signals; $duer$ alone (coef $-0.7$, $p=0.02$) or
+alongside $hpi\_growth$ only keeps its correct sign but never approaches the chosen spec on AIC. Excluding the
+wrong-signed candidates is standard satellite-model governance (an ex-ante economic constraint, stated before
+seeing the fits), not data dredging — and the full grid, wrong-signed rows included, is reported so nothing is
+hidden.
+</div>
+
+<div class="ex">
+<b>GFC-dummy sensitivity check — does the fit survive de-emphasising the crisis quarters?</b>
+<div class="table-wrap">
+<table>
+<tr><th>term</th><th>coef (no dummy)</th><th>$p$</th><th>coef (with 2007Q4&ndash;2009Q2 dummy)</th><th>$p$</th></tr>
+<tr><td>const</td><td class="num">&minus;1.6942</td><td class="num">0.0000</td><td class="num">&minus;1.5860</td><td class="num">0.0000</td></tr>
+<tr><td>$hpi\_growth\_lag1$</td><td class="num">+13.6424</td><td class="num">0.0000</td><td class="num">+10.0368</td><td class="num">0.0077</td></tr>
+<tr><td>$gdp\_growth\_lag2$</td><td class="num">+0.7302</td><td class="num">0.0008</td><td class="num">+0.7107</td><td class="num">0.0010</td></tr>
+<tr><td>gfc_dummy</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">&minus;0.5411</td><td class="num">0.1409</td></tr>
+</table>
+</div>
+Adjusted $R^2$ rises slightly, $0.466\to0.478$, with the dummy. The HPI coefficient shrinks ($13.64\to10.04$)
+when the GFC quarters are dummied out — part of its estimated leverage genuinely IS the crisis episode, expected
+and unavoidable with a single cycle in-sample — but it stays large, positive and significant; signs and orders
+of magnitude survive the check, which is what the sensitivity test is FOR. A satellite whose sign FLIPPED once
+the crisis was dummied out would be unusable for stress projection; this one does not flip.
+</div>
+
+<img class="fig" src="../assets/img/ch06/03_satellite_fit.png" alt="Two-panel chart: top panel shows the recovered credit-cycle Z_t (purple solid) against the satellite's fitted values (orange dashed) from 2000Q2 to 2015Q1 with the GFC window shaded, both tracking a trough around 2008-09 and a partial recovery after 2010; bottom panel shows the fit residuals as a bar chart around zero across the same calendar axis">
+<div class="figcap"><b>Exhibit 6.3</b> — The satellite fit: recovered $Z_t$ vs the two-driver fitted curve,
+residuals below, GFC shaded, real calendar quarters throughout. Already in the project's own house matplotlib
+style — embedded, not redrawn (<code>outputs/satellite/satellite_fit.png</code>).</div>
+
+<div class="interpretation">
+<b>Reading the exhibit.</b> The fitted curve (orange dashed) tracks the recovered $Z_t$'s (purple solid) broad
+shape — trough during the GFC, gradual recovery after 2010 — closely enough to explain nearly half its variance
+($R^2_{adj}=0.466$) from just two lagged macro drivers, but visibly smooths over the SHARPEST quarter-to-quarter
+swings (the residual panel's largest bars cluster right around 2008&ndash;09 and a few post-2010 quarters) —
+consistent with the documented DW$=1.39$ mild positive residual autocorrelation: a persistent cycle factor
+fitted by a STATIC regression will always leave some autocorrelated signal on the table; the production-grade
+fix (ARDL/ECM dynamics with HAC standard errors, named explicitly in the report) is the documented next rung,
+not implemented here given the 57-quarter, one-cycle sample.
+</div>
+
+<div class="warn">
+<b>Simplified vs full method — stated plainly, not glossed over.</b> This is a STATIC OLS in already-transformed
+(I(0)) drivers with AIC lag selection, sign governance and a GFC-dummy sensitivity check. The PRODUCTION
+STANDARD (&sect;9.1, and named explicitly in <code>outputs/satellite/satellite_report.md</code>) is: ARDL bounds
+testing (Pesaran-Shin-Smith 2001) for a mixed I(0)/I(1) regressor set with a negative-and-significant
+error-correction term; Johansen cointegration ranks if a multivariate system is modelled; structural-break tests
+(Chow, CUSUM) around 2008&ndash;09; HAC (Newey-West) standard errors; and out-of-time backtesting of the $Z$
+forecast. On 57 usable quarters spanning a SINGLE credit cycle, the dynamic terms a full ARDL/ECM specification
+would add are identified by that one episode alone — the static form is the honest, disciplined choice for this
+sample size, not a shortcut taken without knowing the alternative.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is $duer$ (change in unemployment) excluded from the chosen satellite spec even though its sign is
+economically correct when used alone?
+  <details><summary>Answer</summary>
+  <div class="answer">Whenever $duer$ is paired WITH $gdp\_growth$ in the same spec, its fitted coefficient
+  flips to a wrong (positive), insignificant sign — a collinearity artefact of the one-cycle sample (the 2008-09
+  unemployment surge and GDP contraction are the same episode, not independent signals). The sign-governance
+  constraint excludes any spec with a wrong-signed driver; $duer$ alone or with $hpi\_growth$ keeps its correct
+  sign but never wins on AIC against the chosen $hpi\_growth\_lag1$+$gdp\_growth\_lag2$ spec.</div>
+  </details>
+</li>
+<li>A $+2$pp quarterly HPI growth acceleration and a $+2$pp quarterly GDP growth acceleration arrive together.
+What is the combined $\Delta Z$?
+  <details><summary>Answer</summary>
+  <div class="answer">HPI: $\Delta hpi\_growth=0.02$ (decimal units) $\Rightarrow 13.6424\times0.02=0.272848$.
+  GDP: $\Delta gdp\_growth=2.0$ (already-percentage-point units) $\Rightarrow 0.7302\times2.0=1.4604$. Combined
+  $\Delta Z = 0.272848+1.4604=1.733248$ — illustrating the earlier gotcha: naively adding "$2$" for both terms
+  (forgetting HPI's decimal convention) would overstate the HPI contribution 100-fold.</div>
+  </details>
+</li>
+<li>Why does the report run a GFC-dummy sensitivity check rather than simply excluding the GFC quarters from
+the estimation sample entirely?
+  <details><summary>Answer</summary>
+  <div class="answer">With only 57 usable quarters spanning one credit cycle, dropping the GFC quarters entirely
+  would remove most of the sample's genuine cyclical variation — exactly the signal the satellite exists to
+  capture. Dummying the GFC out (rather than dropping it) tests whether the SIGNS and rough MAGNITUDES survive
+  de-emphasising the crisis, without discarding the very episode that identifies the model.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-6">6.6 The missing UER term and the coherent-shock convention</h3>
+<!-- ============================================================== -->
+<p>&sect;6.5's chosen satellite spec is $Z_t=f(hpi\_growth\_lag1,\ gdp\_growth\_lag2)$ — unemployment does not
+appear anywhere in it. That has a real, load-bearing consequence for anyone (a human analyst, or the project's
+own Copilot agent) wanting to ask "what if unemployment rose by 2pp?".</p>
+
+<div class="derivation">
+<b>Derivation — why a univariate UER shock cannot reach $Z$.</b>
+<div class="step"><span class="stepno">1.</span> $Z_t$ is an EXPLICIT function of exactly two inputs:
+$Z_t = -1.6942+13.6424\cdot hpi\_growth\_lag1_t+0.7302\cdot gdp\_growth\_lag2_t$ (&sect;6.5). No term in this
+equation reads $uer$, in any lag or transformation.</div>
+<div class="step"><span class="stepno">2.</span> Suppose a UER shock is applied "naively": add $+2$pp to the
+scenario path's $uer$ column, hold $hpi\_growth$ and $gdp\_growth$ at their unshocked (base-scenario) values.</div>
+<div class="step"><span class="stepno">3.</span> Evaluate $Z_t$ on the shocked path: since neither
+$hpi\_growth\_lag1$ nor $gdp\_growth\_lag2$ changed, EVERY term on the right-hand side of step&nbsp;1's equation
+is identical to the unshocked evaluation. $$ Z_t^{shocked} = Z_t^{base}. $$</div>
+<div class="step"><span class="stepno">4.</span> Since $Z$ is unchanged, $PD_{PIT}(Z)$ (Chapter&nbsp;5) is
+unchanged, and therefore the ENTIRE downstream ECL is unchanged: $\Delta ECL = \$0.00$. A UER-only question,
+asked naively, returns a null answer — not because unemployment is economically irrelevant, but because this
+PARTICULAR fitted spec never lets it speak.</div>
+</div>
+
+<div class="warn">
+<b>This is a small-sample identification artefact, not an economic claim.</b>
+&sect;6.5's specification search already showed WHY $duer$ is excluded: every spec pairing it with
+$gdp\_growth$ fits a wrong-signed, insignificant $duer$ coefficient — a collinearity artefact of a single
+credit cycle in which the unemployment surge and the GDP contraction are the same 2008&ndash;09 episode. The
+missing UER term is a documented consequence of &sect;6.5's sign-governance search, not a statement that
+unemployment does not matter to credit risk (Chapter&nbsp;3's own hazard model fits a strongly significant,
+correctly-signed $uer\_lag1$ coefficient on the very same panel).
+</div>
+
+<h4>The solution: shock along the DFAST severe-minus-base co-movement direction</h4>
+<p>Since DFAST's supervisory paths already encode a jointly-plausible multivariate co-movement (&sect;6.2 —
+that coherence is the entire reason the project ingests DFAST rather than hand-rolling paths), the fix reuses
+that structure: a "UER shock" is implemented not as a UER-only move, but as a co-moving shift of ALL THREE
+concepts, in the SAME relative proportions the DFAST severely-adverse path itself moves them.</p>
+
+<div class="defn">
+<b>The coherent-shock convention.</b> Define the co-movement loading of concept $c$ onto a $1$-unit move of
+the named shock variable $v$ as
+$$ \beta_{v\to c} \;=\; \frac{\langle \delta_v,\ \delta_c\rangle}{\langle \delta_v,\ \delta_v\rangle}, \qquad
+\delta_c = \text{severe}_c - \text{base}_c\ \text{over the 13q R\&S window (&sect;6.2's deltas)}, $$
+the ordinary-least-squares loading of concept $c$'s severe-minus-base delta path onto concept $v$'s own
+severe-minus-base delta path (by construction $\beta_{v\to v}=1$). A named shock of size $s$ in variable $v$ is
+then applied as a co-moving perturbation to EVERY concept: $$ \Delta_h(c) = s\cdot\beta_{v\to c}\cdot
+\text{profile}(h), $$ added to the BASE scenario path at every horizon quarter $h$, where
+$\text{profile}(h)$ is the shock's time SHAPE (parallel: constant $1$ every quarter, a sustained level move;
+peak-revert: ramps up over 4 quarters, holds through the R&amp;S window, decays back to 0 over the reversion
+ramp).
+</div>
+
+<div class="ex">
+<b>Worked example — the full chain, one shock, every number shown.</b> Shock: UER $+2$pp, shape
+<code>parallel</code>. All values re-derived directly from a live re-run of <code>agent/tools_tier1.py</code>'s
+<code>shock_macro</code> tool against the project's own frozen engine (warm model cache,
+<code>outputs/models/tier1_models.joblib</code>) — this reproduces the recorded trace in
+<code>outputs/agent_log/tool_calls.jsonl</code> exactly.
+<div class="step"><span class="stepno">1.</span> <strong>Co-movement loadings</strong> (severe-minus-base,
+13-quarter R&amp;S window; <code>agent.tools_tier1._comovement_betas</code>):
+$$ \beta_{uer\to uer}=1.0,\qquad \beta_{uer\to hpi\_growth}=-0.0041294,\qquad \beta_{uer\to gdp\_growth}=-0.0545163. $$
+Both loadings are negative — rising unemployment co-moves with FALLING house-price growth and FALLING GDP
+growth in DFAST's own severe-minus-base direction, exactly the sign an economist would expect of a coherent
+downturn.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Per-concept deltas</strong>, applied at EVERY quarter
+(shape <code>parallel</code> $\Rightarrow \text{profile}(h)=1$ for all $h$), with $s=+2.0$pp:
+$$ \Delta(uer) = 2.0\times1.0 = +2.00\text{pp}, \quad \Delta(hpi\_growth) = 2.0\times(-0.0041294) = -0.0082587\ (\text{decimal}) = -0.826\text{pp/q}, $$
+$$ \Delta(gdp\_growth) = 2.0\times(-0.0545163) = -0.1090326\text{pp/q}. $$
+A $+2$pp unemployment shock therefore also drags quarterly HPI growth down by about $0.83$pp and quarterly GDP
+growth down by about $0.11$pp, every single quarter of the 40-quarter horizon — a genuinely coherent, if
+stylised, downturn.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Propagation into the shocked $Z$ path.</strong> Because
+$hpi\_growth\_lag1$ enters at a 1-quarter lag and $gdp\_growth\_lag2$ at a 2-quarter lag, the shock's effect on
+$Z$ PHASES IN over the first two quarters, then holds at a steady state:
+<div class="table-wrap">
+<table>
+<tr><th>$h$</th><th>1</th><th>2</th><th>3</th><th>4</th><th>&hellip;</th></tr>
+<tr><td>$Z^{base}_h$</td><td class="num">&minus;1.09531</td><td class="num">&minus;0.99139</td><td class="num">&minus;0.83745</td><td class="num">&minus;0.86267</td><td>&hellip;</td></tr>
+<tr><td>$Z^{shocked}_h$</td><td class="num">&minus;1.09531</td><td class="num">&minus;1.10405</td><td class="num">&minus;1.02973</td><td class="num">&minus;1.05495</td><td>&hellip;</td></tr>
+<tr><td>$\Delta Z_h$</td><td class="num">0.00000</td><td class="num">&minus;0.11267</td><td class="num">&minus;0.19228</td><td class="num">&minus;0.19228</td><td>steady from $h=3$</td></tr>
+</table>
+</div>
+$h=1$: neither lag has reached a shocked quarter yet (both lags reach back into the unshocked history), so
+$\Delta Z=0$ exactly. $h=2$: only the 1-quarter HPI lag has reached a shocked quarter:
+$\Delta Z = 13.6424\times(-0.0082587)=-0.11267$. $h\ge3$: BOTH lags are inside the shocked region and the shock
+is sustained (parallel), so $\Delta Z$ settles at its steady state — matching step&nbsp;2's deltas run straight
+through the fitted coefficients: $$ \Delta Z_{steady} = 13.6424\times(-0.0082587) + 0.7302\times(-0.1090326) =
+-0.11267-0.07961 = -0.19228, $$ exactly reproducing the table's $h\ge3$ column.</div>
+<div class="step"><span class="stepno">4.</span> <strong>Vasicek PIT-condition and re-run the frozen ECL
+engine</strong> ($\rho=0.0227$, Chapter&nbsp;5's own calibration) on all 7,849 live/performing exposures at the
+$t=60$ reporting date: baseline (unshocked base scenario) reported allowance $\$30{,}454{,}080.65$; shocked
+reported allowance $\$31{,}694{,}012.25$.
+<div class="table-wrap">
+<table>
+<tr><th>quantity</th><th>value</th></tr>
+<tr><td>baseline reported allowance</td><td class="num">\$30.454m</td></tr>
+<tr><td>shocked reported allowance</td><td class="num">\$31.694m</td></tr>
+<tr><td>delta</td><td class="num">+\$1.240m</td></tr>
+<tr><td>delta, %</td><td class="num">+4.07%</td></tr>
+<tr><td>baseline coverage</td><td class="num">1.82%</td></tr>
+<tr><td>shocked coverage</td><td class="num">1.89%</td></tr>
+</table>
+</div>
+Matching, to display rounding, the recorded agent trace: <em>"UER +2pp (parallel) coherent shock of the base
+scenario: reported allowance \$30.5m -&gt; \$31.7m (delta +1.2m, +4.1%), shocked coverage 1.89%"</em>
+(<code>outputs/agent_log/tool_calls.jsonl</code>, <code>outputs/demo/e2e_trace.json</code>). Staging is FROZEN
+at the reporting date (unaffected by the shock by construction, &sect;6.9 returns to this), so the entire delta
+lands in remeasurement — no loan changes stage; every loan's ECL simply moves up because its PIT hazard did.</div>
+</div>
+
+<img class="fig" src="../assets/img/ch06/04_coherent_shock_sketch.png" alt="Two-lane diagram: left lane (red, marked wrong) shows a naive UER-only shock holding hpi_growth and gdp_growth fixed, which the satellite equation ignores entirely since it has no uer term, producing a zero ECL delta; right lane (green, marked correct) shows the coherent shock computing co-movement betas, applying per-concept deltas to hpi_growth and gdp_growth as well as uer every quarter, producing a shocked Z path that steadily diverges from the base path, which the Vasicek transform and frozen ECL engine turn into a real allowance increase from USD 30.454m to USD 31.694m">
+<div class="figcap"><b>Exhibit 6.4</b> — The coherent-shock convention: a naive univariate UER shock (left, red)
+cannot reach $Z$ at all; the co-moving DFAST-direction shock (right, green) reaches $Z$ and reproduces the
+recorded agent trace. Regenerated in matplotlib
+(<code>notes/assets/img/ch06/build_diagrams.py</code>, numbers from <code>agent/tools_tier1.py</code> and
+<code>outputs/agent_log/tool_calls.jsonl</code>).</div>
+
+<div class="interpretation">
+<b>Interpretation — this is the agent's Tier-1 <code>shock_macro</code> tool, not a one-off calculation.</b>
+Every number in the worked example above is exactly what a user of the project's Copilot agent
+(Chapter&nbsp;8) sees when they ask "what happens if unemployment rises 2 percentage points?" — the coherent-shock
+convention is not a notes-only illustration, it is the production mechanism
+(<code>agent/tools_tier1.py</code>'s <code>shock_macro</code>) standing between a natural-language macro
+question and a number the LLM is never allowed to compute itself (the governing rule, Chapter&nbsp;8: the LLM
+routes and narrates, the frozen engine computes).
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a missing regressor does not mean "the tool ignores your shock".</b> It would be easy to conclude,
+on seeing $Z=f(hpi\_growth,gdp\_growth)$ has no $uer$ term, that a UER-shock QUESTION is simply unanswerable.
+It is answerable — just not by holding the OTHER concepts fixed. The coherent-shock convention answers exactly
+the question asked ("what if UER rises 2pp, consistent with how UER actually co-moves with the rest of the
+economy in a coherent scenario") rather than a strictly-impossible one ("what if UER rises 2pp and NOTHING
+else about the economy changes at all", which is not how real recessions or booms behave).
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is $\Delta Z_h$ exactly zero at $h=1$ but not at $h=2$ or later?
+  <details><summary>Answer</summary>
+  <div class="answer">$Z_h$ depends on $hpi\_growth\_lag1$ (one quarter back) and $gdp\_growth\_lag2$ (two
+  quarters back). At $h=1$ both lags reach back into the UNSHOCKED historical panel (before the shock begins),
+  so every input to the $Z_1$ formula is identical between the baseline and shocked runs. From $h=2$ onward the
+  1-quarter HPI lag starts reaching into shocked quarters, and from $h=3$ onward so does the 2-quarter GDP lag —
+  which is exactly when $\Delta Z$ reaches its steady state.</div>
+  </details>
+</li>
+<li>Both co-movement loadings $\beta_{uer\to hpi\_growth}$ and $\beta_{uer\to gdp\_growth}$ are NEGATIVE. What
+would a positive loading have implied, and why would that have been economically suspicious?
+  <details><summary>Answer</summary>
+  <div class="answer">A positive loading would mean rising unemployment co-moves with RISING house-price growth
+  or RISING GDP growth in DFAST's own severe-minus-base direction — the opposite of how a real coherent downturn
+  behaves (unemployment rises WHILE growth and house prices fall). The negative signs confirm the DFAST
+  severely-adverse path is internally coherent in the economically expected direction, which is exactly the
+  property the coherent-shock convention exists to preserve.</div>
+  </details>
+</li>
+<li>If the shape were <code>peak_revert</code> instead of <code>parallel</code>, would the steady-state
+$\Delta Z_{steady}=-0.19228$ computed in step&nbsp;3 still apply at $h=30$?
+  <details><summary>Answer</summary>
+  <div class="answer">No — <code>peak_revert</code> ramps the shock up over 4 quarters, holds it through the
+  13-quarter R&amp;S window, then decays it back to ZERO over the reversion ramp, so by $h=30$ (well past the
+  21-quarter reversion horizon) the applied deltas — and hence $\Delta Z$ — would be back to zero. The
+  $-0.19228$ steady state in the worked example is specific to the <code>parallel</code> shape, which is a
+  SUSTAINED level move that deliberately does not revert.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-7">6.7 Jensen's inequality, proved</h3>
+<!-- ============================================================== -->
+<p>&sect;6.1 quoted the theorem: "ECL is a convex function of the macro state&hellip; hence
+$\mathbb{E}[f(X)]\ge f(\mathbb{E}[X])$". This section proves BOTH halves that quote asserts without deriving:
+Jensen's inequality itself, and the specific claim that ECL is convex in $Z$ — the flagged expansion,
+backlog D-6.</p>
+
+<h4>Lemma — averaging the macro paths IS averaging $Z$ (because the satellite is linear)</h4>
+<div class="derivation">
+<b>Derivation.</b> Let $x_{1,h,s}, x_{2,h,s}$ denote scenario $s$'s $hpi\_growth\_lag1$, $gdp\_growth\_lag2$ at
+horizon $h$, and $Z_{h,s}=c+b_1 x_{1,h,s}+b_2 x_{2,h,s}$ the satellite (&sect;6.5), with weights $w_s$,
+$\sum_s w_s=1$.
+<div class="step"><span class="stepno">1.</span> The weighted-AVERAGE macro path's own driver values at $h$ are,
+by definition, $\bar x_{1,h}=\sum_s w_s x_{1,h,s}$ and $\bar x_{2,h}=\sum_s w_s x_{2,h,s}$ (&sect;6.1's
+$\overline{path}$ definition).</div>
+<div class="step"><span class="stepno">2.</span> Evaluate the satellite AT that averaged path:
+$Z(\bar{path})_h = c+b_1\bar x_{1,h}+b_2\bar x_{2,h}$.</div>
+<div class="step"><span class="stepno">3.</span> Compare against the weighted average of the PER-SCENARIO $Z$
+values: $$ \sum_s w_s Z_{h,s} = \sum_s w_s\big(c+b_1 x_{1,h,s}+b_2 x_{2,h,s}\big) = c\underbrace{\sum_s
+w_s}_{=1} + b_1\sum_s w_s x_{1,h,s} + b_2\sum_s w_s x_{2,h,s} = c+b_1\bar x_{1,h}+b_2\bar x_{2,h}. $$</div>
+<div class="step"><span class="stepno">4.</span> Steps 2 and 3 are the SAME expression: $$ Z(\bar{path})_h =
+\sum_s w_s Z_{h,s}. $$ Averaging the macro paths first and then computing $Z$ gives exactly the same $Z$ as
+averaging the per-scenario $Z$'s directly — a consequence purely of the satellite being LINEAR in its drivers
+and the weights summing to 1 (the constant term $c$ is unaffected either way). This holds at every horizon $h$.</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> This lemma is why &sect;6.1's two definitions of "single-path ECL" — "average the macro
+paths, then run the engine" and "average $Z$, then run the PIT/ECL machinery" — are the SAME calculation, not
+two different approximations that happen to agree. It also explains why the linearity is load-bearing: if the
+satellite itself were nonlinear in its drivers, $Z(\bar{path})\ne\sum_s w_s Z_s$ in general, and the whole
+Jensen argument below would need to be restated in terms of the DRIVER distribution rather than $Z$'s.
+</div>
+
+<h4>Part (a) — Jensen's inequality for a general convex function</h4>
+<div class="defn">
+<b>Convexity.</b> A twice-differentiable function $f$ is CONVEX on an interval if $f''(x)\ge0$ for every $x$ in
+that interval. Equivalently (the definition the proof below uses): at every point $\mu$, the tangent line
+$\ell(x)=f(\mu)+f'(\mu)(x-\mu)$ lies entirely ON OR BELOW the curve: $\ell(x)\le f(x)$ for all $x$ — a convex
+function always sits above its own tangent lines.
+</div>
+
+<div class="derivation">
+<b>Derivation — Jensen's inequality via the supporting-line argument.</b>
+<div class="step"><span class="stepno">1.</span> Let $X$ be a random variable and $f$ convex. Set
+$\mu=\mathbb{E}[X]$ and form the tangent line to $f$ AT $\mu$: $\ell(x)=f(\mu)+f'(\mu)(x-\mu)$.</div>
+<div class="step"><span class="stepno">2.</span> By the definition of convexity above, $\ell(x)\le f(x)$ for
+EVERY $x$ — in particular, for every possible realisation of $X$: $$ \ell(X) \le f(X)\quad\text{(pointwise, for
+every outcome).} $$</div>
+<div class="step"><span class="stepno">3.</span> Take expectations of both sides (expectation preserves a
+pointwise $\le$ inequality): $$ \mathbb{E}[\ell(X)] \le \mathbb{E}[f(X)]. $$</div>
+<div class="step"><span class="stepno">4.</span> Expand the left side using $\ell$'s own definition and
+linearity of expectation: $$ \mathbb{E}[\ell(X)] = \mathbb{E}\big[f(\mu)+f'(\mu)(X-\mu)\big] = f(\mu) +
+f'(\mu)\big(\mathbb{E}[X]-\mu\big). $$ But $\mu:=\mathbb{E}[X]$ by construction (step&nbsp;1), so
+$\mathbb{E}[X]-\mu=0$ and the second term VANISHES: $\mathbb{E}[\ell(X)]=f(\mu)=f(\mathbb{E}[X])$.</div>
+<div class="step"><span class="stepno">5.</span> Substituting step&nbsp;4 into step&nbsp;3: $$ \boxed{\,
+f(\mathbb{E}[X]) \;\le\; \mathbb{E}[f(X)]\,} $$ — Jensen's inequality, for any convex $f$ and any random variable
+$X$ with a finite mean. $\blacksquare$</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The whole proof is one idea: a convex curve sits above every one of its own tangent
+lines, so averaging the CURVE's height (the right side) can never fall below averaging the TANGENT LINE's height
+at the mean (the left side, which collapses exactly to $f$ evaluated at the mean, because a tangent line's own
+average over any distribution centred at its point of tangency is just its value there). No assumption about
+$X$'s distribution beyond a finite mean is needed — this is why the result applies unchanged whether $X$ is
+&sect;6.5's continuous $Z$ or a discrete 3-point scenario weighting like &sect;6.8&ndash;6.9's.
+</div>
+
+<h4>Part (b) — $PD_{PIT}(Z)$ is convex in $Z$ (the Vasicek second derivative)</h4>
+<p>Chapter&nbsp;5 derived $PD_{PIT}(Z)=\Phi\!\big((c-\sqrt{\rho}Z)/\sqrt{1-\rho}\big)$, $c=\Phi^{-1}(PD_{TTC})$.
+Rewrite it in a form the calculus below is easiest to carry through:</p>
+
+<div class="derivation">
+<b>Derivation — the sign of $\partial^2 PD_{PIT}/\partial Z^2$.</b>
+<div class="step"><span class="stepno">1.</span> <strong>Rewrite.</strong> Let $A=\dfrac{c}{\sqrt{1-\rho}}$ and
+$B=\sqrt{\dfrac{\rho}{1-\rho}}>0$ (both constants, given $PD_{TTC}$ and $\rho$). Then $PD_{PIT}(Z)=\Phi(A-BZ)$ —
+the same function as Chapter&nbsp;5's, just relabelled so the chain rule below has fewer moving pieces.</div>
+<div class="step"><span class="stepno">2.</span> <strong>First derivative.</strong> $\dfrac{d}{dZ}\Phi(A-BZ) =
+\phi(A-BZ)\cdot\dfrac{d}{dZ}(A-BZ) = -B\,\phi(A-BZ)$, where $\phi$ is the standard normal DENSITY (the
+derivative of $\Phi$ is $\phi$, by definition of the CDF).</div>
+<div class="step"><span class="stepno">3.</span> <strong>The density's own derivative.</strong>
+$\phi(x)=\frac{1}{\sqrt{2\pi}}e^{-x^2/2}$, so $\phi'(x) = \frac{1}{\sqrt{2\pi}}\cdot(-x)\,e^{-x^2/2} =
+-x\,\phi(x)$ — a standard, self-contained identity used again in step&nbsp;4.</div>
+<div class="step"><span class="stepno">4.</span> <strong>Second derivative, via the chain rule again.</strong>
+$$ \frac{d^2}{dZ^2}\Phi(A-BZ) = \frac{d}{dZ}\big[-B\,\phi(A-BZ)\big] = -B\cdot\phi'(A-BZ)\cdot(-B) =
+B^2\,\phi'(A-BZ). $$ Substituting step&nbsp;3's identity with $x=A-BZ$: $$ \boxed{\,\frac{d^2
+PD_{PIT}}{dZ^2} = -B^2\,(A-BZ)\,\phi(A-BZ)\,} $$</div>
+<div class="step"><span class="stepno">5.</span> <strong>Sign analysis.</strong> $B^2>0$ always, and
+$\phi(A-BZ)>0$ always (a normal density is never zero or negative) — so the SIGN of the second derivative is
+exactly the sign of $-(A-BZ)=BZ-A$. Since $B>0$: $$ \frac{d^2 PD_{PIT}}{dZ^2} > 0 \quad\Longleftrightarrow\quad
+Z > \frac{A}{B} = \frac{c}{\sqrt{\rho}}. $$ $PD_{PIT}(Z)$ is CONVEX for $Z$ above this threshold and concave
+below it — an inflection point at $Z^*=c/\sqrt{\rho}$.</div>
+</div>
+
+<div class="ex">
+<b>Worked example — locating the inflection point, both calibrations.</b> Numerically verified against a
+central finite-difference second derivative at 7 marked $Z$ points (agreement to 6 decimals throughout):
+<div class="table-wrap">
+<table>
+<tr><th>calibration</th><th>$PD_{TTC}$</th><th>$\rho$</th><th>$c=\Phi^{-1}(PD_{TTC})$</th><th>$Z^*=c/\sqrt{\rho}$</th></tr>
+<tr><td>toy (&sect;6.8's fixture)</td><td class="num">2.00%</td><td class="num">0.12</td><td class="num">&minus;2.0537</td><td class="num">&minus;5.929</td></tr>
+<tr><td>project's own calibration</td><td class="num">1.3488%</td><td class="num">0.0227</td><td class="num">&minus;2.2119</td><td class="num">&minus;14.681</td></tr>
+</table>
+</div>
+Both inflection points sit far below any $Z$ this compendium ever evaluates ($Z\in[-3,3]$ throughout Chapter&nbsp;5
+and this chapter). $PD_{PIT}(Z)$ is therefore CONVEX over the ENTIRE realistic domain for both calibrations —
+concavity would only appear at a $Z$ so extreme (more than 5, or nearly 15, standard deviations below the cycle
+mean) that it corresponds to no economically meaningful scenario.
+</div>
+
+<div class="interpretation">
+<b>Interpretation — why the inflection point is always this far out.</b> $c=\Phi^{-1}(PD_{TTC})$ is strongly
+negative for any realistic portfolio PD (a $2\%$ PD gives $c\approx-2.05$; smaller PDs push $c$ even more
+negative), and dividing by $\sqrt{\rho}$ — a SMALL number for any realistic asset correlation — makes $Z^*$ even
+more negative still. The smaller the calibrated $\rho$ (the project's own $0.0227$ vs the toy's $0.12$), the
+FURTHER out the inflection point sits, and the more robustly convex $PD_{PIT}$ is across the whole realistic
+range — the same $1/\sqrt{\rho}$ sensitivity Chapter&nbsp;5 &sect;5.6&ndash;5.7 already flagged as amplifying
+the $Z$-recovery inversion.
+</div>
+
+<h4>Part (c) — convexity survives the scale-up from $PD_{PIT}$ to ECL</h4>
+<div class="derivation">
+<b>Derivation.</b>
+<div class="step"><span class="stepno">1.</span> $ECL(Z) = EAD\cdot LGD\cdot PD_{PIT}(Z)$ (Chapter&nbsp;2's ECL
+formula, holding $EAD$ and $LGD$ fixed at their scenario-invariant values — &sect;6.9 returns to exactly this
+simplification for the project's own book).</div>
+<div class="step"><span class="stepno">2.</span> $EAD\cdot LGD$ is a POSITIVE constant with respect to $Z$
+(both are positive quantities, and neither depends on $Z$ under this simplification), so
+$$ \frac{d^2 ECL}{dZ^2} = EAD\cdot LGD\cdot\frac{d^2 PD_{PIT}}{dZ^2}. $$</div>
+<div class="step"><span class="stepno">3.</span> Since $EAD\cdot LGD>0$, the sign of $d^2 ECL/dZ^2$ is IDENTICAL
+to the sign of $d^2 PD_{PIT}/dZ^2$ — multiplying a function by a positive constant never changes where it is
+convex. Combined with part&nbsp;(b): $ECL(Z)$ is convex over the same realistic $Z$ range $PD_{PIT}(Z)$ is.</div>
+</div>
+
+<div class="thm">
+<b>Putting it together.</b> By part&nbsp;(c), $ECL(Z)$ is convex over the realistic $Z$ range. By part&nbsp;(a),
+Jensen's inequality then gives $$ ECL\big(\mathbb{E}[Z]\big) \;\le\; \mathbb{E}\big[ECL(Z)\big]. $$ By the
+lemma, $\mathbb{E}[Z]$ under the scenario weighting is exactly $Z$ of the weighted-average macro path, so the
+left side is $ECL(\bar{s})$ — &sect;6.1's single-path ECL — and the right side is $ECL_{PW}=\sum_s w_s\,ECL(s)$
+— &sect;6.1's probability-weighted ECL. This is precisely the theorem &sect;6.1 quoted, now fully derived:
+$$ ECL(\bar{s}) \;\le\; ECL_{PW}. $$
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the proof needs convexity over the RANGE actually visited, not everywhere.</b> Jensen's inequality
+as stated requires $f$ convex on the interval containing every realisation of $X$ — it does not need global
+convexity. Part&nbsp;(b)'s inflection-point calculation is doing real work here: it is not enough to say
+"$PD_{PIT}$ is usually convex", the proof needs to confirm the SPECIFIC $Z$ values every scenario in
+&sect;6.8&ndash;6.9 actually visits sit above $Z^*$ — which the worked example did explicitly, for both
+calibrations used in this chapter.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In the supporting-line proof (part a), which step would fail if $f$ were CONCAVE instead of convex?
+  <details><summary>Answer</summary>
+  <div class="answer">Step&nbsp;2 — for a concave function the tangent line lies ON OR ABOVE the curve
+  ($\ell(x)\ge f(x)$), not below it, which flips the inequality all the way through to
+  $f(\mathbb{E}[X])\ge\mathbb{E}[f(X)]$ — the reverse of Jensen's inequality for convex functions.</div>
+  </details>
+</li>
+<li>Why does the lemma (averaging paths = averaging $Z$) matter for the overall proof, rather than just being a
+bookkeeping convenience?
+  <details><summary>Answer</summary>
+  <div class="answer">Jensen's inequality is a statement about $f(\mathbb{E}[X])$ vs $\mathbb{E}[f(X)]$ for ONE
+  random variable $X$. Without the lemma, "$ECL$ of the averaged macro path" and "$ECL$ evaluated at
+  $\mathbb{E}[Z]$" would be two different quantities that might not even be provably related — the lemma is
+  what identifies &sect;6.1's practical, path-level definition of single-path ECL with the $Z$-level quantity
+  the Jensen proof is actually about.</div>
+  </details>
+</li>
+<li>At the project's own calibration ($\rho=0.0227$), is $PD_{PIT}(Z)$ convex at $Z=-3$?
+  <details><summary>Answer</summary>
+  <div class="answer">Yes — the inflection point is at $Z^*\approx-14.68$, far below $-3$, and convexity holds
+  for $Z>Z^*$ (part b, step 5). $Z=-3$ is comfortably inside the convex region for this calibration.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-8">6.8 The toy fixture: quantifying a 1.9&times; understatement</h3>
+<!-- ============================================================== -->
+<p>&sect;6.7 proved the DIRECTION of the Jensen gap. This section quantifies it on the source notes' own toy
+3-scenario example — every step, every intermediate value, pasted directly from
+<code>tests/fixtures/compute_scenarios.py</code>'s <code>RESULTS</code> (which reproduces the source notes'
+own printed &sect;9.2 table to displayed precision).</p>
+
+<div class="defn">
+<b>The toy setup (&sect;9.2's worked example).</b> $EAD=$&euro;$100$m, $LGD=40\%$, $PD_{TTC}=2\%$, $\rho=0.12$
+— the SAME calibration Chapter&nbsp;5 &sect;5.3's golden fixture uses, so its already-computed threshold
+constants carry over unchanged: $c=\Phi^{-1}(0.02)=-2.053749$, $\sqrt{\rho}=0.346410$, $\sqrt{1-\rho}=0.938083$.
+GDP growth maps onto the cycle factor via $Z=(g-2.0)/1.5$. Three scenarios:
+<div class="table-wrap">
+<table>
+<tr><th>scenario</th><th>$g$</th><th>weight $w$</th></tr>
+<tr><td>upside</td><td class="num">+3.5%</td><td class="num">0.25</td></tr>
+<tr><td>base</td><td class="num">+2.0%</td><td class="num">0.50</td></tr>
+<tr><td>downside</td><td class="num">&minus;2.5%</td><td class="num">0.25</td></tr>
+</table>
+</div>
+</div>
+
+<div class="ex">
+<b>Worked example — every scenario's $Z\to PD_{PIT}\to ECL$ chain.</b>
+<div class="table-wrap">
+<table>
+<tr><th>scenario</th><th>$Z=(g-2.0)/1.5$</th><th>$PD_{PIT}(Z)$</th><th>$ECL=PD\cdot LGD\cdot EAD$</th></tr>
+<tr><td>upside</td><td class="num">$(3.5-2.0)/1.5=1.0$</td><td class="num">0.5255% (Ch.5 &sect;5.3 table)</td><td class="num">&euro;0.21m</td></tr>
+<tr><td>base</td><td class="num">$(2.0-2.0)/1.5=0.0$</td><td class="num">1.4287% (Ch.5 &sect;5.3 table)</td><td class="num">&euro;0.57m</td></tr>
+<tr><td>downside</td><td class="num">$(-2.5-2.0)/1.5=-3.0$</td><td class="num">13.9742% (new, below)</td><td class="num">&euro;5.59m</td></tr>
+</table>
+</div>
+The upside and base $PD_{PIT}$ values are LIFTED directly from Chapter&nbsp;5's own &sect;5.3 six-point table
+(same $\rho$, same $PD_{TTC}$, so the same threshold constants apply unchanged) — only the downside row is new
+here, since Chapter&nbsp;5's table did not tabulate $Z=-3.0$:
+$$ \text{numerator} = c-\sqrt{\rho}Z = -2.053749-(0.346410)(-3.0) = -2.053749+1.039230 = -1.014519, $$
+$$ \text{ratio} = -1.014519/0.938083 = -1.081481, \qquad PD_{PIT}(-3.0)=\Phi(-1.081481)=13.9742\%. $$
+$ECL$ per scenario: upside $0.005255\times0.40\times100=0.2102\to$&euro;$0.21$m; base
+$0.014287\times0.40\times100=0.5715\to$&euro;$0.57$m; downside $0.139742\times0.40\times100=5.5897\to$&euro;$5.59$m
+— all three matching <code>RESULTS['upside_ecl_eurm']</code>/<code>base_ecl_eurm</code>/<code>downside_ecl_eurm</code>
+to displayed precision.
+</div>
+
+<div class="ex">
+<b>Worked example — probability-weighted ECL vs single-averaged-path ECL.</b>
+<div class="step"><span class="stepno">1.</span> <strong>Probability-weighted ECL</strong> (&sect;6.1's
+$ECL_{PW}$ — average the RESULTS): $$ ECL_{PW} = 0.25(0.2102)+0.50(0.5715)+0.25(5.5897) = 0.05255+0.28575+1.39743
+= 1.7357\text{m} \to \boldsymbol{\text{\euro}1.74\text{m}}. $$</div>
+<div class="step"><span class="stepno">2.</span> <strong>Weighted-average GDP growth path:</strong>
+$$ \bar g = 0.25(3.5)+0.50(2.0)+0.25(-2.5) = 0.875+1.0-0.625 = 1.25\%. $$</div>
+<div class="step"><span class="stepno">3.</span> <strong>$Z$ and $PD_{PIT}$ AT that averaged path</strong> (the
+lemma, &sect;6.7: this is identically $\sum_s w_s Z_s$, computed here directly from $\bar g$ for a clean single
+substitution): $$ \bar Z = (1.25-2.0)/1.5 = -0.5, \qquad \text{numerator}=-2.053749-(0.346410)(-0.5)=-1.880544,
+$$ $$ \text{ratio}=-1.880544/0.938083=-2.004667, \qquad PD_{PIT}(-0.5)=\Phi(-2.004667)=2.2499\%. $$</div>
+<div class="step"><span class="stepno">4.</span> <strong>Single-path ECL</strong> (&sect;6.1's $ECL(\bar s)$):
+$$ ECL(\bar s) = 0.022499\times0.40\times100 = 0.9000\text{m} \to \boldsymbol{\text{\euro}0.90\text{m}}. $$</div>
+<div class="step"><span class="stepno">5.</span> <strong>The Jensen gap, quantified:</strong>
+$$ \text{understatement} = 100\times\Big(1-\frac{0.9000}{1.7357}\Big) = 100\times(1-0.51849) =
+\boldsymbol{48.15\%}, \qquad \frac{ECL_{PW}}{ECL(\bar s)} = \frac{1.7357}{0.9000} = \boldsymbol{1.9286\times}. $$
+Both figures match <code>RESULTS['understatement_pct']</code> ($48.15$, notes' own printed "$48\%$") and
+<code>RESULTS['weighted_over_single_ratio']</code> ($1.9286$, notes' own printed "$\sim1.9\times$").</div>
+</div>
+
+<img class="fig" src="../assets/img/ch06/05_toy_jensen_chord.png" alt="Line chart: convex ECL(Z) curve from the toy Vasicek formula, with the three toy scenario points (upside, base, downside) sitting exactly on the curve, a purple diamond marking the probability-weighted ECL of 1.74 euro million sitting visibly above the curve at Z=-0.5, and an orange square marking the ECL at the averaged path of 0.90 euro million sitting exactly on the curve at the same Z=-0.5, with an annotation stating the Jensen gap is 1.93x">
+<div class="figcap"><b>Exhibit 6.5</b> — The toy fixture's Jensen gap, drawn from the real closed-form
+formula (not a canned illustration): the probability-weighted marker sits visibly ABOVE the curve; the
+averaged-path marker sits exactly ON it, at the same $Z$. Regenerated in matplotlib
+(<code>notes/assets/img/ch06/build_diagrams.py</code>, from <code>tests/fixtures/compute_scenarios.py</code>).</div>
+
+<div class="interpretation">
+<b>Reading the exhibit.</b> The three scenario dots sit EXACTLY on the curve — unlike &sect;6.9's real-book
+version (Exhibit&nbsp;6.6), where each scenario is a 13-quarter PATH and only its mean $Z$ is plotted, so the
+dots there sit visibly off the curve (path SHAPE matters beyond the mean). Here each toy scenario is a single
+static $Z$ value by construction, so there is no shape to lose — the only source of the gap is the curve's
+convexity itself, isolated and undiluted by any path-averaging or portfolio-composition effect. That is exactly
+why the toy figure ($1.93\times$) is larger than the project's own book ($1.035\times$, &sect;6.9) — the toy
+example is engineered to show the mechanism in its purest, most exaggerated form.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the downside scenario alone drives almost the entire weighted ECL.</b>
+$0.25\times$&euro;$5.59$m$=$&euro;$1.397$m$$ out of the total weighted &euro;$1.7357$m — over $80\%$ of the
+probability-weighted ECL comes from the downside scenario's own contribution, even though it carries only a
+$25\%$ weight. This is the direct arithmetic consequence of $PD_{PIT}$'s convexity: the tail scenario's PD is
+disproportionately large ($13.97\%$, roughly $10\times$ the base case's $1.43\%$), so even a modest weight on
+it dominates the weighted sum. "The downside tail does the work" — precisely the caption the source notes'
+own Fig.&nbsp;6 uses.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why can Chapter&nbsp;5's own &sect;5.3 table be reused directly for the upside and base rows here, without
+recomputing $PD_{PIT}$ from scratch?
+  <details><summary>Answer</summary>
+  <div class="answer">Because this toy example uses the IDENTICAL calibration Chapter&nbsp;5's golden fixture
+  used ($PD_{TTC}=2\%$, $\rho=0.12$), the threshold constants $c$, $\sqrt{\rho}$, $\sqrt{1-\rho}$ are exactly
+  the same, and $Z=1.0$/$Z=0.0$ are two of the six points Chapter&nbsp;5's table already tabulated — only the
+  downside's $Z=-3.0$ is a genuinely new evaluation.</div>
+  </details>
+</li>
+<li>If the downside scenario's weight were reduced from $0.25$ to $0.10$ (redistributed to the base case), would
+the weighted ECL rise or fall, and roughly by how much (order of magnitude)?
+  <details><summary>Answer</summary>
+  <div class="answer">It would FALL, since less weight sits on the highest-ECL scenario. Roughly: the downside's
+  contribution would drop from $0.25\times5.59=1.397$ to $0.10\times5.59=0.559$ (a fall of about
+  &euro;$0.84$m), while the extra $0.15$ weight moving to the base case adds only $0.15\times0.57\approx
+  \text{\euro}0.086$m — a net fall of roughly &euro;$0.75$m, illustrating just how much of the weighted total the
+  downside weight alone controls.</div>
+  </details>
+</li>
+<li>Does the single-path ECL of &euro;$0.90$m sit closer to the base-case ECL (&euro;$0.57$m) or the weighted ECL
+(&euro;$1.74$m)?
+  <details><summary>Answer</summary>
+  <div class="answer">Closer to the base case (&euro;$0.57$m vs &euro;$1.74$m; &euro;$0.90$m is roughly
+  $0.33$m above the base case but $0.84$m below the weighted figure) — because the averaged path's $\bar
+  Z=-0.5$ is much closer to the base scenario's $Z=0$ than to the downside's $Z=-3.0$; averaging the PATHS
+  first heavily dilutes the downside tail's own extremity before it ever reaches the convex $PD_{PIT}$
+  transform, which is precisely the mechanism that produces the understatement.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-9">6.9 The project's honest 1.035&times;</h3>
+<!-- ============================================================== -->
+<p>&sect;6.8's toy example isolates the Jensen mechanism in its purest, most exaggerated form. Run the SAME
+logic on the project's own 7,849-loan book, through the SAME frozen ECL engine every other chapter uses, and
+the gap survives — but it is far smaller. That gap between $1.9\times$ (toy) and $1.035\times$ (real book) is
+itself worth explaining honestly, not glossing over.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>scenario</th><th>weight</th><th>mean $Z$ (13q R&amp;S)</th><th>UER peak (pp)</th><th>12m ECL</th><th>lifetime ECL</th><th>reported allowance</th><th>coverage</th></tr>
+<tr><td>upside</td><td class="num">0.25</td><td class="num">&minus;0.85</td><td class="num">6.4</td><td class="num">27.4</td><td class="num">289.6</td><td class="num">27.7</td><td class="num">1.654%</td></tr>
+<tr><td>base</td><td class="num">0.50</td><td class="num">&minus;0.88</td><td class="num">6.4</td><td class="num">30.2</td><td class="num">282.9</td><td class="num">30.5</td><td class="num">1.820%</td></tr>
+<tr><td>severe</td><td class="num">0.25</td><td class="num">&minus;1.55</td><td class="num">11.2</td><td class="num">47.4</td><td class="num">296.2</td><td class="num">47.6</td><td class="num">2.843%</td></tr>
+<tr><td><strong>probability-weighted</strong></td><td class="num">1.00</td><td class="num">&minus;1.04</td><td class="num">&mdash;</td><td class="num">33.8</td><td class="num">287.9</td><td class="num"><strong>34.0</strong></td><td class="num">2.034%</td></tr>
+<tr><td>at the AVERAGE macro path</td><td class="num">&mdash;</td><td class="num">&minus;1.04</td><td class="num">&mdash;</td><td class="num">32.6</td><td class="num">286.2</td><td class="num">32.9</td><td class="num">1.965%</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/scenario_ecl/scenario_ecl_report.md</code> "Headline: scenario ECL". All
+figures USD millions; book: 7,849 non-payoff exposures at $t=60$ (7,806 live/performing + 43 Stage-3 default
+rows whose ECL is scenario-invariant by construction, &sect;6.6's staging note).</p>
+
+<div class="ex">
+<b>The Jensen gap, on the live book.</b> Reported allowance $ECL_{PW}=\$34.0$m vs $ECL(\bar s)=\$32.9$m:
+$$ \frac{ECL_{PW}}{ECL(\bar s)} = \frac{34.0}{32.9} = 1.035\times. $$ On summed LIFETIME ECL the ratio is
+smaller still: $287.9/286.2=1.006\times$. Both exceed $1$ — Jensen's inequality holds, exactly as &sect;6.7
+proved it must, on the project's real book and its real satellite-fitted $Z$ paths, not just the toy closed-form
+example.
+</div>
+
+<img class="fig" src="../assets/img/ch06/06_jensen_gap.png" alt="Scatter chart: reported allowance against mean systematic factor Z over the 13-quarter R&S window, with a curve for ECL of a single macro path, three scenario dots (severe USD 47.6m, base USD 30.5m, upside USD 27.7m) sitting off the curve because path shape matters beyond mean Z, a purple diamond for the probability-weighted ECL of USD 34.0m sitting above the curve, and an orange square for the ECL at the probability-weighted average macro path of USD 32.9m sitting on the curve, annotated with the 1.035x Jensen gap">
+<div class="figcap"><b>Exhibit 6.6</b> — THE Jensen-gap exhibit on the live book: weighted allowance
+(\$34.0m) exceeds the ECL of the averaged path (\$32.9m), ratio $1.035\times$. Already in the project's own
+house matplotlib style — embedded, not redrawn (<code>outputs/scenario_ecl/jensen_gap.png</code>).</div>
+
+<img class="fig" src="../assets/img/ch06/07_scenario_ecl_bars.png" alt="Bar chart: reported allowance by scenario at t=60, upside USD 27.7m 1.65% coverage, base USD 30.5m 1.82% coverage, severe USD 47.6m 2.84% coverage, and weighted 50/25/25 USD 34.0m 2.03% coverage">
+<div class="figcap"><b>Exhibit 6.7</b> — Reported allowance by scenario, t=60 (2015Q1) live book, 7,849
+exposures. Already in the project's own house matplotlib style — embedded, not redrawn
+(<code>outputs/scenario_ecl/scenario_ecl_bars.png</code>).</div>
+
+<h4>Why our ratio is far below the toy's $\sim1.9\times$ — the honest decomposition</h4>
+<div class="interpretation">
+<b>Four compounding reasons, all documented, none hidden.</b>
+<ol>
+<li><strong>Calibrated $\rho=0.0227$ vs the toy's $0.12$.</strong> Chapter&nbsp;5 &sect;5.7 already established
+the empirical asset correlation of this panel is roughly $5\times$ smaller than the toy's illustrative value —
+&sect;6.7 part (b)'s convexity analysis shows a smaller $\rho$ pushes the inflection point FURTHER out (more
+robustly convex in principle) but ALSO makes the $PD_{PIT}$ curve itself far FLATTER in absolute PD terms across
+the relevant $Z$ range (the same $\sqrt{\rho}$ term that scales $Z$'s influence on the numerator), so the same
+$Z$ spread bends PD — and hence ECL — far less.</li>
+<li><strong>Scenario $Z$ dispersion.</strong> The satellite-implied paths touch their extremes for only a SINGLE
+quarter (severe trough $-3.16$ vs upside $-0.28$ at the widest point, a $2.9$-$Z$ swing) but sit only about
+$0.7$ $Z$ apart on the 13-quarter R&amp;S-window MEAN the ECL actually integrates over (the table above:
+$-0.85$/$-0.88$/$-1.55$) — against the toy's SUSTAINED, single-period $4$-$Z$ spread ($+1$ to $-3$, held for
+the entire evaluation). DFAST-shaped quarterly paths are far gentler than one stylised, one-shot downside.</li>
+<li><strong>Only the default-PD leg is conditioned.</strong> &sect;6.6 already flagged this: LGD and EAD stay at
+their frozen rung-1 projections, unconditioned by the scenario. This removes the additional
+$PD\times LGD$ convexity the toy implicitly bundles into a single multiplicative ECL formula.</li>
+<li><strong>Lifetime aggregation dilutes further.</strong> All three scenarios share the SAME long-run reversion
+tail from $h=21$ (&sect;6.4), and discounting plus amortisation shrink the differentiated window's weight in the
+LIFETIME sum — which is exactly why the lifetime ratio ($1.006\times$) is smaller again than the reported
+(12m-dominated) ratio ($1.035\times$): the toy example is a single-period calculation entirely INSIDE the
+stressed window, with none of this dilution.</li>
+</ol>
+</div>
+
+<div class="note">
+<b>The lifetime up-vs-base crossover — reported, not hidden.</b> Summed LIFETIME ECL is $289.6$ (upside) vs
+$282.9$ (base) — the upside book is slightly MORE expensive over the full remaining life, even though its 12m
+ECL and reported allowance are (correctly) the cheapest. Two real, documented mechanisms: (1) <strong>mirror
+payback</strong> — the upside path is a damped MIRROR of the severely-adverse deltas (&sect;6.3), so the
+severe path's recovery quarters mirror into a mild LATE-window deterioration for the upside (boom now, payback
+later), pulling its mean $Z$ over 21 quarters marginally below the base path's; (2) <strong>survivor
+exposure</strong> — lower hazards in the boom leave MORE loans alive entering the shared long-run tail, so more
+exposure is at risk in the undifferentiated quarters, a genuine competing-risk effect of lifetime ECL. The IFRS&nbsp;9
+allowance ORDERING (severe &gt; base &gt; upside) still holds on the reported measure, which is what the
+project's own gates test — the crossover is a real, secondary effect visible only at the lifetime horizon, not
+a contradiction of the headline ordering.
+</div>
+
+<h4>Weights sensitivity — the governance exhibit &sect;6.1 promised</h4>
+<div class="table-wrap">
+<table>
+<tr><th>weights (base/down/up)</th><th>reported allowance</th><th>coverage</th><th>vs adopted</th></tr>
+<tr><td>50/25/25 (adopted)</td><td class="num">\$34.0m</td><td class="num">2.034%</td><td class="num">+0.0%</td></tr>
+<tr><td>40/30/30</td><td class="num">\$34.8m</td><td class="num">2.077%</td><td class="num">+2.1%</td></tr>
+<tr><td>60/20/20</td><td class="num">\$33.3m</td><td class="num">1.991%</td><td class="num">&minus;2.1%</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/scenario_ecl/scenario_ecl_report.md</code> "Weights sensitivity".</p>
+
+<div class="interpretation">
+<b>Interpretation.</b> The swing across two reasonable alternative weightings is small — about $\pm2.1\%$ on
+the reported allowance — next to the gap BETWEEN scenarios themselves (severe vs base is $1.56\times$ on the
+allowance, $47.6/30.5$). This is the practical payoff of &sect;6.1's governance framing: since weights are not
+statistically identified, what matters for audit purposes is that the adopted weighting sits reasonably between
+plausible alternatives and that its sensitivity is documented and small relative to the scenarios' own spread —
+exactly what this table demonstrates, rather than defending a specific third decimal place.
+</div>
+
+<div class="warn">
+<b>Do not read the smaller real-book ratio as "Jensen's inequality barely matters here".</b> $1.035\times$ on
+$\$34.0$m is a genuine $\$1.1$m difference between the correct (probability-weighted) measurement and the
+INCORRECT (single-averaged-path) one — small in relative terms, real in absolute terms, and STRUCTURALLY
+guaranteed to point in the same direction (understatement) on any book with a convex-in-$Z$ ECL and any nonzero
+scenario spread, per &sect;6.7's proof. The size of the gap is empirical and book-specific (the four-reason
+decomposition above); the DIRECTION is not — that part is a theorem, not an estimate.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Which of the four decomposition reasons would shrink or disappear if a future rung conditioned LGD on the
+scenario as well as PD?
+  <details><summary>Answer</summary>
+  <div class="answer">Reason 3 ("only the default-PD leg is conditioned") — conditioning LGD too would
+  reintroduce the additional $PD\times LGD$ convexity the toy example bundles but the current project build
+  deliberately omits (a documented simplification, &sect;6.6's engine docstring), likely widening the real-book
+  Jensen ratio somewhat closer to the toy's.</div>
+  </details>
+</li>
+<li>Why is the LIFETIME Jensen ratio ($1.006\times$) smaller than the REPORTED (12m-dominated) ratio
+($1.035\times$)?
+  <details><summary>Answer</summary>
+  <div class="answer">All three scenarios share the identical long-run reversion tail from $h=21$ onward
+  (&sect;6.4), so lifetime ECL sums in a large block of scenario-UNDIFFERENTIATED quarters that dilutes
+  whatever Jensen gap accumulated during the differentiated 13q+8q window — reason 4 of the decomposition.</div>
+  </details>
+</li>
+<li>Does the upside scenario having a HIGHER lifetime ECL than the base scenario contradict the IFRS&nbsp;9
+allowance ordering the project's gates test?
+  <details><summary>Answer</summary>
+  <div class="answer">No — the gates test the REPORTED allowance ordering (severe &gt; base &gt; upside), which
+  holds. The lifetime crossover is a separate, secondary measure where two documented mechanisms (mirror
+  payback, survivor exposure) can flip the ordering without affecting the headline reported figure the gates
+  actually check.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s6-10">6.10 Interactive: scenario weights and a Z-shock explorer</h3>
+<!-- ============================================================== -->
+<p>Both widgets below re-implement REAL closed-form formulas in JavaScript — the same Vasicek $PD_{PIT}(Z,\rho)$
+pair Chapter&nbsp;5's widget uses, and (for the second widget) the satellite equation itself — never a canned
+lookup table, per the campaign's golden rule.</p>
+
+<h4>Widget 1 — scenario weights vs the Jensen gap (the toy fixture, live)</h4>
+<p>Drag $w_{up}$ and $w_{down}$; $w_{base}$ is whatever is left, and all three are renormalised to sum to
+exactly 1 (the same tolerance-then-renormalise convention <code>agent/tools_tier1.py</code>'s
+<code>reweight_scenarios</code> tool uses). At the defaults ($w_{up}=0.25$, $w_{down}=0.25$, so
+$w_{base}=0.50$) the readout below reproduces &sect;6.8's golden-fixture values EXACTLY:
+weighted ECL &euro;$1.74$m, single-path ECL &euro;$0.90$m, ratio $1.93\times$.</p>
+
+<div class="widget">
+<h4>Live widget — drag the weight sliders</h4>
+<div class="widget-controls" id="w1-controls"></div>
+<div id="w1-bars"></div>
+<div id="w1-table"></div>
+</div>
+
+<div class="quiz" style="border-style:solid; border-left-style:solid;">
+<b>What to try.</b>
+<ol>
+<li>Drag $w_{down}$ to 0. What happens to the Jensen gap, and why?
+  <details><summary>Answer</summary>
+  <div class="answer">The ratio collapses toward $1.0\times$ (no gap) — with zero weight on the one scenario
+  whose $Z$ sits deep in the convex region's steep part, the remaining upside/base weights sit close enough
+  together in $Z$-space that $PD_{PIT}$ is nearly linear across the small range actually visited, so
+  Jensen's inequality's bite becomes negligible. This is the SAME mechanism &sect;6.9's decomposition reason 2
+  describes for the real book's much gentler scenario spread.</div>
+  </details>
+</li>
+<li>Push $w_{down}$ toward 1 (drag $w_{up}$ to 0 first). Does the ratio keep rising without bound?
+  <details><summary>Answer</summary>
+  <div class="answer">No — as $w_{down}\to1$, BOTH the weighted ECL and the single-path ECL converge on the
+  downside scenario's own ECL alone (&euro;$5.59$m), since there is no other scenario left to average against;
+  the ratio converges back toward $1.0\times$ from above. The Jensen gap is largest at some INTERMEDIATE mix of
+  weights, not at either extreme — try $w_{down}=0.5$, $w_{up}=0$ to see it near its peak for this toy setup.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<h4>Widget 2 — Z-shock explorer (real satellite + Vasicek formulas)</h4>
+<p>This widget chains &sect;6.5's fitted satellite equation directly into Chapter&nbsp;5's Vasicek
+$PD_{PIT}(Z,\rho)$ formula, at the project's OWN calibration ($\rho=0.0227$) and its own flat TTC anchor
+($1.3488\%$, Chapter&nbsp;5 &sect;5.7). The shock slider moves $uer$ and applies the &sect;6.6 co-movement
+betas to shift $hpi\_growth\_lag1$ and $gdp\_growth\_lag2$ coherently away from the panel's own $t=60$ jump-off
+state — the same mechanism &sect;6.6's worked example walks by hand, now live.</p>
+
+<div class="widget">
+<h4>Live widget — drag the shock slider</h4>
+<div class="widget-controls" id="w2-controls"></div>
+<div id="w2-plot"></div>
+<div id="w2-table"></div>
+</div>
+
+<div class="note">
+<b>What this widget is (and is not).</b> This is a PORTFOLIO-LEVEL illustration using the flat composition-
+adjusted TTC anchor ($1.3488\%$) — it shows how the portfolio-average PIT PD responds to a coherent macro
+shock via the exact satellite+Vasicek formula chain. It is NOT a re-implementation of the full per-loan engine
+(each of the 7,849 loans has its own $\lambda_{TTC}$, LGD and EAD) — &sect;6.6's worked example already ran
+that full chain once, by hand, reproducing the recorded \$30.454m$\to$\$31.694m result exactly; this widget
+lets you explore the DIRECTION and rough SCALE of the PD response to shocks of different sizes, using the
+identical $Z$-formation mechanism.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>At shock $=0$pp, why does the widget NOT read exactly the flat anchor ($1.3488\%$)?
+  <details><summary>Answer</summary>
+  <div class="answer">Because $Z$ at the unshocked jump-off state is NOT zero — Chapter&nbsp;5 &sect;5.7's
+  documented level gap (mean recovered $Z\approx-1.15$ across the panel's history) means the satellite's own
+  fitted $Z$ at the panel's actual $t=60$ macro state sits meaningfully below the cycle-neutral value, so
+  $PD_{PIT}(Z)$ at shock$=0$ is ABOVE the flat anchor even with no shock applied — exactly the anchor-vs-sample-mean
+  distinction Chapter&nbsp;5 &sect;5.4's warning box already flagged.</div>
+  </details>
+</li>
+<li>Does increasing the shock ever DECREASE the displayed PD?
+  <details><summary>Answer</summary>
+  <div class="answer">No, for positive UER shocks — both co-movement betas are negative (&sect;6.6), so a
+  rising UER shock always drags $hpi\_growth$ and $gdp\_growth$ down together, which (via the satellite's own
+  positive coefficients on both) always pushes $Z$ down and $PD_{PIT}$ up. A NEGATIVE shock (falling
+  unemployment) would run the whole chain in reverse and lower the displayed PD.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<script src="../assets/js/widgets.js"></script>
+<script>
+(function () {
+  // --- Standard normal CDF and inverse CDF, independent JS re-implementation
+  //     (same pair as ch05_vasicek.html / notes/assets/widget_demo.html) ---
+  function erf(x) {
+    var sign = x < 0 ? -1 : 1;
+    x = Math.abs(x);
+    var a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741,
+        a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    var t = 1 / (1 + p * x);
+    var y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+  }
+  function normCdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+  function normPpf(p) {
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+              1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+              6.680131188771972e+01, -1.328068155288572e+01];
+    var c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+              -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    var d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+              3.754408661907416e+00];
+    var plow = 0.02425, phigh = 1 - plow, q, r;
+    if (p < plow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+             ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    } else if (p <= phigh) {
+      q = p - 0.5; r = q * q;
+      return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5]) * q /
+             (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+              ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    }
+  }
+  function pdPit(z, pdTtc, rho) {
+    return normCdf((normPpf(pdTtc) - Math.sqrt(rho) * z) / Math.sqrt(1 - rho));
+  }
+
+  // =========================================================================
+  // Widget 1 — scenario weights vs the Jensen gap (tests/fixtures/compute_scenarios.py)
+  // =========================================================================
+  var TOY_EAD = 100.0, TOY_LGD = 0.40, TOY_PD_TTC = 0.02, TOY_RHO = 0.12;
+  var G_ANCHOR = 2.0, G_SCALE = 1.5;
+  var SCEN_G = { up: 3.5, base: 2.0, down: -2.5 };
+
+  function zOfG(g) { return (g - G_ANCHOR) / G_SCALE; }
+  function toyEcl(z) { return pdPit(z, TOY_PD_TTC, TOY_RHO) * TOY_LGD * TOY_EAD; }
+
+  var w1 = { up: 0.25, down: 0.25 };
+  var w1Controls = document.getElementById('w1-controls');
+  var w1BarsEl = document.getElementById('w1-bars');
+
+  Widgets.makeSlider(w1Controls, {
+    label: 'w_up', min: 0, max: 1, step: 0.01, value: w1.up,
+    format: function (v) { return v.toFixed(2); },
+    onInput: function (v) { w1.up = v; w1Redraw(); }
+  });
+  Widgets.makeSlider(w1Controls, {
+    label: 'w_down', min: 0, max: 1, step: 0.01, value: w1.down,
+    format: function (v) { return v.toFixed(2); },
+    onInput: function (v) { w1.down = v; w1Redraw(); }
+  });
+
+  var w1Table = Widgets.makeLiveTable(document.getElementById('w1-table'), {
+    columns: [
+      { key: 'scenario', label: 'scenario', format: function (v) { return v; } },
+      { key: 'g', label: 'g (%)', format: function (v) { return v.toFixed(2); } },
+      { key: 'w', label: 'weight', format: function (v) { return v.toFixed(3); } },
+      { key: 'z', label: 'Z', format: function (v) { return v.toFixed(3); } },
+      { key: 'pd', label: 'PD_PIT (%)', format: function (v) { return v.toFixed(4); } },
+      { key: 'ecl', label: 'ECL (€m)', format: function (v) { return v.toFixed(4); } }
+    ],
+    rows: []
+  });
+
+  function w1Bar(label, value, maxValue, color) {
+    var pct = Math.max(0, Math.min(100, 100 * value / maxValue));
+    return '<div class="bar-label"><span>' + label + '</span><span>€' + value.toFixed(3) + 'm</span></div>' +
+           '<div class="bar-outer"><div class="bar-seg-12m" style="width:' + pct + '%; background:' + color + '; opacity:0.85;"></div></div>';
+  }
+
+  function w1Redraw() {
+    var raw = { up: w1.up, down: w1.down, base: Math.max(0, 1 - w1.up - w1.down) };
+    var sum = raw.up + raw.down + raw.base;
+    var w = { up: raw.up / sum, down: raw.down / sum, base: raw.base / sum };
+
+    var rows = [];
+    var weightedEcl = 0;
+    var weightedG = 0;
+    ['up', 'base', 'down'].forEach(function (name) {
+      var g = SCEN_G[name];
+      var z = zOfG(g);
+      var pd = pdPit(z, TOY_PD_TTC, TOY_RHO) * 100;
+      var ecl = toyEcl(z);
+      weightedEcl += w[name] * ecl;
+      weightedG += w[name] * g;
+      rows.push({ scenario: name, g: g, w: w[name], z: z, pd: pd, ecl: ecl });
+    });
+    var avgZ = zOfG(weightedG);
+    var singlePathEcl = toyEcl(avgZ);
+    var ratio = singlePathEcl > 0 ? weightedEcl / singlePathEcl : NaN;
+    var understatement = weightedEcl > 0 ? 100 * (1 - singlePathEcl / weightedEcl) : 0;
+
+    rows.push({ scenario: 'WEIGHTED (w-sum)', g: weightedG, w: w.up + w.base + w.down, z: avgZ, pd: NaN, ecl: weightedEcl });
+    w1Table.update(rows);
+
+    var maxBar = Math.max(weightedEcl, singlePathEcl, 0.01) * 1.15;
+    w1BarsEl.innerHTML =
+      w1Bar('probability-weighted ECL (the IFRS 9 answer)', weightedEcl, maxBar, '#8e44ad') +
+      w1Bar('ECL at the averaged path (Z=' + avgZ.toFixed(2) + ')', singlePathEcl, maxBar, '#e67e22') +
+      '<div class="bar-label" style="margin-top:6px;"><b>Jensen gap: ' + ratio.toFixed(2) + '&times;  (' +
+      understatement.toFixed(0) + '% understatement if you scored the averaged path instead)</b></div>';
+  }
+  w1Redraw();
+
+  // =========================================================================
+  // Widget 2 — Z-shock explorer (real satellite + Vasicek, project calibration)
+  // =========================================================================
+  var SAT_CONST = -1.6942, SAT_B_HPI = 13.6424, SAT_B_GDP = 0.7302;
+  var PROJ_RHO = 0.0227, PROJ_FLAT_TTC = 0.013488;
+  // co-movement betas, UER -> {hpi_growth, gdp_growth} (agent.tools_tier1._comovement_betas, §6.6)
+  var BETA_UER_HPI = -0.0041294, BETA_UER_GDP = -0.0545163;
+  // panel t=60 jump-off macro state (§6.2's table) — the widget's unshocked baseline
+  var BASE_HPI = 0.011498, BASE_GDP = 0.701670;
+
+  function satelliteZ(hpi, gdp) { return SAT_CONST + SAT_B_HPI * hpi + SAT_B_GDP * gdp; }
+
+  function shockChain(shockPp) {
+    var hpi = BASE_HPI + shockPp * BETA_UER_HPI;
+    var gdp = BASE_GDP + shockPp * BETA_UER_GDP;
+    var z = satelliteZ(hpi, gdp);
+    var pd = pdPit(z, PROJ_FLAT_TTC, PROJ_RHO) * 100;
+    return { hpi: hpi, gdp: gdp, z: z, pd: pd };
+  }
+
+  var w2 = { shock: 0 };
+  var w2Controls = document.getElementById('w2-controls');
+  Widgets.makeSlider(w2Controls, {
+    label: 'UER shock (pp, parallel)', min: -4, max: 10, step: 0.25, value: w2.shock,
+    format: function (v) { return (v >= 0 ? '+' : '') + v.toFixed(2) + 'pp'; },
+    onInput: function (v) { w2.shock = v; w2Redraw(); }
+  });
+
+  function w2CurvePoints() {
+    var pts = [];
+    for (var s = -4; s <= 10.0001; s += 0.25) { pts.push([s, shockChain(s).pd]); }
+    return pts;
+  }
+  var w2Plot = Widgets.makeLinePlot(document.getElementById('w2-plot'), {
+    width: 640, height: 300,
+    xDomain: [-4, 10], yDomain: [0, 5],
+    xLabel: 'UER shock (pp, parallel, applied every quarter)',
+    yLabel: 'portfolio PIT PD (%)',
+    title: 'Portfolio PIT PD vs UER shock — real satellite + Vasicek formula chain (ρ=0.0227)',
+    series: [{ name: 'PD_PIT(shock)', color: '#1f3a5f', points: w2CurvePoints() }]
+  });
+
+  var W2_MARGIN = { top: 26, right: 18, bottom: 42, left: 52 };
+  var W2_W = 640, W2_H = 300;
+  var w2PlotW = W2_W - W2_MARGIN.left - W2_MARGIN.right;
+  var w2PlotH = W2_H - W2_MARGIN.top - W2_MARGIN.bottom;
+  function svgEl(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function w2AddMarker(xDomain, yDomain, point, color, radius) {
+    var sx = W2_MARGIN.left + (point[0] - xDomain[0]) / (xDomain[1] - xDomain[0]) * w2PlotW;
+    var sy = W2_MARGIN.top + w2PlotH - (point[1] - yDomain[0]) / (yDomain[1] - yDomain[0]) * w2PlotH;
+    w2Plot.svg.appendChild(svgEl('circle', { cx: sx, cy: sy, r: radius, fill: color, stroke: '#fff', 'stroke-width': 1 }));
+  }
+
+  var w2Table = Widgets.makeLiveTable(document.getElementById('w2-table'), {
+    columns: [
+      { key: 'k', label: 'quantity', format: function (v) { return v; } },
+      { key: 'v', label: 'value', format: function (v) { return v; } }
+    ],
+    rows: []
+  });
+
+  function w2Redraw() {
+    var r = shockChain(w2.shock);
+    var maxY = Math.max(5, Math.ceil(Math.max.apply(null, w2CurvePoints().map(function (p) { return p[1]; })) * 1.15));
+    w2Plot.update([{ name: 'PD_PIT(shock)', color: '#1f3a5f', points: w2CurvePoints() }], [0, maxY], [-4, 10]);
+    w2AddMarker([-4, 10], [0, maxY], [w2.shock, r.pd], '#e67e22', 4.8);
+
+    w2Table.update([
+      { k: 'hpi_growth_lag1 (decimal)', v: r.hpi.toFixed(6) },
+      { k: 'gdp_growth_lag2 (pp)', v: r.gdp.toFixed(4) },
+      { k: 'Z = -1.6942 + 13.6424·hpi + 0.7302·gdp', v: r.z.toFixed(4) },
+      { k: 'portfolio PIT PD (ρ=0.0227, flat anchor 1.3488%)', v: r.pd.toFixed(4) + '%' }
+    ]);
+  }
+  w2Redraw();
+})();
+</script>
+
+<div class="summary">
+<b>Chapter 6 summary.</b> DFAST supervisory paths give this project a coherent multivariate stress SHAPE for
+free — the rebasing convention (&sect;6.2) transplants that shape onto the panel's own reporting date, a damped
+mirror (&sect;6.3) builds the upside DFAST does not publish, and linear reversion (&sect;6.4) extends the
+13-quarter window to a full 40-quarter horizon without inventing new macro information beyond what is reasonable
+and supportable. A small, sign-governed satellite regression (&sect;6.5) converts those macro paths into
+Chapter&nbsp;5's systematic factor $Z$ — honestly sourced (a vendor-premerged DCR series, never a live FRED
+pull) and honestly scaled (the log-growth-vs-percentage-point trap called out explicitly). That satellite has no
+unemployment term, which would make a naive UER shock invisible to $Z$ entirely; the coherent-shock convention
+(&sect;6.6) fixes this by moving every macro concept together along DFAST's own severe-minus-base direction,
+walked end to end for a real $+2$pp UER shock reproducing the project's own recorded \$30.454m$\to$\$31.694m
+agent trace. The chapter's mathematical core — Jensen's inequality, proved from the supporting-line argument,
+chained through a from-scratch derivation that $PD_{PIT}(Z)$ is convex almost everywhere realistic (the Vasicek
+second derivative) — explains, rather than just asserts, why probability-weighted ECL exceeds the ECL of the
+averaged scenario. The toy fixture makes that gap dramatic ($1.93\times$); the project's own honestly-measured
+book makes it small but real ($1.035\times$), with every one of the four reasons for that difference — smaller
+calibrated $\rho$, gentler scenario spread, an unconditioned LGD/EAD leg, and lifetime dilution — documented
+rather than smoothed over. Chapter&nbsp;7 turns from measuring ECL correctly to VALIDATING that the models
+producing it are behaving as claimed.
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;9, <code>tests/fixtures/compute_scenarios.py</code>, <code>engine/scenarios.py</code>, <code>engine/satellite.py</code>, <code>agent/tools_tier1.py</code>, <code>outputs/scenarios/scenarios_report.md</code>, <code>outputs/satellite/satellite_report.md</code>, <code>outputs/scenario_ecl/scenario_ecl_report.md</code>, and <code>docs/api_contract.md</code> on 2026-07-19.
+</div>
+
+</body>
+</html>

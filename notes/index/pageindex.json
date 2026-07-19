@@ -1,13 +1,16 @@
 {
   "doc_name": "IFRS9 Study Notes",
-  "doc_description": "PageIndex RAG built from 5 file(s) in notes/corpus.",
-  "total_pages": 222,
+  "doc_description": "PageIndex RAG built from 8 file(s) in notes/corpus.",
+  "total_pages": 395,
   "sources": [
     "notes/corpus/ch01_ifrs9_foundations_staging.html.md",
     "notes/corpus/ch02_ecl_mechanics.html.md",
     "notes/corpus/ch03_hazard_modeling.html.md",
     "notes/corpus/ch04_lgd_ead.html.md",
-    "notes/corpus/ch05_vasicek.html.md"
+    "notes/corpus/ch05_vasicek.html.md",
+    "notes/corpus/ch06_scenarios_satellite_jensen.html.md",
+    "notes/corpus/ch07_challengers.html.md",
+    "notes/corpus/ch08_the_agent.html.md"
   ],
   "structure": [
     {
@@ -434,14 +437,14 @@
       "title": "Chapter 5 — The Vasicek One-Factor Model (PIT vs TTC)",
       "node_id": "0057",
       "start_index": 189,
-      "end_index": 222,
+      "end_index": 221,
       "summary": "From an asset-value latent factor to the conditional PD curve — deriving, verifying, and calibrating point-in-time credit risk IFRS9 ECL Study-Notes Compendium — Chapter 5 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §8, tests/fixtures/compute_vasicek.py , engine/vasicek.py , outputs/vasicek/vasicek_report.md , and wiki/pages/scenario-layer.md on 2026-07-19. Contents. 5.1 TTC vs PIT: the philosophical distinction 5.2 The one-factor Gaussian asset-value model 5.3 Derivation: from asset value to PD_PIT(Z) 5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC 5.5 Interactive: ...",
       "nodes": [
         {
           "title": "5  The Vasicek One-Factor Model (PIT vs TTC)",
           "node_id": "0058",
           "start_index": 190,
-          "end_index": 222,
+          "end_index": 221,
           "summary": "Every hazard model in Chapter 3 was fit on historical panel data — it necessarily blends calm years and stressed years into one set of coefficients. IFRS 9 does not want that blend: it wants a probability of default that reflects current and forecast conditions (§5.5.17), not the long-run average. This chapter derives, from first principles, the single most important transformation layer in credit risk modelling — the one that turns a through-the-cycle (TTC) PD into a point-in-time (PIT) PD conditional on where the economy sits in the credit cycle, and (the harder direction) recovers that ...",
           "nodes": [
             {
@@ -520,8 +523,487 @@
               "title": "5.8 The damped hybrid PIT/TTC variant",
               "node_id": "0069",
               "start_index": 219,
-              "end_index": 222,
+              "end_index": 221,
               "summary": "A fully PIT PD ($\\alpha=1$, §5.3's formula as derived) swings all the way with the cycle — useful for ECL, but sometimes a bank wants a PRESENTATION dial that trades some cycle pass-through for smoothness (rating stability, capital-planning narratives). The Aguais/Forest \"dual ratings\" convention formalises this as a single damping parameter. Damped hybrid PD. $$ PD_{\\text{hybrid}}(Z,\\alpha) = PD_{PIT}(\\alpha Z), \\qquad \\alpha\\in[0,1]. $$ $\\alpha=1$ recovers the fully PIT curve of §5.3; $\\alpha=0$ collapses to $PD_{PIT}(0)$, a CYCLE-NEUTRAL PD that is constant regardless of where $Z$ actually ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch06_scenarios_satellite_jensen.html",
+      "node_id": "0070",
+      "start_index": 222,
+      "end_index": 222,
+      "summary": "Ch.6 — Scenarios, Satellite Models & Jensen's Inequality | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 6 — Scenarios, Satellite Models & Jensen's Inequality",
+      "node_id": "0071",
+      "start_index": 222,
+      "end_index": 287,
+      "summary": "From DFAST supervisory paths through a fitted satellite model to a proof that probability-weighted ECL exceeds single-path ECL IFRS9 ECL Study-Notes Compendium — Chapter 6 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §9, tests/fixtures/compute_scenarios.py , engine/scenarios.py , engine/satellite.py , agent/tools_tier1.py , outputs/scenarios/scenarios_report.md , outputs/satellite/satellite_report.md , outputs/scenario_ecl/scenario_ecl_report.md , and docs/api_contract.md on 2026-07-19. Contents. 6.1 Why a single base case is not enough 6.2 DFAST ingestion and the ...",
+      "nodes": [
+        {
+          "title": "6  Scenarios, Satellite Models & Jensen's Inequality",
+          "node_id": "0072",
+          "start_index": 223,
+          "end_index": 287,
+          "summary": "Chapter 5 built the machine that turns a systematic factor $Z$ into a point-in-time PD — but never said where $Z$ comes from when you are trying to look forward rather than recover it from history. IFRS 9 §5.5.17(c) requires ECL to reflect reasonable and supportable information about future conditions, and §5.5.18/B5.5.42 goes further: it must be an unbiased, probability-weighted estimate evaluated across a range of outcomes, not the single most-likely path. This chapter builds the whole forward-looking rung end to end — ingesting supervisory stress-test paths, fitting a small regression that ...",
+          "nodes": [
+            {
+              "title": "6.1 Why a single base case is not enough",
+              "node_id": "0073",
+              "start_index": 225,
+              "end_index": 227,
+              "summary": "Every hazard model up to this point produces one number per loan-quarter. Feed it one macro path and you get one ECL. IFRS 9's answer to \"which macro path?\" is deliberately not \"the most likely one\" — it is several , weighted by their probability of occurring."
+            },
+            {
+              "title": "6.2 DFAST ingestion and the rebasing convention",
+              "node_id": "0074",
+              "start_index": 228,
+              "end_index": 234,
+              "summary": "Hand-rolling three internally-coherent macro paths (unemployment, house prices, GDP and rates all moving together the way a real recession or boom actually moves them) is genuinely hard to do credibly from scratch. The project's answer: ingest the shapes a supervisor already designed. DFAST (the Dodd-Frank Act Stress Test) publishes 28-variable macro paths built for exactly this kind of coherence check — data/ingest/dfast.py parses the 2026 vintage's Baseline and Severely-Adverse 13-quarter CSVs (2026Q1–2029Q1) plus a 200-quarter historic-actuals file, and maps four of those columns onto the ...",
+              "nodes": [
+                {
+                  "title": "The rebasing problem: two clocks that do not overlap",
+                  "node_id": "0075",
+                  "start_index": 229,
+                  "end_index": 234,
+                  "summary": "The project's DCR loan panel ends its own clock at $t=60\\sim$2015Q1 (calendar-verified against FRED UNRATE, §5.7) — but the DFAST 2026 paths run 2026Q1–2029Q1, eleven years later. Splicing DFAST's raw levels onto the panel would create a nonsensical jump (unemployment does not teleport from a 2015 value to whatever the 2026 print happens to be) purely as an artefact of two unrelated calendars meeting. DFAST's real value is not its absolute levels in 2026 — it is the coherent multivariate shape a supervisor designed (unemployment, HPI, GDP and rates moving together the way a real stress ..."
+                }
+              ]
+            },
+            {
+              "title": "6.3 The judgmental upside construction",
+              "node_id": "0076",
+              "start_index": 235,
+              "end_index": 237,
+              "summary": "DFAST publishes a Baseline and a Severely-Adverse path — no upside. IFRS 9's probability-weighted range of outcomes still needs one (the project adopts three named scenarios: base/down/up), so an upside has to be constructed rather than ingested. The damped-mirror convention. $$ \\delta^{up}_h(c) \\;=\\; \\kappa \\cdot \\delta^{down}_h(c), \\qquad \\kappa = -0.35 \\ \\text{(the damping factor)}, $$ applied to the SAME severely-adverse deltas $\\delta^{down}_h(c)$ §6.2 already computed, for every concept $c$ and every horizon quarter $h$."
+            },
+            {
+              "title": "6.4 Extending to 40 quarters: the R&S window and reversion",
+              "node_id": "0077",
+              "start_index": 238,
+              "end_index": 241,
+              "summary": "§6.2–6.3 built 13 quarters of rebased path per scenario — the length of the DFAST supervisory window. A mortgage book's remaining contractual life can run far longer than 13 quarters, and IFRS 9's own §9.4 R&S-horizon logic (Chapter 2's gross-up factor is the other half of this same idea) is explicit that forward-looking macro information is only reasonable and supportable over a limited window — commonly two to three years — beyond which forecast errors compound and instability sets in. The standard response, applied here: condition PIT over the R&S window, then revert to the long-run TTC ..."
+            },
+            {
+              "title": "6.5 The satellite macro-link model",
+              "node_id": "0078",
+              "start_index": 242,
+              "end_index": 254,
+              "summary": "None of that is usable by the Vasicek machinery from Chapter 5 until it is converted into a $Z$ path — the \"satellite\" (macro-link) model is exactly that converter: a small regression of the RECOVERED credit-cycle factor $Z_t$ (Chapter 5's Belkin inversion) on lagged macro drivers, standard architecture per §9.1: \"regress a credit index… on macro drivers (GDP growth, unemployment, HPI, rates)\". The fitted satellite model. $$ Z_t \\;=\\; -1.6942 \\;+\\; 13.6424\\cdot hpi\\_growth\\_lag1_t \\;+\\; 0.7302\\cdot gdp\\_growth\\_lag2_t \\;+\\; e_t $$ OLS, $n=57$ quarters (2001Q1–2015Q1 — the common estimation ...",
+              "nodes": [
+                {
+                  "title": "Variable cards (Requirement 12 — every macro term, full honesty)",
+                  "node_id": "0079",
+                  "start_index": 244,
+                  "end_index": 246,
+                  "summary": "Both regressors below are curated from the same source of truth the app's own /api/model/macro_glossary endpoint serves ( docs/api_contract.md , app/api/main.py ) — the notes and the app cannot silently disagree on what these terms mean. Variable card — hpi_growth_lag1 (National HPI, log-growth, 1-quarter lag). The DCR panel's own national House Price Index series."
+                },
+                {
+                  "title": "Stationarity and lag-selection hygiene",
+                  "node_id": "0080",
+                  "start_index": 247,
+                  "end_index": 254,
+                  "summary": "Before any coefficient can be trusted, the driver candidates need the standard time-series hygiene check §9.1 lists: ADF (null: unit root) and KPSS (null: stationarity) run together (they are complementary, not redundant — agreement between opposite-null tests is much stronger evidence than either alone), Durbin-Watson for residual autocorrelation, and AIC-based lag/spec selection. series $n$ ADF $p$ KPSS $p$ verdict $Z$ (recovered) 60 0.521 0.033 unit root — I(1); difference before use $uer$ level 60 0.458 0.018 unit root — I(1); difference before use $duer$ (first difference) 59 0.222 0.100 ..."
+                }
+              ]
+            },
+            {
+              "title": "6.6 The missing UER term and the coherent-shock convention",
+              "node_id": "0081",
+              "start_index": 255,
+              "end_index": 263,
+              "summary": "§6.5's chosen satellite spec is $Z_t=f(hpi\\_growth\\_lag1,\\ gdp\\_growth\\_lag2)$ — unemployment does not appear anywhere in it. That has a real, load-bearing consequence for anyone (a human analyst, or the project's own Copilot agent) wanting to ask \"what if unemployment rose by 2pp?\". Derivation — why a univariate UER shock cannot reach $Z$. 1. $Z_t$ is an EXPLICIT function of exactly two inputs: $Z_t = -1.6942+13.6424\\cdot hpi\\_growth\\_lag1_t+0.7302\\cdot gdp\\_growth\\_lag2_t$ (§6.5).",
+              "nodes": [
+                {
+                  "title": "The solution: shock along the DFAST severe-minus-base co-movement direction",
+                  "node_id": "0082",
+                  "start_index": 257,
+                  "end_index": 263,
+                  "summary": "Since DFAST's supervisory paths already encode a jointly-plausible multivariate co-movement (§6.2 — that coherence is the entire reason the project ingests DFAST rather than hand-rolling paths), the fix reuses that structure: a \"UER shock\" is implemented not as a UER-only move, but as a co-moving shift of ALL THREE concepts, in the SAME relative proportions the DFAST severely-adverse path itself moves them. Define the co-movement loading of concept $c$ onto a $1$-unit move of the named shock variable $v$ as $$ \\beta_{v\\to c} \\;=\\; \\frac{\\langle \\delta_v,\\ \\delta_c\\rangle}{\\langle \\delta_v,\\ ..."
+                }
+              ]
+            },
+            {
+              "title": "6.7 Jensen's inequality, proved",
+              "node_id": "0083",
+              "start_index": 264,
+              "end_index": 271,
+              "summary": "§6.1 quoted the theorem: \"ECL is a convex function of the macro state… hence $\\mathbb{E}[f(X)]\\ge f(\\mathbb{E}[X])$\". This section proves BOTH halves that quote asserts without deriving: Jensen's inequality itself, and the specific claim that ECL is convex in $Z$ — the flagged expansion, backlog D-6.",
+              "nodes": [
+                {
+                  "title": "Lemma — averaging the macro paths IS averaging $Z$ (because the satellite is linear)",
+                  "node_id": "0084",
+                  "start_index": 264,
+                  "end_index": 264,
+                  "summary": "Let $x_{1,h,s}, x_{2,h,s}$ denote scenario $s$'s $hpi\\_growth\\_lag1$, $gdp\\_growth\\_lag2$ at horizon $h$, and $Z_{h,s}=c+b_1 x_{1,h,s}+b_2 x_{2,h,s}$ the satellite (§6.5), with weights $w_s$, $\\sum_s w_s=1$. 1. The weighted-AVERAGE macro path's own driver values at $h$ are, by definition, $\\bar x_{1,h}=\\sum_s w_s x_{1,h,s}$ and $\\bar x_{2,h}=\\sum_s w_s x_{2,h,s}$ (§6.1's $\\overline{path}$ definition). 2. Evaluate the satellite AT that averaged path: $Z(\\bar{path})_h = c+b_1\\bar x_{1,h}+b_2\\bar x_{2,h}$. 3."
+                },
+                {
+                  "title": "Part (a) — Jensen's inequality for a general convex function",
+                  "node_id": "0085",
+                  "start_index": 265,
+                  "end_index": 266,
+                  "summary": "A twice-differentiable function $f$ is CONVEX on an interval if $f''(x)\\ge0$ for every $x$ in that interval. Equivalently (the definition the proof below uses): at every point $\\mu$, the tangent line $\\ell(x)=f(\\mu)+f'(\\mu)(x-\\mu)$ lies entirely ON OR BELOW the curve: $\\ell(x)\\le f(x)$ for all $x$ — a convex function always sits above its own tangent lines. Derivation — Jensen's inequality via the supporting-line argument. 1."
+                },
+                {
+                  "title": "Part (b) — $PD_{PIT}(Z)$ is convex in $Z$ (the Vasicek second derivative)",
+                  "node_id": "0086",
+                  "start_index": 267,
+                  "end_index": 268,
+                  "summary": "Chapter 5 derived $PD_{PIT}(Z)=\\Phi\\!\\big((c-\\sqrt{\\rho}Z)/\\sqrt{1-\\rho}\\big)$, $c=\\Phi^{-1}(PD_{TTC})$. Rewrite it in a form the calculus below is easiest to carry through: Derivation — the sign of $\\partial^2 PD_{PIT}/\\partial Z^2$. 1. Let $A=\\dfrac{c}{\\sqrt{1-\\rho}}$ and $B=\\sqrt{\\dfrac{\\rho}{1-\\rho}}>0$ (both constants, given $PD_{TTC}$ and $\\rho$)."
+                },
+                {
+                  "title": "Part (c) — convexity survives the scale-up from $PD_{PIT}$ to ECL",
+                  "node_id": "0087",
+                  "start_index": 269,
+                  "end_index": 271,
+                  "summary": "Derivation. 1. $ECL(Z) = EAD\\cdot LGD\\cdot PD_{PIT}(Z)$ (Chapter 2's ECL formula, holding $EAD$ and $LGD$ fixed at their scenario-invariant values — §6.9 returns to exactly this simplification for the project's own book). 2. $EAD\\cdot LGD$ is a POSITIVE constant with respect to $Z$ (both are positive quantities, and neither depends on $Z$ under this simplification), so $$ \\frac{d^2 ECL}{dZ^2} = EAD\\cdot LGD\\cdot\\frac{d^2 PD_{PIT}}{dZ^2}. $$ 3. Since $EAD\\cdot LGD>0$, the sign of $d^2 ECL/dZ^2$ is IDENTICAL to the sign of $d^2 PD_{PIT}/dZ^2$ — multiplying a function by a positive constant ..."
+                }
+              ]
+            },
+            {
+              "title": "6.8 The toy fixture: quantifying a 1.9× understatement",
+              "node_id": "0088",
+              "start_index": 272,
+              "end_index": 276,
+              "summary": "§6.7 proved the DIRECTION of the Jensen gap. This section quantifies it on the source notes' own toy 3-scenario example — every step, every intermediate value, pasted directly from tests/fixtures/compute_scenarios.py 's RESULTS (which reproduces the source notes' own printed §9.2 table to displayed precision). The toy setup (§9.2's worked example). $EAD=$€$100$m, $LGD=40\\%$, $PD_{TTC}=2\\%$, $\\rho=0.12$ — the SAME calibration Chapter 5 §5.3's golden fixture uses, so its already-computed threshold constants carry over unchanged: $c=\\Phi^{-1}(0.02)=-2.053749$, $\\sqrt{\\rho}=0.346410$, ..."
+            },
+            {
+              "title": "6.9 The project's honest 1.035×",
+              "node_id": "0089",
+              "start_index": 277,
+              "end_index": 283,
+              "summary": "§6.8's toy example isolates the Jensen mechanism in its purest, most exaggerated form. Run the SAME logic on the project's own 7,849-loan book, through the SAME frozen ECL engine every other chapter uses, and the gap survives — but it is far smaller. That gap between $1.9\\times$ (toy) and $1.035\\times$ (real book) is itself worth explaining honestly, not glossing over. scenario weight mean $Z$ (13q R&S) UER peak (pp) 12m ECL lifetime ECL reported allowance coverage upside 0.25 −0.85 6.4 27.4 289.6 27.7 1.654% base 0.50 −0.88 6.4 30.2 282.9 30.5 1.820% severe 0.25 −1.55 11.2 47.4 296.2 47.6 ...",
+              "nodes": [
+                {
+                  "title": "Why our ratio is far below the toy's $\\sim1.9\\times$ — the honest decomposition",
+                  "node_id": "0090",
+                  "start_index": 280,
+                  "end_index": 281,
+                  "summary": "Four compounding reasons, all documented, none hidden. Calibrated $\\rho=0.0227$ vs the toy's $0.12$. Chapter 5 §5.7 already established the empirical asset correlation of this panel is roughly $5\\times$ smaller than the toy's illustrative value — §6.7 part (b)'s convexity analysis shows a smaller $\\rho$ pushes the inflection point FURTHER out (more robustly convex in principle) but ALSO makes the $PD_{PIT}$ curve itself far FLATTER in absolute PD terms across the relevant $Z$ range (the same $\\sqrt{\\rho}$ term that scales $Z$'s influence on the numerator), so the same $Z$ spread bends PD — ..."
+                },
+                {
+                  "title": "Weights sensitivity — the governance exhibit §6.1 promised",
+                  "node_id": "0091",
+                  "start_index": 282,
+                  "end_index": 283,
+                  "summary": "weights (base/down/up) reported allowance coverage vs adopted 50/25/25 (adopted) \\$34.0m 2.034% +0.0% 40/30/30 \\$34.8m 2.077% +2.1% 60/20/20 \\$33.3m 1.991% −2.1% Source: outputs/scenario_ecl/scenario_ecl_report.md \"Weights sensitivity\". The swing across two reasonable alternative weightings is small — about $\\pm2.1\\%$ on the reported allowance — next to the gap BETWEEN scenarios themselves (severe vs base is $1.56\\times$ on the allowance, $47.6/30.5$). This is the practical payoff of §6.1's governance framing: since weights are not statistically identified, what matters for audit purposes is ..."
+                }
+              ]
+            },
+            {
+              "title": "6.10 Interactive: scenario weights and a Z-shock explorer",
+              "node_id": "0092",
+              "start_index": 284,
+              "end_index": 287,
+              "summary": "Both widgets below re-implement REAL closed-form formulas in JavaScript — the same Vasicek $PD_{PIT}(Z,\\rho)$ pair Chapter 5's widget uses, and (for the second widget) the satellite equation itself — never a canned lookup table, per the campaign's golden rule.",
+              "nodes": [
+                {
+                  "title": "Widget 1 — scenario weights vs the Jensen gap (the toy fixture, live)",
+                  "node_id": "0093",
+                  "start_index": 285,
+                  "end_index": 285,
+                  "summary": "Drag $w_{up}$ and $w_{down}$; $w_{base}$ is whatever is left, and all three are renormalised to sum to exactly 1 (the same tolerance-then-renormalise convention agent/tools_tier1.py 's reweight_scenarios tool uses). At the defaults ($w_{up}=0.25$, $w_{down}=0.25$, so $w_{base}=0.50$) the readout below reproduces §6.8's golden-fixture values EXACTLY: weighted ECL €$1.74$m, single-path ECL €$0.90$m, ratio $1.93\\times$."
+                },
+                {
+                  "title": "Live widget — drag the weight sliders",
+                  "node_id": "0094",
+                  "start_index": 285,
+                  "end_index": 285,
+                  "summary": "What happens to the Jensen gap, and why? Answer The ratio collapses toward $1.0\\times$ (no gap) — with zero weight on the one scenario whose $Z$ sits deep in the convex region's steep part, the remaining upside/base weights sit close enough together in $Z$-space that $PD_{PIT}$ is nearly linear across the small range actually visited, so Jensen's inequality's bite becomes negligible. This is the SAME mechanism §6.9's decomposition reason 2 describes for the real book's much gentler scenario spread."
+                },
+                {
+                  "title": "Widget 2 — Z-shock explorer (real satellite + Vasicek formulas)",
+                  "node_id": "0095",
+                  "start_index": 286,
+                  "end_index": 286,
+                  "summary": "This widget chains §6.5's fitted satellite equation directly into Chapter 5's Vasicek $PD_{PIT}(Z,\\rho)$ formula, at the project's OWN calibration ($\\rho=0.0227$) and its own flat TTC anchor ($1.3488\\%$, Chapter 5 §5.7). The shock slider moves $uer$ and applies the §6.6 co-movement betas to shift $hpi\\_growth\\_lag1$ and $gdp\\_growth\\_lag2$ coherently away from the panel's own $t=60$ jump-off state — the same mechanism §6.6's worked example walks by hand, now live."
+                },
+                {
+                  "title": "Live widget — drag the shock slider",
+                  "node_id": "0096",
+                  "start_index": 286,
+                  "end_index": 287,
+                  "summary": "This is a PORTFOLIO-LEVEL illustration using the flat composition- adjusted TTC anchor ($1.3488\\%$) — it shows how the portfolio-average PIT PD responds to a coherent macro shock via the exact satellite+Vasicek formula chain. It is NOT a re-implementation of the full per-loan engine (each of the 7,849 loans has its own $\\lambda_{TTC}$, LGD and EAD) — §6.6's worked example already ran that full chain once, by hand, reproducing the recorded \\$30.454m$\\to$\\$31.694m result exactly; this widget lets you explore the DIRECTION and rough SCALE of the PD response to shocks of different sizes, using ..."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch07_challengers.html",
+      "node_id": "0097",
+      "start_index": 288,
+      "end_index": 288,
+      "summary": "Ch.7 — Challengers: The Champion-Challenger Governance Pattern | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 7 — Challengers: The Champion-Challenger Governance Pattern",
+      "node_id": "0098",
+      "start_index": 289,
+      "end_index": 328,
+      "summary": "Why a model that loses still earns its keep — the DCR MLP challenger, the like-for-like law, and reading a scorecard honestly IFRS9 ECL Study-Notes Compendium — Chapter 7 of 13. Compiled from outputs/challenger/scorecard.md , analysis/fit_challenger.py , challenger/mlp.py , engine/hazard.py , tests/fixtures/compute_validation.py , wiki/memory/log.md , and this chapter's own recompute ( notes/assets/img/ch07/recompute_challenger_scoring.py ) on 2026-07-19. Contents. 7.1 The champion-challenger governance pattern 7.2 What evidence would promote a challenger — the promotion bar 7.3 The DCR MLP ...",
+      "nodes": [
+        {
+          "title": "7  Challengers: The Champion-Challenger Governance Pattern",
+          "node_id": "0099",
+          "start_index": 290,
+          "end_index": 328,
+          "summary": "Chapter 3 built and trusted a cloglog hazard model with a hand-engineered age spline and a hand-built LTV×unemployment interaction. Every one of those design choices was a human decision — an analyst deciding that default hazard is non-monotone in loan age, and that collateral risk and macro stress compound rather than add. This chapter asks the obvious follow-up question a model-risk function is supposed to ask: if a flexible learner is given the same raw information and no hints, does it find the same structure on its own?",
+          "nodes": [
+            {
+              "title": "7.1 The champion-challenger governance pattern",
+              "node_id": "0100",
+              "start_index": 291,
+              "end_index": 293,
+              "summary": "Model-risk practice (the discipline behind supervisory guidance such as the Federal Reserve's SR 11-7, and echoed in IFRS 9's own governance expectations picked up again in Chapter 13) asks for effective challenge : every production model needs a critical, technically competent, empowered counter-voice — not a rubber stamp, and not merely a one-off validation memo filed away and forgotten. A champion-challenger programme operationalises effective challenge as a recurring cycle rather than a single event. Champion — the model whose output actually drives the ledger: in this project, the frozen ..."
+            },
+            {
+              "title": "7.2 What evidence would promote a challenger — the promotion bar",
+              "node_id": "0101",
+              "start_index": 294,
+              "end_index": 296,
+              "summary": "\"The challenger scored lower this cycle\" is not, by itself, the reason production stays with the champion — the reason is that nothing on this list was cleared . Listing the bar explicitly is what turns \"challenger never champion\" from a slogan into an auditable governance rule. The promotion bar — what would have to be true."
+            },
+            {
+              "title": "7.3 The DCR MLP challenger: architecture & the like-for-like law",
+              "node_id": "0102",
+              "start_index": 297,
+              "end_index": 302,
+              "summary": "The challenger is a small feed-forward network (an MLP, multi-layer perceptron) fit on the exact same loan-quarter panel Chapter 3's champion uses, with the exact same one-quarter-ahead default_event target. champion challenger form cloglog GLM, natural cubic spline in age (df=5), centered LTV×UER interaction MLP (64, 32) hidden units, ReLU, dropout 0.2, AdamW weight decay 0.0001 class imbalance none needed (GLM likelihood) pos_weight-weighted BCE + prior correction (pos_weight = 35.9) early stopping n/a (IRLS convergence) by TIME: fit t≤32, validate t=33..40 (2008Q2–2010Q1); best epoch 8 ..."
+            },
+            {
+              "title": "7.4 Scorecard read: discrimination (AUC)",
+              "node_id": "0103",
+              "start_index": 303,
+              "end_index": 305,
+              "summary": "One-quarter-ahead default AUC, train (t≤40) and out-of-time (t=41..60), for both models. This chapter's own recompute ( notes/assets/img/ch07/recompute_challenger_scoring.py — champion refit via engine.hazard.fit_default_hazard , challenger re-scored, not retrained, from outputs/challenger/mlp_challenger.pt ) reproduces every value in scorecard.md to the 4th decimal. Worked numbers — recomputed, not retyped. model train AUC (t≤40) OOT AUC (t=41..60) train−OOT gap champion 0.7476 0.6609 0.0867 challenger 0.7632 0.6417 0.1214 delta (challenger − champion) +0.0156 −0.0191 +0.0347 Rounded to the ..."
+            },
+            {
+              "title": "7.5 Calibration: reliability — champion vs challenger",
+              "node_id": "0104",
+              "start_index": 306,
+              "end_index": 309,
+              "summary": "A reliability diagram bins scored rows into quantiles of predicted hazard and plots each bin's MEAN predicted hazard against its mean OBSERVED event rate. Perfect calibration sits on the 45-degree diagonal; points above the diagonal mean the model UNDER-predicts in that bin (observed exceeds predicted), points below mean it OVER-predicts. Exhibit 7.3 — Reliability (20 score-quantile bins), champion vs challenger, train and out-of-time.",
+              "nodes": [
+                {
+                  "title": "Interactive: reliability-curve comparator",
+                  "node_id": "0105",
+                  "start_index": 309,
+                  "end_index": 309,
+                  "summary": "Toggle each model on/off and switch between the train and out-of-time splits — every point plotted below is the SAME 20-bin recomputed data tabulated above and charted in Exhibit 7.3 (linear axes here, rather than the exhibit's log-log, for direct visual comparison against the diagonal at typical portfolio scale)."
+                },
+                {
+                  "title": "Live widget — reliability-curve comparator (real 20-bin data, this chapter's own recompute)",
+                  "node_id": "0106",
+                  "start_index": 309,
+                  "end_index": 309,
+                  "summary": "Gotcha — \"well calibrated on average\" and \"well calibrated\" are different claims. A model whose book-level predicted total equals its book-level observed total can still be badly mis-calibrated at the loan level, systematically over-pricing some segment of the book and under-pricing another by an equal and offsetting amount. Any absolute (not just rank-ordering) use of a PD — ECL itself, most obviously — is exposed to this even when a single summary ratio looks reassuring; the fix is always to check calibration bin-by-bin (or segment-by-segment), never by the portfolio mean alone."
+                }
+              ]
+            },
+            {
+              "title": "7.6 Stability: PSI, train→OOT",
+              "node_id": "0107",
+              "start_index": 310,
+              "end_index": 316,
+              "summary": "The Population Stability Index (PSI) measures how much a score DISTRIBUTION has shifted between two populations — here, the training-time score distribution vs the out-of-time score distribution, for each model separately. Derivation — PSI's band-by-band formula, from its KL-divergence motivation. 1. For two discrete distributions $P$ (a baseline/expected population) and $Q$ (a current/actual population) split into the same $n$ bands with shares $p_i,q_i$, the Kullback–Leibler divergence $D_{KL}(Q\\Vert P)=\\sum_i q_i\\ln(q_i/p_i)$ measures how surprised you'd be seeing $Q$'s data if you ..."
+            },
+            {
+              "title": "7.7 Interpretability for nonlinear models: permutation importance, PDP, and the SHAP-dropped decision",
+              "node_id": "0108",
+              "start_index": 317,
+              "end_index": 321,
+              "summary": "A GLM's coefficients are self-interpreting (Chapter 3's hazard-ratio reading applies directly). An MLP's weights are not — interpretability has to be reconstructed from the model's INPUT-OUTPUT behaviour rather than read off its parameters. Permutation importance — for a fitted model and a held-out set, randomly shuffle (permute) one feature (or a block of features) across rows, breaking its relationship with the target while leaving its marginal distribution untouched, and measure how much the evaluation metric (OOT AUC here) drops.",
+              "nodes": [
+                {
+                  "title": "The SHAP-dropped decision — an engineering-tradeoff lesson",
+                  "node_id": "0109",
+                  "start_index": 320,
+                  "end_index": 321,
+                  "summary": "The original project plan called for SHAP (Shapley-value attribution) alongside the MLP challenger and out-of-time scorecard. It was dropped during Day 3 of the build, recorded verbatim in the project's own handoff memory: Recorded decision. \" Torch from PyPI (cu126 index TLS-blocked; decision), shap dropped (numba/np2.5 conflict; permutation importance+PDP instead). \" — wiki/memory/log.md , Day 3 handoff entry. SHAP's exact-computation paths pull in numba as a transitive dependency for JIT-compiled kernels; numba pins compatible numpy versions tightly, and lagged behind this project's numpy ..."
+                }
+              ]
+            },
+            {
+              "title": "7.8 The seasoning-hump-rediscovery check",
+              "node_id": "0110",
+              "start_index": 322,
+              "end_index": 324,
+              "summary": "The champion's age effect is a DELIBERATE, hand-built natural cubic spline (df=5) — encoding the analyst's prior that default hazard rises then falls with loan age (the \"seasoning hump\", first introduced in Chapter 3's empirical hazard-by-age exhibit, peaking around 10–12 quarters on book). The challenger receives raw loan_age as a single unconstrained input, with no spline basis, no monotonicity constraint, no hint of any hump. If the hump is a real structural feature of the DATA rather than an artefact of the champion's chosen basis, a sufficiently flexible learner given the same raw ..."
+            },
+            {
+              "title": "7.9 Interactive: AUC intuition — score separation → live ROC",
+              "node_id": "0111",
+              "start_index": 325,
+              "end_index": 327,
+              "summary": "Every AUC number in this chapter (0.6609, 0.6417, and the rest) is a single scalar summarising an entire ROC curve. This section builds the intuition for what that scalar actually MEANS in terms of how separated two score distributions are, using the simplest case with a clean closed form: two Gaussian score distributions of equal variance. Proposition (Mann-Whitney / concordance interpretation of AUC).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the separation slider",
+                  "node_id": "0112",
+                  "start_index": 327,
+                  "end_index": 327,
+                  "summary": "The widget computes AUC TWO independent ways at every slider position — the closed form $\\Phi(d/\\sqrt2)$, and trapezoidal integration of the numerically swept ROC curve itself — and displays both in the readout box below the plot; they agree to within numerical-integration error at every setting, the same style of dual cross-check Chapter 5 uses for the Vasicek anchor property. Gotcha — real score distributions are never exactly Gaussian, and this widget does not claim they are. The clean closed form $\\Phi(d/\\sqrt2)$ is a teaching device for building intuition about the RELATIONSHIP between ..."
+                }
+              ]
+            },
+            {
+              "title": "7.10 Forward pointer: Chapter 12's SFLLD LSTM challenger",
+              "node_id": "0113",
+              "start_index": 328,
+              "end_index": 328,
+              "summary": "This chapter's MLP asked a narrow, rigorously like-for-like question: given the EXACT SAME 12 raw covariates the champion uses, does a flexible cross-sectional learner find the same structure? Chapter 12 runs a structurally different challenger experiment against the Freddie Mac SFLLD hazard baseline (AUC 0.8536 train / 0.6847 OOT): an LSTM (sequence model) given each loan's trailing 24-month DELINQUENCY-PATH history — a feature the champion hazard does not use AT ALL, not merely uses less flexibly. The result there is dramatic (LSTM OOT AUC 0.9925, a +0.3078 delta) precisely BECAUSE it is ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch08_the_agent.html",
+      "node_id": "0114",
+      "start_index": 329,
+      "end_index": 329,
+      "summary": "Ch.8 — The Agent (LangGraph Copilot) | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 8 — The Agent (LangGraph Copilot)",
+      "node_id": "0115",
+      "start_index": 329,
+      "end_index": 395,
+      "summary": "A grounded, three-tier agent that never computes a number itself — reading the router, the guard stack, and the sandbox that let it write code safely IFRS9 ECL Study-Notes Compendium — Chapter 8 of 13. Compiled from agent/graph.py , agent/tools_tier1.py , agent/tools_tier2.py , agent/tier3_retrieval.py , agent/mcp_server.py , wiki/pages/agent-layer.md , outputs/agent_log/*.jsonl , outputs/demo/*.json , outputs/gate/reasoned_route_gate.md , tests/test_tier2.py , and live reproduction against the local engine on 2026-07-19. Contents. 8.1 The governing rule and the three-tier split 8.2 Tier-1: ...",
+      "nodes": [
+        {
+          "title": "8  The Agent (LangGraph Copilot)",
+          "node_id": "0116",
+          "start_index": 331,
+          "end_index": 395,
+          "summary": "Chapters 1–7 built a frozen, deterministic IFRS 9 ECL engine and validated it exhaustively. This chapter is about the layer sitting on top of that engine that lets a bank risk analyst ask it questions in plain English — and the entire design problem it solves is trust: a large language model is fluent, but it is also a confident maker-upper of plausible-sounding numbers. The project's answer, built across four phases (Day 4's LangGraph router and four Tier-1 tools; a stretch phase adding Tier-3 documentation retrieval and an MCP server; App v2 adding the Tier-2 sandboxed code interpreter; and ...",
+          "nodes": [
+            {
+              "title": "8.1 The governing rule and the three-tier split",
+              "node_id": "0117",
+              "start_index": 332,
+              "end_index": 334,
+              "summary": "The governing rule (verbatim, agent/graph.py module docstring). \"THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic and never states a fact from its own memory. Every NUMBER in every Tier-1 answer comes from the frozen engine via the four Tier-1 tools in agent/tools_tier1.py . Every CLAIM in a Tier-3 ( query_model_docs ) answer comes from a retrieved wiki/knowledge-corpus passage, cited."
+            },
+            {
+              "title": "8.2 Tier-1: four validated tools",
+              "node_id": "0118",
+              "start_index": 335,
+              "end_index": 349,
+              "summary": "Tier-1 ( agent/tools_tier1.py ) is four pure, deterministic Python functions the router may call: shock_macro , reweight_scenarios , rerun_ecl , decompose_waterfall . Each has a pydantic argument model with extra=\"forbid\" — malformed or extraneous arguments raise ValidationError BEFORE any engine code runs, and the router never gets a second chance to guess: a validation failure collapses straight to refusal ( decide_route , §8.5). Every one of the six heavy artifacts these tools need (fitted hazard and LGD models, recovered systematic factor Z , the fitted satellite, the DFAST scenario set, ...",
+              "nodes": [
+                {
+                  "title": "shock_macro — the coherent-shock convention",
+                  "node_id": "0119",
+                  "start_index": 338,
+                  "end_index": 340,
+                  "summary": "shock_macro(var, shock, shape) perturbs the base scenario's macro path and reruns the satellite→Z→PIT→ECL chain (Chapters 5–6) for the t=60 book. The interesting design decision is what happens to a UNIVARIATE shock: the project's fitted satellite is $Z=f(\\text{hpi\\_growth\\_lag1},\\ \\text{gdp\\_growth\\_lag2})$ — the unemployment driver was EXCLUDED by the economic-sign governance constraint on this one-cycle panel (Chapter 6, outputs/satellite/ satellite_report.md ). A UER-only path move would therefore be entirely invisible to the credit-cycle factor $Z$ — not because unemployment doesn't ..."
+                },
+                {
+                  "title": "reweight_scenarios",
+                  "node_id": "0120",
+                  "start_index": 341,
+                  "end_index": 341,
+                  "summary": "reweight_scenarios(w_up, w_base, w_down) recomputes the weighted allowance from the three CACHED per-scenario ECL totals (no re-run) and reports the Jensen ratio — weighted allowance divided by the allowance AT the weighted-average macro path (Chapter 6's Jensen's-inequality gap, made interactively queryable). Recorded exchange — reweight_scenarios(0.3, 0.4, 0.3) . Audit-log entry, quoted verbatim from outputs/agent_log/tool_calls.jsonl (seq 2): {\"tool\": \"reweight_scenarios\", \"args\": {\"w_up\": 0.3, \"w_base\": 0.4, \"w_down\": 0.3}, \"headline\": \"weights up/base/down = 0.30/0.40/0.30: weighted ..."
+                },
+                {
+                  "title": "rerun_ecl",
+                  "node_id": "0121",
+                  "start_index": 342,
+                  "end_index": 344,
+                  "summary": "rerun_ecl(segment) filters the cached per-loan scenario books by segment ( all , stage1 , stage2 , stage3 , investor , high_ltv — current updated LTV > 80) and reports the scenario-weighted allowance, stage mix, and share of the total book allowance — pure decomposition of already-computed numbers, no re-run. Recorded exchange — rerun_ecl(\"high_ltv\") . Audit-log entry, outputs/agent_log/ tool_calls.jsonl (seq 3): headline \"segment 'high_ltv' (current updated LTV > 80): 3,201 loans, balance \\$756.7m, scenario-weighted allowance \\$18.9m (55.6% of the book allowance), coverage 2.50%\" ."
+                },
+                {
+                  "title": "decompose_waterfall",
+                  "node_id": "0122",
+                  "start_index": 345,
+                  "end_index": 349,
+                  "summary": "decompose_waterfall(t0, t1) runs the FROZEN engine's movement_decomposition (Chapter 2) between two rung-1 snapshots: opening + stage_migration + remeasurement + derecognitions + new_loans = closing, an identity asserted inside the frozen engine itself. Recorded exchange — decompose_waterfall(20, 40) . Audit-log entry, outputs/ agent_log/tool_calls.jsonl (seq 4): headline \"allowance waterfall t=20 (2005Q1) -> t=40 (2010Q1): opening \\$24.5m, stage migration +3.9m, remeasurement +26.0m, derecognitions -21.2m, new loans +999.4m, closing \\$1,032.6m\" ."
+                }
+              ]
+            },
+            {
+              "title": "8.3 Tier-2: the sandboxed",
+              "node_id": "0123",
+              "start_index": 350,
+              "end_index": 361,
+              "summary": "analyze_data Tier-1's four tools cover the questions someone anticipated in advance. Real analysts ask long-tail questions no fixed parameter set covers — \"which FICO band drives the most allowance\", \"top 10 loans by exposure\", \"average LTV of Stage 2 loans\". Tier-2's analyze_data ( agent/ tools_tier2.py ) answers these by letting the LLM WRITE pandas code against three read-only DataFrames ( book , scenarios , z_path — built once from the already-run Tier-1 engine state, documented in full in the module's own docstring) — but the number shown to the user always comes from EXECUTING that ..."
+            },
+            {
+              "title": "8.4 Tier-3:",
+              "node_id": "0124",
+              "start_index": 362,
+              "end_index": 365,
+              "summary": "query_model_docs Tier-1 and Tier-2 answer questions with a NUMBER. Tier-3 ( agent/tier3_retrieval.py ) answers questions about what the project's OWN documentation says — methodology, definitions, design rationale — strictly by retrieving and quoting real passages, with NO LLM involved in the retrieval step itself. Two sources, reused from two existing skills rather than reimplemented: the model-development wiki's typed graph ( .claude/skills/llm-wiki/scripts/wiki_query.py — lexical seed scoring + a 1-hop graph expansion) and the indexed IFRS 9 knowledge corpus ( ..."
+            },
+            {
+              "title": "8.5 The LangGraph router: a three-way scope split",
+              "node_id": "0125",
+              "start_index": 366,
+              "end_index": 374,
+              "summary": "Every question enters the graph at exactly one place: the router node. A single LLM call, temperature 0, classifies the question into exactly one of three CLASSES — COMPUTABLE (one of the six Tier-1/Tier-2/Tier-3 tools), REASONED (a conceptual question no tool computes or simply quotes, but that a grounded, cited reasoning pass can responsibly address), or REFUSE (everything else) — and, for COMPUTABLE, also emits that tool's arguments. decide_route ( agent/graph.py ) then pydantic-validates whatever the router claimed: an unparseable response, an unknown route, or an argument-validation ...",
+              "nodes": [
+                {
+                  "title": "Interactive — router-decision explorer",
+                  "node_id": "0126",
+                  "start_index": 370,
+                  "end_index": 374,
+                  "summary": "(illustrative decision tree, NOT the real LLM) The real router is a single temperature-0 LLM call reading the full natural-language system prompt above and returning one JSON classification — it is not literally a decision tree. The tree below is a teaching approximation of the SAME disambiguation rules, restructured as clickable yes/no questions; click a node to expand the rule it encodes, quoted or paraphrased from ROUTER_SYSTEM_PROMPT . Does the question have ANY connection to this model, IFRS 9, or credit risk generally?"
+                }
+              ]
+            },
+            {
+              "title": "8.6 The guard stack, derived as a pipeline",
+              "node_id": "0127",
+              "start_index": 375,
+              "end_index": 379,
+              "summary": "Every LLM-authored piece of prose in this system — Tier-1's narration, Tier-3's docs narration, REASONED's interpretation — is DISTRUSTED mechanically before it is ever shown. The guard stack was not designed in one pass; it was built up in the order the project actually needed each layer, and understanding that construction order is the clearest way to understand what each layer catches that the others don't. Layer 1 (built first, Day 4) — the VERBATIM-NUMBER check. _number_tokens(text) finds every digit-token substring ( -?\\d[\\d,]*(?:\\.\\d+)? ) in the LLM's narration. ...",
+              "nodes": [
+                {
+                  "title": "Interactive — guard-pipeline stepper",
+                  "node_id": "0128",
+                  "start_index": 378,
+                  "end_index": 379,
+                  "summary": "(the REAL regex/word-list logic from agent/graph.py , reimplemented in JS) Type or paste a candidate narration below; the two number guards run LIVE against a real recorded shock_macro result (§8.2's exchange) using the same digit-token regex and spelled-number word lists as _number_tokens / _spelled_number_violation ( agent/graph.py lines 658–719). The citation check (layer 3) is Tier-3/REASONED-only and is described qualitatively above rather than reimplemented here, since it needs a passages list this tool_result doesn't carry. load: PASS example load: invented digit load: \"two hundred ..."
+                }
+              ]
+            },
+            {
+              "title": "8.7 REASONED in full, refusal as a feature, and an honest limitation",
+              "node_id": "0129",
+              "start_index": 380,
+              "end_index": 386,
+              "summary": "",
+              "nodes": [
+                {
+                  "title": "REASONED — the route's own motivating example, worked in full",
+                  "node_id": "0130",
+                  "start_index": 380,
+                  "end_index": 386,
+                  "summary": "§8.5's router few-shot table lists the first of its two REASONED examples as \"does the satellite need a UER × HPI interaction, or do the main effects and momentum already account for the joint stress response?\" — not by coincidence: it is literally the ship gate's own \"motivating example\" for the whole route ( outputs/gate/reasoned_route_gate.md §5: \"Before this feature this question hit REFUSE; it no longer does\"). Here is that exact recorded exchange in full, not merely the routing decision. Recorded exchange — the REASONED route's own motivating example."
+                }
+              ]
+            },
+            {
+              "title": "8.8 The audit trail",
+              "node_id": "0131",
+              "start_index": 387,
+              "end_index": 389,
+              "summary": "Every Tier-1/Tier-2/Tier-3 call, and every full graph run, is logged — not as an afterthought, but as the mechanism that makes every number in this chapter independently verifiable rather than merely asserted. Two logs, two grains. outputs/agent_log/tool_calls.jsonl — one line per successful TOOL call (Tier-1, Tier-2, Tier-3, and REASONED's baseline lookup all share this file and its sequence counter): {\"seq\", \"ts\", \"tool\", \"args\", \"headline\"} . The returned tool_call_id ( \"tc-<seq>\" ) references this exact line. _last_logged_seq reads the last line's own seq field to resume numbering ..."
+            },
+            {
+              "title": "8.9 The MCP server surface",
+              "node_id": "0132",
+              "start_index": 390,
+              "end_index": 395,
+              "summary": "agent/mcp_server.py exposes the SAME four Tier-1 tools over the Model Context Protocol, so any MCP client (Claude Desktop, an IDE agent, a script using the fastmcp / mcp SDK) can call them directly — no HTTP layer, no copilot chat UI in between. It is deliberately a THIN ADAPTER: each tool is registered by wrapping the real tools_tier1 function in a wrapper whose sole parameter is typed with the REAL pydantic model from TIER1_ARG_MODELS , so fastmcp builds the wire schema straight from that model — bounds, extra=\"forbid\" , and every cross-field model_validator (shock bounds, weights summing ..."
             }
           ]
         }

@@ -29,6 +29,24 @@
       "slug": "ch05_vasicek.html",
       "assets": [],
       "figures": 0
+    },
+    "ch06_scenarios_satellite_jensen.html": {
+      "hash": "723ad707d59fea2e",
+      "slug": "ch06_scenarios_satellite_jensen.html",
+      "assets": [],
+      "figures": 0
+    },
+    "ch07_challengers.html": {
+      "hash": "8c3260bfb49cc49d",
+      "slug": "ch07_challengers.html",
+      "assets": [],
+      "figures": 0
+    },
+    "ch08_the_agent.html": {
+      "hash": "b64bbb50f5d1a7ed",
+      "slug": "ch08_the_agent.html",
+      "assets": [],
+      "figures": 0
     }
   }
 }
