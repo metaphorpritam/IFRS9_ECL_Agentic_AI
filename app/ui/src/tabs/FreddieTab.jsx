@@ -1,3 +1,4 @@
+import { Fragment } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import {
   explainPanelQuestion,
@@ -10,6 +11,12 @@ import { fmtNum, fmtPct, fmtRatio, runDate } from '../format.js';
 import StatTile from '../components/StatTile.jsx';
 import ExhibitImage from '../components/ExhibitImage.jsx';
 import Panel from '../components/Panel.jsx';
+import HowToReadCoefficients from '../components/HowToReadCoefficients.jsx';
+import {
+  ExpandToggle,
+  InterpretationRow,
+  useExpandableRows,
+} from '../components/CoefficientInterpretation.jsx';
 
 // Local formatter: this tab's rates arrive pre-computed on the 0-100 scale
 // (the *_pct convention, see docs/api_contract.md §4) -- never re-multiply.
@@ -269,6 +276,71 @@ function SeverityCyclePanel({ exhibits }) {
   );
 }
 
+const FREDDIE_COEF_COLS = 6; // toggle + term + HR + per-unit HR + coef + p
+
+function SflldCoefficientsPanel({ hazard }) {
+  const { isOpen, toggle } = useExpandableRows();
+  if (!hazard) return null;
+  return (
+    <Panel
+      exhibit={5}
+      title="SFLLD hazard coefficients"
+      subtitle="The full fitted coefficient table (19 terms) -- hazard ratio > 1 = risk-increasing; < 1 = risk-reducing. Click a row to expand its interpretation."
+      source={{ endpoint: 'GET /api/freddie/hazard', runDate: runDate() }}
+      buildExplainQuestion={() =>
+        explainPanelQuestion({
+          panelId: 'freddie_coefficients',
+          exhibitLabel: 'Exhibit 5',
+          title: 'SFLLD hazard coefficients',
+          recap: `${hazard.coefficients.length} fitted terms; train AUC ${hazard.metrics.train_auc.toFixed(4)}, OOT AUC ${hazard.metrics.oot_auc.toFixed(4)}. State UER level hazard ratio ${hazard.coefficients.find((c) => c.term === 'uer_lag1')?.hazard_ratio.toFixed(4)}, state HPI-growth hazard ratio ${hazard.coefficients.find((c) => c.term === 'hpi_growth_lag1')?.hazard_ratio.toFixed(4)}.`,
+        })
+      }
+    >
+      <div class="table-scroll">
+        <table class="data-table coef-table">
+          <thead>
+            <tr>
+              <th />
+              <th>Term</th>
+              <th class="num">Hazard ratio</th>
+              <th class="num" data-tip="0.01-vs-1pp-corrected, see the intro panel">Per-unit HR</th>
+              <th class="num">Coef</th>
+              <th class="num">p</th>
+            </tr>
+          </thead>
+          <tbody>
+            {hazard.coefficients.map((c) => {
+              const open = isOpen(c.term);
+              return (
+                <Fragment key={c.term}>
+                  <tr class={`coef-row${open ? ' row-open' : ''}`} onClick={() => toggle(c.term)}>
+                    <td>
+                      <ExpandToggle open={open} onToggle={() => toggle(c.term)} label={c.term} />
+                    </td>
+                    <td>
+                      <code>{c.term}</code>
+                      {c.fred_series && <span class="fred-badge fred-badge-inline">FRED</span>}
+                    </td>
+                    <td class={`num ${c.hazard_ratio > 1 ? 'hr-up' : 'hr-down'}`}>
+                      {c.hazard_ratio.toFixed(4)}
+                    </td>
+                    <td class="num">
+                      {c.hazard_ratio_per_unit != null ? c.hazard_ratio_per_unit.toFixed(4) : '—'}
+                    </td>
+                    <td class="num">{c.coef.toFixed(4)}</td>
+                    <td class="num">{c.p_value < 1e-4 ? c.p_value.toExponential(2) : c.p_value.toFixed(4)}</td>
+                  </tr>
+                  {open && <InterpretationRow row={c} colSpan={FREDDIE_COEF_COLS} />}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+}
+
 function HazardVsDcrPanel({ hazard, exhibits }) {
   if (!hazard) return null;
   const seasoning = exhibitById(exhibits, 'freddie_seasoning_curve');
@@ -277,14 +349,14 @@ function HazardVsDcrPanel({ hazard, exhibits }) {
   const covidCal = exhibitById(exhibits, 'freddie_covid_calibration_comparison');
   return (
     <Panel
-      exhibit={5}
+      exhibit={6}
       title="Champion hazard vs the DCR priors, and the COVID regime verdict"
       subtitle="Sign comparison against engine/hazard.py's expected directions, plus the reviewed COVID/forbearance regime treatment."
       source={{ endpoint: 'GET /api/freddie/hazard', runDate: runDate() }}
       buildExplainQuestion={() =>
         explainPanelQuestion({
           panelId: 'freddie_hazard_vs_dcr',
-          exhibitLabel: 'Exhibit 5',
+          exhibitLabel: 'Exhibit 6',
           title: 'Champion hazard vs the DCR priors',
           recap: `Recommended COVID treatment: ${hazard.covid.verdict} (window ${hazard.covid.window}). ${hazard.covid.recommendation}`,
         })
@@ -329,13 +401,13 @@ function StateHeterogeneityPanel({ exhibits }) {
   if (!ex) return null;
   return (
     <Panel
-      exhibit={6}
+      exhibit={7}
       title="State heterogeneity — the collateral channel, in real geography"
       source={{ endpoint: 'GET /api/freddie/exhibits', runDate: runDate() }}
       buildExplainQuestion={() =>
         explainPanelQuestion({
           panelId: 'freddie_state_heterogeneity',
-          exhibitLabel: 'Exhibit 6',
+          exhibitLabel: 'Exhibit 7',
           title: ex.title,
           recap: ex.caption,
         })
@@ -358,14 +430,14 @@ function LstmLiftPanel({ summary, exhibits }) {
   ];
   return (
     <Panel
-      exhibit={7}
+      exhibit={8}
       title="LSTM path-dependence challenger — lift decomposition"
       subtitle="Challenger-never-champion: a discrimination-only scorecard testing whether trailing delinquency-path memory adds signal the current-state-only champion cannot see."
       source={{ endpoint: 'GET /api/freddie/summary', runDate: runDate() }}
       buildExplainQuestion={() =>
         explainPanelQuestion({
           panelId: 'freddie_lstm_lift',
-          exhibitLabel: 'Exhibit 7',
+          exhibitLabel: 'Exhibit 8',
           title: 'LSTM path-dependence challenger',
           recap: rows.map((r) => `${r.group}: champion ${r.champion.toFixed(4)} -> LSTM ${r.model.toFixed(4)} (Δ ${(r.model - r.champion >= 0 ? '+' : '')}${(r.model - r.champion).toFixed(4)})`).join('; '),
         })
@@ -458,11 +530,14 @@ export default function FreddieTab() {
 
       {error && <div class="empty-note">Engine API offline ({error}).</div>}
 
+      <HowToReadCoefficients />
+
       <HeroTiles summary={summary} />
       <VintageCurvesPanel exhibits={exhibits} />
       <CovidAnomalyPanel exhibits={exhibits} />
       <BacktestPanel backtest={backtest} />
       <SeverityCyclePanel exhibits={exhibits} />
+      <SflldCoefficientsPanel hazard={hazard} />
       <HazardVsDcrPanel hazard={hazard} exhibits={exhibits} />
       <StateHeterogeneityPanel exhibits={exhibits} />
       <LstmLiftPanel summary={summary} exhibits={exhibits} />

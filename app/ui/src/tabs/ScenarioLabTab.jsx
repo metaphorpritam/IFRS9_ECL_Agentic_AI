@@ -167,10 +167,17 @@ export default function ScenarioLabTab() {
                 panelId: 'shock_control',
                 params: { var: shockVar, shock: shockPp, shape: shockShape },
                 title: 'Macro shock',
-                recap: `Control currently set to ${shockVar} ${shockPp >= 0 ? '+' : ''}${shockPp.toFixed(1)}pp (${shockShape}).`,
+                recap: `Control currently set to ${shockVar} ${shockPp >= 0 ? '+' : ''}${shockPp.toFixed(1)}pp (${shockShape}). Coherent-shock convention: the satellite is Z = f(hpi_growth_lag1, gdp_growth_lag2) with NO unemployment term, so a UER-only shock is projected onto the DFAST severe-minus-base direction to still reach Z (see the macro data glossary on The Model tab).`,
               })
             }
           >
+            <p class="caveat coherent-shock-note">
+              <b>Coherent-shock convention.</b> The satellite has{' '}
+              <b>no unemployment term</b> (Z = f(hpi_growth_lag1, gdp_growth_lag2)
+              only) — a UER-only shock is applied as a co-moving move along the
+              DFAST severe-minus-base direction so it still reaches the credit
+              cycle. See the Macro data glossary on The Model tab.
+            </p>
             <div class="control-row">
               <select value={shockVar} onInput={(e) => setShockVar(e.currentTarget.value)}>
                 <option value="UER">UER (unemployment level)</option>

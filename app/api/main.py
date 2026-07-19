@@ -625,6 +625,706 @@ def _parse_ci(s: str) -> list[float]:
     return [float(lo), float(hi)]
 
 
+# ---------------------------------------------------------------------------
+# Requirement 12 -- macro/FRED interpretation, first-class in the app.
+#
+# One curated, grounded fact registry (`_CONCEPTS`) keyed by a normalised
+# "concept" id, joined onto each parsed coefficient/variable-dictionary row
+# by a per-source label->concept lookup below. Content is transcribed from
+# outputs/variable_dictionary.md, outputs/hazard/hazard_ratios.md,
+# outputs/freddie/hazard/hazard_report.md + coefficients.csv +
+# dcr_sign_comparison.csv, outputs/satellite/satellite_report.md and
+# freddie/macro.py's docstrings -- never invented. The two NUMBERS every
+# concept needs (hazard_ratio_per_unit, worked_example) are the only part
+# computed here, mechanically, from the coefficient the row itself carries
+# (GOVERNING RULE: the LLM never does arithmetic; here, neither does a
+# human -- see _hazard_ratio_per_unit / _worked_example below).
+#
+# unit_kind drives the worked-example arithmetic:
+#   "direct"      -- HR already reads per the stated unit (e.g. per 10pp).
+#   "log1pct"     -- HR in the source table is per a FULL 1.0 log-unit
+#                    (~100% growth, never observed); the economically
+#                    legible unit is 1% growth (0.01 log-units), so
+#                    hazard_ratio_per_unit = exp(beta * 0.01) = HR ** 0.01
+#                    -- the classic "0.01 vs 1pp" misread the spec calls
+#                    out, computed exactly, not eyeballed.
+#   "categorical" -- a 0/1 dummy; HR reads "vs the stated reference".
+#   "interaction" -- a product term; a single worked example would mislead
+#                    (see fit_stats.double_trigger_note instead).
+#   "spline"      -- one basis weight of a natural-cubic-spline age curve;
+#                    not individually interpretable (source text is explicit
+#                    about this for both DCR and SFLLD).
+#   "baseline"    -- the model intercept.
+# ---------------------------------------------------------------------------
+
+_CONCEPTS: dict[str, dict] = {
+    "fico": {
+        "unit_meaning": "1 unit = 100 points of FICO score at origination "
+            "(fico_s = FICO_orig_time / 100).",
+        "transformation": "level, static at origination, scaled /100",
+        "lag": "static (origination) -- no lag, not time-varying",
+        "fred_series": None,
+        "economic_channel": "Ability/willingness-to-pay channel: cleaner "
+            "credit history at origination signals lower baseline default "
+            "propensity, independent of the macro cycle.",
+        "unit_kind": "direct", "unit_label": "100 FICO points",
+    },
+    "ltv": {
+        "unit_meaning": "1 unit = 10 percentage points of updated LTV "
+            "(ltv10 = updated_ltv / 10; updated_ltv winsorised at 300%).",
+        "transformation": "updated_ltv = LTV_orig x (balance_t/balance_orig) "
+            "x (hpi_orig/hpi_t) -- a documented CURRENT-period exception to "
+            "the lag convention, because collateral value is a real-time "
+            "state, not a forecast.",
+        "lag": "current period (documented exception, flagged with a lightning-bolt in the variable dictionary)",
+        "fred_series": None,
+        "economic_channel": "Collateral / negative-equity channel: as "
+            "updated LTV rises the borrower's equity cushion shrinks, "
+            "removing both the option to sell out of trouble and (past "
+            "100% LTV) adding a strategic-default incentive.",
+        "unit_kind": "direct", "unit_label": "10pp of updated LTV",
+    },
+    "rate_incentive": {
+        "unit_meaning": "1 unit = 1 percentage point of rate incentive "
+            "(note rate minus the current market rate).",
+        "transformation": "current-period state variable (option value is "
+            "real-time)",
+        "lag": "current period (documented exception, same as LTV)",
+        "fred_series": None,
+        "economic_channel": "Refinancing-incentive channel: a note rate "
+            "above the market rate makes refinancing pay -- the star "
+            "prepayment driver; for default it doubles as a proxy for "
+            "contractual debt-service burden.",
+        "unit_kind": "direct", "unit_label": "1pp of rate incentive",
+    },
+    "investor": {
+        "unit_meaning": "binary flag: 1 if the loan is investor-owned at "
+            "origination, 0 (owner-occupied) otherwise.",
+        "transformation": "static origination flag", "lag": "static (origination)",
+        "fred_series": None,
+        "economic_channel": "Strategic-default propensity channel: an "
+            "investor has no home to lose, so the same negative-equity "
+            "trigger converts to default faster than for an owner-occupant.",
+        "unit_kind": "categorical", "unit_label": "an investor-owned loan",
+        "reference_label": "an owner-occupied loan",
+    },
+    "condo": {
+        "unit_meaning": "binary flag: 1 if the property is a condominium.",
+        "transformation": "static origination flag", "lag": "static (origination)",
+        "fred_series": None,
+        "economic_channel": "Property-type risk: condos carry HOA/liquidity "
+            "characteristics distinct from single-family detached homes "
+            "(effect not significant at 5% in the default hazard, p=0.141).",
+        "unit_kind": "categorical", "unit_label": "a condominium",
+        "reference_label": "the non-condo reference property type",
+    },
+    "pud": {
+        "unit_meaning": "binary flag: 1 if the property is a planned unit "
+            "development.",
+        "transformation": "static origination flag", "lag": "static (origination)",
+        "fred_series": None,
+        "economic_channel": "Property-type risk, same family as condo.",
+        "unit_kind": "categorical", "unit_label": "a planned-unit-development property",
+        "reference_label": "the reference property type",
+    },
+    "single_family": {
+        "unit_meaning": "binary flag: 1 if the property is single-family "
+            "detached.",
+        "transformation": "static origination flag", "lag": "static (origination)",
+        "fred_series": None,
+        "economic_channel": "Property-type risk, same family as condo "
+            "(effect not significant at 5% in the default hazard, p=0.715).",
+        "unit_kind": "categorical", "unit_label": "a single-family detached property",
+        "reference_label": "the reference property type",
+    },
+    "uer_level_dcr": {
+        "unit_meaning": "1 unit = 1 percentage point of the national "
+            "unemployment rate LEVEL, lagged 1 quarter.",
+        "transformation": "level (pp), within-loan 1-quarter lag -- a "
+            "vendor-premerged national series on the DCR panel's own "
+            "ANONYMIZED quarterly clock (data/panel/build_panel.py: "
+            "\"macros pre-merged\"), not a live FRED pull. Only the "
+            "clock's CALENDAR alignment to real quarters was verified, "
+            "via correlation against FRED UNRATE (corr 0.996, per "
+            "outputs/variable_dictionary.md's preamble) -- an anchoring "
+            "check, not a sourcing claim, so no FRED series id is given.",
+        "lag": "1 quarter",
+        "fred_series": None,
+        "economic_channel": "Cash-flow / labour-income channel: a job loss "
+            "removes the income that services the mortgage, raising "
+            "arrears and default risk.",
+        "unit_kind": "direct", "unit_label": "1pp of national UER level",
+        "net_effect_note": "Read TOGETHER with the 4-quarter change term "
+            "below -- a 1pp labour-market SHOCK moves both one-for-one; "
+            "see fit_stats.net_uer_effect_note for the combined hazard "
+            "ratio (~1.28 per pp).",
+    },
+    "uer_momentum_dcr": {
+        "unit_meaning": "1 unit = 1 percentage point of the 4-quarter "
+            "CHANGE in the national unemployment rate, lagged 1 quarter.",
+        "transformation": "4-quarter first difference of the same "
+            "vendor-premerged, anonymized-clock national UER series as "
+            "the level term above -- not a live FRED pull.",
+        "lag": "1 quarter (over a 4-quarter window)",
+        "fred_series": None,
+        "economic_channel": "Labour-market momentum: a fast-deteriorating "
+            "job market front-loads distress even before the level itself "
+            "is high -- the level and momentum coefficients correlate at "
+            "0.94 in-sample and are read TOGETHER as the net unemployment-"
+            "shock effect (fit_stats.net_uer_effect_note).",
+        "unit_kind": "direct", "unit_label": "1pp of the 4-quarter UER change",
+    },
+    "hpi_growth_dcr": {
+        "unit_meaning": "dlog(HPI) -- one-quarter log-difference of the "
+            "national house-price index, lagged 1 quarter. The table's HR "
+            "is scaled to a FULL 1.0 log-unit (~100% quarterly growth, "
+            "never observed) -- the economically legible worked example "
+            "below is per 1% quarterly growth (0.01 log-units); this is "
+            "the classic 0.01-vs-1pp misread.",
+        "transformation": "log-growth (dlog) of the national FHFA HPI, "
+            "lagged 1 quarter -- a vendor-premerged series on the DCR "
+            "panel's anonymized clock, not a live FRED pull (unlike the "
+            "SFLLD rung's state-level {POSTAL}STHPI, which IS a genuine "
+            "live FRED pull via freddie/macro.py).",
+        "lag": "1 quarter",
+        "fred_series": None,
+        "economic_channel": "Collateral / equity-building channel: rising "
+            "house prices rebuild borrower equity and improve the odds of "
+            "a profitable sale instead of default; falling prices do the "
+            "reverse.",
+        "unit_kind": "log1pct", "unit_label": "1% quarterly HPI growth",
+    },
+    "gdp_growth_dcr": {
+        "unit_meaning": "1 unit = 1 percentage point of quarterly "
+            "(non-annualised) real GDP growth, lagged 1 quarter.",
+        "transformation": "quarterly growth rate, lagged 1 quarter -- a "
+            "vendor-premerged national series on the DCR panel's "
+            "anonymized clock, not a live FRED pull.",
+        "lag": "1 quarter",
+        "fred_series": None,
+        "economic_channel": "General activity channel: a stronger economy "
+            "supports employment and incomes broadly -- a second-order "
+            "effect alongside the direct labour-market (UER) channel.",
+        "unit_kind": "direct", "unit_label": "1pp of quarterly GDP growth",
+    },
+    "double_trigger": {
+        "unit_meaning": "product of CENTERED updated-LTV(10pp) and "
+            "CENTERED national-UER(pp) -- not a simple per-unit shift in "
+            "either variable alone.",
+        "transformation": "mean-centered interaction term (its UER leg is "
+            "the same vendor-premerged, anonymized-clock national series "
+            "as uer_level_dcr above -- not a live FRED pull).",
+        "lag": "mixed (current-period LTV x lag-1 UER)",
+        "fred_series": None,
+        "economic_channel": "Double-trigger hypothesis: default is most "
+            "likely when a borrower BOTH cannot pay (unemployment) AND "
+            "cannot sell out of trouble (negative equity) at once. The "
+            "fitted sign here is a documented in-sample substitution (the "
+            "main effects and momentum term already carry most of the "
+            "joint stress) -- see fit_stats.double_trigger_note, not "
+            "evidence against the hypothesis.",
+        "unit_kind": "interaction", "unit_label": None,
+    },
+    "intercept": {
+        "unit_meaning": "reference-row hazard multiplier: every "
+            "categorical at its reference level, every continuous "
+            "covariate at its training mean / spline reference.",
+        "transformation": "model constant", "lag": "n/a", "fred_series": None,
+        "economic_channel": "Not an economic channel -- the baseline "
+            "hazard level the other coefficients multiply.",
+        "unit_kind": "baseline", "unit_label": None,
+    },
+    # -- SFLLD (Freddie rung-3, state-level, monthly panel) --------------
+    "uer_level_sflld": {
+        "unit_meaning": "1 unit = 1 percentage point of the property "
+            "state's own unemployment rate LEVEL, lagged 1 month.",
+        "transformation": "level (pp), state-level, monthly, SA, lagged 1 "
+            "month; falls back to national UNRATE for GU/VI, which carry "
+            "no state series",
+        "lag": "1 month",
+        "fred_series": "{POSTAL}UR",
+        "economic_channel": "Cash-flow / labour-income channel, same "
+            "mechanism as the DCR national UER level -- state resolution "
+            "replaces the national anchor with the borrower's own local "
+            "labour market.",
+        "unit_kind": "direct", "unit_label": "1pp of state UER level",
+    },
+    "uer_momentum_sflld": {
+        "unit_meaning": "1 unit = 1 percentage point of the state UER's "
+            "1-MONTH change, lagged 1 month (the monthly-panel analogue "
+            "of DCR's 4-quarter change).",
+        "transformation": "1-month first difference of state UER, lagged 1 month",
+        "lag": "1 month",
+        "fred_series": "{POSTAL}UR",
+        "economic_channel": "Labour-market momentum at monthly frequency: "
+            "a fast month-on-month deterioration in the local job market "
+            "front-loads distress.",
+        "unit_kind": "direct", "unit_label": "1pp of the 1-month state UER change",
+    },
+    "hpi_growth_sflld": {
+        "unit_meaning": "dlog(state HPI) -- one-month log-difference of "
+            "the state house-price index (forward-filled from FRED's "
+            "quarterly print), lagged 1 month. Same full-log-unit table "
+            "scaling as the DCR HPI term -- read the 1%-growth worked "
+            "example, not the raw table HR.",
+        "transformation": "log-growth (dlog) of the FHFA all-transactions "
+            "state HPI (quarterly, NSA), forward-filled to monthly, lagged "
+            "1 month; falls back to national USSTHPI for GU/PR/VI",
+        "lag": "1 month",
+        "fred_series": "{POSTAL}STHPI",
+        "economic_channel": "Collateral / equity-building channel, same "
+            "as DCR's national HPI term, at state resolution.",
+        "unit_kind": "log1pct",
+        "unit_label": "1% monthly HPI growth (the forward-filled series "
+            "concentrates each quarter's growth into its first month, so "
+            "read alongside a trailing-12m view, not a single month)",
+    },
+    "dti": {
+        "unit_meaning": "1 unit = 10 points of origination DTI "
+            "(dti_s = dti / 10).",
+        "transformation": "level, static at origination, scaled /10",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Debt-service cash-flow strain channel: a "
+            "higher debt-to-income ratio leaves less income buffer to "
+            "absorb a shock -- no DCR counterpart at this rung (the DCR "
+            "panel carries no DTI field).",
+        "unit_kind": "direct", "unit_label": "10 points of origination DTI",
+    },
+    "loan_age_spline": {
+        "unit_meaning": "one basis coefficient of a 5-knot natural cubic "
+            "spline in loan age -- not individually interpretable as a "
+            "per-unit shift.",
+        "transformation": "natural cubic spline, cr(loan_age, df=5)",
+        "lag": "n/a (contemporaneous loan age)", "fred_series": None,
+        "economic_channel": "Seasoning channel: underwriting-quality "
+            "burn-in, then a mid-life peak in default risk, then "
+            "survivor-selection decay -- the fitted CURVE, not any one "
+            "basis weight, carries the story (see the seasoning exhibit).",
+        "unit_kind": "spline", "unit_label": None,
+    },
+    "occupancy_investor": {
+        "unit_meaning": "binary flag: 1 if occupancy_status = 'I' (investor).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='P' owner-occupied)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Strategic-default propensity -- matches the "
+            "DCR investor-flag prior (HR 1.099, both fitted +).",
+        "unit_kind": "categorical", "unit_label": "an investor-occupied property",
+        "reference_label": "an owner-occupied (primary residence) property",
+    },
+    "occupancy_second_home": {
+        "unit_meaning": "binary flag: 1 if occupancy_status = 'S' (second home).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='P' owner-occupied)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Strategic-default propensity predicted second "
+            "homes to default MORE than owner-occupied (less skin in the "
+            "game); this fit shows the OPPOSITE (HR 0.825) -- a "
+            "documented, stated MISS (hazard_report.md Sec 2): conditional "
+            "on the same FICO/DTI/LTV/macro, second-home borrowers in "
+            "this sample default less -- sample composition, not a "
+            "causal claim.",
+        "unit_kind": "categorical", "unit_label": "a second-home property",
+        "reference_label": "an owner-occupied (primary residence) property",
+    },
+    "purpose_cashout": {
+        "unit_meaning": "binary flag: 1 if loan_purpose = 'C' (cash-out refinance).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='P' purchase-money)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Cash-out refinancing extracts equity, "
+            "raising leverage and default risk -- matches the prior (HR "
+            "1.550, the largest categorical effect in the table).",
+        "unit_kind": "categorical", "unit_label": "a cash-out refinance",
+        "reference_label": "a purchase-money loan",
+    },
+    "purpose_norefi": {
+        "unit_meaning": "binary flag: 1 if loan_purpose = 'N' (no-cash-out refinance).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='P' purchase-money)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "No-cash-out refinancing was expected to "
+            "select seasoned, improved-credit borrowers (lower risk); "
+            "this fit shows the OPPOSITE (HR 1.310) -- a documented, "
+            "stated MISS (hazard_report.md Sec 2).",
+        "unit_kind": "categorical", "unit_label": "a no-cash-out refinance",
+        "reference_label": "a purchase-money loan",
+    },
+    "channel_broker": {
+        "unit_meaning": "binary flag: 1 if channel = 'B' (broker).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='R' retail)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Origination-control agency problem: "
+            "broker-originated loans historically carry weaker "
+            "underwriting discipline than retail -- matches the prior "
+            "(HR 1.220).",
+        "unit_kind": "categorical", "unit_label": "a broker-channel loan",
+        "reference_label": "a retail-channel loan",
+    },
+    "channel_correspondent": {
+        "unit_meaning": "binary flag: 1 if channel = 'C' (correspondent).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='R' retail)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Origination-control agency problem predicted "
+            "correspondent to be riskier than retail; this fit shows the "
+            "OPPOSITE (HR 0.791) -- a documented, stated MISS "
+            "(hazard_report.md Sec 2): correspondent loans in this "
+            "Freddie sample are not the pre-crisis wholesale book the "
+            "prior describes.",
+        "unit_kind": "categorical", "unit_label": "a correspondent-channel loan",
+        "reference_label": "a retail-channel loan",
+    },
+    "channel_tpo": {
+        "unit_meaning": "binary flag: 1 if channel = 'T' (third-party originator).",
+        "transformation": "static origination categorical, "
+            "Treatment(reference='R' retail)",
+        "lag": "static (origination)", "fred_series": None,
+        "economic_channel": "Origination-control agency problem, same "
+            "direction as broker -- matches the prior (HR 1.360, the "
+            "largest channel effect).",
+        "unit_kind": "categorical", "unit_label": "a third-party-originator loan",
+        "reference_label": "a retail-channel loan",
+    },
+    "intercept_sflld": {
+        "unit_meaning": "reference-row hazard multiplier: owner-occupied "
+            "/ purchase-money / retail-channel / loan-age-spline "
+            "reference, all continuous covariates at 0 on their raw "
+            "scale (fico_s/dti_s/ltv10/uer_lag1/... are NOT centered in "
+            "this fit) -- an out-of-sample combination, so read as a pure "
+            "model constant, not an achievable loan profile.",
+        "transformation": "model constant", "lag": "n/a", "fred_series": None,
+        "economic_channel": "Not an economic channel -- the baseline "
+            "hazard level the other coefficients multiply.",
+        "unit_kind": "baseline", "unit_label": None,
+    },
+    # -- variable-dictionary-only concepts (no single coefficient) -------
+    "lgd_target": {
+        "unit_meaning": "N/A -- this is the LGD target variable, not a "
+            "hazard regressor.",
+        "transformation": "vendor-realised workout LGD, resolved workouts only",
+        "lag": "resolution window", "fred_series": None,
+        "economic_channel": "Loss-given-default outcome, modelled "
+            "separately by the two-stage cure/severity LGD model, not the "
+            "hazard.",
+        "unit_kind": "none", "unit_label": None,
+    },
+    "z_factor": {
+        "unit_meaning": "N/A -- the recovered systematic credit-cycle "
+            "factor (Vasicek/Belkin inversion), not a macro regressor "
+            "itself.",
+        "transformation": "Belkin inversion of observed vs "
+            "composition-adjusted expected default rates", "lag": "n/a",
+        "fred_series": None,
+        "economic_channel": "Systematic (undiversifiable) credit-cycle "
+            "risk -- the satellite model below regresses THIS on lagged "
+            "macro; the PIT/TTC conditioning consumes it directly.",
+        "unit_kind": "none", "unit_label": None,
+    },
+    "scenario_paths": {
+        "unit_meaning": "N/A -- a set of forward macro PATHS, not a "
+            "single regressor.",
+        "transformation": "DFAST 2026 supervisory scenario CSVs (not a raw "
+            "FRED pull -- see data/ingest/dfast.py): UER (pp level), HPI "
+            "level -> dlog, GDP SAAR -> quarterly, mortgage rate",
+        "lag": "2026Q1-2029Q1 (13q), rebased as deltas onto the 2015Q1 "
+            "jump-off, reversion to panel long-run means by q21",
+        "fred_series": None,
+        "economic_channel": "Coherent supervisory multivariate shapes feed "
+            "the scenario ECL directly; see the satellite/coherent-shock "
+            "note for how a univariate agent shock is projected onto this "
+            "coherent direction.",
+        "unit_kind": "none", "unit_label": None,
+    },
+    "gdp_combined": {
+        "unit_meaning": "GDP growth enters TWICE, at two different lags, "
+            "for two different consumers: gdp_lag1 (1-quarter lag) drives "
+            "the DCR default hazard; gdp_growth_lag2 (2-quarter lag) "
+            "drives the satellite Z regression (the deeper lag won the "
+            "satellite's AIC-minimising specification search).",
+        "transformation": "quarterly growth rate, national -- a "
+            "vendor-premerged series on the DCR panel's anonymized "
+            "clock, not a live FRED pull.",
+        "lag": "1 quarter (hazard) / 2 quarters (satellite)",
+        "fred_series": None,
+        "economic_channel": "General activity channel: a stronger economy "
+            "supports employment and incomes broadly, and (with a longer "
+            "transmission lag) the systematic credit cycle itself.",
+        "unit_kind": "none", "unit_label": None,
+    },
+}
+
+
+def _hazard_ratio_per_unit(concept: dict, hr: float | None,
+                           coef: float | None = None) -> float | None:
+    """exp(beta * unit_delta) for the concept's OWN economically-legible
+    unit -- mechanical, never hand-typed (GOVERNING RULE, extended to this
+    exhibit's arithmetic)."""
+    if hr is None:
+        return None
+    kind = concept["unit_kind"]
+    if kind == "log1pct":
+        beta = coef if coef is not None else math.log(hr)
+        return round(math.exp(beta * 0.01), 6)
+    if kind in ("none", "interaction"):
+        # An interaction term has no single legible "1 unit" (unit_label
+        # is None for these concepts) -- reporting the raw table HR under
+        # this field would silently pass off a product-term coefficient as
+        # a marginal per-unit reading, exactly the misread this exhibit
+        # exists to prevent. See _worked_example's "interaction" branch /
+        # fit_stats.double_trigger_note for the honest marginal-effect
+        # decomposition instead (docs/api_contract.md's documented null).
+        return None
+    return round(hr, 6)
+
+
+def _worked_example(concept: dict, hr: float | None,
+                    coef: float | None = None) -> str | None:
+    """The numeric worked example, computed from the SAME hr/coef passed to
+    _hazard_ratio_per_unit (never re-typed by hand)."""
+    if hr is None:
+        return None
+    kind = concept["unit_kind"]
+    label = concept.get("unit_label")
+    if kind == "direct":
+        pct = (hr - 1.0) * 100.0
+        direction = "increase" if pct >= 0 else "decrease"
+        return (f"+{label} => hazard x {hr:.4f} "
+               f"({pct:+.1f}%, a {abs(pct):.1f}% {direction} in the "
+               f"monthly/quarterly default hazard).")
+    if kind == "log1pct":
+        beta = coef if coef is not None else math.log(hr)
+        hr1 = math.exp(beta * 0.01)
+        pct = (hr1 - 1.0) * 100.0
+        direction = "increase" if pct >= 0 else "decrease"
+        return (f"+{label} => hazard x {hr1:.4f} "
+               f"({pct:+.1f}%, a {abs(pct):.1f}% {direction}) -- NOT the "
+               f"raw table HR of {hr:.4f}, which is scaled to a full "
+               f"100%-log-unit move (the 0.01-vs-1pp misread this exhibit "
+               f"exists to prevent).")
+    if kind == "categorical":
+        pct = (hr - 1.0) * 100.0
+        direction = "higher" if pct >= 0 else "lower"
+        ref = concept.get("reference_label", "the reference category")
+        return (f"A loan that is {label} => hazard x {hr:.4f} "
+               f"({abs(pct):.1f}% {direction} than {ref}).")
+    if kind == "interaction":
+        return ("Not a simple per-unit read (interaction term) -- see "
+               "fit_stats.double_trigger_note for the marginal-effect "
+               "decomposition at mean vs high UER.")
+    if kind == "spline":
+        return ("One of five spline basis weights -- not individually "
+               "interpretable; see the seasoning-curve exhibit for the "
+               "fitted age profile this basis reconstructs.")
+    if kind == "baseline":
+        return (f"Reference/mean-covariate baseline hazard multiplier: "
+               f"x{hr:.4f} -- not a marginal per-unit effect.")
+    return None
+
+
+def _variable_interpretation(concept_key: str | None, hr: float | None = None,
+                            coef: float | None = None) -> dict:
+    """{unit_meaning, transformation, lag, fred_series, economic_channel,
+    hazard_ratio_per_unit, worked_example} for one coefficient/variable row.
+    `concept_key=None` (no curated match) degrades to all-null fields rather
+    than raising -- additive contract, never a 500 on an unmapped row."""
+    if concept_key is None or concept_key not in _CONCEPTS:
+        return {"unit_meaning": None, "transformation": None, "lag": None,
+                "fred_series": None, "economic_channel": None,
+                "hazard_ratio_per_unit": None, "worked_example": None}
+    c = _CONCEPTS[concept_key]
+    return {
+        "unit_meaning": c["unit_meaning"],
+        "transformation": c["transformation"],
+        "lag": c["lag"],
+        "fred_series": c["fred_series"],
+        "economic_channel": c["economic_channel"],
+        "hazard_ratio_per_unit": _hazard_ratio_per_unit(c, hr, coef),
+        "worked_example": _worked_example(c, hr, coef),
+    }
+
+
+#: DCR hazard_ratios.md "Covariate" label -> concept key (identical labels
+#: in both the default and prepayment tables).
+_DCR_LABEL_TO_CONCEPT = {
+    "Intercept": "intercept",
+    "FICO at orig. (per 100 pts)": "fico",
+    "Updated LTV (per 10pp, at mean UER)": "ltv",
+    "Rate incentive (pp)": "rate_incentive",
+    "Investor loan": "investor",
+    "Condo": "condo",
+    "Planned urban dev.": "pud",
+    "Single family": "single_family",
+    "Unemployment level (lag 1)": "uer_level_dcr",
+    "Unemployment 4q change (lag 1)": "uer_momentum_dcr",
+    "HPI growth (lag 1)": "hpi_growth_dcr",
+    "GDP growth (lag 1)": "gdp_growth_dcr",
+    "DOUBLE TRIGGER: LTV(10pp) x UER (centered)": "double_trigger",
+}
+
+#: outputs/freddie/hazard/coefficients.csv "term" -> concept key.
+_FREDDIE_TERM_TO_CONCEPT = {
+    "Intercept": "intercept_sflld",
+    "C(occupancy_status, Treatment(reference='P'))[T.I]": "occupancy_investor",
+    "C(occupancy_status, Treatment(reference='P'))[T.S]": "occupancy_second_home",
+    "C(loan_purpose, Treatment(reference='P'))[T.C]": "purpose_cashout",
+    "C(loan_purpose, Treatment(reference='P'))[T.N]": "purpose_norefi",
+    "C(channel, Treatment(reference='R'))[T.B]": "channel_broker",
+    "C(channel, Treatment(reference='R'))[T.C]": "channel_correspondent",
+    "C(channel, Treatment(reference='R'))[T.T]": "channel_tpo",
+    "fico_s": "fico", "dti_s": "dti", "ltv10": "ltv",
+    "uer_lag1": "uer_level_sflld", "delta_uer_lag1": "uer_momentum_sflld",
+    "hpi_growth_lag1": "hpi_growth_sflld",
+}
+
+
+def _freddie_term_concept(term: str) -> str | None:
+    if term in _FREDDIE_TERM_TO_CONCEPT:
+        return _FREDDIE_TERM_TO_CONCEPT[term]
+    if term.startswith("cr(loan_age"):
+        return "loan_age_spline"
+    return None
+
+
+#: variable_dictionary.md "variable" cell (raw, backtick-quoted) -> concept
+#: key. `gdp_lag1` / `gdp_growth_lag2` is a combined row (two consumers, two
+#: lags) so it gets its own concept rather than reusing gdp_growth_dcr.
+_VARDICT_LABEL_TO_CONCEPT = {
+    "`fico_s`": "fico",
+    "`ltv10` ⚡": "ltv",
+    "`loan_age`": "loan_age_spline",
+    "`prepay_incentive` ⚡": "rate_incentive",
+    "`investor_orig_time`, RE-type flags": "investor",
+    "`uer_lag1`": "uer_level_dcr",
+    "`uer_chg4_lag1`": "uer_momentum_dcr",
+    "`hpi_growth_lag1`": "hpi_growth_dcr",
+    "`gdp_lag1` / `gdp_growth_lag2`": "gdp_combined",
+    "`dt_ltv_uer`": "double_trigger",
+    "`lgd_time` (target)": "lgd_target",
+    "`Z_t` (recovered)": "z_factor",
+    "Scenario paths": "scenario_paths",
+}
+
+
+#: /api/model/macro_glossary -- every macro series across DCR + SFLLD +
+#: satellite, one row per (series, model) pairing where the transformation
+#: or lag genuinely differs; `which_models` lists every consumer.
+_MACRO_GLOSSARY = [
+    {"id": "dcr_uer_level", "label": "National UER -- level",
+     "fred_series": None, "geography": "US national",
+     "frequency": "monthly (matched to the panel's quarterly clock)",
+     "transformation": "level (pp)", "lag": "1 quarter",
+     "lag_rationale": "Publication-lag realism + the model's own timing "
+         "convention: only past values (t-k, k>=1) are ever referenced, "
+         "so scoring never looks ahead. NOT a live FRED pull -- a "
+         "vendor-premerged national series on the DCR panel's own "
+         "ANONYMIZED quarterly clock (t=1..60); only the clock's "
+         "CALENDAR alignment to real quarters was verified, via "
+         "correlation against FRED UNRATE (corr 0.996, per "
+         "outputs/variable_dictionary.md's preamble) -- an anchoring "
+         "check, not a sourcing claim, so no FRED series id is given.",
+     "which_models": ["DCR default hazard"]},
+    {"id": "dcr_uer_momentum", "label": "National UER -- 4-quarter change",
+     "fred_series": None, "geography": "US national",
+     "frequency": "monthly (matched to the panel's quarterly clock)",
+     "transformation": "4-quarter first difference", "lag": "1 quarter",
+     "lag_rationale": "Same 1-quarter lag as the level term; the 4q window "
+         "captures momentum a single lag would miss. Level and momentum "
+         "correlate at 0.94 in-sample -- read their SUM as the net "
+         "unemployment-shock effect, not the level term alone. Same "
+         "vendor-premerged, anonymized-clock series as the level row "
+         "above -- not a live FRED pull (see that row's note).",
+     "which_models": ["DCR default hazard"]},
+    {"id": "dcr_hpi_growth", "label": "National HPI -- log-growth",
+     "fred_series": None, "geography": "US national",
+     "frequency": "quarterly",
+     "transformation": "dlog(HPI), one-quarter log-difference",
+     "lag": "1 quarter",
+     "lag_rationale": "Same publication-lag/no-lookahead convention as "
+         "UER. NOT a live FRED pull -- vendor-premerged on the DCR "
+         "panel's anonymized clock, same as the UER rows above (unlike "
+         "the SFLLD rows below, which ARE genuine live FRED pulls).",
+     "which_models": ["DCR default hazard", "DCR prepayment hazard"]},
+    {"id": "dcr_gdp_growth", "label": "National real GDP -- quarterly growth",
+     "fred_series": None, "geography": "US national",
+     "frequency": "quarterly", "transformation": "quarterly growth rate",
+     "lag": "1 quarter (hazard) / 2 quarters (satellite -- see below)",
+     "lag_rationale": "Hazard: same 1-quarter convention as UER/HPI. "
+         "Satellite: the 2-quarter lag won the AIC-minimising, "
+         "sign-admissible specification search over the full driver grid. "
+         "NOT a live FRED pull -- vendor-premerged on the DCR panel's "
+         "anonymized clock, same as the UER/HPI rows above.",
+     "which_models": ["DCR default hazard", "satellite (Z regression)"]},
+    {"id": "sflld_uer_level", "label": "State UER -- level",
+     "fred_series": "{POSTAL}UR", "geography": "US state (property state)",
+     "frequency": "monthly",
+     "transformation": "level (pp)", "lag": "1 month",
+     "lag_rationale": "Panel-native frequency is monthly (vs DCR's "
+         "quarterly), so the lag is 1 calendar month, not 1 quarter -- "
+         "same no-lookahead convention, finer clock. Falls back to "
+         "national UNRATE for GU/VI (no state series at FRED).",
+     "which_models": ["SFLLD champion hazard"]},
+    {"id": "sflld_uer_momentum", "label": "State UER -- 1-month change",
+     "fred_series": "{POSTAL}UR", "geography": "US state (property state)",
+     "frequency": "monthly",
+     "transformation": "1-month first difference", "lag": "1 month",
+     "lag_rationale": "Monthly-panel analogue of the DCR 4-quarter change "
+         "-- the shortest momentum window the native frequency supports.",
+     "which_models": ["SFLLD champion hazard"]},
+    {"id": "sflld_hpi_growth", "label": "State HPI -- log-growth",
+     "fred_series": "{POSTAL}STHPI", "geography": "US state (property state)",
+     "frequency": "quarterly, forward-filled to monthly",
+     "transformation": "dlog(HPI) of the forward-filled monthly series",
+     "lag": "1 month",
+     "lag_rationale": "FRED publishes STHPI at quarter-start dates; "
+         "forward-fill (not interpolation) avoids letting month 2 of a "
+         "quarter see month 3's not-yet-published print -- the 1-month "
+         "lag then applies on top, same no-lookahead convention. Falls "
+         "back to national USSTHPI for GU/PR/VI.",
+     "which_models": ["SFLLD champion hazard"]},
+    {"id": "satellite_hpi_growth", "label": "National HPI -- log-growth (satellite)",
+     "fred_series": None, "geography": "US national",
+     "frequency": "quarterly",
+     "transformation": "dlog(HPI), one-quarter log-difference (identical "
+         "series/transform to the DCR hazard's HPI term -- same "
+         "vendor-premerged, anonymized-clock series, not a live FRED "
+         "pull; see dcr_hpi_growth above)",
+     "lag": "1 quarter",
+     "lag_rationale": "Same national series as the DCR hazard term; the "
+         "satellite regresses the recovered credit-cycle factor Z on it "
+         "directly (OLS coefficient +13.642, not a hazard ratio).",
+     "which_models": ["satellite (Z regression)"]},
+    {"id": "scenario_paths", "label": "DFAST scenario paths (UER/HPI/GDP/mortgage rate)",
+     "fred_series": None, "geography": "US national",
+     "frequency": "quarterly, 2026Q1-2029Q1 (13 quarters)",
+     "transformation": "UER: pp level. HPI: level -> dlog. GDP: SAAR -> "
+         "quarterly (geometric fourth root). Mortgage rate: level. All "
+         "rebased as DELTAS onto the 2015Q1 panel jump-off.",
+     "lag": "n/a (a forward path, not a lagged regressor)",
+     "lag_rationale": "Not a FRED pull -- DFAST 2026 supervisory scenario "
+         "CSVs, chosen for coherent (jointly-plausible) multivariate "
+         "shapes; reverts to panel long-run macro means by q21, held to 40q.",
+     "which_models": ["scenario ECL (up/base/down)"]},
+    {"id": "coherent_shock_convention",
+     "label": "Coherent-shock convention (satellite has NO unemployment term)",
+     "fred_series": None, "geography": "n/a", "frequency": "n/a",
+     "transformation": "n/a -- a modelling-convention note, not a series",
+     "lag": "n/a",
+     "lag_rationale": "The sign-governed satellite is "
+         "Z = f(hpi_growth_lag1, gdp_growth_lag2) -- unemployment was "
+         "excluded by the AIC/sign-governance search (every spec pairing "
+         "duer with gdp_growth fit a wrong-signed, collinearity-driven "
+         "duer coefficient). A UNIVARIATE UER-only shock therefore cannot "
+         "reach Z at all: shock_macro applies every agent shock as a "
+         "co-moving move along the DFAST severe-minus-base direction "
+         "(loadings normalised to the named variable) so a UER shock "
+         "still moves HPI/GDP coherently and reaches Z -- without this, "
+         "a UER-only shock question would return delta = 0.",
+     "which_models": ["satellite (Z regression)", "shock_macro tool"]},
+]
+
+
 def _parse_hazard_ratios() -> dict:
     """outputs/hazard/hazard_ratios.md -> {'default': {...}, 'prepay': {...}}."""
     text = (OUTPUTS_DIR / "hazard" / "hazard_ratios.md").read_text(
@@ -645,15 +1345,21 @@ def _parse_hazard_ratios() -> dict:
         stories = dict(re.findall(
             r"-\s*\*\*(\w+)\*\*\s*--\s*(.*?)(?=\n-\s*\*\*|\Z)",
             fs.group(1), flags=re.S)) if fs else {}
-        coefficients = [{
-            "variable": r["Covariate"],
-            "family": r["family"],
-            "hazard_ratio": float(r["HR = exp(coef)"]),
-            "ci": _parse_ci(r["95% CI"]),
-            "p": _parse_p(r["p"])[0],
-            "p_display": _parse_p(r["p"])[1],
-            "story": stories.get(r["family"], "").strip(),
-        } for r in table_rows]
+        coefficients = []
+        for r in table_rows:
+            hr = float(r["HR = exp(coef)"])
+            row = {
+                "variable": r["Covariate"],
+                "family": r["family"],
+                "hazard_ratio": hr,
+                "ci": _parse_ci(r["95% CI"]),
+                "p": _parse_p(r["p"])[0],
+                "p_display": _parse_p(r["p"])[1],
+                "story": stories.get(r["family"], "").strip(),
+            }
+            row.update(_variable_interpretation(
+                _DCR_LABEL_TO_CONCEPT.get(r["Covariate"]), hr))
+            coefficients.append(row)
         out[key] = {
             "n_fit": int(_num(stats.group(1))) if stats else None,
             "events": int(_num(stats.group(2))) if stats else None,
@@ -720,6 +1426,25 @@ def _parse_variable_dictionary() -> dict:
     raw_rows = _md_table_rows(lines[span[0]:span[1]])
     rows = [{_VARDICT_COLUMNS.get(k, k): v for k, v in r.items()}
             for r in raw_rows]
+
+    # Requirement 12: join the curated interpretation onto every row. The
+    # hazard ratio (where one exists for this concept) is REUSED from the
+    # already-parsed DCR default-hazard table -- reported here, never
+    # re-derived -- via the same label->concept map the coefficients
+    # endpoint uses, so the two exhibits can never silently disagree.
+    default_hr_by_label = {
+        c["variable"]: c["hazard_ratio"]
+        for c in _parse_hazard_ratios().get("default", {}).get("coefficients", [])
+    }
+    concept_hr = {
+        concept: default_hr_by_label[label]
+        for label, concept in _DCR_LABEL_TO_CONCEPT.items()
+        if label in default_hr_by_label
+    }
+    for row in rows:
+        concept_key = _VARDICT_LABEL_TO_CONCEPT.get(row["variable"])
+        row.update(_variable_interpretation(concept_key, concept_hr.get(concept_key)))
+
     return {"preamble": preamble, "rows": rows, "notes": notes}
 
 
@@ -839,6 +1564,23 @@ def model_coefficients() -> dict:
 def model_variable_dictionary() -> dict:
     """Every modelled variable: source, window, rationale, fitted sign."""
     return _parse_variable_dictionary()
+
+
+@app.get("/api/model/macro_glossary")
+def model_macro_glossary() -> dict:
+    """Every macro series across DCR + SFLLD + satellite: source, geography,
+    transformation, lag rationale, which models consume it (Requirement 12).
+    """
+    return {
+        "series": _MACRO_GLOSSARY,
+        "source_files": [
+            "outputs/variable_dictionary.md",
+            "outputs/hazard/hazard_ratios.md",
+            "outputs/freddie/hazard/hazard_report.md",
+            "outputs/satellite/satellite_report.md",
+            "freddie/macro.py",
+        ],
+    }
 
 
 @app.get("/api/model/lgd")
@@ -1045,12 +1787,18 @@ def _parse_freddie_panel() -> dict:
 def _parse_freddie_hazard() -> dict:
     """coefficients.csv + dcr_sign_comparison.csv + metrics + COVID verdict."""
     coef_df = pd.read_csv(FREDDIE_DIR / "hazard" / "coefficients.csv")
-    coefficients = [{
-        "term": r["term"], "coef": float(r["coef"]), "std_err": float(r["std_err"]),
-        "z": float(r["z"]), "p_value": float(r["p_value"]),
-        "ci_low": float(r["ci_low"]), "ci_high": float(r["ci_high"]),
-        "hazard_ratio": float(r["hazard_ratio"]),
-    } for _, r in coef_df.iterrows()]
+    coefficients = []
+    for _, r in coef_df.iterrows():
+        coef, hr = float(r["coef"]), float(r["hazard_ratio"])
+        row = {
+            "term": r["term"], "coef": coef, "std_err": float(r["std_err"]),
+            "z": float(r["z"]), "p_value": float(r["p_value"]),
+            "ci_low": float(r["ci_low"]), "ci_high": float(r["ci_high"]),
+            "hazard_ratio": hr,
+        }
+        row.update(_variable_interpretation(
+            _freddie_term_concept(r["term"]), hr, coef))
+        coefficients.append(row)
 
     sign_df = pd.read_csv(FREDDIE_DIR / "hazard" / "dcr_sign_comparison.csv")
     dcr_sign_comparison = [{

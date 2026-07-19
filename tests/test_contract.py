@@ -190,9 +190,16 @@ def test_ask_mode_passes_through_when_agent_provides_it(client, monkeypatch):
 # ---------------------------------------------------------------------------
 
 _HAZARD_COEF_FIELDS = {"variable", "family", "hazard_ratio", "ci", "p",
-                      "p_display", "story"}
+                      "p_display", "story",
+                      # Requirement 12 -- macro/FRED interpretation fields
+                      "unit_meaning", "transformation", "lag", "fred_series",
+                      "economic_channel", "hazard_ratio_per_unit",
+                      "worked_example"}
 _HAZARD_FAMILIES = {"baseline", "borrower", "collateral", "macro",
                     "incentive"}
+#: variables whose HR is per a full 1.0 log-unit in the source table, so
+#: hazard_ratio_per_unit (per 1% growth) must differ from hazard_ratio.
+_LOG1PCT_VARIABLES = {"HPI growth (lag 1)"}
 
 
 def test_model_coefficients_contract(client):
@@ -219,12 +226,74 @@ def test_model_coefficients_contract(client):
             assert isinstance(row["p"], float) and 0.0 <= row["p"] <= 1.0
             assert isinstance(row["story"], str) and len(row["story"]) > 0
 
+            # Requirement 12: every row is curated (no unmapped variables),
+            # fred_series is nullable, and hazard_ratio_per_unit/
+            # worked_example are computed -- not hand-typed -- from
+            # hazard_ratio (mechanically re-derivable: exp(log(hr) *
+            # unit_scale), unit_scale = 1 except the log1pct macro rows).
+            assert isinstance(row["unit_meaning"], str) and row["unit_meaning"]
+            assert isinstance(row["transformation"], str) and row["transformation"]
+            assert isinstance(row["lag"], str) and row["lag"]
+            assert row["fred_series"] is None or isinstance(row["fred_series"], str)
+            assert isinstance(row["economic_channel"], str) and row["economic_channel"]
+            # every row's worked_example is a non-empty string; the
+            # DOUBLE TRIGGER interaction row's is deliberately NOT a raw
+            # per-unit hazard-ratio phrasing (a single number would
+            # mislead for a product term) -- it points at
+            # fit_stats.double_trigger_note instead.
+            assert isinstance(row["worked_example"], str) and row["worked_example"]
+            if row["variable"] == "DOUBLE TRIGGER: LTV(10pp) x UER (centered)":
+                assert "double_trigger_note" in row["worked_example"]
+            hrpu = row["hazard_ratio_per_unit"]
+            if hrpu is not None:
+                assert isinstance(hrpu, float)
+                if row["variable"] in _LOG1PCT_VARIABLES:
+                    # per-1%-growth reading != the raw per-100%-log-unit HR
+                    # -- the 0.01-vs-1pp gotcha, recomputed here mechanically.
+                    assert hrpu != pytest.approx(row["hazard_ratio"])
+                    assert hrpu == pytest.approx(
+                        row["hazard_ratio"] ** 0.01, rel=1e-6)
+                else:
+                    assert hrpu == pytest.approx(row["hazard_ratio"], rel=1e-4)
+
     # a specific, checkable row (the double-trigger interaction term)
     intercept = models["default"]["coefficients"][0]
     assert intercept["variable"] == "Intercept"
     assert intercept["family"] == "baseline"
     assert intercept["hazard_ratio"] == pytest.approx(0.2658)
     assert intercept["ci"] == pytest.approx([0.1534, 0.4608])
+    assert intercept["fred_series"] is None
+
+    uer_level = next(c for c in models["default"]["coefficients"]
+                     if c["variable"] == "Unemployment level (lag 1)")
+    # DCR's national macro columns are a vendor-premerged series on the
+    # panel's own ANONYMIZED clock (data/panel/build_panel.py: "macros
+    # pre-merged"), not a live FRED pull -- only the clock's CALENDAR
+    # alignment was verified against FRED UNRATE (corr 0.996). Claiming a
+    # literal FRED series id here would be dishonest; that fact belongs in
+    # `transformation`, not `fred_series`. Contrast SFLLD's genuinely
+    # live-pulled state rows in test_freddie_hazard_contract below.
+    assert uer_level["fred_series"] is None
+    assert "FRED UNRATE" in uer_level["transformation"]
+    assert uer_level["hazard_ratio_per_unit"] == pytest.approx(0.6930, abs=1e-3)
+
+    hpi_growth = next(c for c in models["default"]["coefficients"]
+                      if c["variable"] == "HPI growth (lag 1)")
+    assert hpi_growth["fred_series"] is None
+    assert hpi_growth["hazard_ratio_per_unit"] == pytest.approx(
+        hpi_growth["hazard_ratio"] ** 0.01, rel=1e-6)
+    assert hpi_growth["hazard_ratio_per_unit"] != pytest.approx(
+        hpi_growth["hazard_ratio"])
+
+    double_trigger = next(
+        c for c in models["default"]["coefficients"]
+        if c["variable"] == "DOUBLE TRIGGER: LTV(10pp) x UER (centered)")
+    assert "double_trigger_note" in double_trigger["worked_example"]
+    # An interaction term has no single legible "1 unit" (unit_label is
+    # None for this concept) -- a per-unit hazard ratio here would silently
+    # pass off the raw product-term coefficient as a marginal effect.
+    assert double_trigger["hazard_ratio_per_unit"] is None
+    assert double_trigger["fred_series"] is None
 
     fs = body["fit_stats"]
     assert set(fs) >= {"default", "prepay", "seasoning_peak",
@@ -249,13 +318,56 @@ def test_model_variable_dictionary_contract(client):
     row_fields = {"variable", "source_transformation", "lag_window",
                  "economic_rationale", "expected_sign", "fitted_verified",
                  "consumed_by"}
+    # Requirement 12 -- joined interpretation fields (nullable where the
+    # row has no single coefficient: loan_age, lgd_time, Z_t, Scenario paths).
+    interp_fields = {"unit_meaning", "transformation", "lag", "fred_series",
+                     "economic_channel", "hazard_ratio_per_unit",
+                     "worked_example"}
+    no_hr_variables = {"`loan_age`", "`lgd_time` (target)",
+                       "`Z_t` (recovered)", "Scenario paths",
+                       "`gdp_lag1` / `gdp_growth_lag2`"}
+    # `dt_ltv_uer` DOES carry a hazard ratio, but it is the DOUBLE TRIGGER
+    # interaction term (same as /api/model/coefficients above) -- a
+    # per-unit read of a product term would mislead, so it gets
+    # hazard_ratio_per_unit: null while worked_example stays a non-null
+    # pointer to fit_stats.double_trigger_note.
+    interaction_variables = {"`dt_ltv_uer`"}
     for row in body["rows"]:
-        assert set(row) == row_fields
-        assert all(isinstance(v, str) for v in row.values())
+        assert set(row) == row_fields | interp_fields
+        for k in row_fields:
+            assert isinstance(row[k], str)
+        assert isinstance(row["unit_meaning"], str) and row["unit_meaning"]
+        assert isinstance(row["transformation"], str) and row["transformation"]
+        assert isinstance(row["lag"], str) and row["lag"]
+        assert row["fred_series"] is None or isinstance(row["fred_series"], str)
+        # DCR is a vendor-premerged, anonymized-clock panel -- no row on
+        # this endpoint is a live FRED pull, so fred_series is always null.
+        assert row["fred_series"] is None
+        assert isinstance(row["economic_channel"], str) and row["economic_channel"]
+        if row["variable"] in no_hr_variables:
+            assert row["hazard_ratio_per_unit"] is None
+            assert row["worked_example"] is None
+        elif row["variable"] in interaction_variables:
+            assert row["hazard_ratio_per_unit"] is None
+            assert isinstance(row["worked_example"], str)
+            assert "double_trigger_note" in row["worked_example"]
+        else:
+            assert isinstance(row["hazard_ratio_per_unit"], float)
 
     first = body["rows"][0]
     assert first["variable"] == "`fico_s`"
     assert first["expected_sign"] == "PD ↓"
+    assert first["fred_series"] is None
+    assert first["hazard_ratio_per_unit"] == pytest.approx(0.6314)
+
+    uer_row = next(r for r in body["rows"] if r["variable"] == "`uer_lag1`")
+    assert uer_row["fred_series"] is None
+    assert "FRED UNRATE" in uer_row["transformation"]
+
+    hpi_row = next(r for r in body["rows"] if r["variable"] == "`hpi_growth_lag1`")
+    assert hpi_row["fred_series"] is None
+    assert hpi_row["hazard_ratio_per_unit"] != pytest.approx(0.0318)  # not the raw per-log-unit HR
+    assert "1%" in hpi_row["unit_meaning"] or "1%" in hpi_row["worked_example"]
 
 
 def test_model_lgd_contract(client):
@@ -298,6 +410,47 @@ def test_model_lgd_contract(client):
         {"id": "lgd_distribution",
          "png_url": "/static/exhibits/lgd/lgd_distribution.png"},
     ]
+
+
+def test_model_macro_glossary_contract(client):
+    """NEW (Requirement 12): every macro series across DCR+SFLLD+satellite."""
+    body = client.get("/api/model/macro_glossary").json()
+    assert set(body) == {"series", "source_files"}
+    assert isinstance(body["source_files"], list) and len(body["source_files"]) == 5
+
+    series = body["series"]
+    assert len(series) == 10
+    row_fields = {"id", "label", "fred_series", "geography", "frequency",
+                 "transformation", "lag", "lag_rationale", "which_models"}
+    ids = set()
+    for row in series:
+        assert set(row) == row_fields
+        assert row["fred_series"] is None or isinstance(row["fred_series"], str)
+        assert isinstance(row["which_models"], list) and len(row["which_models"]) > 0
+        assert all(isinstance(m, str) for m in row["which_models"])
+        ids.add(row["id"])
+    assert len(ids) == len(series)   # every id unique
+
+    by_id = {r["id"]: r for r in series}
+    # DCR rows (incl. the satellite's reused HPI term) are a vendor-
+    # premerged national series on the panel's ANONYMIZED clock, never a
+    # live FRED pull -- only the clock's calendar alignment was checked
+    # against FRED UNRATE. Only the genuinely FRED-sourced SFLLD/state
+    # rows (live-pulled by freddie/macro.py) carry a real series id.
+    for dcr_id in ("dcr_uer_level", "dcr_uer_momentum", "dcr_hpi_growth",
+                   "dcr_gdp_growth", "satellite_hpi_growth"):
+        assert by_id[dcr_id]["fred_series"] is None, dcr_id
+    assert "FRED UNRATE" in by_id["dcr_uer_level"]["lag_rationale"]
+    assert by_id["sflld_uer_level"]["fred_series"] == "{POSTAL}UR"
+    assert by_id["sflld_hpi_growth"]["fred_series"] == "{POSTAL}STHPI"
+    assert by_id["dcr_gdp_growth"]["which_models"] == [
+        "DCR default hazard", "satellite (Z regression)"]
+
+    # the coherent-shock convention row: no series-level facts, documents
+    # why the satellite has no UER term (wiki/pages/agent-layer.md).
+    coherent = by_id["coherent_shock_convention"]
+    assert coherent["fred_series"] is None
+    assert "shock_macro" in coherent["lag_rationale"]
 
 
 # ---------------------------------------------------------------------------
@@ -482,13 +635,38 @@ def test_freddie_hazard_contract(client):
     coefs = body["coefficients"]
     assert len(coefs) == 19
     coef_fields = {"term", "coef", "std_err", "z", "p_value", "ci_low",
-                   "ci_high", "hazard_ratio"}
+                   "ci_high", "hazard_ratio",
+                   # Requirement 12 -- macro/FRED interpretation fields
+                   "unit_meaning", "transformation", "lag", "fred_series",
+                   "economic_channel", "hazard_ratio_per_unit",
+                   "worked_example"}
     for row in coefs:
         assert set(row) == coef_fields
+        # GOVERNING RULE extended to this exhibit: hazard_ratio is always
+        # exp(coef) -- recomputed here, never trusted verbatim from the CSV.
+        assert row["hazard_ratio"] == pytest.approx(
+            math.exp(row["coef"]), rel=1e-6)
+        assert row["unit_meaning"] and isinstance(row["unit_meaning"], str)
+        assert row["economic_channel"] and isinstance(row["economic_channel"], str)
+        assert row["fred_series"] is None or isinstance(row["fred_series"], str)
     intercept = coefs[0]
     assert intercept["term"] == "Intercept"
     assert intercept["coef"] == pytest.approx(-3.6043, abs=1e-3)
     assert intercept["hazard_ratio"] == pytest.approx(0.0272, abs=1e-3)
+    assert intercept["fred_series"] is None
+
+    uer_row = next(r for r in coefs if r["term"] == "uer_lag1")
+    assert uer_row["fred_series"] == "{POSTAL}UR"
+    assert uer_row["hazard_ratio_per_unit"] == pytest.approx(
+        math.exp(uer_row["coef"]), rel=1e-6)
+
+    hpi_row = next(r for r in coefs if r["term"] == "hpi_growth_lag1")
+    assert hpi_row["fred_series"] == "{POSTAL}STHPI"
+    # 0.01-vs-1pp gotcha: hazard_ratio_per_unit is exp(coef*0.01), computed
+    # from the RAW coefficient -- distinct from the raw-scale hazard_ratio.
+    assert hpi_row["hazard_ratio_per_unit"] == pytest.approx(
+        math.exp(hpi_row["coef"] * 0.01), rel=1e-6)
+    assert hpi_row["hazard_ratio_per_unit"] != pytest.approx(hpi_row["hazard_ratio"])
 
     sign_rows = {r["variable"]: r for r in body["dcr_sign_comparison"]}
     assert len(sign_rows) == 7

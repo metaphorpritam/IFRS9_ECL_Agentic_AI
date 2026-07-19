@@ -208,6 +208,13 @@ export default function ExecutiveTab() {
             }
           >
             <ScenarioTable scenarios={summary.scenarios} />
+            <p class="caveat coherent-shock-note">
+              <b>Coherent-shock convention.</b> Each scenario's macro path
+              moves UER/HPI/GDP together (DFAST-coherent shapes); the
+              satellite feeding this table has no unemployment term
+              (Z = f(hpi_growth_lag1, gdp_growth_lag2)) — see the Macro
+              data glossary on The Model tab.
+            </p>
           </Panel>
         </>
       )}

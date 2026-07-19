@@ -121,6 +121,8 @@ export const getModelCoefficients = () => get('/api/model/coefficients');
 
 export const getVariableDictionary = () => get('/api/model/variable_dictionary');
 
+export const getMacroGlossary = () => get('/api/model/macro_glossary');
+
 export const getLgd = () => get('/api/model/lgd');
 
 // ----------------------------------------------------------- The Policy tab

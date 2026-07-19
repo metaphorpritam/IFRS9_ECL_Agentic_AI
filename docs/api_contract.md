@@ -272,7 +272,14 @@ fit statistics from `outputs/hazard/fit_stats.md`. No params.
         {"variable": "FICO at orig. (per 100 pts)", "family": "borrower",
          "hazard_ratio": 0.6314, "ci": [0.613, 0.6505],
          "p": 1e-16, "p_display": "<1e-16",
-         "story": "Borrower quality: cleaner credit at origination defaults less; investors walk away from underwater rentals faster than owner-occupiers."}
+         "story": "Borrower quality: cleaner credit at origination defaults less; investors walk away from underwater rentals faster than owner-occupiers.",
+         "unit_meaning": "1 unit = 100 points of FICO score at origination (fico_s = FICO_orig_time / 100).",
+         "transformation": "level, static at origination, scaled /100",
+         "lag": "static (origination) -- no lag, not time-varying",
+         "fred_series": null,
+         "economic_channel": "Ability/willingness-to-pay channel: cleaner credit history at origination signals lower baseline default propensity, independent of the macro cycle.",
+         "hazard_ratio_per_unit": 0.6314,
+         "worked_example": "+100 FICO points => hazard x 0.6314 (-36.9%, a 36.9% decrease in the monthly/quarterly default hazard)."}
         /* ... 13 rows total for "default": Intercept, FICO, Updated LTV,
            Rate incentive, Investor loan, Condo, Planned urban dev.,
            Single family, Unemployment level (lag 1), Unemployment 4q
@@ -312,6 +319,54 @@ Field notes:
 * `hazard_ratio > 1` = risk-increasing; `< 1` = risk-reducing (it is
   `exp(coef)` of a cloglog hazard).
 
+**Requirement 12 interpretation fields** (every coefficient row, both
+`default` and `prepay`, all 13 rows) — content curated/transcribed from
+`outputs/variable_dictionary.md` + `outputs/hazard/hazard_ratios.md`, the
+two computed numbers (`hazard_ratio_per_unit`, `worked_example`) derived
+mechanically from the row's own `hazard_ratio`/coef, never hand-typed:
+* `unit_meaning` (string) — what "1 unit" of this covariate actually is
+  (e.g. "100 points of FICO", "10pp of updated LTV", "1pp of national
+  UER level").
+* `transformation` (string) — the exact source-column transform (level /
+  delta / log-growth / static flag / spline / interaction).
+* `lag` (string) — the lag window and, for the two documented
+  current-period exceptions (`ltv10`, `prepay_incentive`), a note why.
+* `fred_series` (string, always **null** on this endpoint) — the DCR
+  panel's macro columns (UER, HPI, GDP) are a vendor-premerged national
+  series on the panel's own ANONYMIZED quarterly clock
+  (`data/panel/build_panel.py`: "macros pre-merged"), not a live FRED
+  pull, so no FRED series id is claimed here. The clock's CALENDAR
+  alignment to real quarters was independently verified via correlation
+  against FRED UNRATE (corr 0.996) — an anchoring check, not a sourcing
+  claim (see each macro row's `transformation` text for the citation).
+  Genuinely FRED-sourced rows (state UER/HPI, live-pulled by
+  `freddie/macro.py`) carry a real id on `GET /api/freddie/hazard` below.
+* `economic_channel` (string) — the one-paragraph causal story (labour-
+  income / collateral-equity / refinancing-incentive / strategic-default
+  channel), including a stated MISS where the fit disagrees with the
+  prior (never smoothed over).
+* `hazard_ratio_per_unit` (float, **nullable**) — `exp(beta · unit_delta)`
+  for the row's OWN economically-legible unit. For the two log-growth
+  macro rows (`HPI growth (lag 1)` in both models) this is **NOT** the
+  same number as `hazard_ratio` — the table's `hazard_ratio` is scaled to
+  a full 1.0 log-unit (~100% quarterly growth, never observed);
+  `hazard_ratio_per_unit` is the same coefficient re-expressed per 1%
+  growth (`hazard_ratio ** 0.01`) — the classic **0.01-vs-1pp misread**
+  this field exists to prevent. `null` for the DOUBLE TRIGGER interaction
+  row (a per-unit read of a product term is misleading — see
+  `worked_example` / `fit_stats.double_trigger_note` instead).
+* `worked_example` (string) — one computed sentence, e.g.
+  `"+1pp of national UER level => hazard x 0.6930 (-30.7%, a 30.7%
+  decrease in the monthly/quarterly default hazard)."` For categorical
+  rows (Investor loan, Condo, …) it reads "A loan that is X => hazard x
+  HR (…% higher/lower than the reference)." For the Intercept it reads
+  as a baseline-multiplier sentence. For the DOUBLE TRIGGER interaction
+  row a single per-unit number would mislead (it is a product term), so
+  the string instead points at `fit_stats.double_trigger_note` for the
+  marginal-effect decomposition — always a string, never `null`, on rows
+  that carry a coefficient at all (see `/api/model/variable_dictionary`
+  below for the 4 rows that carry none).
+
 ### `GET /api/model/variable_dictionary`
 
 Parsed from `outputs/variable_dictionary.md`. No params.
@@ -331,7 +386,14 @@ Parsed from `outputs/variable_dictionary.md`. No params.
      "economic_rationale": "Equity cushion / strategic-default trigger; = vendor `LTV_time` to 5e-9",
      "expected_sign": "PD ↑, severity ↑, cure ↓",
      "fitted_verified": "✓ all three (sev +0.107/10pp, cure −0.764)",
-     "consumed_by": "default hazard; LGD both stages; staging legs"}
+     "consumed_by": "default hazard; LGD both stages; staging legs",
+     "unit_meaning": "1 unit = 10 percentage points of updated LTV (ltv10 = updated_ltv / 10; updated_ltv winsorised at 300%).",
+     "transformation": "updated_ltv = LTV_orig x (balance_t/balance_orig) x (hpi_orig/hpi_t) -- a documented CURRENT-period exception to the lag convention, because collateral value is a real-time state, not a forecast.",
+     "lag": "current period (documented exception, flagged with a lightning-bolt in the variable dictionary)",
+     "fred_series": null,
+     "economic_channel": "Collateral / negative-equity channel: as updated LTV rises the borrower's equity cushion shrinks, removing both the option to sell out of trouble and (past 100% LTV) adding a strategic-default incentive.",
+     "hazard_ratio_per_unit": 1.225,
+     "worked_example": "+10pp of updated LTV => hazard x 1.2250 (+22.5%, a 22.5% increase in the monthly/quarterly default hazard)."}
     /* ... 13 rows total, in file order: fico_s, ltv10, loan_age,
        prepay_incentive, investor/RE-type flags, uer_lag1, uer_chg4_lag1,
        hpi_growth_lag1, gdp_lag1/gdp_growth_lag2, dt_ltv_uer,
@@ -340,9 +402,92 @@ Parsed from `outputs/variable_dictionary.md`. No params.
   "notes": "Model equations live in the module docstrings (cloglog hazard; two-stage LGD; ECL sum; Vasicek PIT\ntransform with the Gauss-Hermite anchor proof; satellite Z = −1.694 + 13.642·hpi_growth_lag1 +\n0.730·gdp_growth_lag2, n=57, with ADF/KPSS/DW/AIC and the GFC-dummy sensitivity in\noutputs/satellite/satellite_report.md). Coefficient tables with CIs: outputs/hazard/hazard_ratios.md,\noutputs/lgd/lgd_report.md."
 }
 ```
-`rows[].*` keys are all strings (raw source cells, including the ✓/⚡/↑/↓
+`rows[].*` original keys (`variable`, `source_transformation`,
+`lag_window`, `economic_rationale`, `expected_sign`, `fitted_verified`,
+`consumed_by`) are all strings (raw source cells, including the ✓/⚡/↑/↓
 glyphs and backtick-quoted variable names — the UI renders them as-is,
 markdown-lite).
+
+**Requirement 12 interpretation fields**, joined onto every row (same
+`unit_meaning` / `transformation` / `lag` / `fred_series` / `economic_channel`
+/ `hazard_ratio_per_unit` / `worked_example` shape as `/api/model/coefficients`
+above, described there field-by-field — including `fred_series` always
+being **null** here too, for the same reason: every row on this endpoint
+is a DCR/national concept, never a live FRED pull): the hazard-ratio-bearing
+fields are **reused from the DCR default-hazard table**, never re-derived,
+so the two exhibits cannot silently disagree. Four rows have **no** hazard
+ratio at all and get `hazard_ratio_per_unit: null, worked_example: null`
+(still carry `unit_meaning`/`transformation`/`economic_channel`):
+`loan_age` (spline basis, not individually interpretable),
+`` `lgd_time` (target) `` (an LGD target, not a hazard regressor),
+`` `Z_t` (recovered) `` (the satellite's dependent variable, not a
+regressor), and `Scenario paths` (a set of forward paths, not one
+coefficient). A fifth row, `` `dt_ltv_uer` ``, DOES carry a hazard ratio
+but still gets `hazard_ratio_per_unit: null` — it is the same DOUBLE
+TRIGGER interaction term as `/api/model/coefficients` above, and a
+per-unit read of a product term would mislead the same way there;
+`worked_example` stays a non-null string pointing at
+`fit_stats.double_trigger_note`.
+
+### `GET /api/model/macro_glossary`
+
+**NEW (Requirement 12).** Every macro series used anywhere in the app —
+DCR (national), SFLLD (state, Freddie rung 3), and the satellite Z
+regression — one entry per (series, model) pairing where the
+transformation or lag genuinely differs. Curated from
+`outputs/variable_dictionary.md`, `outputs/hazard/hazard_ratios.md`,
+`outputs/freddie/hazard/hazard_report.md`,
+`outputs/satellite/satellite_report.md` and `freddie/macro.py`'s
+docstrings. No params.
+
+```json
+{
+  "series": [
+    {"id": "dcr_uer_level", "label": "National UER -- level",
+     "fred_series": null, "geography": "US national",
+     "frequency": "monthly (matched to the panel's quarterly clock)",
+     "transformation": "level (pp)", "lag": "1 quarter",
+     "lag_rationale": "Publication-lag realism + the model's own timing convention: only past values (t-k, k>=1) are ever referenced, so scoring never looks ahead. NOT a live FRED pull -- vendor-premerged on the DCR panel's anonymized clock; only the clock's calendar alignment was verified against FRED UNRATE (corr 0.996).",
+     "which_models": ["DCR default hazard"]},
+    "... 9 more rows: dcr_uer_momentum, dcr_hpi_growth, dcr_gdp_growth,",
+    "sflld_uer_level, sflld_uer_momentum, sflld_hpi_growth,",
+    "satellite_hpi_growth, scenario_paths, coherent_shock_convention",
+    "(10 rows total) ..."
+  ],
+  "source_files": ["outputs/variable_dictionary.md", "outputs/hazard/hazard_ratios.md",
+                   "outputs/freddie/hazard/hazard_report.md", "outputs/satellite/satellite_report.md",
+                   "freddie/macro.py"]
+}
+```
+Field notes:
+* `id` (string) — stable row key, e.g. `dcr_uer_level`, `sflld_hpi_growth`.
+* `fred_series` (string, **nullable**) — the FRED series ID, populated
+  ONLY for the two SFLLD/state rows that are genuinely live-pulled from
+  FRED by `freddie/macro.py`: `{POSTAL}UR`, `{POSTAL}STHPI` (a literal
+  `{POSTAL}` template, not a specific state — FRED mints one series per
+  state postal code). `null` for every `dcr_*` and `satellite_hpi_growth`
+  row (the DCR panel's macro columns are a vendor-premerged national
+  series on an ANONYMIZED clock, not a live FRED pull — only the clock's
+  calendar alignment was checked against FRED UNRATE, see each row's
+  `lag_rationale`) and for the two non-series rows: `scenario_paths`
+  (a DFAST supervisory-scenario CSV pull, not a FRED series) and
+  `coherent_shock_convention` (a modelling-convention note, not a series
+  at all).
+* `which_models` (array of strings) — every consumer, e.g.
+  `["DCR default hazard", "DCR prepayment hazard"]`,
+  `["DCR default hazard", "satellite (Z regression)"]` (GDP growth is the
+  one series consumed at two different lags by two different models —
+  `lag`/`lag_rationale` state both).
+* `coherent_shock_convention` is the one entry with no series-level
+  facts (`fred_series`/`geography`/`frequency`/`lag` are all `n/a` or
+  `null`): it documents that the satellite is
+  `Z = f(hpi_growth_lag1, gdp_growth_lag2)` with **no unemployment
+  term** (sign-governance excluded it — every spec pairing duer with
+  gdp_growth fit a wrong-signed, collinearity-driven duer coefficient),
+  so `shock_macro` projects any univariate agent shock onto the DFAST
+  severe-minus-base direction to still reach Z. Matches
+  `wiki/pages/agent-layer.md`'s "THE COHERENT-SHOCK CONVENTION" note —
+  reported here for the UI, not duplicated logic.
 
 ### `GET /api/model/lgd`
 
@@ -629,8 +774,23 @@ coefficient tables. No params.
     {"term": "Intercept", "coef": -3.604265652756619, "std_err": 0.0659238765215353,
      "z": -54.67314488976103, "p_value": 0.0,
      "ci_low": -3.733474076460094, "ci_high": -3.475057229053144,
-     "hazard_ratio": 0.0272074171706316},
-    "... 18 more rows (19 total: intercept, occupancy/purpose/channel",
+     "hazard_ratio": 0.0272074171706316,
+     "unit_meaning": "reference-row hazard multiplier: owner-occupied / purchase-money / retail-channel / loan-age-spline reference, all continuous covariates at 0 on their raw scale.",
+     "transformation": "model constant", "lag": "n/a", "fred_series": null,
+     "economic_channel": "Not an economic channel -- the baseline hazard level the other coefficients multiply.",
+     "hazard_ratio_per_unit": 0.027207,
+     "worked_example": "Reference/mean-covariate baseline hazard multiplier: x0.0272 -- not a marginal per-unit effect."},
+    {"term": "uer_lag1", "coef": 0.09496308546677008, "std_err": 0.003081229955925172,
+     "z": 30.81986311477892, "p_value": 1.42e-208,
+     "ci_low": 0.0889239857250708, "ci_high": 0.10100218520846936,
+     "hazard_ratio": 1.0996182624819877,
+     "unit_meaning": "1 unit = 1 percentage point of the property state's own unemployment rate LEVEL, lagged 1 month.",
+     "transformation": "level (pp), state-level, lagged 1 month", "lag": "1 month",
+     "fred_series": "{POSTAL}UR",
+     "economic_channel": "Cash-flow / labour-income channel, same mechanism as the DCR national UER level -- state resolution replaces the national anchor with the borrower's own local labour market.",
+     "hazard_ratio_per_unit": 1.099618,
+     "worked_example": "+1pp of state UER level => hazard x 1.0996 (+10.0%, a 10.0% increase in the monthly/quarterly default hazard)."},
+    "... 17 more rows (19 total: intercept, occupancy/purpose/channel",
     "categoricals, the 5-knot loan-age spline, fico_s, dti_s, ltv10,",
     "uer_lag1, delta_uer_lag1, hpi_growth_lag1) ..."
   ],
@@ -653,6 +813,26 @@ coefficient tables. No params.
 `dcr_sign_comparison` covers the 7 continuous/structural terms only (not
 the categorical occupancy/purpose/channel dummies, which have no DCR
 counterpart at all).
+
+**Requirement 12 interpretation fields**, joined onto every one of the 19
+`coefficients[]` rows — same shape/semantics as `/api/model/coefficients`
+(`unit_meaning`, `transformation`, `lag`, `fred_series`, `economic_channel`,
+`hazard_ratio_per_unit`, `worked_example`), curated from
+`outputs/freddie/hazard/hazard_report.md`'s per-variable rationale table.
+Two differences from the DCR endpoint, both because this endpoint carries
+the raw fitted `coef` (DCR's markdown table only ever publishes `HR =
+exp(coef)`):
+* `hazard_ratio_per_unit` for the two log-growth macro rows
+  (`hpi_growth_lag1`) is computed as `exp(coef * 0.01)` from the **raw**
+  `coef` column, not derived from `hazard_ratio` — the tightest possible
+  "computed mechanically, never invented" reading, and exactly what
+  `tests/test_contract.py` recomputes and asserts against.
+* The 8 categorical dummy rows (occupancy/purpose/channel) and the 5
+  loan-age spline rows get the SAME `unit_kind` treatment as their DCR
+  categorical/spline counterparts, including 3 explicitly STATED misses
+  vs the DCR sign prior (`occupancy_status[T.S]`, `loan_purpose[T.N]`,
+  `channel[T.C]` — see `economic_channel` on those three rows, verbatim
+  from `hazard_report.md`'s "Fitted signs vs the priors" paragraph).
 
 ### `GET /api/freddie/backtest`
 
@@ -872,6 +1052,7 @@ byte-identical with this doc.
 | GET | `/api/agent/stream` | SSE trace feed of the latest `/ask` |
 | GET | `/api/model/coefficients` | hazard-ratio families + fit stats (The Model) |
 | GET | `/api/model/variable_dictionary` | every modelled variable (The Model) |
+| GET | `/api/model/macro_glossary` | every macro series across DCR+SFLLD+satellite (The Model) |
 | GET | `/api/model/lgd` | LGD key numbers + exhibits (The Model) |
 | GET | `/api/policy/staging_sensitivity` | SICR threshold governance curve (Policy) |
 | GET | `/api/policy/weights_table` | scenario weights sensitivity (Policy) |

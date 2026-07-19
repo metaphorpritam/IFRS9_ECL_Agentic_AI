@@ -4,6 +4,7 @@ import {
   explainPanelQuestion,
   getModelCoefficients,
   getVariableDictionary,
+  getMacroGlossary,
   getLgd,
   getExhibitsList,
 } from '../api.js';
@@ -11,6 +12,12 @@ import { runDate } from '../format.js';
 import SearchableTable from '../components/SearchableTable.jsx';
 import ExhibitImage from '../components/ExhibitImage.jsx';
 import Panel from '../components/Panel.jsx';
+import HowToReadCoefficients from '../components/HowToReadCoefficients.jsx';
+import {
+  ExpandToggle,
+  InterpretationRow,
+  useExpandableRows,
+} from '../components/CoefficientInterpretation.jsx';
 
 const FAMILY_LABEL = {
   baseline: 'Baseline (seasoning)',
@@ -20,7 +27,10 @@ const FAMILY_LABEL = {
   incentive: 'Incentive / behavioural',
 };
 
-function CoefficientsTable({ model }) {
+const COEF_COLS = 6; // toggle + variable + HR + per-unit HR + CI + p
+
+function CoefficientsTable({ model, modelKey }) {
+  const { isOpen, toggle } = useExpandableRows();
   if (!model) return null;
   const families = [];
   const seen = new Set();
@@ -35,8 +45,10 @@ function CoefficientsTable({ model }) {
       <table class="data-table coef-table">
         <thead>
           <tr>
+            <th />
             <th>Variable</th>
             <th class="num">Hazard ratio</th>
+            <th class="num" data-tip="0.01-vs-1pp-corrected, see the intro panel">Per-unit HR</th>
             <th class="num">95% CI</th>
             <th class="num">p</th>
           </tr>
@@ -45,22 +57,38 @@ function CoefficientsTable({ model }) {
           {families.map((fam) => (
             <Fragment key={fam}>
               <tr class="family-row">
-                <td colSpan={4}>{FAMILY_LABEL[fam] ?? fam}</td>
+                <td colSpan={COEF_COLS}>{FAMILY_LABEL[fam] ?? fam}</td>
               </tr>
               {model.coefficients
                 .filter((c) => c.family === fam)
-                .map((c) => (
-                  <tr key={c.variable}>
-                    <td>{c.variable}</td>
-                    <td class={`num ${c.hazard_ratio > 1 ? 'hr-up' : 'hr-down'}`}>
-                      {c.hazard_ratio.toFixed(4)}
-                    </td>
-                    <td class="num">[{c.ci[0].toFixed(3)}, {c.ci[1].toFixed(3)}]</td>
-                    <td class="num">{c.p_display}</td>
-                  </tr>
-                ))}
+                .map((c) => {
+                  const key = `${modelKey}:${c.variable}`;
+                  const open = isOpen(key);
+                  return (
+                    <Fragment key={key}>
+                      <tr class={`coef-row${open ? ' row-open' : ''}`} onClick={() => toggle(key)}>
+                        <td>
+                          <ExpandToggle open={open} onToggle={() => toggle(key)} label={c.variable} />
+                        </td>
+                        <td>
+                          {c.variable}
+                          {c.fred_series && <span class="fred-badge fred-badge-inline">FRED</span>}
+                        </td>
+                        <td class={`num ${c.hazard_ratio > 1 ? 'hr-up' : 'hr-down'}`}>
+                          {c.hazard_ratio.toFixed(4)}
+                        </td>
+                        <td class="num">
+                          {c.hazard_ratio_per_unit != null ? c.hazard_ratio_per_unit.toFixed(4) : '—'}
+                        </td>
+                        <td class="num">[{c.ci[0].toFixed(3)}, {c.ci[1].toFixed(3)}]</td>
+                        <td class="num">{c.p_display}</td>
+                      </tr>
+                      {open && <InterpretationRow row={c} colSpan={COEF_COLS} />}
+                    </Fragment>
+                  );
+                })}
               <tr class="story-row">
-                <td colSpan={4}>
+                <td colSpan={COEF_COLS}>
                   {model.coefficients.find((c) => c.family === fam)?.story}
                 </td>
               </tr>
@@ -142,6 +170,10 @@ function VariableDictionary({ dict }) {
     { key: 'expected_sign', label: 'Expected sign' },
     { key: 'fitted_verified', label: 'Fitted / verified' },
     { key: 'consumed_by', label: 'Consumed by' },
+    {
+      key: 'fred_series', label: 'FRED',
+      render: (r) => (r.fred_series ? <span class="fred-badge">{r.fred_series}</span> : '—'),
+    },
   ];
   return (
     <>
@@ -153,6 +185,36 @@ function VariableDictionary({ dict }) {
       />
       <p class="panel-sub preamble">{dict.notes}</p>
     </>
+  );
+}
+
+function MacroGlossary({ glossary }) {
+  if (!glossary) return null;
+  const columns = [
+    { key: 'label', label: 'Series' },
+    {
+      key: 'fred_series', label: 'FRED ID',
+      render: (r) => (r.fred_series ? <code>{r.fred_series}</code> : '—'),
+    },
+    { key: 'geography', label: 'Geography' },
+    { key: 'frequency', label: 'Frequency' },
+    { key: 'transformation', label: 'Transformation' },
+    { key: 'lag', label: 'Lag' },
+    { key: 'lag_rationale', label: 'Why this lag' },
+    {
+      key: 'which_models', label: 'Used by',
+      render: (r) => r.which_models.join('; '),
+    },
+  ];
+  return (
+    <details class="stage-guide macro-glossary">
+      <summary>Macro data glossary ({glossary.series.length} series)</summary>
+      <SearchableTable
+        columns={columns}
+        rows={glossary.series}
+        placeholder="Search macro series (e.g. UNRATE, STHPI, coherent)…"
+      />
+    </details>
   );
 }
 
@@ -237,6 +299,7 @@ function LgdSection({ lgd, exhibits }) {
 export default function ModelTab() {
   const [coeffs, setCoeffs] = useState(null);
   const [dict, setDict] = useState(null);
+  const [macroGlossary, setMacroGlossary] = useState(null);
   const [lgd, setLgd] = useState(null);
   const [exhibits, setExhibits] = useState([]);
   const [selected, setSelected] = useState('default');
@@ -244,11 +307,18 @@ export default function ModelTab() {
 
   useEffect(() => {
     let alive = true;
-    Promise.all([getModelCoefficients(), getVariableDictionary(), getLgd(), getExhibitsList()])
-      .then(([c, d, l, ex]) => {
+    Promise.all([
+      getModelCoefficients(),
+      getVariableDictionary(),
+      getMacroGlossary(),
+      getLgd(),
+      getExhibitsList(),
+    ])
+      .then(([c, d, mg, l, ex]) => {
         if (!alive) return;
         setCoeffs(c);
         setDict(d);
+        setMacroGlossary(mg);
         setLgd(l);
         setExhibits(ex.exhibits);
       })
@@ -275,6 +345,8 @@ export default function ModelTab() {
       {error && (
         <div class="empty-note">Engine API offline ({error}).</div>
       )}
+
+      <HowToReadCoefficients />
 
       <Panel
         exhibit={1}
@@ -309,7 +381,7 @@ export default function ModelTab() {
           })
         }
       >
-        <CoefficientsTable model={model} />
+        <CoefficientsTable model={model} modelKey={selected} />
       </Panel>
 
       <Panel
@@ -368,12 +440,31 @@ export default function ModelTab() {
 
       <Panel
         exhibit={5}
+        title="Macro data glossary"
+        subtitle="Every FRED/macro series across the DCR (national) and SFLLD (state) panels and the satellite Z regression -- source, geography, transformation, and why each lag."
+        source={{ endpoint: 'GET /api/model/macro_glossary', runDate: runDate() }}
+        buildExplainQuestion={() =>
+          explainPanelQuestion({
+            panelId: 'macro_glossary',
+            exhibitLabel: 'Exhibit 5',
+            title: 'Macro data glossary',
+            recap: macroGlossary
+              ? `${macroGlossary.series.length} macro series documented across DCR, SFLLD and the satellite: ${macroGlossary.series.map((s) => s.label).join('; ')}.`
+              : 'no data rendered yet',
+          })
+        }
+      >
+        <MacroGlossary glossary={macroGlossary} />
+      </Panel>
+
+      <Panel
+        exhibit={6}
         title="LGD — two-stage workout model"
         source={{ endpoint: 'GET /api/model/lgd', runDate: runDate() }}
         buildExplainQuestion={() =>
           explainPanelQuestion({
             panelId: 'lgd',
-            exhibitLabel: 'Exhibit 5',
+            exhibitLabel: 'Exhibit 6',
             title: 'LGD — two-stage workout model',
             recap: lgd
               ? `Cure rate ${(lgd.cure_rate * 100).toFixed(1)}%, cure AUC (train/OOT) ${lgd.cure_auc.train.toFixed(3)}/${lgd.cure_auc.oot.toFixed(3)}, excess-loss loading ${(lgd.excess_loss_loading * 100).toFixed(2)}%.`

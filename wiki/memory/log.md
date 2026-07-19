@@ -101,3 +101,7 @@ HANDOFF (7% tokens). TWO WORKFLOWS IN FLIGHT: (1) notes batch B run wf_55363991-
 ## 2026-07-19 08:07 UTC — tags: notes, batchB
 
 Notes batch B COMPLETE (10/10 agents): ch03 hazard (cloglog derived, left-truncation stats scratch-computed, 2 node-tested widgets, 8 exhibits), ch04 LGD/EAD, ch05 Vasicek. All three через renderQA+adversarial with fixes. Reindexed + coverage updated. NEXT: batch C (ch06 scenarios/satellite/Jensen + ch07 challengers + ch08 agent) - same pipeline pattern as batch-b script.
+
+## 2026-07-19 08:21 UTC — tags: app, req12
+
+Req-12 macro interpretation SHIPPED: 7 interpretation fields on all coefficient rows + /api/model/macro_glossary (10 rows) + HR columns + How-to-read panels + coherent-shock notes. Review caught 2 HIGH: DCR rows falsely badged as live FRED series (vendor-premerged on anonymized clock - badges nulled, honesty clause added) + DOUBLE TRIGGER leaked a misleading per-unit HR where contract promised null (interaction branch added). 665+ tests.

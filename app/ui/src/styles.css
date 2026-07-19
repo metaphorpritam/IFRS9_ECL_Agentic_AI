@@ -1014,6 +1014,108 @@ input[type='range'] {
   margin-top: 8px;
 }
 
+/* ---------------------------------------------------------- Requirement 12
+   macro/FRED interpretation: expandable coefficient rows, FRED badges, the
+   "How to read" intro panel, and the macro-glossary collapsible panel. */
+
+.row-expand-btn {
+  font: inherit;
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+.row-expand-btn:hover { color: var(--accent-text); background: var(--accent-wash); }
+.row-expand-caret { font-size: 11px; }
+
+.data-table tbody tr.row-open td { background: var(--accent-wash); }
+.data-table.coef-table tbody tr.coef-row { cursor: pointer; }
+
+.interp-row td {
+  white-space: normal;
+  height: auto;
+  padding: 0;
+  border-bottom: 2px solid var(--border);
+}
+
+.interp-body {
+  padding: 12px 14px 14px 40px;
+  background: var(--page);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.interp-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.interp-line {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin: 0;
+}
+.interp-line b { color: var(--ink); }
+
+.interp-worked {
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--accent-wash);
+  border-left: 3px solid var(--accent);
+  padding: 6px 10px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.fred-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.fred-badge-inline {
+  margin-left: 8px;
+  font-size: 9.5px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+
+.lag-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.macro-glossary { margin-top: 0; }
+.macro-glossary summary { font-weight: 600; }
+
+.coherent-shock-note {
+  margin-bottom: 10px;
+}
+
 @media (max-width: 780px) {
   .two-col { grid-template-columns: 1fr; }
 }
