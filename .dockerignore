@@ -65,3 +65,5 @@ outputs/*
 !outputs/vasicek
 !outputs/scenario_ecl
 !outputs/challenger
+!outputs/freddie
+!outputs/mdd

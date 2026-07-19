@@ -3,6 +3,7 @@ import ExecutiveTab from './tabs/ExecutiveTab.jsx';
 import ModelTab from './tabs/ModelTab.jsx';
 import ScenarioLabTab from './tabs/ScenarioLabTab.jsx';
 import PolicyTab from './tabs/PolicyTab.jsx';
+import FreddieTab from './tabs/FreddieTab.jsx';
 import CopilotTab from './tabs/CopilotTab.jsx';
 import MiniChatDock from './components/MiniChatDock.jsx';
 import SelectionExplain from './components/SelectionExplain.jsx';
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'model', label: 'The Model', Comp: ModelTab },
   { id: 'scenario', label: 'Scenario Lab', Comp: ScenarioLabTab },
   { id: 'policy', label: 'Policy', Comp: PolicyTab },
+  { id: 'freddie', label: 'Real Data', Comp: FreddieTab },
   { id: 'copilot', label: 'Copilot', Comp: CopilotTab },
 ];
 
@@ -69,6 +71,14 @@ export default function App() {
             9
           </span>
           <span class="brand-name">IFRS 9 ECL Copilot</span>
+          <a
+            class="mdd-link"
+            href="/static/mdd/MDD.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            MDD
+          </a>
         </div>
         <span class="grounded-badge">
           <span class="status-dot status-dot-good" />

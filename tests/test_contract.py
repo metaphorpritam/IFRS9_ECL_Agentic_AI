@@ -391,7 +391,175 @@ def test_static_exhibits_are_actually_served(client):
 
 
 # ---------------------------------------------------------------------------
-# Section 4: /api/agent/interpret (LLM mocked, never called for real)
+# Section 4: The 'Real Data' tab (Freddie Mac SFLLD Phase A/B)
+# ---------------------------------------------------------------------------
+
+def test_freddie_summary_contract(client):
+    body = client.get("/api/freddie/summary").json()
+    assert set(body) == {"panel", "hazard", "covid", "lgd",
+                         "backtest_headline", "lstm", "gate_verdict",
+                         "source_files"}
+
+    panel = body["panel"]
+    assert set(panel) == {"n_loans", "n_loan_months", "n_vintages",
+                          "overall_d90_rate_pct", "overall_prepay_rate_pct",
+                          "vintages"}
+    assert panel["n_loans"] == 837500
+    assert panel["n_loan_months"] == 39522565
+    assert panel["n_vintages"] == 17
+    assert panel["overall_d90_rate_pct"] == pytest.approx(5.32)
+    assert panel["overall_prepay_rate_pct"] == pytest.approx(58.93)
+    assert len(panel["vintages"]) == 17
+    vintage_fields = {"vintage", "n_loans", "n_loan_months", "d90_rate_pct",
+                      "prepay_rate_pct", "other_terminal_rate_pct",
+                      "censored_rate_pct", "perf_window_end"}
+    for v in panel["vintages"]:
+        assert set(v) == vintage_fields
+    by_vintage = {v["vintage"]: v for v in panel["vintages"]}
+    assert set(by_vintage) == {
+        "2005", "2006", "2007", "2008", "2009", "2010", "2014", "2015",
+        "2016", "2018", "2019", "2020", "2021", "2022", "2023", "2024",
+        "2025"}                                    # 2011-13/2017 gap, declared
+    assert by_vintage["2007"]["n_loans"] == 50000
+    assert by_vintage["2007"]["d90_rate_pct"] == pytest.approx(16.26)
+    assert by_vintage["2025"]["n_loans"] == 37500   # partial final vintage
+
+    hazard = body["hazard"]
+    assert set(hazard) == {"train_auc", "oot_auc", "train_n", "train_events",
+                           "oot_n", "oot_events", "mcfadden_r2",
+                           "dcr_train_auc", "dcr_oot_auc"}
+    assert hazard["train_auc"] == pytest.approx(0.8536, abs=1e-4)
+    assert hazard["oot_auc"] == pytest.approx(0.6847, abs=1e-4)
+    assert hazard["dcr_train_auc"] == pytest.approx(0.7476)
+    assert hazard["dcr_oot_auc"] == pytest.approx(0.6609)
+
+    covid = body["covid"]
+    assert set(covid) == {"verdict", "window", "naive_oot2_auc",
+                          "additive_oot2_auc", "exclude_oot2_auc",
+                          "recommendation"}
+    assert covid["verdict"] == "exclude"
+    assert covid["window"] == "2020-04..2021-09"
+    assert covid["exclude_oot2_auc"] == pytest.approx(0.7509, abs=1e-4)
+    assert "prefer **exclude**" in covid["recommendation"]
+
+    lgd = body["lgd"]
+    assert set(lgd) == {"mean_realized_lgd_train", "mean_realized_lgd_oot",
+                        "cure_auc_train", "cure_auc_oot",
+                        "excess_loading_sflld", "excess_loading_dcr"}
+    assert lgd["mean_realized_lgd_train"] == pytest.approx(0.2715, abs=1e-4)
+    assert lgd["excess_loading_sflld"] == pytest.approx(0.0148)
+    assert lgd["excess_loading_dcr"] == pytest.approx(0.0255)
+    assert lgd["cure_auc_oot"] == pytest.approx(0.4769)
+
+    bh = body["backtest_headline"]
+    assert set(bh) == {"worst_asof", "worst_miss_ratio_frozen",
+                       "worst_miss_ratio_actual", "saturation_asof",
+                       "saturation_miss_ratio_actual"}
+    assert bh["worst_asof"] == "2007-12"
+    assert bh["worst_miss_ratio_frozen"] == pytest.approx(9.42, abs=1e-2)
+    assert bh["saturation_asof"] == "2019-12"
+    assert bh["saturation_miss_ratio_actual"] == pytest.approx(0.064, abs=1e-3)
+
+    lstm = body["lstm"]
+    assert set(lstm) == {"oot_champion_auc", "oot_lstm_auc",
+                         "prior_dlq_champion_auc", "prior_dlq_lstm_auc",
+                         "clean_champion_auc", "clean_lstm_auc"}
+    assert lstm["oot_lstm_auc"] == pytest.approx(0.9925, abs=1e-4)
+    assert lstm["prior_dlq_lstm_auc"] > lstm["prior_dlq_champion_auc"]
+    # the path-dependence signature: lift concentrates on prior-delinquency
+    assert (lstm["prior_dlq_lstm_auc"] - lstm["prior_dlq_champion_auc"]) > \
+        (lstm["clean_lstm_auc"] - lstm["clean_champion_auc"])
+
+    assert body["gate_verdict"] == "PASS"
+    assert isinstance(body["source_files"], list) and body["source_files"]
+
+
+def test_freddie_hazard_contract(client):
+    body = client.get("/api/freddie/hazard").json()
+    assert set(body) == {"coefficients", "dcr_sign_comparison", "metrics",
+                         "covid", "source_files"}
+
+    coefs = body["coefficients"]
+    assert len(coefs) == 19
+    coef_fields = {"term", "coef", "std_err", "z", "p_value", "ci_low",
+                   "ci_high", "hazard_ratio"}
+    for row in coefs:
+        assert set(row) == coef_fields
+    intercept = coefs[0]
+    assert intercept["term"] == "Intercept"
+    assert intercept["coef"] == pytest.approx(-3.6043, abs=1e-3)
+    assert intercept["hazard_ratio"] == pytest.approx(0.0272, abs=1e-3)
+
+    sign_rows = {r["variable"]: r for r in body["dcr_sign_comparison"]}
+    assert len(sign_rows) == 7
+    assert sign_rows["fico_s"]["dcr_variable"] == "fico_s"
+    assert sign_rows["fico_s"]["dcr_expected_sign"] == "-"
+    assert sign_rows["dti_s"]["dcr_variable"] is None    # no DCR counterpart
+    assert sign_rows["delta_uer_lag1"]["dcr_variable"] == "uer_chg4_lag1"
+
+    assert body["metrics"]["train_auc"] == pytest.approx(0.8536, abs=1e-4)
+    assert body["covid"]["verdict"] == "exclude"
+    assert isinstance(body["source_files"], list) and len(body["source_files"]) == 6
+
+
+def test_freddie_backtest_contract(client):
+    body = client.get("/api/freddie/backtest").json()
+    assert set(body) == {"rows", "central_honesty_note", "overlay_narrative",
+                         "covid_panel_note", "source_files"}
+
+    rows = body["rows"]
+    assert [r["asof"] for r in rows] == \
+        ["2007-12", "2009-12", "2015-12", "2019-12", "2021-12"]
+    row_fields = {"asof", "fit_n", "fit_events", "n_active_loans",
+                  "realized_cum_d90", "predicted_cum_d90_frozen",
+                  "miss_ratio_frozen", "predicted_cum_d90_actual",
+                  "miss_ratio_actual"}
+    for r in rows:
+        assert set(r) == row_fields
+
+    by_date = {r["asof"]: r for r in rows}
+    gfc = by_date["2007-12"]
+    assert gfc["realized_cum_d90"] == pytest.approx(0.08750, abs=1e-4)
+    assert gfc["miss_ratio_frozen"] == pytest.approx(9.42, abs=1e-2)
+    covid = by_date["2019-12"]
+    assert covid["miss_ratio_actual"] == pytest.approx(0.0643, abs=1e-3)
+
+    assert "9.42x" in body["central_honesty_note"]
+    assert "UNDERPREDICTS the GFC" in body["central_honesty_note"]
+    assert isinstance(body["overlay_narrative"], str) and len(body["overlay_narrative"]) > 0
+    assert isinstance(body["covid_panel_note"], str) and len(body["covid_panel_note"]) > 0
+
+
+def test_freddie_exhibits_contract(client):
+    body = client.get("/api/freddie/exhibits").json()
+    assert set(body) == {"exhibits"}
+    items = body["exhibits"]
+    assert len(items) == 13
+    ids = [e["id"] for e in items]
+    assert len(ids) == len(set(ids))
+    for e in items:
+        assert set(e) == {"id", "title", "png_url", "caption", "source"}
+        assert e["png_url"].startswith("/static/freddie/")
+        assert e["png_url"].endswith(".png")
+        assert e["source"].startswith("outputs/freddie/")
+
+    by_id = {e["id"]: e for e in items}
+    assert by_id["freddie_vintage_curves"]["png_url"] == \
+        "/static/freddie/eda/exhibit1_vintage_curves.png"
+    assert by_id["freddie_backtest_200712"]["png_url"] == \
+        "/static/freddie/backtest/predicted_vs_realized_200712.png"
+    assert "9.42" in by_id["freddie_backtest_200712"]["caption"]
+
+
+def test_static_freddie_exhibits_are_actually_served(client):
+    """Every png_url the previous test asserted resolves to a real file."""
+    r = client.get("/static/freddie/eda/exhibit1_vintage_curves.png")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+
+
+# ---------------------------------------------------------------------------
+# Section 5: /api/agent/interpret (LLM mocked, never called for real)
 # ---------------------------------------------------------------------------
 
 _RERUN_RESULT = {

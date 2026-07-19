@@ -529,7 +529,203 @@ every PNG under `outputs/`). No params.
 
 ---
 
-## 4. NEW: Copilot / Scenario Lab auto-interpretation
+## 4. NEW: The 'Real Data' tab (Freddie Mac SFLLD Phase A/B)
+
+`freddie/` (read-only, FROZEN like the engine) built a second, REAL-data
+pipeline alongside the DCR-synthetic engine above — a champion hazard/LGD
+refit on the real Freddie Mac Single-Family Loan-Level Dataset (SFLLD, 17
+vintages), an ALFRED-vintage backtest, and an LSTM path-dependence
+challenger. The four endpoints below parse `outputs/freddie/**`'s
+already-written reports/CSVs/JSON into JSON on every request — no engine
+state is touched and every number is read off those artifacts VERBATIM,
+never recomputed. Every PNG referenced by a `png_url` below is served at
+`/static/freddie/<relative-path-under-outputs/freddie/>` (a second, more
+convenient mount over the same files `/static/exhibits/freddie/*` already
+serves via the whole-`outputs/` mount above).
+
+### `GET /api/freddie/summary`
+
+Panel scale + the headline numbers for the tab's hero panel. No params.
+
+```json
+{
+  "panel": {
+    "n_loans": 837500,
+    "n_loan_months": 39522565,
+    "n_vintages": 17,
+    "overall_d90_rate_pct": 5.32,
+    "overall_prepay_rate_pct": 58.93,
+    "vintages": [
+      {"vintage": "2005", "n_loans": 50000, "n_loan_months": 3588153,
+       "d90_rate_pct": 10.75, "prepay_rate_pct": 87.21,
+       "other_terminal_rate_pct": 0.15, "censored_rate_pct": 1.89,
+       "perf_window_end": "2025-09"},
+      "... 15 more rows (one per vintage: 2005-2010, 2014-2016, 2018-2025 —",
+      "2011-2013/2017 are a documented coverage gap, never downloaded) ...",
+      {"vintage": "2025", "n_loans": 37500, "n_loan_months": 153366,
+       "d90_rate_pct": 0.04, "prepay_rate_pct": 1.79,
+       "other_terminal_rate_pct": 0.03, "censored_rate_pct": 98.14,
+       "perf_window_end": "2025-09"}
+    ]
+  },
+  "hazard": {
+    "train_auc": 0.8535911902958723, "oot_auc": 0.6847251436480823,
+    "train_n": 17703723, "train_events": 26284,
+    "oot_n": 21818842, "oot_events": 18309,
+    "mcfadden_r2": 0.11966452683311235,
+    "dcr_train_auc": 0.7476, "dcr_oot_auc": 0.6609
+  },
+  "covid": {
+    "verdict": "exclude",
+    "window": "2020-04..2021-09",
+    "naive_oot2_auc": 0.7553126379930407,
+    "additive_oot2_auc": 0.7546806708472524,
+    "exclude_oot2_auc": 0.7509195241784803,
+    "recommendation": "prefer **exclude** for any structural or scenario-conditional use -- it is the only treatment that preserves economically-signed macro coefficients, ... (full paragraph, verbatim from hazard_report.md section 3)"
+  },
+  "lgd": {
+    "mean_realized_lgd_train": 0.2715010941028595,
+    "mean_realized_lgd_oot": 0.0073627401143312,
+    "cure_auc_train": 0.6991, "cure_auc_oot": 0.4769,
+    "excess_loading_sflld": 0.0148, "excess_loading_dcr": 0.0255
+  },
+  "backtest_headline": {
+    "worst_asof": "2007-12", "worst_miss_ratio_frozen": 9.423568161519073,
+    "worst_miss_ratio_actual": 1.8965807743337444,
+    "saturation_asof": "2019-12", "saturation_miss_ratio_actual": 0.06433186245201551
+  },
+  "lstm": {
+    "oot_champion_auc": 0.6847251436480823, "oot_lstm_auc": 0.9924998553122111,
+    "prior_dlq_champion_auc": 0.5698246326781929, "prior_dlq_lstm_auc": 0.9570336218094414,
+    "clean_champion_auc": 0.5385541163579888, "clean_lstm_auc": 0.5287356531754855
+  },
+  "gate_verdict": "PASS",
+  "source_files": ["outputs/freddie/gate_phaseA.md", "... 8 more"]
+}
+```
+Notes: `hazard.dcr_*_auc` is the DCR-synthetic champion's own AUC (reused
+from `outputs/hazard/fit_stats.md` via the existing `/api/model/coefficients`
+parser — never re-derived), for the DCR-vs-SFLLD comparison stat tiles.
+`*_pct` fields are already 0–100 scale. `covid.verdict` is always
+`"exclude"` (the reviewed recommendation — the additive-dummy variant was
+overturned on review: it fits POSITIVE but fails to repair the
+sign-flipped structural macro terms). `lgd.mean_realized_lgd_oot` is
+COVID-cure-dominated, not a like-for-like regime comparison (see
+`/api/freddie/summary`'s `lgd` source report). `backtest_headline.worst_*`
+is the row with the largest `miss_ratio_frozen` across all 5 reporting
+dates (currently 2007-12, the GFC); `saturation_*` is the row with the
+smallest `miss_ratio_actual` (currently 2019-12, the hindsight-macro
+saturation). `gate_verdict` is the Phase B gate's own PASS/FAIL line.
+
+### `GET /api/freddie/hazard`
+
+Coefficients + the DCR sign comparison + AUCs + the COVID regime verdict —
+the same `covid` object as `/api/freddie/summary`, plus the full
+coefficient tables. No params.
+
+```json
+{
+  "coefficients": [
+    {"term": "Intercept", "coef": -3.604265652756619, "std_err": 0.0659238765215353,
+     "z": -54.67314488976103, "p_value": 0.0,
+     "ci_low": -3.733474076460094, "ci_high": -3.475057229053144,
+     "hazard_ratio": 0.0272074171706316},
+    "... 18 more rows (19 total: intercept, occupancy/purpose/channel",
+    "categoricals, the 5-knot loan-age spline, fico_s, dti_s, ltv10,",
+    "uer_lag1, delta_uer_lag1, hpi_growth_lag1) ..."
+  ],
+  "dcr_sign_comparison": [
+    {"variable": "fico_s", "dcr_variable": "fico_s", "dcr_expected_sign": "-"},
+    {"variable": "dti_s", "dcr_variable": null, "dcr_expected_sign": "n/a (DCR has no DTI field at this rung)"},
+    {"variable": "ltv10", "dcr_variable": "ltv10", "dcr_expected_sign": "+"},
+    {"variable": "uer_lag1", "dcr_variable": "uer_lag1", "dcr_expected_sign": "+ (net, level+momentum -- see DCR variable dictionary)"},
+    {"variable": "delta_uer_lag1", "dcr_variable": "uer_chg4_lag1", "dcr_expected_sign": "+"},
+    {"variable": "hpi_growth_lag1", "dcr_variable": "hpi_growth_lag1", "dcr_expected_sign": "-"},
+    {"variable": "cr(loan_age, df=5)", "dcr_variable": "cr(loan_age, df=5)", "dcr_expected_sign": "hump (DCR peak ~12 QUARTERS ~= 36 months)"}
+  ],
+  "metrics": { "...": "identical shape to /api/freddie/summary's hazard object" },
+  "covid": { "...": "identical shape to /api/freddie/summary's covid object" },
+  "source_files": ["outputs/freddie/hazard/coefficients.csv", "... 5 more"]
+}
+```
+`dcr_variable` is `null` when the SFLLD term has no DCR counterpart (only
+`dti_s` today — the DCR engine has no DTI field at this rung).
+`dcr_sign_comparison` covers the 7 continuous/structural terms only (not
+the categorical occupancy/purpose/channel dummies, which have no DCR
+counterpart at all).
+
+### `GET /api/freddie/backtest`
+
+The ALFRED-vintage backtest: per-reporting-date predicted-vs-realized D90
++ miss ratios (the honesty exhibit), plus 3 verbatim narrative notes. No
+params.
+
+```json
+{
+  "rows": [
+    {"asof": "2007-12", "fit_n": 86188, "fit_events": 610, "n_active_loans": 124235,
+     "realized_cum_d90": 0.08749547229041735, "predicted_cum_d90_frozen": 0.009284749766834936,
+     "miss_ratio_frozen": 9.423568161519073, "predicted_cum_d90_actual": 0.046133269657947416,
+     "miss_ratio_actual": 1.8965807743337444},
+    {"asof": "2009-12", "fit_n": 264774, "fit_events": 6843, "n_active_loans": 165978,
+     "realized_cum_d90": 0.06568942871946884, "predicted_cum_d90_frozen": 0.05553775223045237,
+     "miss_ratio_frozen": 1.182788753259087, "predicted_cum_d90_actual": 0.04657626110967737,
+     "miss_ratio_actual": 1.4103628576966267},
+    {"asof": "2015-12", "fit_n": 713027, "fit_events": 23732, "n_active_loans": 121861,
+     "realized_cum_d90": 0.013974938659620387, "predicted_cum_d90_frozen": 0.01856748237465763,
+     "miss_ratio_frozen": 0.752656627195429, "predicted_cum_d90_actual": 0.018546140130412742,
+     "miss_ratio_actual": 0.753522757908191},
+    {"asof": "2019-12", "fit_n": 1067328, "fit_events": 26491, "n_active_loans": 193308,
+     "realized_cum_d90": 0.04600947710389637, "predicted_cum_d90_frozen": 0.009198148398939846,
+     "miss_ratio_frozen": 5.00203683484812, "predicted_cum_d90_actual": 0.7151895709255173,
+     "miss_ratio_actual": 0.06433186245201551},
+    {"asof": "2021-12", "fit_n": 1298615, "fit_events": 35707, "n_active_loans": 173838,
+     "realized_cum_d90": 0.011608509071664424, "predicted_cum_d90_frozen": 0.01733963868732328,
+     "miss_ratio_frozen": 0.6694781408652541, "predicted_cum_d90_actual": 0.012290078358215651,
+     "miss_ratio_actual": 0.944543129288056}
+  ],
+  "central_honesty_note": "miss ratio (frozen) = 9.42x (realized 8.750% vs predicted 0.928%) -- **UNDERPREDICTS the GFC, as expected**: a model fit on pre-2008 data with macro frozen at 2007-12 levels cannot see the crisis coming; this is the exhibit's central honesty result, not a defect.",
+  "overlay_narrative": "The DCR champion (`engine/hazard.py`) is a point-in-time (PIT) hazard; IFRS-9 compliance requires pairing it with a forward-looking scenario overlay ... (full paragraph, verbatim from backtest_report.md section 1)",
+  "covid_panel_note": "The 2019-12 model (fit on pre-COVID data, macro frozen at 2019-12 levels or even the hindsight-actual path) projects forward straight through the 2020-04..2021-09 forbearance window it never saw ... (full paragraph, verbatim from backtest_report.md section 3)",
+  "source_files": ["outputs/freddie/backtest/all_metrics.json", "outputs/freddie/backtest/backtest_report.md"]
+}
+```
+Exactly 5 rows (the 5 pseudo-reporting dates: 2007-12, 2009-12, 2015-12,
+2019-12, 2021-12), always in that order. `realized_cum_d90` /
+`predicted_cum_d90_*` are ratios (e.g. `0.0875` = 8.75%), not `*_pct`
+fields. `miss_ratio_*` is `realized / predicted` (>1 = the model
+underpredicted; <1 = overpredicted) — **2007-12's `miss_ratio_frozen`
+9.42× is the centerpiece finding**: a pre-crisis model with macro frozen
+at 2007-12 levels cannot see the GFC coming.
+
+### `GET /api/freddie/exhibits`
+
+id → `{title, png_url, caption, source}` for the 13 curated Freddie SFLLD
+exhibit PNGs (vintage curves, roll-rate/COVID anomaly, state heterogeneity,
+severity cycle, hazard calibration/seasoning/COVID-regime, the backtest
+honesty panels, and the LSTM calibration/lift charts). No params.
+
+```json
+{
+  "exhibits": [
+    {"id": "freddie_vintage_curves", "title": "Vintage curves -- cumulative D90 by months on book",
+     "png_url": "/static/freddie/eda/exhibit1_vintage_curves.png",
+     "caption": "2007 vintage reaches 16.26% cumulative D90 by month 225 vs 14.11% (2006) and 9.14% (2008) -- the pre-crisis-vintage hump; every 2018-2025 modern vintage tops out below 5.48%.",
+     "source": "outputs/freddie/eda/eda_report.md#Exhibit 1"},
+    {"id": "freddie_backtest_200712", "title": "Backtest honesty panel -- 2007-12 GFC miss",
+     "png_url": "/static/freddie/backtest/predicted_vs_realized_200712.png",
+     "caption": "A model refit through 2007-12 with macro frozen at then-current levels predicts 0.928% 36-month D90 vs a realized 8.750% -- a 9.42x underprediction of the GFC it could not see coming.",
+     "source": "outputs/freddie/backtest/backtest_report.md#2"},
+    "... 11 more (see app/api/main.py FREDDIE_EXHIBITS for the full curated list) ..."
+  ]
+}
+```
+`source` (unique to this endpoint vs `/api/exhibits/list`'s `caption`-only
+shape) names the report/section the caption's numbers were read from.
+
+---
+
+## 5. NEW: Copilot / Scenario Lab auto-interpretation
 
 ### `POST /api/agent/interpret`
 
@@ -594,7 +790,7 @@ output shape:
 
 ---
 
-## 5. NEW: UI v3 AI-explain question-prefix conventions
+## 6. NEW: UI v3 AI-explain question-prefix conventions
 
 Both conventions below are **UI-side wire-text conventions layered on top of
 the existing `POST /api/agent/ask`** (§1) — they add ZERO new endpoints and
@@ -606,7 +802,7 @@ tools/Tier-2/Tier-3/refusal governance as a typed question (FINAL_SPEC.md
 tag, a colon, and a trailing question — and is free to route it to any of
 the five paths, including `REFUSE`, exactly as it would any other message.
 
-### 5.1 Panel/tile explain prefix
+### 6.1 Panel/tile explain prefix
 
 Every panel/tile heading in the UI carries a small AI-explain icon
 (`app/ui/src/components/ExplainButton.jsx`). Clicking it composes:
@@ -638,7 +834,7 @@ stage migration +$X.Xm, remeasurement +$X.Xm, derecognitions −$X.Xm, new
 loans +$X.Xm, closing $X.Xm. What should I take from this?
 ```
 
-### 5.2 Selection-explain prefix
+### 6.2 Selection-explain prefix
 
 Highlighting any text in the main app area (outside inputs and both chat
 surfaces) shows a floating "Explain with AI" chip
@@ -680,5 +876,11 @@ byte-identical with this doc.
 | GET | `/api/policy/staging_sensitivity` | SICR threshold governance curve (Policy) |
 | GET | `/api/policy/weights_table` | scenario weights sensitivity (Policy) |
 | GET | `/api/exhibits/list` | every servable exhibit PNG, with captions |
+| GET | `/api/freddie/summary` | SFLLD panel scale + headline numbers (Real Data hero) |
+| GET | `/api/freddie/hazard` | SFLLD hazard coefficients + DCR sign comparison + AUCs |
+| GET | `/api/freddie/backtest` | ALFRED-vintage predicted-vs-realized table (Real Data) |
+| GET | `/api/freddie/exhibits` | every servable Freddie SFLLD exhibit PNG, with captions |
 | POST | `/api/agent/interpret` | auto-interpretation of an already-run tool result |
 | GET | `/static/exhibits/*` | the exhibit PNGs themselves (read-only static mount) |
+| GET | `/static/freddie/*` | the Freddie SFLLD exhibit PNGs (read-only static mount) |
+| GET | `/static/mdd/MDD.html` | the Model Development Document (read-only static mount) |

@@ -198,6 +198,22 @@ button, input, select {
   white-space: nowrap;
 }
 
+/* Header brand-row link to the static Model Development Document, opened
+   in a new tab (app/ui/src/app.jsx) -- a small pill next to the wordmark,
+   never competing with the primary tab nav for attention. */
+.mdd-link {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mdd-link:hover { color: var(--accent-text); border-color: var(--accent); }
+
 .grounded-badge {
   display: inline-flex;
   align-items: center;
@@ -937,6 +953,41 @@ input[type='range'] {
   letter-spacing: 0.05em;
   color: var(--accent-text);
   margin-left: 8px;
+}
+
+/* The backtest honesty panel's headline callout (Real Data tab, Exhibit 3):
+   a big number + one sentence, critical-tinted -- the 9.42x GFC miss ratio
+   needs to read before the table does. */
+.callout {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.callout-crit {
+  background: var(--critical-wash);
+  border-color: var(--critical);
+}
+.callout-figure {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--critical-text);
+  white-space: nowrap;
+}
+.callout-text {
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* Real Data tab's backtest panel is the centerpiece exhibit -- a slightly
+   heavier accent border marks it out from the surrounding panels. */
+.freddie-centerpiece {
+  border-color: var(--accent);
 }
 
 .caveat-block {

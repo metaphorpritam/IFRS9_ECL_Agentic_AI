@@ -983,6 +983,337 @@ def exhibits_list() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# App v3: The 'Real Data' tab -- Freddie Mac SFLLD Phase A/B parsers.
+#
+# freddie/ (read-only here; FROZEN like the engine) built a full second,
+# REAL-data pipeline alongside the DCR-synthetic engine above -- a champion
+# hazard/LGD refit on the real Freddie Mac SFLLD panel, an ALFRED-vintage
+# backtest, and an LSTM path-dependence challenger. These views parse
+# outputs/freddie/**'s already-written reports/CSVs/JSON into JSON on every
+# request, exactly like the Model/Policy parsers above -- every number is
+# read off those artifacts VERBATIM, never recomputed here. Exact response
+# shapes are documented in docs/api_contract.md.
+# ---------------------------------------------------------------------------
+
+FREDDIE_DIR = OUTPUTS_DIR / "freddie"
+
+
+def _freddie_text(*parts: str) -> str:
+    return FREDDIE_DIR.joinpath(*parts).read_text(encoding="utf-8")
+
+
+def _freddie_json(*parts: str) -> dict:
+    return json.loads(_freddie_text(*parts))
+
+
+def _parse_freddie_panel() -> dict:
+    """gate_phaseA.md section 4 -> per-vintage panel stats + totals."""
+    text = _freddie_text("gate_phaseA.md")
+    for title, body in _md_sections(text):
+        if not title.startswith("4. Per-vintage panel stats"):
+            continue
+        lines = body.splitlines()
+        span = _md_table_span(lines)
+        raw_rows = _md_table_rows(lines[span[0]:span[1]])
+        vintages = [{
+            "vintage": r["vintage"],
+            "n_loans": int(_num(r["n_loans"])),
+            "n_loan_months": int(_num(r["n_loan_months (modeled)"])),
+            "d90_rate_pct": round(float(r["d90 rate"]) * 100, 2),
+            "prepay_rate_pct": round(float(r["prepay rate"]) * 100, 2),
+            "other_terminal_rate_pct": round(float(r["other-terminal rate"]) * 100, 2),
+            "censored_rate_pct": round(float(r["censored rate"]) * 100, 2),
+            "perf_window_end": r["perf. window end"],
+        } for r in raw_rows]
+        totals_m = re.search(
+            r"\*\*Totals\*\*:\s*([\d,]+) loans,\s*([\d,]+) modeled "
+            r"loan-months,\s*overall D90 rate ([\d.]+),\s*overall\s*"
+            r"prepay rate ([\d.]+)\.", body)
+        return {
+            "n_loans": int(_num(totals_m.group(1))),
+            "n_loan_months": int(_num(totals_m.group(2))),
+            "n_vintages": len(vintages),
+            "overall_d90_rate_pct": round(float(totals_m.group(3)) * 100, 2),
+            "overall_prepay_rate_pct": round(float(totals_m.group(4)) * 100, 2),
+            "vintages": vintages,
+        }
+    raise HTTPException(status_code=503,
+                        detail="panel stats section not found in "
+                               "outputs/freddie/gate_phaseA.md")
+
+
+def _parse_freddie_hazard() -> dict:
+    """coefficients.csv + dcr_sign_comparison.csv + metrics + COVID verdict."""
+    coef_df = pd.read_csv(FREDDIE_DIR / "hazard" / "coefficients.csv")
+    coefficients = [{
+        "term": r["term"], "coef": float(r["coef"]), "std_err": float(r["std_err"]),
+        "z": float(r["z"]), "p_value": float(r["p_value"]),
+        "ci_low": float(r["ci_low"]), "ci_high": float(r["ci_high"]),
+        "hazard_ratio": float(r["hazard_ratio"]),
+    } for _, r in coef_df.iterrows()]
+
+    sign_df = pd.read_csv(FREDDIE_DIR / "hazard" / "dcr_sign_comparison.csv")
+    dcr_sign_comparison = [{
+        "variable": r["variable"],
+        "dcr_variable": (None if pd.isna(r["dcr_variable"]) else r["dcr_variable"]),
+        "dcr_expected_sign": r["dcr_expected_sign"],
+    } for _, r in sign_df.iterrows()]
+
+    metrics = _freddie_json("hazard", "metrics.json")
+    covid_metrics = _freddie_json("hazard", "covid_metrics.json")
+    dcr_fit_stats = _parse_fit_stats()["default"]     # reused, not re-derived
+
+    text = _freddie_text("hazard", "hazard_report.md")
+    rec_m = re.search(
+        r"\*\*Recommendation \(follows the numbers above\)\*\*:\s*(.+?)"
+        r"(?=\n## )", text, flags=re.S)
+
+    return {
+        "coefficients": coefficients,
+        "dcr_sign_comparison": dcr_sign_comparison,
+        "metrics": {
+            "train_auc": metrics["train_auc"], "oot_auc": metrics["oot_auc"],
+            "train_n": metrics["train_n"], "train_events": metrics["train_events"],
+            "oot_n": metrics["oot_n"], "oot_events": metrics["oot_events"],
+            "mcfadden_r2": metrics["mcfadden_r2"],
+            "dcr_train_auc": dcr_fit_stats["train_auc"],
+            "dcr_oot_auc": dcr_fit_stats["oot_auc"],
+        },
+        "covid": {
+            "verdict": "exclude",
+            "window": "2020-04..2021-09",
+            "naive_oot2_auc": covid_metrics["naive_oot2_auc"],
+            "additive_oot2_auc": covid_metrics["additive_oot2_auc"],
+            "exclude_oot2_auc": covid_metrics["exclude_oot2_auc"],
+            "recommendation": rec_m.group(1).strip() if rec_m else None,
+        },
+        "source_files": [
+            "outputs/freddie/hazard/coefficients.csv",
+            "outputs/freddie/hazard/dcr_sign_comparison.csv",
+            "outputs/freddie/hazard/metrics.json",
+            "outputs/freddie/hazard/covid_metrics.json",
+            "outputs/freddie/hazard/hazard_report.md",
+            "outputs/hazard/fit_stats.md",
+        ],
+    }
+
+
+def _parse_freddie_lgd_summary() -> dict:
+    """population_lgd_summary.csv + the cure-AUC / excess-loading callouts."""
+    df = pd.read_csv(FREDDIE_DIR / "lgd" / "population_lgd_summary.csv") \
+        .set_index("split")
+    text = _freddie_text("lgd", "lgd_report.md")
+    cure_auc_m = re.search(
+        r"Cure AUC: train \*\*([\d.]+)\*\*, OOT \*\*([\d.]+)\*\*", text)
+    loading_m = re.search(
+        r"Overall \(DCR-style\) constant loading: \*\*([\d.]+)\*\* "
+        r"\(vs DCR's ([\d.]+)\)", text)
+    return {
+        "mean_realized_lgd_train": float(df.loc["train", "mean_realized_lgd"]),
+        "mean_realized_lgd_oot": float(df.loc["oot", "mean_realized_lgd"]),
+        "cure_auc_train": float(cure_auc_m.group(1)),
+        "cure_auc_oot": float(cure_auc_m.group(2)),
+        "excess_loading_sflld": float(loading_m.group(1)),
+        "excess_loading_dcr": float(loading_m.group(2)),
+    }
+
+
+def _parse_freddie_backtest_rows() -> list[dict]:
+    """backtest/all_metrics.json (exact floats) -> the per-asof table."""
+    rows = _freddie_json("backtest", "all_metrics.json")
+    return [{
+        "asof": r["asof"][:7],                        # '2007-12-01' -> '2007-12'
+        "fit_n": r["fit_n"], "fit_events": r["fit_events"],
+        "n_active_loans": r["n_active_loans"],
+        "realized_cum_d90": r["realized_cum_d90"],
+        "predicted_cum_d90_frozen": r["predicted_cum_d90_frozen"],
+        "miss_ratio_frozen": r["miss_ratio_frozen"],
+        "predicted_cum_d90_actual": r["predicted_cum_d90_actual"],
+        "miss_ratio_actual": r["miss_ratio_actual"],
+    } for r in rows]
+
+
+@app.get("/api/freddie/summary")
+def freddie_summary() -> dict:
+    """Panel scale + the headline numbers for the 'Real Data' tab hero."""
+    panel = _parse_freddie_panel()
+    hazard = _parse_freddie_hazard()
+    lgd = _parse_freddie_lgd_summary()
+    backtest_rows = _parse_freddie_backtest_rows()
+    lstm = _freddie_json("lstm", "metrics.json")
+    gate_text = _freddie_text("gate_phaseB.md")
+    verdict_m = re.search(r"## 6\. Verdict\s*\*\*(PASS|FAIL)\.\*\*", gate_text)
+
+    worst = max(backtest_rows, key=lambda r: r["miss_ratio_frozen"])
+    saturation = min(backtest_rows, key=lambda r: r["miss_ratio_actual"])
+
+    return {
+        "panel": panel,
+        "hazard": hazard["metrics"],
+        "covid": hazard["covid"],
+        "lgd": lgd,
+        "backtest_headline": {
+            "worst_asof": worst["asof"],
+            "worst_miss_ratio_frozen": worst["miss_ratio_frozen"],
+            "worst_miss_ratio_actual": worst["miss_ratio_actual"],
+            "saturation_asof": saturation["asof"],
+            "saturation_miss_ratio_actual": saturation["miss_ratio_actual"],
+        },
+        "lstm": {
+            "oot_champion_auc": lstm["oot_champion_auc"],
+            "oot_lstm_auc": lstm["oot_lstm_auc"],
+            "prior_dlq_champion_auc": lstm["oot_prior_dlq_champion_auc"],
+            "prior_dlq_lstm_auc": lstm["oot_prior_dlq_lstm_auc"],
+            "clean_champion_auc": lstm["oot_clean_history_champion_auc"],
+            "clean_lstm_auc": lstm["oot_clean_history_lstm_auc"],
+        },
+        "gate_verdict": verdict_m.group(1) if verdict_m else None,
+        "source_files": [
+            "outputs/freddie/gate_phaseA.md",
+            "outputs/freddie/hazard/metrics.json",
+            "outputs/freddie/hazard/covid_metrics.json",
+            "outputs/freddie/hazard/hazard_report.md",
+            "outputs/freddie/lgd/population_lgd_summary.csv",
+            "outputs/freddie/lgd/lgd_report.md",
+            "outputs/freddie/backtest/all_metrics.json",
+            "outputs/freddie/lstm/metrics.json",
+            "outputs/freddie/gate_phaseB.md",
+        ],
+    }
+
+
+@app.get("/api/freddie/hazard")
+def freddie_hazard() -> dict:
+    """Coefficients + DCR sign comparison + AUCs + the COVID regime verdict."""
+    return _parse_freddie_hazard()
+
+
+@app.get("/api/freddie/backtest")
+def freddie_backtest() -> dict:
+    """Per-reporting-date predicted/realized/miss-ratio table -- the honesty exhibit."""
+    rows = _parse_freddie_backtest_rows()
+    text = _freddie_text("backtest", "backtest_report.md")
+    honesty_m = re.search(
+        r"\*\*2007-12 check \(spec requirement\)\*\*:\s*(.+?)(?=\n\n)",
+        text, flags=re.S)
+    narrative_m = re.search(
+        r"## 1\. IFRS-9 narrative: PIT hazard vs forward-looking overlay\n"
+        r"(.+?)(?=\n## )", text, flags=re.S)
+    covid_panel_m = re.search(
+        r"## 3\. The 2019-12-vs-COVID panel[^\n]*\n(.+?)(?=\n## )",
+        text, flags=re.S)
+    return {
+        "rows": rows,
+        "central_honesty_note": honesty_m.group(1).strip() if honesty_m else None,
+        "overlay_narrative": narrative_m.group(1).strip() if narrative_m else None,
+        "covid_panel_note": covid_panel_m.group(1).strip() if covid_panel_m else None,
+        "source_files": ["outputs/freddie/backtest/all_metrics.json",
+                         "outputs/freddie/backtest/backtest_report.md"],
+    }
+
+
+#: servable Freddie SFLLD exhibit PNGs (the consultant-curated subset for
+#: the 'Real Data' tab -- captions/sources hand-authored against the
+#: reports, same convention as EXHIBITS above).
+FREDDIE_EXHIBITS = [
+    {"id": "freddie_vintage_curves", "path": "eda/exhibit1_vintage_curves.png",
+     "title": "Vintage curves -- cumulative D90 by months on book",
+     "caption": "2007 vintage reaches 16.26% cumulative D90 by month 225 vs "
+                "14.11% (2006) and 9.14% (2008) -- the pre-crisis-vintage "
+                "hump; every 2018-2025 modern vintage tops out below 5.48%.",
+     "source": "outputs/freddie/eda/eda_report.md#Exhibit 1"},
+    {"id": "freddie_roll_rate_matrices", "path": "eda/exhibit2_roll_rate_matrices.png",
+     "title": "Roll-rate matrices -- GFC vs calm vs COVID",
+     "caption": "COVID's 60->90+ roll rate (58.25%) exceeds the GFC's "
+                "(47.43%), yet 90+->liquidation collapses to 0.21% (vs "
+                "2.02% GFC) -- the forbearance-accounting signature: "
+                "delinquency-status escalation without loss realization.",
+     "source": "outputs/freddie/eda/eda_report.md#Exhibit 2"},
+    {"id": "freddie_calendar_time_series", "path": "eda/exhibit3_calendar_time_series.png",
+     "title": "Calendar-time D90-entry rate",
+     "caption": "The COVID spike (1.775% in 2020-06) is ~4.5x the GFC's own "
+                "peak (0.396% in 2009-10) on a naive D90 count -- read "
+                "alongside the roll-rate exhibit, not as evidence COVID "
+                "was the worse credit event.",
+     "source": "outputs/freddie/eda/eda_report.md#Exhibit 3"},
+    {"id": "freddie_state_heterogeneity", "path": "eda/exhibit4_state_heterogeneity.png",
+     "title": "State heterogeneity -- 2006-07 vintage default vs HPI drawdown",
+     "caption": "NV (38.0%), FL (32.6%), AZ (27.9%) vs VT (4.8%), AK "
+                "(5.3%), WY (6.2%); default rate vs peak-to-trough HPI "
+                "drawdown fits slope 0.491, r=0.89 across 49 states.",
+     "source": "outputs/freddie/eda/eda_report.md#Exhibit 4"},
+    {"id": "freddie_severity_cycle", "path": "lgd/severity_by_liq_year.png",
+     "title": "Realized severity by liquidation year",
+     "caption": "Severity plateaus >=50% mean LGD from 2011-2016, peaking "
+                "in 2016 (mean 60.8%) -- years after the GFC's default "
+                "wave -- because REO/short-sale liquidation lags the "
+                "origination-era credit event.",
+     "source": "outputs/freddie/lgd/lgd_report.md"},
+    {"id": "freddie_hazard_calibration_by_year", "path": "hazard/calibration_by_year.png",
+     "title": "Hazard calibration by calendar year",
+     "caption": "Observed vs predicted D90 hazard by calendar year, "
+                "champion fit scored on the full panel -- includes the "
+                "2020 saturation row (observed 0.357% vs predicted 4.162%).",
+     "source": "outputs/freddie/hazard/hazard_report.md#4"},
+    {"id": "freddie_seasoning_curve", "path": "hazard/seasoning_curve.png",
+     "title": "Seasoning curve -- fitted default hazard by loan age",
+     "caption": "Natural-cubic-spline age baseline; empirical hazard peaks "
+                "42-48mo (0.256% monthly), consistent with the DCR "
+                "champion's ~12-quarter peak.",
+     "source": "outputs/freddie/hazard/hazard_report.md#4"},
+    {"id": "freddie_state_uer_effect", "path": "hazard/state_uer_effect.png",
+     "title": "State UER effect -- predicted vs observed hazard by UER quartile",
+     "caption": "OOT-scored predicted vs observed hazard across state "
+                "uer_lag1 quartiles.",
+     "source": "outputs/freddie/hazard/hazard_report.md#4"},
+    {"id": "freddie_covid_calibration_comparison", "path": "hazard/covid_calibration_comparison.png",
+     "title": "COVID regime treatment comparison -- naive / additive / exclude",
+     "caption": "Only 'exclude' preserves economically-signed macro "
+                "coefficients (delta_uer_lag1 +0.774, hpi_growth_lag1 "
+                "-3.307); OOT2 AUC spread (0.7553/0.7547/0.7509) is too "
+                "small to override that structural argument.",
+     "source": "outputs/freddie/hazard/hazard_report.md#3"},
+    {"id": "freddie_backtest_200712", "path": "backtest/predicted_vs_realized_200712.png",
+     "title": "Backtest honesty panel -- 2007-12 GFC miss",
+     "caption": "A model refit through 2007-12 with macro frozen at "
+                "then-current levels predicts 0.928% 36-month D90 vs a "
+                "realized 8.750% -- a 9.42x underprediction of the GFC it "
+                "could not see coming.",
+     "source": "outputs/freddie/backtest/backtest_report.md#2"},
+    {"id": "freddie_backtest_201912", "path": "backtest/predicted_vs_realized_201912.png",
+     "title": "Backtest -- 2019-12 COVID-window miss",
+     "caption": "Frozen-macro projection underpredicts 5.00x (0.920% vs "
+                "realized 4.601%); fed the real April-2020 UER print, the "
+                "hindsight projection saturates to 71.5% -- ~20 SDs "
+                "outside training support.",
+     "source": "outputs/freddie/backtest/backtest_report.md#3"},
+    {"id": "freddie_lstm_calibration", "path": "lstm/calibration_comparison.png",
+     "title": "LSTM vs champion calibration by calendar year",
+     "caption": "Observed vs each model's predicted monthly D90 hazard by "
+                "calendar year, forbearance window shaded.",
+     "source": "outputs/freddie/lstm/lstm_report.md#2"},
+    {"id": "freddie_lstm_lift_split", "path": "lstm/lift_split.png",
+     "title": "LSTM lift decomposition -- clean history vs prior-delinquency spell",
+     "caption": "OOT AUC lift concentrates almost entirely on loans with a "
+                "prior delinquency spell (champion 0.5698 -> LSTM 0.9570, "
+                "+0.387) vs near-zero on clean-history loans (0.5386 -> "
+                "0.5287, -0.010) -- the path-dependence signature.",
+     "source": "outputs/freddie/lstm/lstm_report.md#3"},
+]
+
+
+@app.get("/api/freddie/exhibits")
+def freddie_exhibits() -> dict:
+    """id -> {title, png_url, caption, source} for the curated Freddie PNGs."""
+    return {"exhibits": [
+        {"id": e["id"], "title": e["title"],
+         "png_url": f"/static/freddie/{e['path']}", "caption": e["caption"],
+         "source": e["source"]}
+        for e in FREDDIE_EXHIBITS
+    ]}
+
+
+# ---------------------------------------------------------------------------
 # 2a. Tier-1 tools (pydantic arg models double as the OpenAPI schema;
 #     FastAPI 422s malformed bodies BEFORE the engine runs — governing rule)
 # ---------------------------------------------------------------------------
@@ -1124,6 +1455,23 @@ def agent_interpret(req: InterpretRequest) -> dict:
 if OUTPUTS_DIR.exists():
     app.mount("/static/exhibits", StaticFiles(directory=OUTPUTS_DIR),
              name="exhibits")
+
+#: dedicated Freddie SFLLD mount (outputs/freddie/** is ALSO reachable via
+#: /static/exhibits/freddie/** above since that mount covers the whole
+#: outputs/ tree -- this second mount exists only so freddie png_url's read
+#: as /static/freddie/... per the contract, not because the files aren't
+#: already served).
+if FREDDIE_DIR.exists():
+    app.mount("/static/freddie", StaticFiles(directory=FREDDIE_DIR),
+             name="freddie")
+
+#: MDD (Model Development Document) mount -- guarded like the two mounts
+#: above because outputs/mdd/ may not exist yet (a parallel agent's
+#: deliverable); the header link is wired unconditionally regardless (see
+#: app/ui/src/app.jsx), so it 404s harmlessly until that MDD lands.
+MDD_DIR = OUTPUTS_DIR / "mdd"
+if MDD_DIR.exists():
+    app.mount("/static/mdd", StaticFiles(directory=MDD_DIR), name="mdd")
 
 if (UI_DIST / "index.html").exists():
     app.mount("/", StaticFiles(directory=UI_DIST, html=True), name="ui")

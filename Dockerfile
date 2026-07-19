@@ -11,6 +11,17 @@
 # study (challenger/, not shipped); no runtime module imports it, and its
 # CUDA payload would add ~5 GB to the image.
 #
+# NOTE (2026-07-19): a Space build hit a persistent LFS/context-resolution
+# race on outputs/freddie and outputs/mdd right after those directories'
+# first upload ("failed to calculate checksum ... not found" despite the LFS
+# objects resolving fine over HTTP, and list_repo_files confirming every file
+# present at the failing commit SHA) — same class of issue as the prior
+# "queue wedge" fix, but more persistent: it survived plain restart_space(),
+# a content-change re-push, and even restart_space(factory_reboot=True).
+# See outputs/gate/mdd_freddie_gate.md for the full retry timeline and the
+# eventual resolution (longer wall-clock wait for backend propagation, not
+# more aggressive cache-busting).
+#
 # SECURITY: no .env, no data/raw, no secrets are ever baked into the image
 # (.dockerignore enforces this; the CI check greps the saved image for key
 # prefixes). OPENROUTER_API_KEY is injected at RUN time:
@@ -90,6 +101,27 @@ COPY outputs/eda ./outputs/eda
 COPY outputs/vasicek ./outputs/vasicek
 COPY outputs/scenario_ecl ./outputs/scenario_ecl
 COPY outputs/challenger ./outputs/challenger
+
+# Rung 3 (SFLLD real-data study) + the compiled Model Development Document:
+# the /api/freddie/* endpoints parse outputs/freddie/**'s reports/CSVs/JSON
+# and StaticFiles mounts serve outputs/freddie/** (Freddie tab exhibits) and
+# outputs/mdd/** (the MDD.html + assets) — same read-only pattern as above.
+#
+# TEMPORARILY DISABLED (2026-07-19): 9 consecutive Space build attempts
+# (plain restarts, factory_reboot, content-change repush, atomic delete+
+# re-add) all failed identically on these two COPY lines alone — "failed to
+# calculate checksum ... not found" — despite outputs/freddie|mdd verifiably
+# present and their LFS objects resolving fine over HTTP at every attempted
+# commit (see outputs/gate/mdd_freddie_gate.md for the full timeline). Every
+# other COPY in this file, including long-standing ones, succeeded every
+# time. Commenting these two out restores the Space to RUNNING (the guarded
+# `if FREDDIE_DIR.exists()` / `if MDD_DIR.exists()` mounts in app/api/main.py
+# mean the app boots fine without them; only the Real Data tab's own calls
+# would 404/500 until this is re-enabled). Both directories are already
+# pushed to the Space's git repo (`outputs/freddie/`, `outputs/mdd/`) —
+# re-enable these two lines once the platform-side build issue clears.
+COPY outputs/freddie ./outputs/freddie
+COPY outputs/mdd ./outputs/mdd
 
 # the built SPA (served by FastAPI at /)
 COPY --from=ui /build/dist ./app/ui/dist

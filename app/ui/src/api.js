@@ -130,3 +130,13 @@ export const getStagingSensitivity = () => get('/api/policy/staging_sensitivity'
 export const getWeightsTable = () => get('/api/policy/weights_table');
 
 export const getExhibitsList = () => get('/api/exhibits/list');
+
+// ------------------------------------------------------ The Real Data tab
+
+export const getFreddieSummary = () => get('/api/freddie/summary');
+
+export const getFreddieHazard = () => get('/api/freddie/hazard');
+
+export const getFreddieBacktest = () => get('/api/freddie/backtest');
+
+export const getFreddieExhibits = () => get('/api/freddie/exhibits');

@@ -21,6 +21,95 @@ Questions outside those six validated routes get an explicit refusal
 ("outside my validated scope"). The refusal is a governance feature,
 demonstrated on purpose.
 
+## The honest backtest
+
+The exhibit that anchors the whole real-data study: refit the champion
+hazard spec at `2007-12`, using **only** the data and macro vintages that
+actually existed then, project 36 months forward with macro frozen at
+`2007-12` levels, and compare to what actually happened. Realized 36-month
+cumulative D90: **8.750%**. Predicted: **0.928%**. **9.42× underprediction —
+the model completely misses the GFC**, because a model fit on pre-2008 data
+with macro frozen at pre-crisis levels cannot see a crisis it has never been
+shown. Feed the same spec the *actual* 2008–2011 macro path instead (the
+ceiling a perfect scenario overlay could reach) and the miss shrinks to
+**1.90×** — still under, because the crisis's severity was itself outside
+the training regime. That gap between a naive frozen-macro extrapolation and
+a hindsight-perfect overlay is the analytical case, in one number, for IFRS 9
+¶5.5.17's forward-looking, probability-weighted scenario requirement — a
+point-in-time hazard alone is not enough. The same backtest, run at
+`2019-12`, shows the mirror failure: fed the real April-2020 unemployment
+print (+10.6pp in one month, ~20 standard deviations outside the training
+support), the linear predictor saturates and *overshoots* to 71.5% predicted
+vs 4.601% realized (0.06×) — a reminder that even a perfect macro overlay
+cannot rescue a hazard whose functional form was never identified in the
+regime the scenario visits. See `outputs/freddie/backtest/backtest_report.md`
+and Exhibit 5 in the [Model Development Document](outputs/mdd/MDD.md) (also
+served live at `/static/mdd/MDD.html` on the Space) for the full five-date
+table and the connective finding with the LGD module (the realized D90 spike
+in 2020 did **not** turn into a matching loss spike — forbearance resolved it
+as cures, at a 97.9% modern-era OOT cure rate).
+
+## Real data at scale: the Freddie Mac SFLLD study
+
+Everything above (the frozen engine, App v2, the original 509-test gate) is
+proven on a synthetic, DCR-style panel — deliberately, so the engine's
+correctness could be pinned down against known-good fixtures first before
+touching real data. Rung 3 asks the harder
+question: does the same champion hazard spec hold up on the **real** Freddie
+Mac Single-Family Loan-Level Dataset (SFLLD)? `freddie/` (read-only,
+frozen like the engine once gated) reruns the identical hazard/LGD spec on
+real loan-level history, real dates, real states, and real realized losses,
+adds an LSTM path-dependence challenger, and closes the loop with the
+ALFRED-vintage backtest above. The **Real Data** tab in the app surfaces all
+of it live (`/api/freddie/summary`, `/hazard`, `/backtest`, `/exhibits`).
+
+* **Scale**: 837,500 loans / 39,522,565 loan-months across 17 vintages
+  (2005–2010, 2014–2016, 2018–2025 — 2011–2013/2017 are a documented,
+  never-downloaded coverage gap), vs the DCR panel's 621,736 loan-quarters /
+  49,974 loans.
+* **Discrimination, DCR vs SFLLD** (same cloglog spec, same train/OOT
+  discipline):
+
+  | Panel | Train AUC | OOT AUC |
+  |---|---:|---:|
+  | DCR (synthetic) | 0.748 | 0.661 |
+  | SFLLD (real) | **0.8536** | **0.6847** |
+
+  The real panel's AUC is *higher* on both cuts — more genuine signal in real
+  loan-level history than the synthetic generator injected — while the
+  train→OOT degradation pattern (a model that discriminates well in-sample
+  and decays out-of-time) replicates, evidence the DCR panel's stress
+  behaviour wasn't a synthetic-data artifact.
+* **COVID regime verdict — EXCLUDE**: the author's first-pass recommendation
+  (an additive COVID dummy over 2020-04..2021-09) was **overturned on
+  review** — the additive variant flips the sign of `delta_uer_lag1`, an
+  economically nonsensical outcome no downstream user should inherit
+  silently. The adopted treatment excludes the window entirely from
+  structural/scenario use; only the exclude variant preserves
+  correctly-signed macro coefficients across all three candidates tested.
+* **LSTM path-dependence decomposition**: an LSTM challenger scores OOT AUC
+  **0.9925** vs the champion hazard's **0.6847** on the identical split — a
+  huge gap that means nothing on its own until it's decomposed. Split by
+  prior-24-month delinquency history: on **clean-history loans** the LSTM is
+  essentially at parity with the champion (**0.529 vs 0.539**, both
+  near-random — there's no path to learn from when there's no history).
+  On loans with a **prior delinquency spell**, the LSTM pulls dramatically
+  ahead (**0.957 vs 0.570**). All of the LSTM's apparent edge is the
+  champion's current-state-only view failing to use delinquency history it
+  never sees — not a generically better model, a specific, explainable blind
+  spot in the champion spec.
+
+Every one of these numbers is quoted verbatim from `outputs/freddie/**`'s
+reports (`hazard_report.md`, `lgd_report.md`, `backtest_report.md`,
+`lstm_report.md`, `gate_phaseB.md`) — the API layer parses, never
+recomputes, and the same discipline (a mechanical verbatim-number check on
+every agent narration) applies to this tab as to the rest of the app. Full
+methodology, every declared simplification, and the two found-and-fixed bugs
+from this phase (a realized-outcome timing bug in the backtest, a
+zero-fill bug in the LGD aggregate) are in the
+[Model Development Document](outputs/mdd/MDD.md) — also served live at
+`/static/mdd/MDD.html` on the Space.
+
 ## Architecture
 
 ```
@@ -74,10 +163,19 @@ Freddie Mac loan-level panel (2000Q2–2015Q1, 60 quarters)   DFAST 2026 scenari
 └──────────────────────────────────────────────────────────────────────────────┘
         │  App v2: same engine + same agent, a consultant's-deliverable UI
         ▼
-┌────────────────────────── APP v2 — 5 TABS (Day 5+) ───────────────────────────┐
-│ Executive Overview │ The Model │ Scenario Lab │ Policy │ Copilot             │
+┌────────────────────────── APP v2 — 6 TABS (Day 5+) ───────────────────────────┐
+│ Executive Overview │ The Model │ Scenario Lab │ Policy │ Real Data │ Copilot │
 │ every tab pairs a pre-generated exhibit with an agent-grounded              │
 │ interpretation; a mini-chat dock (same copilot) rides along on every tab    │
+└──────────────────────────────────────────────────────────────────────────────┘
+        │  Rung 3: the same champion spec, refit on REAL loan-level data
+        ▼
+┌────────────────────────── REAL DATA — SFLLD (Rung 3) ─────────────────────────┐
+│ freddie/    read-only, FROZEN like the engine once gated — Freddie Mac       │
+│             SFLLD hazard/LGD refit + ALFRED-vintage backtest + LSTM          │
+│             challenger, 837.5k real loans / 39.5M loan-months, 17 vintages   │
+│ app/api/main.py  /api/freddie/{summary,hazard,backtest,exhibits} parse       │
+│                  outputs/freddie/**'s reports/CSVs/JSON — never recompute    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -95,7 +193,7 @@ Not every good question has a number behind it — *"how is LGD split into cure
 and severity?"*, *"why is ρ so far below the Basel 0.15 convention?"* are
 methodology questions, not arithmetic. A 5th route, `query_model_docs`
 (`agent/tier3_retrieval.py`), answers these from two on-disk sources — the
-model-development wiki (`wiki/`, 19 pages) and the indexed IFRS 9 credit-risk
+model-development wiki (`wiki/`, 20 pages) and the indexed IFRS 9 credit-risk
 notes corpus (`knowledge/corpus/`, 69 nodes) — using the same deterministic
 lexical + typed-graph scoring as the `llm-wiki` and `pageindex-plus` skills
 (reused via `importlib`, never reimplemented). **No LLM call happens inside
@@ -173,7 +271,7 @@ so startup is a ~10–25 s warm load, not a ~50 s refit; tool calls answer in
 seconds from in-memory state.
 
 ```bash
-uv run --no-sync pytest tests/ -q          # 509 passed
+uv run --no-sync pytest tests/ -q          # 664 passed
 ```
 
 ## MCP server: the same four tools, over the Model Context Protocol
@@ -235,7 +333,7 @@ tool demo, not something a credit-risk consultant would actually hand a
 client. App v2 is a design pass built around one governing story: **the
 consultant has already run the analysis — the client browses it, experiments
 with it, and asks the copilot to interpret it**, never the other way around
-(the client never sees a raw number the model made up). Five tabs, one
+(the client never sees a raw number the model made up). Six tabs, one
 FastAPI backend, one LangGraph agent underneath all of them:
 
 | Tab | What it is |
@@ -244,6 +342,7 @@ FastAPI backend, one LangGraph agent underneath all of them:
 | **The Model** | The hazard-ratio families and their fit stats, the variable dictionary, the LGD calibration exhibits — parsed straight from the consultant's own markdown reports, with a plain-language "story" for every covariate. |
 | **Scenario Lab** | Run the four Tier-1 tools interactively (shock a macro variable, reweight the scenarios, rerun a segment, decompose a waterfall) and get an **automatic, grounded interpretation** under the result the moment it lands — no need to ask the copilot a follow-up question. |
 | **Policy** | Every governance exhibit (the SICR-threshold sensitivity curve, the scenario-weights table) paired explicitly with the decision it's meant to inform. |
+| **Real Data** | The Freddie Mac SFLLD study (Rung 3): panel scale, DCR-vs-SFLLD hazard AUC, the COVID-regime verdict, the ALFRED-vintage honest backtest, and the LSTM path-dependence decomposition — see [Real data at scale](#real-data-at-scale-the-freddie-mac-sflld-study) above. |
 | **Copilot** | The agent front and centre — all six routes (four Tier-1 tools, Tier-2 `analyze_data`, Tier-3 `query_model_docs`), the live trace, the refusal path. |
 
 A **mini-chat dock** rides along on every tab, so the copilot is never more
@@ -351,6 +450,12 @@ replaced three near-duplicate explain implementations).
 | E2E container traces (shock + refusal) | `outputs/demo/e2e_trace.json`, `e2e_refusal.json` |
 | App v2 / Tier-2 E2E traces (scenario+interpret, analyze_data, citation, refusal) | `outputs/demo/appv2_e2e.json`, `shadow_*.json` |
 | Gate reports (frozen-engine tripwire, suite counts) | `outputs/gate/` |
+| SFLLD vintage curves, roll-rate heatmaps (GFC/calm/COVID), state heterogeneity | `outputs/freddie/eda/` |
+| ALFRED-vintage backtest panel (the 9.42x GFC miss, all five reporting dates) | `outputs/freddie/backtest/predicted_vs_realized_200712.png`, `backtest_report.md` |
+| SFLLD hazard coefficients, calibration by year, COVID-regime comparison | `outputs/freddie/hazard/` |
+| SFLLD severity-by-year, cure-rate-by-era | `outputs/freddie/lgd/` |
+| LSTM lift-split (prior-delinquency-spell decomposition) | `outputs/freddie/lstm/lift_split.png`, `lstm_report.md` |
+| Model Development Document (compiled from the wiki + every gate report) | `outputs/mdd/MDD.md`, `MDD.html` (live at `/static/mdd/MDD.html`) |
 
 ## Numbers that matter (honest edition)
 
@@ -371,12 +476,14 @@ replaced three near-duplicate explain implementations).
   probability-weighted range.
 * **Scenario ECL (t=60 book, 7,849 loans, $1.67bn):** up $27.7m / base $30.5m /
   severe $47.6m; weighted $34.0m = 2.03% coverage.
-* **Test discipline:** **509 tests** (133 golden fixtures pinning engine
+* **Test discipline:** **664 tests** (133 golden fixtures pinning engine
   values, 187 through Day 2, 91 scenario-layer, 103 agent/API, 41 stretch:
   Tier-3 doc retrieval + MCP adapter, 87 App v2: Tier-2 sandbox + the
-  UI/API contract), plus a fingerprint tripwire proving the five frozen
-  engine modules are byte-identical to the Day-2 gate at every subsequent
-  gate.
+  UI/API contract, 77 Rung 3: SFLLD hazard/LGD/backtest/LSTM, 5 the Real
+  Data tab's UI/API contract), plus a fingerprint tripwire proving the five
+  frozen engine modules are byte-identical to the Day-2 gate at every
+  subsequent gate — 582/582 through Rung 3 Phase A, 659/659 through Phase B,
+  **664/664 current**.
 * **Agent latency:** engine warm-up 10–25 s once (joblib cache), then 3–12 s
   per question end-to-end including the LLM round trip.
 
@@ -385,11 +492,12 @@ replaced three near-duplicate explain implementations).
 ```
 engine/        frozen five + vasicek/scenarios/satellite     agent/   tools_tier1/tier2 + graph + tier3 + mcp
 app/api/       FastAPI service (contract in docs/api_contract.md)
-app/ui/        Preact/ECharts SPA — app/ui/src/tabs/ (5 App v2 tabs) + shared components
-analysis/      exhibit scripts        tests/     509 tests (133 golden fixtures)
-wiki/          model-development wiki (19 pages)  knowledge/  indexed IFRS9 notes corpus
+app/ui/        Preact/ECharts SPA — app/ui/src/tabs/ (6 App v2 tabs) + shared components
+analysis/      exhibit scripts        tests/     664 tests (133 golden fixtures)
+freddie/       Rung 3: SFLLD hazard/LGD/backtest/LSTM refit (read-only, frozen like engine/)
+wiki/          model-development wiki (20 pages)  knowledge/  indexed IFRS9 notes corpus
 docs/          docs/api_contract.md — UI/API contract, single source of truth
 data/          panel pipeline + DFAST ingest (raw data gitignored)
-outputs/       exhibits, reports, model cache, audit logs, gate reports
+outputs/       exhibits, reports, model cache, audit logs, gate reports, mdd/ (MDD.md/.html)
 Dockerfile     multi-stage build (node UI → python:3.13-slim, port 7860)
 ```
