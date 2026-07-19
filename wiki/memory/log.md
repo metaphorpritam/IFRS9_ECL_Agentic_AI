@@ -125,3 +125,7 @@ STUDY-NOTES CAMPAIGN COMPLETE: 13 chapters + landing page (notes/index.html), 46
 ## 2026-07-19 19:39 UTC — tags: notes, polish
 
 Notes polish: (1) TOC sidebar shipped on all 14 pages (toc.js + idempotent patcher; QA used REAL Chromium/Playwright A/B tests, fixed a mid-width overflow regression by deriving the pin threshold from each page's content width). (2) LaTeX defect ROOT-CAUSED: \_ inside \text{} renders literal backslash because tex-svg bundle lacks textmacros; mechanical fix 33 changes/8 files + 4 secondary defect classes (stray $$ in ch06 swallowing a quiz box, \boldsymbol->\mathbf, \euro-in-text, ch09 36 unescaped currency $) = 39 defects -> 0 via the NEW verify_math.py deep harness (real MathJax bundle in jsdom); check_notes gains static check 7. REMAINING from browser QA: ch12 wide-equation overflow at narrow viewports + ch04 NaN-SVG widget error - bugfix pass next.
+
+## 2026-07-19 21:15 UTC — tags: notes, polish, complete
+
+Content bugfixes VERIFIED CLEAN + deep math harness final PASS: ch04 widget one-line data-shape fix (object vs [x,y] pair - console clean at all slider positions); math overflow fixed campaign-wide via CSS-only patcher (TWO root causes: uncapped display-math SVG + inline-math immune to overflow per CSS spec -> inline-block promotion); 42/42 file-width combos zero page overflow, wide equations scroll internally. Notes compendium now FULLY polished: content 46/46, sidebar TOC, LaTeX 39->0, responsive 42/42 - all real-Chromium-verified. Project + notes campaign COMPLETE; user-side items only.
