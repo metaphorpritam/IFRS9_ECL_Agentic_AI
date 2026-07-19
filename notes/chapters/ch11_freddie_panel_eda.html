@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.11 — Freddie Mac Panel &amp; EDA | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 11: FREDDIE MAC PANEL & EDA
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md); CSS
+  block copied verbatim from ch04_lgd_ead.html for visual consistency across
+  the compendium. widgets.js loaded RELATIVE ("../assets/js/widgets.js") —
+  same choice as Ch.1-Ch.7, since this chapter lives in notes/chapters/ and
+  widgets.js in notes/assets/js/, both inside the repo.
+  Standalone deliverable for this build phase: self-contained (own <h1>/TOC/
+  closing <hr>) rather than str_replace'd into a not-yet-existing master
+  file; per conventions.md this chapter's <h2 id="s11"> is written so a later
+  merge into notes/chapters/ifrs9_ecl_study_notes.html is a straight splice.
+
+  SCOPE (per notes/plan/chapters.md Ch.11 + notes/plan/requirement_12_macro_
+  interpretation.md + notes/plan/derivation_backlog.md D-7/D-8, which this
+  chapter explicitly absorbs since Ch.4 left both open — see
+  ch04_lgd_ead.html's own top-of-file scope note): the SFLLD rung-3 real-data
+  ingest + panel + macro-merge pipeline, the D90 absorbing default definition
+  derived precisely, the 5 real EDA exhibits, the roll-rate transition-matrix
+  estimator (D-8) walked through tests/fixtures/compute_rollrate.py, and net
+  credit loss discounting (D-7) walked through tests/fixtures/compute_ncl.py,
+  tied to SFLLD's own realized-loss fields.
+
+  GROUNDING DISCIPLINE: every number in Sections 11.1-11.6 and 11.10/11.13-
+  11.15 is read directly off outputs/freddie/ingest/dq_report.md,
+  outputs/freddie/eda/eda_report.md, outputs/panel/waterfall.md, or recomputed
+  live this session from data/processed/freddie/{panel_monthly,loan_orig}.
+  parquet and data/processed/freddie/macro/state_macro_panel.parquet (freddie/
+  and data/ are READ-ONLY for this build — read via uv run --no-sync python,
+  never modified). Sections 11.8-11.9 and 11.12-11.13 recompute
+  tests/fixtures/compute_rollrate.py and compute_ncl.py directly (both print
+  RESULTS vs TARGETS, all OK) rather than hand-typing any fixture number.
+  D-7/D-8 are the GENERIC textbook worked examples (a synthetic EUR loan; a
+  3-bucket 90/120/150-DPD roll ladder) — kept distinct from, and then bridged
+  to, the REAL SFLLD 6-bucket transition matrices and realized-loss fields;
+  the two are never conflated. The two interactive widgets (vintage-curve
+  explorer, transition-matrix explorer) both use REAL SFLLD-derived numbers
+  recomputed this session (see the inline comments above each <script>), not
+  canned/illustrative data.
+
+  Two interactives: 11.7's vintage-curve explorer uses widgets.js's
+  makeLinePlot + hand-written checkboxes (the multi-series-toggle pattern
+  ch07_challengers.html's Widget 1 already established, replicated here);
+  11.11's transition-matrix explorer is hand-written vanilla DOM (heat-colored
+  table cells need inline background-color per cell, which makeLiveTable's
+  textContent-only rendering does not support — the same "hand-written when
+  widgets.js's four helpers don't fit" choice ch08_the_agent.html documents
+  for its own two interactives).
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control input[type="checkbox"] { vertical-align: middle; margin-right: 4px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+  .toggle-btn {
+    border: 1px solid var(--rule); background: var(--page-bg); color: var(--ink);
+    border-radius: 4px; padding: 5px 12px; font-size: 12.5px; cursor: pointer;
+  }
+  .toggle-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
+  .heatcell { font-variant-numeric: tabular-nums; text-align: right; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 11 — Freddie Mac Panel &amp; EDA</h1>
+<div class="subtitle">Real dates, real states, real losses: the SFLLD rung-3 build, the D90 absorbing default derived
+precisely, and two orphaned derivations — net credit loss discounting and the roll-rate bridge — finally get their
+fixture walkthroughs</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 11 of 13. Compiled from
+<code>outputs/freddie/ingest/dq_report.md</code>, <code>outputs/freddie/eda/eda_report.md</code>,
+<code>outputs/panel/waterfall.md</code>, <code>freddie/ingest.py</code>, <code>freddie/build_panel.py</code>,
+<code>freddie/macro.py</code>, <code>tests/fixtures/compute_ncl.py</code>,
+<code>tests/fixtures/compute_rollrate.py</code>, and <code>data/processed/freddie/*.parquet</code> (read live this
+session) on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s11-1">11.1 Why real GSE data: the three upgrades</a></li>
+<li><a href="#s11-2">11.2 Sample design: 17 vintages, the coverage gap, and the 32-field layout verification story</a></li>
+<li><a href="#s11-3">11.3 The D90 absorbing default definition, derived precisely</a></li>
+<li><a href="#s11-4">11.4 Panel construction: the waterfall, the tie-break, and the flowchart</a></li>
+<li><a href="#s11-5">11.5 State-level macro merge (Requirement 12): genuine FRED series and coverage</a></li>
+<li><a href="#s11-6">11.6 Updated LTV: the NV worked examples</a></li>
+<li><a href="#s11-7">11.7 Interactive: vintage-curve explorer</a></li>
+<li><a href="#s11-8">11.8 The roll-rate transition-matrix estimator (Derivation Backlog D-8)</a></li>
+<li><a href="#s11-9">11.9 <code>compute_rollrate.py</code> — fixture walkthrough, every step</a></li>
+<li><a href="#s11-10">11.10 The real SFLLD roll-rate matrices: GFC vs calm vs COVID</a></li>
+<li><a href="#s11-11">11.11 Interactive: transition-matrix explorer</a></li>
+<li><a href="#s11-12">11.12 Net credit loss: discounting a realised loss (Derivation Backlog D-7)</a></li>
+<li><a href="#s11-13">11.13 <code>compute_ncl.py</code> — fixture walkthrough, and the tie to realized LGD</a></li>
+<li><a href="#s11-14">11.14 State heterogeneity: the collateral channel</a></li>
+<li><a href="#s11-15">11.15 The calendar-time credit cycle: COVID vs GFC, read correctly</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s11">11&nbsp; Freddie Mac Panel &amp; EDA</h2>
+<p>Chapters 1&ndash;10 built and read an entire IFRS&nbsp;9 ECL engine — staging, hazard, LGD/EAD, Vasicek, scenarios,
+challengers, the agent, the app — on the DCR panel: a synthetic, anonymized-clock, national-macro-only dataset
+(49,974 loans, 621,736 rows, Chapter&nbsp;3's own build waterfall). This chapter turns to the project's
+<strong>rung-3</strong> build: the real Freddie Mac Single-Family Loan-Level Dataset (SFLLD) sample, ingested,
+absorbing-D90-flagged, and merged against genuinely state-level FRED macro series by <code>freddie/ingest.py</code>,
+<code>freddie/build_panel.py</code> and <code>freddie/macro.py</code>. Two derivations flagged in
+<code>notes/plan/derivation_backlog.md</code> as D-7 (net-credit-loss discounting) and D-8 (the 90&rarr;180-DPD
+roll-rate bridge) were left open by Chapter&nbsp;4 (see that chapter's own top-of-file scope note) precisely because
+they belong here: D-8 is the generic textbook version of the same row-normalized transition-matrix idea this
+chapter's real roll-rate matrices already use, and D-7 is the generic version of the same net-credit-loss accounting
+this chapter's realized-loss fields already report. Source anchors:
+<code>outputs/freddie/ingest/dq_report.md</code>, <code>outputs/freddie/eda/eda_report.md</code>
+(<a href="#s11-1">11.1</a>&ndash;<a href="#s11-6">11.6</a>, <a href="#s11-14">11.14</a>&ndash;<a href="#s11-15">11.15</a>);
+<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;11.3&ndash;11.4 via
+<code>tests/fixtures/compute_rollrate.py</code> / <code>compute_ncl.py</code>
+(<a href="#s11-8">11.8</a>&ndash;<a href="#s11-9">11.9</a>, <a href="#s11-12">11.12</a>&ndash;<a href="#s11-13">11.13</a>).</p>
+
+<!-- ============================================================== -->
+<h3 id="s11-1">11.1 Why real GSE data: the three upgrades</h3>
+<!-- ============================================================== -->
+<p>The DCR engine (Chapters&nbsp;1&ndash;9) is a complete, internally-consistent ECL machine — but every date on its
+clock is an anonymized quarter index, every macro series is national-only, and every loss is a modeled LGD
+assumption, not an audited outcome. The SFLLD rung-3 build closes exactly those three gaps, and nothing else: it
+does not replace the DCR engine (Chapter&nbsp;12 fits its own hazard/LGD models on this panel, a separate,
+parallel build) — it demonstrates what changes when the underlying data stops being synthetic.</p>
+<div class="table-wrap">
+<table>
+<tr><th>Upgrade</th><th>DCR panel (Ch.1&ndash;9)</th><th>SFLLD panel (this chapter)</th><th>What it unlocks</th></tr>
+<tr><td>Real calendar dates</td><td>anonymized quarter index $t=1\ldots60$</td><td>real <code>monthly_reporting_period</code>, 2005&ndash;2025</td><td>the GFC hump, the COVID spike, and 2022&ndash;24 normalization are DATED events with dated causes (&sect;11.15), not an anonymized clock</td></tr>
+<tr><td>Real states</td><td>none (<code>state_orig_time</code> flagged "unused at this rung", Ch.3 waterfall)</td><td><code>property_state</code>, 54 postal codes (&sect;11.5)</td><td>the collateral channel in real geography — NV/AZ/FL/CA vs TX/ND (&sect;11.14) — invisible to a panel with no state field</td></tr>
+<tr><td>Real realized losses</td><td>modeled LGD assumption</td><td><code>actual_loss_calculation</code>, an audited realized-loss field</td><td>the first empirical severity distribution in this compendium to calibrate against (&sect;11.13)</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/freddie/eda/eda_report.md</code> "What real GSE data buys over the DCR engine's
+synthetic panel".</p>
+
+<div class="interpretation">
+<b>What this means.</b> Every one of these three upgrades is a genuine capability gain, not merely "more data" —
+each closes a documented, explicitly-flagged limitation of the DCR panel. The collateral-channel upgrade is the
+sharpest of the three: Chapter&nbsp;3's own build waterfall for the DCR panel keeps a
+<code>state_orig_time_missing</code> flag on 2,829 rows and documents "state unused at this rung (national macros
+only; no state-level merge in scope)" — this chapter is the rung where that scope pin finally gets closed, and
+&sect;11.14's $r=0.89$ state-level HPI-drawdown-vs-default correlation is a result the DCR panel could not have
+produced under any specification, no state field to condition on.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "real data" does not mean "strictly larger" or "strictly better specified".</b> The SFLLD sample (17
+vintages, 837,500 loans, &sect;11.2) is larger in raw row count than the DCR panel (49,974 loans) but the Phase-B
+hazard refit built on it (Chapter&nbsp;12) is explicitly a SIMPLER model in one respect: it fits only the DEFAULT
+(D90) cause-specific hazard, with no competing-risk prepayment hazard, unlike the DCR champion's dual-hazard framing
+(<code>outputs/freddie/hazard/hazard_report.md</code> &sect;0, declared as a simplification). Real data upgrades the
+INPUTS; it does not automatically upgrade every downstream modeling choice — those remain separate decisions, made
+and documented separately in Chapter&nbsp;12.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Which of the three upgrades (real dates, real states, real losses) is responsible for &sect;11.14's finding that
+NV/FL/AZ/CA default rates sit far above TX/ND for the 2006&ndash;07 vintages?
+  <details><summary>Answer</summary>
+  <div class="answer">Real states — <code>property_state</code>. The DCR panel has no state field at all
+  (<code>state_orig_time</code> flagged unused), so it cannot condition on geography; the collateral-channel result
+  requires a real state field to merge state-level HPI/UER against.</div>
+  </details>
+</li>
+<li>Why does "real realized losses" matter specifically for LGD work, beyond simply being more accurate data?
+  <details><summary>Answer</summary>
+  <div class="answer">Because it is the first AUDITED severity outcome in the compendium (<code>actual_loss_
+  calculation</code>) rather than a modeled assumption — every prior LGD number in Chapters&nbsp;2 and 4 was either
+  a synthetic-panel workout outcome or a fitted model's prediction; SFLLD's realized-LGD population (&sect;11.13)
+  is the first chance to calibrate a model against ground truth rather than against another model's output.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-2">11.2 Sample design: 17 vintages, the coverage gap, and the 32-field layout verification story</h3>
+<!-- ============================================================== -->
+<p><code>freddie/ingest.py</code> reads Freddie Mac's own public SFLLD <em>sample</em> dataset — not the full
+loan-level population — 17 origination-vintage zip files, each holding two pipe-delimited, <strong>header-less</strong>
+text files: <code>sample_orig_{YYYY}.txt</code> (one row per loan) and <code>sample_svcg_{YYYY}.txt</code> (one row
+per loan-month). Full-year vintages sample exactly 50,000 origination loans (Freddie's own documented sample
+methodology); 2025 is a partial year through the Q3 origination cutoff and samples a proportionately smaller 37,500
+— <code>validate_orig()</code> only enforces the 50k floor for non-2025 vintages, so this is not treated as a
+data-quality defect.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Vintages downloaded (17)</th><th>Vintages NOT downloaded (4, documented gap)</th></tr>
+<tr><td>2005&ndash;2010, 2014&ndash;2016, 2018&ndash;2025</td><td>2011, 2012, 2013, 2017</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>freddie/ingest.py</code> <code>VINTAGE_YEARS</code> / <code>MISSING_VINTAGES</code>;
+<code>outputs/freddie/ingest/dq_report.md</code> line&nbsp;1: "not an ingestion failure &mdash; documented gap".</p>
+
+<p><strong>The 32-field layout verification story.</strong> Both files carry exactly 32 fields per row, in a fixed
+official column order (<code>ORIG_COLUMNS</code>, <code>SVCG_COLUMNS</code>) copied from Freddie Mac's own
+"Single-Family Loan-Level Dataset General User Guide" — but because the files are header-less, pandas will happily
+parse 32 pipe-delimited strings into 32 named columns REGARDLESS of whether the names are in the right order. A
+single field inserted, dropped, or transposed relative to the User Guide's documented position would silently
+misassign every downstream column — e.g. if <code>property_state</code> (field&nbsp;17) and <code>property_type</code>
+(field&nbsp;18) were swapped, every state-level merge in &sect;11.5 would quietly join against the wrong geography,
+with no parse error anywhere to flag it. This is exactly the "off-by-one" risk a headerless, position-defined format
+carries, and it is the reason the module docstring states the layout was "cross-checked empirically against every
+vintage" rather than simply transcribed from the PDF.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Empirical guard</th><th>What it catches</th><th>Why 17 vintages matters</th></tr>
+<tr><td><code>assert len(ORIG_COLUMNS) == 32</code> / <code>len(SVCG_COLUMNS) == 32</code> (module import time)</td>
+<td>a field added/dropped from the hardcoded list</td><td>fails immediately, every run</td></tr>
+<tr><td><code>test_raw_rows_have_32_fields_every_vintage</code>: splits the raw pipe-delimited line, counts tokens</td>
+<td>a vintage whose file itself has a different field count than documented</td><td>checked independently per
+vintage — a one-off malformed file in a single vintage cannot hide</td></tr>
+<tr><td>Sentinel-frequency check (<code>test_sentinel_frequencies_present_in_real_vintages</code>): confirms e.g.
+<code>credit_score</code>'s documented sentinel 9999 actually fires</td><td>a field genuinely in the WRONG
+position — a shifted column would either never hit its documented sentinel value, or hit it with an implausible
+frequency, because it would actually be reading a different concept's numbers</td><td>run against multiple vintages
+independently; a systematic column-order bug would misfire identically across all of them, not just one</td></tr>
+<tr><td>Valid-value-set check (<code>test_delinquency_ladder_values_in_documented_set</code>,
+<code>validate_svcg</code>'s <code>bad_dlq_values</code>/<code>bad_zb_codes</code>): every
+<code>current_delinquency_status</code> value must be a non-negative integer string or the literal <code>"RA"</code>
+</td><td>a shifted <code>current_delinquency_status</code> column would immediately start producing values outside
+this tight, documented set — most other 32 fields (dollar amounts, dates, free-text names) do not share this
+distinctive value-set signature, so a swap involving this field is hard to miss</td><td>run per vintage; 17
+independent chances to catch a systematic shift, not one</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>freddie/ingest.py</code> module docstring ("Layout source of truth" &amp; per-field
+sentinel documentation); <code>tests/test_freddie_ingest.py</code> (field-count, sentinel-frequency, and
+delinquency-ladder tests, read directly).</p>
+
+<div class="interpretation">
+<b>What this means.</b> None of these four checks, alone, PROVES the column order is right — a sufficiently
+adversarial reordering (e.g. swapping two fields with genuinely overlapping value ranges and no distinctive
+sentinel) could in principle survive all four. What they collectively buy is a MUCH higher bar than "the file parsed
+without an exception": every one of the 32 fields with a documented sentinel code or a tight valid-value set gets an
+independent empirical check, run across all 17 vintages, so a genuine off-by-one error has to survive dozens of
+independent statistical fingerprints simultaneously, not just avoid crashing pandas once.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "the file parsed with no errors" is not evidence the columns are correctly labeled.</b> A pipe-delimited
+read with a fixed column-name list will ALWAYS succeed as long as the row has the expected token count — that is a
+necessary, not sufficient, correctness check. The dangerous failure mode for a headerless format is not a crash; it
+is a silently-successful parse into the wrong column names, which is precisely what the sentinel-frequency and
+valid-value-set checks (not the field-count check alone) are designed to surface.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is <code>assert len(ORIG_COLUMNS) == 32</code> alone insufficient to catch every possible field-layout bug?
+  <details><summary>Answer</summary>
+  <div class="answer">It only checks the COUNT of names in the hardcoded list, not their ORDER against the actual
+  file — a list with the right 32 names in the wrong sequence would pass this assert trivially while still
+  mislabeling every column. It catches an added/dropped field, not a reordering.</div>
+  </details>
+</li>
+<li>Why does the delinquency-ladder valid-value-set check make a particularly strong guard specifically for the
+<code>current_delinquency_status</code> field's position?
+  <details><summary>Answer</summary>
+  <div class="answer">Because its value set is unusually tight and distinctive (non-negative integer strings or the
+  literal "RA") compared to most of the other 31 fields (dollar amounts, dates, free-text names, wide numeric
+  ranges) — a field genuinely occupying that position but actually containing different data would very likely
+  produce values outside that narrow set almost immediately, making a shift easy to detect statistically even
+  though pandas would parse it without any error.</div>
+  </details>
+</li>
+<li>Why does running the sentinel-frequency and valid-value-set checks across all 17 vintages independently matter
+more than running them once against a single vintage?
+  <details><summary>Answer</summary>
+  <div class="answer">The field layout is documented as FIXED across vintages (Freddie's own official column
+  order), so a genuine layout bug would misfire identically in every vintage's file. Checking all 17 independently
+  means a bug has to simultaneously evade detection in 17 separate empirical tests, not just one — a much higher
+  bar than a single spot-check, even though each individual vintage's check is the same logic.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-3">11.3 The D90 absorbing default definition, derived precisely</h3>
+<!-- ============================================================== -->
+<p>The primary default event modeled in this panel is <strong>D90</strong>: the FIRST loan-month where
+<code>current_delinquency_status</code> corresponds to 90+ days delinquent — formally,
+$$ \text{severe}_t = (\text{dlq\_num}_t \ge 3)\ \text{OR}\ \text{is\_reo\_acquisition}_t, $$
+where <code>dlq_num</code> is the parsed numeric delinquency-status ladder and <code>is_reo_acquisition</code>
+flags the literal string <code>"RA"</code> (REO Acquisition — the field's own escape hatch for "days-delinquent no
+longer means anything, the property has already been acquired"). D90 is modeled as an <strong>absorbing</strong>
+event: once a loan's cumulative first-D90 indicator fires, every subsequent loan-month for that loan is dropped from
+the MODELING panel (<code>panel_monthly.parquet</code>) — even if the servicer later reports the loan curing back
+below 90&nbsp;DPD.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Candidate default definition</th><th>Trigger</th><th>Availability</th><th>Frequency (this sample)</th><th>Timing vs D90</th><th>Used for</th></tr>
+<tr><td><strong>D90 (used, this panel)</strong></td><td><code>dlq_num&gt;=3</code> or <code>RA</code></td>
+<td>every loan-month, every vintage uniformly</td><td>overall 5.32% of loans (&sect;11.4)</td><td>earliest of the
+three</td><td>the modeling target: <code>d90_event</code></td></tr>
+<tr><td>D180</td><td><code>dlq_num&gt;=6</code></td><td>same source field, just a higher threshold — no harder to
+compute</td><td>strictly lower than D90 (a subset of D90 loans that stay delinquent longer)</td><td>later</td>
+<td>not used — would push the event further out and undercount early-stage risk</td></tr>
+<tr><td>Liquidation</td><td><code>zero_balance_code</code> in {02,03,09,96}</td><td>ONLY for loans that reach a
+terminal servicer disposition within the performance window</td><td>13,836 of 44,593 D90 defaults (&asymp;31.0%,
+&sect;11.13) reach a liquidation code with realized loss populated — most D90 defaults cure, modify, or are still
+open/censored</td><td>latest, often lagged years (&sect;11.13's liquidation-pipeline lag)</td><td>kept on
+<code>loan_orig.parquet</code> for competing-risk / LGD-NCL work (&sect;11.12&ndash;11.13), never the modeling
+target</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>freddie/build_panel.py</code> module docstring ("DEFAULT DEFINITION", "WHY D90 AND NOT
+D180 OR LIQUIDATION"); the 31.0% figure from <code>outputs/freddie/eda/eda_report.md</code> Exhibit&nbsp;5's
+"Modeling cautions" note.</p>
+
+<div class="derivation">
+<b>The tie-break, derived from the panel-construction code (no skipped steps)</b>
+(<code>freddie/build_panel.py</code>'s <code>_build_monthly_panel</code>).
+<div class="step"><span class="stepno">1.</span> <strong>Flag every severe row.</strong> For each loan-month $t$,
+$\text{severe}_t = (\text{dlq\_num}_t\ge3)\ \text{OR}\ \text{is\_reo\_acquisition}_t$, computed over the FULL,
+un-truncated servicing history for the loan.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Count prior severe rows, strictly before $t$.</strong>
+Let $\text{cumsum}_t=\sum_{s\le t}\text{severe}_s$ (an inclusive running count, computed per loan). Then
+$\text{prior\_severe\_count}_t=\text{cumsum}_t-\text{severe}_t$ removes the CURRENT row's own contribution, leaving
+exactly the count of severe rows strictly before $t$. This is the key construction: a plain
+$\text{cumsum}_t\le1$ filter would incorrectly keep every row after the first severe month too (cumsum stays at
+1 forever once triggered); subtracting the current row's own flag is what makes the filter stop AT the event, not
+after it.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Truncate.</strong> Keep row $t$ iff
+$\text{prior\_severe\_count}_t=0$ — every loan-month up to and including its first severe month survives; everything
+strictly after is dropped from the modeling panel. This is the absorbing property.</div>
+<div class="step"><span class="stepno">4.</span> <strong>The tie-break.</strong> On the surviving rows, check
+whether a terminal <code>zero_balance_code</code> is ALSO populated on the exact same row that triggered
+$\text{severe}_t$ (empirically real, roughly 0.1&ndash;0.2% of loans per vintage — e.g. loans
+<code>F07Q10009844</code>, <code>F07Q40358784</code> in the 2007 vintage — most often a <code>zero_balance_code=='01'</code>
+Prepaid-or-Matured disposition, a DDLPI/MBA-method delinquency-status artifact at final payoff, not a genuine
+ongoing default):
+$$ \text{d90\_event}_t = \text{severe}_t\ \text{AND NOT}\ \text{has\_zero\_balance\_code}_t. $$
+When both fire on the same row, the zero-balance disposition code WINS and <code>d90_event</code> is suppressed on
+that row — this is exactly what keeps <code>d90_event</code> and <code>prepay_event</code> (or any other
+zero-balance-derived flag) mutually exclusive AS MODELED, never both firing on the same loan-month.</div>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> "Cures" (dlq_num falling back below 3 after previously hitting 3+) are real events in the
+raw SFLLD data — <code>tests/test_freddie_ingest.py</code>'s hand-checked loan <code>F07Q10000581</code> (2007
+vintage) reaches 90+ DPD, later cures back below 3 in the raw servicing history, and is never terminated by a
+zero-balance code within the performance window. The absorbing-D90 modeling panel deliberately does NOT see this
+cure: once <code>F07Q10000581</code> hits its first severe month, every later row — cure included — is truncated
+from <code>panel_monthly.parquet</code>. This mirrors the DCR engine's own discrete-time hazard framing
+(<code>engine/hazard.py</code>, not imported here — rung&nbsp;3 is a fresh build): a loan is "at risk of first
+default" only up to its first default month, by construction, in both engines.
+</div>
+
+<div class="warn">
+<b>Consequence, stated precisely.</b> <code>d90_event</code> and <code>prepay_event</code> are mutually exclusive
+AS MODELED: a loan can only prepay (<code>zero_balance_code==01</code> on its terminal panel row) if it never first
+went 90+&nbsp;DPD in the truncated modeling panel. A loan that goes 90+&nbsp;DPD and is LATER foreclosed, short-saled,
+or otherwise liquidated is modeled purely as a D90 default — the later liquidation is not a separate modeling-panel
+event. It IS fully preserved on <code>loan_orig.parquet</code> (<code>terminal_outcome</code>, realized-loss fields),
+since that table is built from the FULL, un-truncated servicing history (&sect;11.13's realized-LGD population
+depends on exactly this un-truncated table).
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does <code>prior_severe_count = cumsum - severe</code> (subtracting the current row) rather than just using
+<code>cumsum &lt;= 1</code> as the keep-filter?
+  <details><summary>Answer</summary>
+  <div class="answer">A boolean cumulative sum only grows on a TRUE row and then stays flat forever after — so
+  <code>cumsum &lt;= 1</code> alone would be true both ON the first severe row and on every row AFTER it (cumsum is
+  still 1), incorrectly keeping the whole post-event tail. Subtracting the current row's own flag isolates "was any
+  PRIOR row severe", which is exactly 0 up to and including the event month and exactly &ge;1 strictly after it —
+  the filter that actually truncates AT the event.</div>
+  </details>
+</li>
+<li>A loan's severe flag and a terminal <code>zero_balance_code</code> both fire on the same reporting row. What
+does the panel record for that row, and why is this the RIGHT default, not an arbitrary one?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>d90_event</code> is suppressed (set to 0) on that row; the zero-balance disposition
+  code wins. This is documented as usually reflecting a DDLPI/MBA delinquency-status artifact at final payoff/
+  maturity rather than a genuine ongoing default, so treating it as a non-default (prepay/other terminal) rather
+  than a D90 default is the economically correct reading of that specific data pattern, not an arbitrary
+  tie-break rule.</div>
+  </details>
+</li>
+<li>Why does the D90-vs-D180-vs-liquidation table rule out liquidation as the modeling target even though it is the
+"truest" terminal credit event?
+  <details><summary>Answer</summary>
+  <div class="answer">Because it is a strictly later, lower-frequency, servicer-dependent event: only about 31.0% of
+  D90 defaults in this sample ever reach a liquidation zero-balance code within the observed performance window
+  (most cure, modify, or remain open/censored) — using liquidation as the primary default definition would
+  understate credit risk by construction, since the majority of true credit events would never be counted as
+  events at all.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-4">11.4 Panel construction: the waterfall, the tie-break, and the flowchart</h3>
+<!-- ============================================================== -->
+<p>Per-vintage row counts and D90 rates, read directly off <code>outputs/freddie/ingest/dq_report.md</code>
+(recomputed, not retyped, and cross-checked against a live re-read of <code>panel_monthly.parquet</code> +
+<code>loan_orig.parquet</code> this session — &sect;11.7's vintage-curve data below reproduces every one of these
+per-vintage final D90 rates to the displayed decimal from the raw panel independently):</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Vintage</th><th>n_loans</th><th>n_loan_months (modeled)</th><th>D90 rate</th><th>Prepay rate</th><th>Censored rate</th></tr>
+<tr><td>2005</td><td class="num">50,000</td><td class="num">3,588,153</td><td class="num">10.75%</td><td class="num">87.21%</td><td class="num">1.89%</td></tr>
+<tr><td>2006</td><td class="num">50,000</td><td class="num">2,833,990</td><td class="num">14.11%</td><td class="num">83.95%</td><td class="num">1.61%</td></tr>
+<tr><td>2007</td><td class="num">50,000</td><td class="num">2,592,669</td><td class="num"><strong>16.26%</strong></td><td class="num">81.58%</td><td class="num">1.82%</td></tr>
+<tr><td>2008</td><td class="num">50,000</td><td class="num">2,224,103</td><td class="num">9.14%</td><td class="num">88.85%</td><td class="num">1.78%</td></tr>
+<tr><td>2009</td><td class="num">50,000</td><td class="num">3,078,747</td><td class="num">3.07%</td><td class="num">92.31%</td><td class="num">4.34%</td></tr>
+<tr><td>2010</td><td class="num">50,000</td><td class="num">3,363,401</td><td class="num">3.16%</td><td class="num">90.26%</td><td class="num">6.43%</td></tr>
+<tr><td>2014</td><td class="num">50,000</td><td class="num">3,265,018</td><td class="num">3.78%</td><td class="num">79.21%</td><td class="num">16.83%</td></tr>
+<tr><td>2015</td><td class="num">50,000</td><td class="num">3,317,071</td><td class="num">4.00%</td><td class="num">73.70%</td><td class="num">22.23%</td></tr>
+<tr><td>2016</td><td class="num">50,000</td><td class="num">3,201,194</td><td class="num">4.66%</td><td class="num">68.40%</td><td class="num">26.81%</td></tr>
+<tr><td>2018</td><td class="num">50,000</td><td class="num">1,901,886</td><td class="num">5.36%</td><td class="num">76.36%</td><td class="num">18.10%</td></tr>
+<tr><td>2019</td><td class="num">50,000</td><td class="num">1,750,978</td><td class="num">5.48%</td><td class="num">67.56%</td><td class="num">26.76%</td></tr>
+<tr><td>2020</td><td class="num">50,000</td><td class="num">2,306,271</td><td class="num">2.08%</td><td class="num">36.20%</td><td class="num">61.55%</td></tr>
+<tr><td>2021</td><td class="num">50,000</td><td class="num">2,272,716</td><td class="num">1.80%</td><td class="num">17.09%</td><td class="num">80.91%</td></tr>
+<tr><td>2022</td><td class="num">50,000</td><td class="num">1,766,601</td><td class="num">3.02%</td><td class="num">15.66%</td><td class="num">80.91%</td></tr>
+<tr><td>2023</td><td class="num">50,000</td><td class="num">1,214,980</td><td class="num">1.85%</td><td class="num">18.01%</td><td class="num">79.81%</td></tr>
+<tr><td>2024</td><td class="num">50,000</td><td class="num">691,421</td><td class="num">0.63%</td><td class="num">9.37%</td><td class="num">89.72%</td></tr>
+<tr><td>2025</td><td class="num">37,500</td><td class="num">153,366</td><td class="num"><strong>0.04%</strong></td><td class="num">1.79%</td><td class="num">98.14%</td></tr>
+<tr><td><strong>Total</strong></td><td class="num"><strong>837,500</strong></td><td class="num"><strong>39,522,565</strong></td><td class="num"><strong>5.32%</strong> (overall)</td><td class="num"><strong>58.93%</strong> (overall)</td><td class="num">&mdash;</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/freddie/ingest/dq_report.md</code> "Per-vintage row counts and event rates";
+performance window ends 2025-09 for every vintage.</p>
+
+<p>The 0.04%&ndash;16.26% D90-rate range across vintages is not noise — it is the pre-crisis-vintage hump entirely
+visible in raw origination-year row counts before any modeling: 2007 (16.26%) and 2006 (14.11%) sit far above every
+other vintage, 2020&ndash;2025 sit near the floor (loans too young, and 2020&ndash;21 specifically distorted by
+forbearance, &sect;11.15), and 2025's 0.04% simply reflects a partial-year vintage barely six months into its
+performance window by the 2025-09 cutoff.</p>
+
+<img class="fig" src="../assets/img/ch11/01_panel_construction_flowchart.png" alt="Flowchart: raw sample_orig and sample_svcg text files feed freddie.ingest (sentinel mapping, dtype casting, 32-field assert, empirical validation), then a severe flag, then absorbing-D90 truncation, then a tie-break diamond (same-row zero-balance code populated?) routing to either d90_event=1 or disposition-code-wins, both feeding panel_monthly.parquet (837,500 loans, 39,522,565 loan-months), which then merges with freddie.macro's state-level FRED series and loan_orig.parquet's full un-truncated realized-loss fields into the final merged panel used by Chapter 11 EDA and Chapter 12 models">
+<div class="figcap"><b>Exhibit 11.1</b> — Panel construction: raw SFLLD files &rarr; absorbing-D90 default panel
+&rarr; macro merge, including the same-row tie-break (&sect;11.3). Regenerated from
+<code>freddie/build_panel.py</code> and <code>freddie/macro.py</code>'s documented pipeline.</div>
+
+<div class="interpretation">
+<b>What this means, read against the DCR panel's own waterfall (Chapter&nbsp;3).</b> The DCR panel's build waterfall
+removes rows in 7 explicit steps (duplicate rows, ID collisions, status conflicts, post-terminal truncation,
+non-positive origination balances, zero-balance live rows, non-positive note rates) — a data-cleaning waterfall on a
+SINGLE already-merged file. The SFLLD build has no equivalent multi-step cleaning waterfall because the absorbing-
+D90 truncation (&sect;11.3's derivation) IS the panel's own row-elimination step, applied per loan via the
+severe-flag/tie-break logic rather than via a sequence of ad-hoc row-level defect filters — the two panels solve
+structurally different problems (DCR: clean a noisy, pre-merged vendor file; SFLLD: define and apply an absorbing
+event on official, individually-clean vintage files) with correspondingly different-shaped construction logic.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the tie-break rate (0.1&ndash;0.2% of loans per vintage) sounds negligible, but it is exactly the
+population that would otherwise silently double-count an event.</b> Without the tie-break, a loan whose
+<code>severe</code> flag and terminal <code>zero_balance_code</code> both fire on the same row could be counted as
+BOTH a D90 default and a prepayment/other-terminal outcome somewhere downstream, depending on which flag a later
+aggregation reads first — a small-looking population bug that would corrupt the mutual-exclusivity invariant
+&sect;11.3's <code>.warn</code> box states as a hard guarantee. The fix is a single, documented precedence rule
+(disposition code wins), not a post-hoc patch.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does 2007's D90 rate (16.26%) exceed 2006's (14.11%) even though 2006 predates it — isn't an earlier
+vintage supposed to have had more time to season into default?
+  <details><summary>Answer</summary>
+  <div class="answer">Both are old enough (18+ years by the 2025-09 performance window end) to have reached their full
+  cumulative D90 curve (Exhibit&nbsp;11.5's vintage curves flatten well before 225 months), so seasoning time is not
+  the differentiator here — 2007 vintage loans were underwritten at the very peak of the housing bubble with the
+  weakest documentation/leverage standards of the whole 2005&ndash;2010 window, so a higher SHARE of that vintage's
+  loans were destined to default regardless of how long they season, not merely delayed relative to 2006.</div>
+  </details>
+</li>
+<li>Why does the censored rate rise so sharply for 2020&ndash;2025 vintages (61.55% up to 98.14%) compared to
+2005&ndash;2010 (1.61%&ndash;6.43%)?
+  <details><summary>Answer</summary>
+  <div class="answer">These vintages are simply too young relative to the fixed 2025-09 performance-window end —
+  a 2024 or 2025 loan has had only months, not years, to reach either a D90 event or a prepayment/other terminal
+  outcome, so the overwhelming majority of its loan-months are still active (right-censored) at the observation
+  cutoff. This is a function of vintage age at the panel's snapshot date, not a change in underlying credit
+  quality.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-5">11.5 State-level macro merge (Requirement&nbsp;12): genuine FRED series and coverage</h3>
+<!-- ============================================================== -->
+<p>Because the SFLLD orig table carries a real <code>property_state</code> field, <code>freddie/macro.py</code>
+merges STATE-level unemployment and house-price series instead of the DCR panel's national-only macros
+(&sect;11.1's second upgrade). Per the campaign's Requirement&nbsp;12 (every macro variable, in every model, gets the
+full honesty card), both series below are curated the same way Chapter&nbsp;6's DCR/satellite macro cards are, and
+share the same source-of-truth discipline the app's own <code>/api/model/macro_glossary</code> endpoint serves.</p>
+
+<div class="defn">
+<b>Variable card — <code>uer_lag1</code> (state civilian unemployment rate, SA, monthly, 1-month lag).</b>
+<ul>
+<li><strong>Source.</strong> FRED series <code>{POSTAL}UR</code> per state (e.g. <code>NVUR</code>, <code>CAUR</code>)
+— a genuine, per-state <strong>live FRED pull</strong> (<code>fetch_fred_series</code>, cached to CSV after the
+first network call; every subsequent run, including the test suite, is offline against the cache). Honesty
+contrast: this is the OPPOSITE sourcing situation from Chapter&nbsp;6's DCR/satellite national macros, which are
+explicitly a vendor-premerged, anonymized-clock series NOT pulled live from FRED — SFLLD's state series genuinely
+are. Two states — GU, VI — have no <code>{POSTAL}UR</code> series at all and fall back to the national anchor
+<code>UNRATE</code>, flagged via <code>uer_is_national_fallback</code>.</li>
+<li><strong>Transformation + lag rationale.</strong> Raw level, no transform (FRED already reports a percentage-point
+rate). Lag&nbsp;=&nbsp;1 month: matches the champion hazard fit's timing convention (<code>freddie/fit_hazard.py</code>,
+Chapter&nbsp;12) and mirrors the DCR panel's own "only $t-k$, $k\ge1$, ever referenced" no-lookahead rule at this
+panel's native monthly (not quarterly) frequency.</li>
+<li><strong>Units and scale.</strong> One "unit" is a whole percentage point: a value of $5.6$ means state
+unemployment $=5.6\%$, not $5.6\%\%$ or $0.056$. No decimal-vs-percentage-point trap here (contrast &sect;11.6's
+sibling <code>hpi_growth_lag1</code> below, which IS a decimal log-difference).</li>
+<li><strong>Coefficient reading — worked example (python-computed).</strong> Champion hazard fit coefficient
+$\beta_{\text{uer\_lag1}}=0.0950$ (<code>outputs/freddie/hazard/hazard_report.md</code>). A $+1$pp rise in state
+unemployment: $$ HR = \exp(0.0950\times1) = 1.0997, $$ a $9.97\%$ proportional increase in the monthly default
+hazard, holding every other covariate fixed.</li>
+<li><strong>Economic channel.</strong> Labour-income / cash-flow channel: a higher state unemployment rate directly
+raises the probability that a borrower in that state loses income needed to service the mortgage.</li>
+</ul>
+</div>
+
+<div class="defn">
+<b>Variable card — <code>delta_uer_lag1</code> (1-month change in state UER, lag 1 month).</b>
+<ul>
+<li><strong>Source.</strong> Derived from the SAME <code>{POSTAL}UR</code> series as <code>uer_lag1</code> above —
+not a separate FRED pull, a first difference computed inside <code>freddie/macro.py</code>'s
+<code>_add_derived_columns</code>.</li>
+<li><strong>Transformation + lag rationale.</strong> $\Delta uer_t = uer_t - uer_{t-1}$, then lagged 1 month like
+every other macro term here — captures labour-market MOMENTUM (is the state's unemployment rate actively
+worsening right now), distinct from the LEVEL term above.</li>
+<li><strong>Units and scale.</strong> Same percentage-point units as the level term: $+1.0$ means unemployment rose
+1 full percentage point month-on-month — a large, COVID-era-scale move in normal times (contrast the April&nbsp;2020
+state UER jumps of roughly $+10$pp month-on-month that saturate this term, &sect;3 of
+<code>hazard_report.md</code>).</li>
+<li><strong>Coefficient reading — worked example (python-computed).</strong> $\beta_{\text{delta\_uer\_lag1}}=0.6671$.
+A genuine $+1$pp LABOUR-MARKET SHOCK moves both <code>uer_lag1</code> and <code>delta_uer_lag1</code> by $+1$pp
+simultaneously (a real unemployment shock is a level move that IS a momentum move in the same month), so the net
+effect combines both coefficients: $$ HR_{\text{net}} = \exp(0.0950+0.6671) = \exp(0.7621) = 2.1428, $$ more than
+a DOUBLING of the monthly default hazard from a genuine 1pp state unemployment shock — read the level coefficient
+alone and the effect looks 20$\times$ smaller ($HR=1.0997$) than it actually is, exactly the level-vs-momentum
+reading trap Chapter&nbsp;3 &sect;3.7 flags for the DCR champion's own UER terms.</li>
+<li><strong>Economic channel.</strong> Labour-market momentum: a state where unemployment is actively rising signals
+forward-looking cash-flow stress beyond what the current LEVEL alone captures — borrowers anticipate further
+income risk, not just react to today's rate.</li>
+</ul>
+</div>
+
+<div class="defn">
+<b>Variable card — <code>hpi_growth_lag1</code> (state FHFA all-transactions HPI, 1-month log-growth, lag 1 month).</b>
+<ul>
+<li><strong>Source.</strong> FRED series <code>{POSTAL}STHPI</code> per state (e.g. <code>NVSTHPI</code>) — genuine
+live FRED pull, same sourcing honesty as <code>uer_lag1</code>. THREE states/territories — GU, PR, VI — have no
+<code>{POSTAL}STHPI</code> series (PR HAS a UER series but no HPI series specifically) and fall back to the national
+anchor <code>USSTHPI</code>, flagged via <code>hpi_is_national_fallback</code>.</li>
+<li><strong>Transformation + lag rationale.</strong> FRED reports STHPI quarterly, at quarter-START dates. Each
+state's series is reindexed onto a continuous monthly index and FORWARD-FILLED (the value published for a quarter
+is held constant across that quarter's three months) — the documented alternative, linear interpolation between
+quarter-start prints, was rejected because it would let month&nbsp;2 of a quarter "see" month&nbsp;3's not-yet-published
+realized print, exactly the intra-quarter information the no-lookahead rule excludes. $hpi\_growth=\Delta\log(HPI)$
+on the STEPPED series, then lagged 1 month.</li>
+<li><strong>Units and scale — the log-growth trap.</strong> One "unit" is a DECIMAL log-difference, and because the
+underlying series is step-function-forward-filled, $hpi\_growth$ is $\approx0$ for two of every three months and
+carries the WHOLE quarter's growth in the first month of each new quarter — a visible artifact, not noise, and the
+reason the EDA exhibits (&sect;11.14 in a related context) use a trailing 12-month sum rather than reading a single
+month's value.</li>
+<li><strong>Coefficient reading — worked example (python-computed).</strong> $\beta_{\text{hpi\_growth\_lag1}}=-3.3442$.
+Read PER FULL LOG-UNIT (a 100% monthly house-price move — never observed), the hazard ratio looks catastrophic:
+$\exp(-3.3442)=0.0353$. Rescaled to a realistic $+1$pp ($0.01$) monthly HPI-growth move:
+$$ HR = \exp(-3.3442\times0.01) = \exp(-0.033442) = 0.9671, $$ a $3.3\%$ REDUCTION in monthly default hazard per
+percentage point of monthly house-price appreciation — the economically legible reading, and the same scale trap
+Chapter&nbsp;3 &sect;3.7's gotcha box flags for the DCR champion's own (national) HPI term.</li>
+<li><strong>Economic channel.</strong> Collateral / negative-equity channel: rising state house prices rebuild
+borrower equity, restoring the option to sell or refinance out of trouble — the SAME channel &sect;11.6's
+<code>updated_ltv</code> construction and Chapter&nbsp;4's LGD model both cite, told a third time here at the
+state level.</li>
+</ul>
+</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Coverage note</th><th>States/territories affected</th></tr>
+<tr><td>UER national fallback (no <code>{POSTAL}UR</code> series)</td><td>GU, VI</td></tr>
+<tr><td>HPI national fallback (no <code>{POSTAL}STHPI</code> series)</td><td>GU, PR, VI</td></tr>
+<tr><td>Total states/territories in the SFLLD sample</td><td>54 (50 states + DC + PR + GU + VI)</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>freddie/macro.py</code> "COVERAGE NOTE" docstring, empirically verified against the live
+FRED API; <code>data/processed/freddie/macro/coverage_note.json</code>, read live this session (n_states=54,
+ur_fallback_states=['GU','VI'], hpi_fallback_states=['GU','PR','VI']).</p>
+
+<img class="fig" src="../assets/img/ch11/02_state_macro_merge_pipeline.png" alt="Flowchart: get_states_in_data scans 17 origination zips for 54 states/territories, branching into resolve_series_ids (choosing per-state or national-fallback FRED series IDs) and fetch_fred_series (live FRED API pull with offline CSV cache), then splitting into UER (native monthly) and HPI (native quarterly, reindexed monthly and forward-filled) processing, both feeding into add_derived_columns (rebasing, growth rates, then a 1-month lag on every column), then merge_macro joining onto the loan panel by state and month, finally feeding the updated_ltv formula">
+<div class="figcap"><b>Exhibit 11.2</b> — State-level macro merge: FRED pull &rarr; monthly panel &rarr; updated LTV.
+Regenerated from <code>freddie/macro.py</code>'s documented pipeline (<code>resolve_series_ids</code>,
+<code>fetch_fred_series</code>, <code>_add_derived_columns</code>, <code>merge_macro</code>).</div>
+
+<div class="table-wrap" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+<div style="flex:1; min-width:300px;">
+<img class="fig" src="../assets/img/ch11/03_state_hpi_growth.png" alt="Line chart of trailing 12-month log HPI growth by state, 2000-2025, for CA/TX/FL/NV/ND highlighted against a background of all other states in light gray and the US national series dashed; NV and FL show the sharpest 2004-2006 run-up and 2007-2011 collapse, ND stays comparatively flat throughout, all states show a shared spike around 2021-2022">
+<div class="figcap"><b>Exhibit 11.3</b> — State HPI growth, trailing 12-month log growth, 2000&ndash;2025.</div>
+</div>
+<div style="flex:1; min-width:300px;">
+<img class="fig" src="../assets/img/ch11/04_state_uer.png" alt="Line chart of state unemployment rate, 2000-2025, for CA/TX/FL/NV/ND highlighted against a background of all other states in light gray and the US national series dashed; NV peaks highest of the five in both the GFC (~13.5%) and COVID (~30%) windows, ND stays lowest throughout">
+<div class="figcap"><b>Exhibit 11.4</b> — State unemployment rate, 2000&ndash;2025.</div>
+</div>
+</div>
+<p class="src">Source: <code>outputs/freddie/macro/state_hpi_growth_2000_2025.png</code>,
+<code>outputs/freddie/macro/state_uer_2000_2025.png</code>, both generated by <code>freddie/macro.py</code> from the
+genuine cached FRED pulls &sect;11.5's variable cards describe.</p>
+
+<div class="interpretation">
+<b>What this means.</b> NV's UER series (Exhibit&nbsp;11.4) is the standout in BOTH crisis windows — peaking
+highest of the five highlighted states in the GFC and again, far more sharply, in COVID (the state's tourism/
+hospitality-heavy economy is unusually exposed to a demand-collapse shock) — while ND barely moves in either
+window, a preview of exactly the cross-state dispersion &sect;11.14's collateral-channel scatter quantifies for
+HPI. The two panels together are the raw material the champion hazard's <code>uer_lag1</code>/
+<code>hpi_growth_lag1</code> coefficients (&sect;11.5's variable cards) are fitted against.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — mixed scales inside the champion hazard's macro block are not a bug, but are a live misreading risk,
+exactly as Chapter&nbsp;6 &sect;6 flags for the satellite model.</b> <code>uer_lag1</code>/<code>delta_uer_lag1</code>
+enter as whole percentage points ($5.6$, $1.0$) and <code>hpi_growth_lag1</code> enters as a decimal log-difference
+($0.01$) in the SAME fitted hazard equation — both are individually correct (each matches that concept's native
+FRED representation) but a reader substituting "1.15" for a 1.15% monthly HPI move instead of "0.0115" would compute
+a hazard-ratio effect roughly $100\times$ too large from that term alone. Always confirm which convention a given
+macro coefficient's card uses before substituting a real-world move into its worked example.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is <code>uer_lag1</code>'s hazard-ratio worked example ($HR=1.0997$ per $+1$pp) misleading if read in
+isolation, and what is the economically correct combined reading?
+  <details><summary>Answer</summary>
+  <div class="answer">A genuine 1pp unemployment SHOCK moves both the level (<code>uer_lag1</code>) and its own
+  1-month change (<code>delta_uer_lag1</code>) simultaneously, so the level coefficient alone
+  ($HR=1.0997$) badly understates the true effect; the combined reading
+  $\exp(0.0950+0.6671)=2.1428$ is the economically correct net hazard-ratio for a genuine shock.</div>
+  </details>
+</li>
+<li>Which two macro coverage gaps mean Puerto Rico's <code>hpi_growth_lag1</code> is actually the NATIONAL
+<code>USSTHPI</code> series in disguise, while its <code>uer_lag1</code> is genuinely PR-specific?
+  <details><summary>Answer</summary>
+  <div class="answer">PR has a live <code>PRUR</code> FRED series (state-specific UER, no fallback needed) but NO
+  <code>PRSTHPI</code> series (FRED has no state-level house-price index for Puerto Rico), so
+  <code>hpi_is_national_fallback</code> is TRUE for PR while <code>uer_is_national_fallback</code> is FALSE — an
+  asymmetric coverage gap unique to PR among the three fallback territories (GU and VI fall back on BOTH
+  series).</div>
+  </details>
+</li>
+<li>Why does the HPI series get forward-filled from quarter-start rather than linearly interpolated across the
+three months of a quarter?
+  <details><summary>Answer</summary>
+  <div class="answer">Linear interpolation between a quarter's start print and the NEXT quarter's start print would
+  let an early month in the current quarter "see" a partial preview of a print that has not been published yet —
+  exactly the intra-quarter information the panel's no-lookahead convention rules out. Forward-fill only ever uses
+  the most recently PUBLISHED value, so it never invents information from the future.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-6">11.6 Updated LTV: the NV worked examples</h3>
+<!-- ============================================================== -->
+<p><code>freddie/macro.py</code> adapts the DCR-verified updated-LTV formula (<code>data/panel/build_panel.py</code>'s
+"UPDATED LTV" section, which the vendor's own <code>LTV_time</code> column there reproduces to $\sim10^{-9}$) to
+state-level HPI:</p>
+<div class="derivation">
+<b>Updated LTV, derived from the collateral-indexation idea (no skipped steps).</b>
+<div class="step"><span class="stepno">1.</span> <strong>Start from the definition of LTV.</strong> $LTV=
+\text{balance}/\text{property value}$. At origination, $LTV_{\text{orig}}=\text{orig\_upb}/\text{orig\_value}$, so
+$\text{orig\_value}=\text{orig\_upb}/LTV_{\text{orig}}$.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Index the property value forward using the state HPI.</strong>
+Assume the property's value moves in line with its state's house-price index between origination and the current
+reporting month: $\text{current\_value} = \text{orig\_value}\times(hpi_{\text{now}}/hpi_{\text{orig}})$.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Substitute the current balance and current value into the
+LTV definition.</strong>
+$$ updated\_ltv = \frac{\text{current\_upb}}{\text{current\_value}} = \frac{\text{current\_upb}}
+{(\text{orig\_upb}/LTV_{\text{orig}})\times(hpi_{\text{now}}/hpi_{\text{orig}})}
+= LTV_{\text{orig}}\times\frac{\text{current\_upb}}{\text{orig\_upb}}\times\frac{hpi_{\text{orig}}}{hpi_{\text{now}}}. $$
+The three factors read as: original leverage, times amortization paydown, times the collateral-value INDEX
+correction (house prices FELL $\Rightarrow hpi_{\text{orig}}/hpi_{\text{now}}>1\Rightarrow$ updated LTV rises above
+what paydown alone would suggest).</div>
+<div class="step"><span class="stepno">4.</span> <strong>Origination-month approximation, stated honestly.</strong>
+$hpi_{\text{orig}}$ is read at the loan's <code>first_payment_date</code> (the field the public SFLLD orig table
+actually carries), not the true note/closing date the layout does not expose — first-payment date is normally one
+calendar month after closing, a small, documented, one-month approximation, not an estimate of genuinely unknown
+data.</div>
+</div>
+
+<div class="ex">
+<b>Worked example 1 — NV, 2006 vintage, observed 2009-03 (the crash).</b> Real loan values
+(<code>tests/test_freddie_macro.py::test_updated_ltv_formula_matches_documented_derivation</code>'s fixture, cross-
+checked live this session against <code>data/processed/freddie/macro/state_macro_panel.parquet</code>'s cached, real
+FRED-derived NV HPI index): $LTV_{\text{orig}}=80.0$, $\text{orig\_upb}=\$254{,}000$, $\text{current\_upb}
+=\$245{,}566.35$ (2009-03), $hpi_{\text{orig}}$ read at 2006-03, $hpi_{\text{now}}$ at 2009-03.
+<div class="table-wrap">
+<table>
+<tr><th>step</th><th>quantity</th><th>value</th></tr>
+<tr><td>1</td><td>$hpi_{\text{orig}}$ (NV HPI index, 2006-03, rebased 2000-01=100)</td><td class="num">215.8519</td></tr>
+<tr><td>2</td><td>$hpi_{\text{now}}$ (NV HPI index, 2009-03)</td><td class="num">145.8966</td></tr>
+<tr><td>3</td><td>amortization ratio $=245{,}566.35/254{,}000$</td><td class="num">0.966797</td></tr>
+<tr><td>4</td><td>HPI ratio $=215.8519/145.8966$</td><td class="num">1.479485</td></tr>
+<tr><td>5</td><td>$updated\_ltv = 80.0\times0.966797\times1.479485$</td><td class="num"><strong>114.4289</strong></td></tr>
+</table>
+</div>
+Despite ~3.3% of ordinary amortization paydown (the ratio in row&nbsp;3 is below 1), updated LTV RISES from
+$80.0$ to $114.43$ — the NV HPI collapse (index falling from 215.85 to 145.90, a $\sim32\%$ drop) overwhelms the
+paydown effect entirely, pushing this loan deep underwater by 2009. This matches the qualitative claim
+<code>tests/test_freddie_macro.py::test_updated_ltv_rises_through_the_nv_crash</code> checks against a different
+real 2006-vintage NV loan (<code>updated_ltv &gt; orig_ltv</code>, post-crash).
+</div>
+
+<div class="ex">
+<b>Worked example 2 — NV, real loan <code>F10Q10019125</code>, 2010 vintage, 2010-06 vs 2019-06 (the recovery).</b>
+Read live this session directly from <code>freddie.ingest.read_orig_vintage(2010)</code> /
+<code>read_svcg_vintage(2010)</code> (the first NV loan in that vintage's orig table) and the real cached NV HPI
+series: $LTV_{\text{orig}}=44.0$, $\text{orig\_upb}=\$110{,}000$, first payment 2010-03.
+<div class="table-wrap">
+<table>
+<tr><th>date</th><th>current_upb</th><th>state HPI index</th><th>amort. ratio</th><th>HPI ratio</th><th>updated_ltv</th></tr>
+<tr><td>2010-06 (near the NV trough)</td><td class="num">\$109,000.00</td><td class="num">113.4803</td>
+<td class="num">0.990909</td><td class="num">1.034830</td><td class="num"><strong>45.12</strong></td></tr>
+<tr><td>2019-06 (post-recovery)</td><td class="num">\$89,550.05</td><td class="num">209.3457</td>
+<td class="num">0.814091</td><td class="num">0.560952</td><td class="num"><strong>20.09</strong></td></tr>
+</table>
+</div>
+$LTV_{\text{orig}}=44.0$ is already low, so 2010-06's updated LTV (45.12) sits close to origination — this loan was
+originated almost exactly AT the NV price trough, not during the crash. By 2019-06, NV house prices have nearly
+doubled off that trough (HPI index $113.48\to209.35$) and 9 years of amortization have paid the balance down to
+81.4% of its original size — both effects push updated LTV to 20.09, WELL below both origination LTV and its own
+2010-06 reading, confirming
+<code>tests/test_freddie_macro.py::test_updated_ltv_falls_as_nv_recovers</code>'s qualitative claim with the actual
+numbers behind it.
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> The two worked examples above are the same formula, the same state, and structurally
+opposite outcomes — precisely because they sample two different points on NV's own HPI cycle (crash vs recovery)
+relative to each loan's own origination point. This is the state-level collateral channel made concrete at the
+single-loan level: &sect;11.14's $r=0.89$ state-level correlation between HPI drawdown and vintage default rate is
+the AGGREGATE version of exactly this mechanism.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a low origination LTV does not make a loan immune to the collateral channel; it only raises the price
+drop needed to trigger it.</b> Worked example&nbsp;2's loan started at $LTV_{\text{orig}}=44.0$ — a conservatively
+underwritten loan by any standard — and still shows updated LTV RISING from 44.0 to 45.12 over its first three
+months, purely from the HPI ratio term, before the recovery years bring it back down. The formula treats leverage
+and collateral value as two independent multiplicative factors; a low starting LTV shifts where the underwater
+threshold sits, it does not remove the mechanism.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In worked example&nbsp;1, which single factor — amortization or the HPI ratio — is responsible for updated LTV
+rising above origination LTV, and how do you know from the table alone?
+  <details><summary>Answer</summary>
+  <div class="answer">The HPI ratio (1.479485, &gt;1) — the amortization ratio (0.966797) is BELOW 1, which alone
+  would push updated LTV down, not up. Since the product still rises above the origination LTV of 80.0, the HPI
+  ratio's upward pull must more than offset the amortization ratio's downward pull; the HPI ratio is doing all
+  the work in the direction actually observed.</div>
+  </details>
+</li>
+<li>Why does <code>freddie/macro.py</code> use <code>first_payment_date</code> rather than the true note/closing
+date to look up $hpi_{\text{orig}}$, and is this an estimate of missing data?
+  <details><summary>Answer</summary>
+  <div class="answer">The public SFLLD layout does not expose a note/closing-date field at all, only
+  <code>first_payment_date</code> (documented, 32-field layout, &sect;11.2) — since first-payment date is normally
+  one calendar month after closing, this is a small, DOCUMENTED, one-month approximation using a field that
+  genuinely exists in the data, not an estimate standing in for a value the data lacks.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-7">11.7 Interactive: vintage-curve explorer</h3>
+<!-- ============================================================== -->
+<p>The widget below reproduces <code>freddie/eda.py</code>'s <code>compute_vintage_curves</code> exactly — cumulative
+D90 rate by months-on-book, per vintage — recomputed live this session directly from
+<code>panel_monthly.parquet</code>/<code>loan_orig.parquet</code> (every value below matches
+<code>outputs/freddie/ingest/dq_report.md</code>'s final per-vintage D90 rate to the displayed decimal, e.g. 2007's
+curve ends at 16.26%, exactly &sect;11.4's table entry). Toggle vintages on/off to compare eras directly.</p>
+
+<div class="widget">
+<h4>Live widget — toggle vintages, real cumulative-D90 curves</h4>
+<div class="widget-controls" id="vc-controls"></div>
+<div id="vc-plot"></div>
+</div>
+
+<script src="../assets/js/widgets.js"></script>
+<script>
+(function () {
+  // Real cumulative-D90-rate-by-months-on-book data, recomputed live this
+  // session from data/processed/freddie/{panel_monthly,loan_orig}.parquet
+  // via freddie.eda.compute_vintage_curves's exact groupby/cumsum logic
+  // (sampled every 6 months on book to keep the embedded payload small; the
+  // final value per vintage matches outputs/freddie/ingest/dq_report.md's
+  // reported per-vintage D90 rate to the displayed decimal).
+  var VINTAGE_CURVES = {"2006":{"mob":[0,6,12,18,24,30,36,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180,186,192,198,204,210,216,222,228,234],"cum_d90_rate_pct":[0.004,0.128,0.52,1.078,1.952,3.286,5.038,6.81,8.302,9.376,10.35,11.086,11.68,12.176,12.538,12.772,12.978,13.164,13.3,13.392,13.454,13.53,13.608,13.686,13.732,13.752,13.794,13.832,13.912,13.988,14.006,14.028,14.044,14.058,14.068,14.074,14.088,14.102,14.112,14.112]},"2007":{"mob":[0,6,12,18,24,30,36,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180,186,192,198,204,210,216,222],"cum_d90_rate_pct":[0.0,0.332,1.17,2.77,4.93,7.216,9.052,10.472,11.588,12.496,13.27,13.85,14.266,14.6,14.822,15.004,15.18,15.28,15.396,15.482,15.546,15.644,15.72,15.76,15.798,15.884,16.0,16.112,16.144,16.164,16.182,16.204,16.21,16.224,16.238,16.248,16.258,16.26]},"2008":{"mob":[0,6,12,18,24,30,36,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180,186,192,198,204,210],"cum_d90_rate_pct":[0.006,0.422,1.372,2.726,3.956,4.87,5.634,6.33,6.87,7.28,7.592,7.824,8.02,8.146,8.252,8.344,8.418,8.482,8.566,8.628,8.686,8.728,8.766,8.826,8.914,9.012,9.046,9.064,9.076,9.086,9.106,9.11,9.12,9.126,9.134,9.142]},"2009":{"mob":[0,6,12,18,24,30,36,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180,186,192,198],"cum_d90_rate_pct":[0.0,0.054,0.2,0.362,0.62,0.866,1.106,1.35,1.52,1.668,1.788,1.878,1.972,2.048,2.138,2.194,2.246,2.316,2.364,2.41,2.442,2.552,2.792,2.91,2.956,2.976,2.996,3.016,3.032,3.04,3.054,3.06,3.07,3.07]},"2014":{"mob":[0,6,12,18,24,30,36,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138],"cum_d90_rate_pct":[0.0,0.044,0.166,0.332,0.488,0.678,0.878,1.058,1.236,1.356,1.458,1.754,2.608,3.28,3.42,3.482,3.56,3.608,3.652,3.678,3.722,3.76,3.774,3.782]},"2020":{"mob":[0,6,12,18,24,30,36,42,48,54,60,66],"cum_d90_rate_pct":[0.0,0.814,1.176,1.382,1.526,1.644,1.738,1.824,1.914,2.004,2.054,2.076]}};
+  var COLOR = {"2006":"#8e44ad","2007":"#c0392b","2008":"#e67e22","2009":"#1f3a5f","2014":"#1e9e6b","2020":"#2980b9"};
+  var DEFAULT_ON = {"2006":true,"2007":true,"2008":true,"2009":false,"2014":false,"2020":false};
+
+  var vcState = {};
+  Object.keys(VINTAGE_CURVES).forEach(function (v) { vcState[v] = DEFAULT_ON[v]; });
+
+  var vcControls = document.getElementById('vc-controls');
+  function makeVcCheckbox(vintage) {
+    var wrap = document.createElement('div');
+    wrap.className = 'widget-control';
+    var label = document.createElement('label');
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = vcState[vintage];
+    cb.addEventListener('change', function () { vcState[vintage] = cb.checked; vcRedraw(); });
+    label.appendChild(cb);
+    var swatch = document.createElement('span');
+    swatch.style.display = 'inline-block';
+    swatch.style.width = '10px'; swatch.style.height = '10px';
+    swatch.style.background = COLOR[vintage]; swatch.style.marginRight = '4px';
+    swatch.style.borderRadius = '2px';
+    label.appendChild(swatch);
+    label.appendChild(document.createTextNode(vintage + ' vintage'));
+    wrap.appendChild(label);
+    vcControls.appendChild(wrap);
+  }
+  Object.keys(VINTAGE_CURVES).forEach(makeVcCheckbox);
+
+  var vcPlot = Widgets.makeLinePlot(document.getElementById('vc-plot'), {
+    width: 780, height: 360, xDomain: [0, 240], yDomain: [0, 17],
+    xLabel: 'months on book', yLabel: 'cumulative D90 rate (%)',
+    title: 'Cumulative D90 rate by months on book (real SFLLD panel)'
+  });
+
+  function vcRedraw() {
+    var series = [];
+    Object.keys(VINTAGE_CURVES).forEach(function (v) {
+      if (!vcState[v]) return;
+      var d = VINTAGE_CURVES[v];
+      var points = d.mob.map(function (m, i) { return [m, d.cum_d90_rate_pct[i]]; });
+      series.push({ name: v, color: COLOR[v], points: points });
+    });
+    vcPlot.update(series);
+  }
+  vcRedraw();
+})();
+</script>
+
+<img class="fig" src="../assets/img/ch11/05_vintage_curves.png" alt="Two line charts: left, cumulative D90 rate by months on book, with bubble-era vintages (2006-2008, red/pink) rising far above recovery (2009-10, 2014-16, orange) and modern (2018-2025, navy) vintages, 2007 peaking at 16.3%; right, cumulative prepayment rate by vintage with the 2020-21 refi wave visible as a shared acceleration across pre-2020 vintages at the calendar point they each reach 2020Q1">
+<div class="figcap"><b>Exhibit 11.5</b> — Vintage curves: real-dated SFLLD 2005&ndash;2025 sample. Embedded from
+<code>outputs/freddie/eda/exhibit1_vintage_curves.png</code>, generated by <code>freddie/eda.py</code> from the same
+underlying computation the widget above reproduces live.</div>
+
+<div class="interpretation">
+<b>What this means.</b> Exhibit&nbsp;11.5's right panel shows something the widget's D90-only view cannot: the
+2020&ndash;21 refi wave shows up as a shared ACCELERATION across the 2014&ndash;2019 vintages' cumulative-prepay
+curves, all hitting their inflection at the calendar point each vintage's own clock happened to reach 2020Q1 —
+not as a feature of the 2020/2021 vintages' own (freshly-originated, fresh-clock) curves. A vintage-curve view alone,
+without cross-referencing the calendar date each vintage reaches a given months-on-book value, would miss this
+entirely — it is a genuinely calendar-driven event appearing on a months-on-book x-axis at DIFFERENT positions for
+each vintage.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a vintage curve that looks "flat" at the right edge is not necessarily done seasoning; it may just be
+running out of observed months.</b> 2020's curve in the widget stops at 66 months on book (the panel's most recent
+performance snapshot is 2025-09, and a 2020-vintage loan first paid in 2020 has only reached roughly 66 months by
+then) — its cumulative D90 rate of 2.08% is a CENSORED read, not a final one, unlike 2006/2007/2008's curves, which
+have run long enough (200+ months) to have flattened out for real. Comparing 2020's 2.08% directly against 2007's
+16.26% as if both were equally "finished" curves would badly understate 2020's eventual rate.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Toggle only 2007 and 2009 on. Both vintages are old enough to have fully seasoned (222+ and 198 months on book
+respectively) — why does 2007 end at 16.26% while 2009 ends at only 3.07%?
+  <details><summary>Answer</summary>
+  <div class="answer">Both curves are genuinely finished (not censored), so the gap is a real underwriting-era
+  difference: 2007 originations sit at the peak of the pre-crisis bubble (weak documentation/leverage standards),
+  while 2009 originations happened well into the credit tightening that followed the crisis — the same
+  seasoning-curve shape, at a much lower overall level.</div>
+  </details>
+</li>
+<li>Why would comparing 2020's D90 curve directly against 2007's at the SAME months-on-book value (e.g. both at
+month 66) be misleading, even setting aside the censoring issue in the gotcha above?
+  <details><summary>Answer</summary>
+  <div class="answer">Because month 66 for the 2020 vintage falls partly inside the COVID forbearance window
+  (2020-04 through roughly 2021-09), during which the naive D90 (dlq-based) definition is documented (&sect;11.15)
+  to behave anomalously — administrative delinquency-status advancement continued for forborne loans even though
+  actual credit deterioration and liquidation activity collapsed. A month-66 comparison for 2020 is contaminated by
+  a regime effect that simply does not exist in 2007's history.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-8">11.8 The roll-rate transition-matrix estimator (Derivation Backlog D-8)</h3>
+<!-- ============================================================== -->
+<p><code>freddie/eda.py</code>'s Exhibit&nbsp;2 (&sect;11.10) reports monthly roll-rate matrices: the probability a
+loan in delinquency bucket $i$ this month is in bucket $j$ next month. This section derives the estimator those
+matrices use from first principles, then (&sect;11.9) walks the generic textbook version of the same idea
+(<code>tests/fixtures/compute_rollrate.py</code>, the orphaned Derivation Backlog item D-8) step by step.</p>
+
+<div class="derivation">
+<b>The row-normalized transition-count estimator, derived as a multinomial MLE (no skipped steps).</b>
+(<code>freddie/eda.py</code>'s <code>_matrix_for_window</code> states the estimator directly as
+<code>mat.div(mat.sum(axis=1), axis=0)</code>; this derivation justifies it.)
+<div class="step"><span class="stepno">1.</span> <strong>Set up the model.</strong> Assume (a first-order Markov
+assumption, stated explicitly rather than silently relied on) that, conditional on being in bucket $i$ this month, a
+loan-month's NEXT bucket $j\in B=\{\text{current},30,60,90+,\text{prepaid},\text{default\_terminal}\}$ is drawn i.i.d.
+from a categorical distribution with true (unknown) probabilities $p_{i1},\ldots,p_{i|B|}$, $\sum_j p_{ij}=1$.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Write the row's likelihood.</strong> Observing $N_{ij}$
+loan-months that transition from $i$ to $j$ (over some window, e.g. "GFC 2007&ndash;2009"), the multinomial
+log-likelihood for row $i$'s parameters is
+$$ \ell(p_{i\cdot}) = \sum_{j\in B} N_{ij}\ln p_{ij}. $$</div>
+<div class="step"><span class="stepno">3.</span> <strong>Maximize subject to the simplex constraint.</strong> Form
+the Lagrangian with multiplier $\mu$ for $\sum_j p_{ij}=1$:
+$$ \mathcal{L}(p_{i\cdot},\mu) = \sum_j N_{ij}\ln p_{ij} - \mu\Big(\sum_j p_{ij}-1\Big). $$</div>
+<div class="step"><span class="stepno">4.</span> <strong>First-order condition, each $j$.</strong>
+$$ \frac{\partial\mathcal{L}}{\partial p_{ij}} = \frac{N_{ij}}{p_{ij}} - \mu = 0 \quad\Longrightarrow\quad
+p_{ij} = \frac{N_{ij}}{\mu}. $$</div>
+<div class="step"><span class="stepno">5.</span> <strong>Solve for $\mu$ from the constraint.</strong> Substituting
+back: $\sum_j N_{ij}/\mu = 1 \Rightarrow \mu = \sum_j N_{ij} = N_{i\cdot}$ (the row's total transition count).</div>
+<div class="step"><span class="stepno">6.</span> <strong>The estimator.</strong>
+$$ \boxed{\;\hat p_{ij} = \frac{N_{ij}}{N_{i\cdot}}\;} $$
+— exactly the row-normalized count matrix. Every cell in Exhibit&nbsp;11.6 below is this MLE, computed over loan-month
+pairs with a genuinely CONSECUTIVE next observation (<code>next_age - loan_age == 1</code>, so a reporting gap never
+gets silently treated as a one-month transition), aggregated across all 17 vintages' full, un-truncated servicing
+history within each calendar window.</div>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> This is the same row-normalized-count idea &sect;11.9's generic $q_b=fwd/(fwd+cure)$ worked
+example uses, specialized to a 2-outcome-per-row multinomial (forward vs cure only, ignoring the small "stay"
+probability the generic backlog example does not model) instead of the full 6-outcome multinomial derived here.
+Both are literally the same estimator; the generic example is the special case, the real matrices (&sect;11.10) are
+the general case.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the first-order Markov assumption in step&nbsp;1 is a MODELING CHOICE, not a property the data
+guarantees.</b> The estimator derived above is only the correct MLE if a loan's next-month bucket genuinely depends
+solely on its CURRENT bucket, not on how it got there or how long it has been there. A loan that has been at 90+
+DPD for 8 months and a loan that JUST reached 90+ DPD this month are treated identically by this estimator even
+though their true forward risk may differ (duration dependence) — the matrices in &sect;11.10 are a first-order
+summary, not a claim that duration effects do not exist.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In step&nbsp;4's first-order condition, why does solving for $\mu$ specifically require summing $N_{ij}$ over
+$j$ rather than, say, over $i$?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the simplex constraint being enforced is PER ROW ($\sum_j p_{ij}=1$ for a FIXED $i$)
+  — each row of the transition matrix is its own separate categorical distribution with its own normalizing
+  constant, so the Lagrange multiplier $\mu$ (and hence the row total $N_{i\cdot}$) is computed independently for
+  each starting bucket $i$, not pooled across rows.</div>
+  </details>
+</li>
+<li>Why does <code>freddie/eda.py</code> require <code>next_age - loan_age == 1</code> before counting a pair as a
+transition, rather than just taking every consecutive ROW for a loan?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the raw servicing history can have reporting GAPS (a loan-month simply missing from
+  the file, not necessarily a real skip in the loan's actual history) — if two consecutive ROWS in the data are
+  actually 3 months apart in real loan age, treating that pair as a genuine one-month transition would silently
+  corrupt the transition-count estimator with a transition that spans more than one true month.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-9">11.9 <code>compute_rollrate.py</code> — fixture walkthrough, every step</h3>
+<!-- ============================================================== -->
+<p>The generic textbook worked example this chapter absorbs from Chapter&nbsp;4's open backlog (D-8,
+<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;11.4, "Converting a 180-DPD definition to 90 DPD"):
+a simplified 3-bucket roll ladder (90/120/150 DPD) with monthly roll-forward/cure PAIRS at each bucket, used to
+bridge a D180-calibrated PD/LGD down to a D90 definition. Recomputed live this session,
+<code>uv run --no-sync python tests/fixtures/compute_rollrate.py</code> — every RESULTS value below matches its
+TARGET (the notes' own printed value) to the displayed decimal.</p>
+
+<div class="ex">
+<b>Step 1 — the eventual roll-forward probability per bucket, $q_b=fwd/(fwd+cure)$.</b> Stated inputs (monthly
+roll-forward, monthly cure) per bucket: 90&nbsp;DPD $(0.50,0.12)$, 120&nbsp;DPD $(0.55,0.10)$, 150&nbsp;DPD
+$(0.60,0.08)$ — a 2-outcome special case of &sect;11.8's general estimator (forward vs cure only).
+<div class="table-wrap">
+<table>
+<tr><th>bucket</th><th>fwd</th><th>cure</th><th>$fwd+cure$</th><th>$q_b=fwd/(fwd+cure)$</th></tr>
+<tr><td>90 DPD</td><td class="num">0.50</td><td class="num">0.12</td><td class="num">0.62</td><td class="num"><strong>0.806452</strong></td></tr>
+<tr><td>120 DPD</td><td class="num">0.55</td><td class="num">0.10</td><td class="num">0.65</td><td class="num"><strong>0.846154</strong></td></tr>
+<tr><td>150 DPD</td><td class="num">0.60</td><td class="num">0.08</td><td class="num">0.68</td><td class="num"><strong>0.882353</strong></td></tr>
+</table>
+</div>
+The notes' own printed values round these to $0.81$, $0.85$, $0.88$ — the fixture keeps full precision throughout,
+which matters for step&nbsp;2 below.
+</div>
+
+<div class="ex">
+<b>Step 2 — the roll-through rate $R$, as a chained product with running partial products.</b> $R=P(\text{reach
+180}\mid\text{reach 90})=q_{90}\times q_{120}\times q_{150}$ — the telescoping Markov chain rule, applying
+&sect;11.8's estimator three times in a row.
+<div class="table-wrap">
+<table>
+<tr><th>step</th><th>running product</th><th>value</th></tr>
+<tr><td>1</td><td>$q_{90}$</td><td class="num">0.806452</td></tr>
+<tr><td>2</td><td>$q_{90}\times q_{120} = 0.806452\times0.846154$</td><td class="num">0.682382</td></tr>
+<tr><td>3</td><td>$R = 0.682382\times q_{150} = 0.682382\times0.882353$</td><td class="num"><strong>0.602102</strong></td></tr>
+</table>
+</div>
+The notes' own "$0.81\times0.85\times0.88=0.60$" quotes the ROUNDED $q$ values; using $0.02/0.60$ for the next step
+would give PD$_{90}=3.33\%$, not the notes' own printed $3.32\%$ — the fixture carries $R$ at full precision
+($0.602102$) specifically because this last-digit difference matters for what comes next.
+</div>
+
+<div class="ex">
+<b>Step 3 — converting PD and LGD from a D180 to a D90 definition.</b> Starting point: $PD_{180}=2.0\%$,
+$LGD_{180}=30\%$ (the D180-calibrated pair). $PD_{90}=PD_{180}/R$ (fewer D90 loans "make it" all the way to D180, so
+the D90-conditional PD must be LARGER by exactly the factor $1/R$); $LGD_{90}=(1-R)\times LGD_{\text{cure}} +
+R\times LGD_{180}$ (a probability-weighted blend: the $(1-R)$ share of D90 loans that self-cure back out before
+reaching D180 realize the (typically much lower) cure-scenario loss, the $R$ share that do reach D180 realize the
+full D180 severity).
+<div class="table-wrap">
+<table>
+<tr><th>quantity</th><th>formula</th><th>value</th></tr>
+<tr><td>$PD_{90}$</td><td>$2.0\%/0.602102$</td><td class="num"><strong>3.32%</strong></td></tr>
+<tr><td>$LGD_{90}$, cure-loss-free scenario</td><td>$(1-0.602102)\times0\%+0.602102\times30\%$</td><td class="num"><strong>18.06%</strong></td></tr>
+<tr><td>$LGD_{90}$, 3%-cure-loss scenario</td><td>$(1-0.602102)\times3\%+0.602102\times30\%$</td><td class="num"><strong>19.26%</strong></td></tr>
+</table>
+</div>
+</div>
+
+<div class="ex">
+<b>Step 4 — expected loss under all three views, $EL=PD\times LGD$.</b>
+<div class="table-wrap">
+<table>
+<tr><th>definition</th><th>PD</th><th>LGD</th><th>$EL=PD\times LGD$</th></tr>
+<tr><td>D180 (starting point)</td><td class="num">2.000%</td><td class="num">30.00%</td><td class="num"><strong>0.600%</strong></td></tr>
+<tr><td>D90, cure-loss-free</td><td class="num">3.322%</td><td class="num">18.06%</td><td class="num"><strong>0.600%</strong></td></tr>
+<tr><td>D90, 3%-cure-loss</td><td class="num">3.322%</td><td class="num">19.26%</td><td class="num"><strong>0.640%</strong></td></tr>
+</table>
+</div>
+Every value above is <code>RESULTS</code> from the live-recomputed <code>tests/fixtures/compute_rollrate.py</code>
+run this session, matching every <code>TARGETS</code> entry to its displayed decimal (10/10 OK).
+</div>
+
+<div class="interpretation">
+<b>What this means — the cure-loss-free row is not a coincidence.</b> $EL_{180}=0.600\%$ exactly equals
+$EL_{90,\text{cure-loss-free}}=0.600\%$ — this is an algebraic identity, not an empirical match: substituting
+$LGD_{90}=(1-R)\times0+R\times LGD_{180}$ and $PD_{90}=PD_{180}/R$ into $EL_{90}=PD_{90}\times LGD_{90}$ gives
+$EL_{90}=(PD_{180}/R)\times(R\times LGD_{180})=PD_{180}\times LGD_{180}=EL_{180}$ — the $R$ terms cancel exactly
+when cures are assumed loss-free. Expected loss is INVARIANT to which delinquency-bucket definition you use to
+measure it, as long as cures genuinely cost nothing. The moment cures carry even a small realistic loss (the 3%
+scenario), that cancellation breaks and $EL_{90}$ rises above $EL_{180}$ (0.640% vs 0.600%) — the D90 definition
+captures a loss component (the cure-loss on loans that never reach D180) that a pure D180 view cannot see at all.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "D90 gives a higher PD than D180" does not mean D90 is a MORE PESSIMISTIC risk view.</b> $PD_{90}=3.32\%$
+looks alarmingly larger than $PD_{180}=2.0\%$ in isolation — but the interpretation's algebraic identity above shows
+expected loss is unchanged (under the loss-free-cure assumption) precisely because $LGD_{90}$ falls in exact
+lockstep. A reader who quotes $PD_{90}$ next to $PD_{180}$ without also adjusting the LGD side would badly
+overstate the definitional change's economic impact — the two moves are constructed together, not independently.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does using the notes' rounded $q$ values ($0.81\times0.85\times0.88$) instead of the fixture's
+full-precision $R=0.602102$ produce a slightly different $PD_{90}$?
+  <details><summary>Answer</summary>
+  <div class="answer">$0.81\times0.85\times0.88=0.60588$ rounds to the notes' displayed $0.60$, but
+  $2.0\%/0.60588=3.30\%$ while $2.0\%/0.602102=3.3217\%$ (rounds to 3.32%) — the fixture deliberately keeps every
+  intermediate at full float precision specifically to avoid this kind of compounding rounding error, only rounding
+  at the very final display step.</div>
+  </details>
+</li>
+<li>Derive algebraically why $EL_{180}=EL_{90,\text{cure-loss-free}}$ exactly, without plugging in the numbers.
+  <details><summary>Answer</summary>
+  <div class="answer">$EL_{90}=PD_{90}\times LGD_{90}=(PD_{180}/R)\times\big[(1-R)\times0+R\times LGD_{180}\big]
+  =(PD_{180}/R)\times(R\times LGD_{180})=PD_{180}\times LGD_{180}=EL_{180}$ — the two $R$ factors (one in the
+  denominator from the PD conversion, one in the numerator from the LGD blend) cancel exactly, but ONLY because
+  the cure-scenario LGD term is exactly 0; any nonzero cure loss breaks the cancellation.</div>
+  </details>
+</li>
+<li>If a bank reported ONLY $PD_{90}=3.32\%$ from this bridge, without disclosing that it came from a D180-
+calibrated $PD_{180}=2.0\%$, what would a reader comparing it against another bank's own $PD_{180}=2.0\%$ risk
+concluding incorrectly?
+  <details><summary>Answer</summary>
+  <div class="answer">They would likely (and incorrectly) conclude the first bank's book is riskier — 3.32% looks
+  much worse than 2.0% at face value — when in fact, under the loss-free-cure assumption, the two banks have
+  IDENTICAL expected loss (0.600% each); the apparent gap is entirely a definitional artifact of which delinquency
+  bucket triggers the PD measurement, not a real difference in credit quality.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-10">11.10 The real SFLLD roll-rate matrices: GFC vs calm vs COVID</h3>
+<!-- ============================================================== -->
+<p>Applying &sect;11.8's row-normalized estimator to the FULL, un-truncated raw monthly servicing history (not
+<code>panel_monthly.parquet</code>'s absorbing-D90-truncated panel, which deliberately hides cures, &sect;11.3) over
+three calendar windows, aggregated across all 17 vintages:</p>
+
+<img class="fig" src="../assets/img/ch11/06_roll_rate_matrices.png" alt="Three side-by-side heatmap transition matrices for GFC 2007-2009, Calm 2015-2018, and COVID 2020-2021, rows current/30/60/90+ to columns current/30/60/90+/prepaid/default_terminal, color-coded red intensity by probability; the 60-to-90+ cell is visibly darker (58.2%) in COVID than GFC (47.4%) or Calm (28.8%), while the 90+-to-default_terminal cell is visibly much lighter in COVID (0.2%) than GFC (2.0%) or Calm (2.5%)">
+<div class="figcap"><b>Exhibit 11.6</b> — Monthly roll-rate matrices, three windows, real calendar dates. Embedded
+from <code>outputs/freddie/eda/exhibit2_roll_rate_matrices.png</code>, generated by
+<code>freddie/eda.py</code>'s <code>plot_roll_rate_matrices</code> from the SAME row-normalized estimator
+&sect;11.8 derives.</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Window</th><th>current&rarr;30</th><th>60&rarr;90+</th><th>90+&rarr;cure (back to &lt;90)</th><th>90+&rarr;liquidation</th></tr>
+<tr><td>GFC 2007&ndash;2009</td><td class="num">0.94%</td><td class="num">47.43%</td><td class="num">5.39%</td><td class="num">2.02%</td></tr>
+<tr><td>Calm 2015&ndash;2018</td><td class="num">0.59%</td><td class="num">28.76%</td><td class="num">8.15%</td><td class="num">2.50%</td></tr>
+<tr><td>COVID 2020&ndash;2021</td><td class="num"><strong>0.73%</strong></td><td class="num"><strong>58.25%</strong></td><td class="num"><strong>9.60%</strong></td><td class="num"><strong>0.21%</strong></td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/freddie/eda/eda_report.md</code> Exhibit&nbsp;2 table; independently
+re-extracted this session from <code>outputs/freddie/eda/_cache_roll_rate_transitions.parquet</code> (the same
+cached transition-count table <code>freddie/eda.py</code> itself reads), which reproduces all four columns above to
+the displayed decimal.</p>
+
+<div class="interpretation">
+<b>What this means — the forbearance signature, read precisely (not just the headline number).</b> A naive read of
+the current&rarr;30 column alone (COVID 0.73% vs GFC 0.94%, Calm 0.59%) would conclude COVID was a MILD credit
+event — LOWER-to-similar early-stage delinquency onset than GFC. That read is exactly backwards once the rest of
+the ladder is read: 60&rarr;90+ is the HIGHEST of the three windows in COVID (58.25%, vs 47.43% GFC and 28.76% calm)
+— the raw delinquency-status ladder kept climbing on a contractual schedule for loans in forbearance even though the
+borrower was not actually being pursued for foreclosure — while 90+&rarr;LIQUIDATION (the true terminal credit
+event) COLLAPSES to 0.21% in COVID, a more than 10$\times$ drop from GFC's 2.02% and Calm's 2.50% — the loan-level
+signature of the CARES&nbsp;Act foreclosure moratorium. 90+ cure is if anything slightly HIGHER in COVID (9.60% vs
+5.39% GFC, 8.15% calm), consistent with borrowers exiting via a repayment plan/modification rather than genuinely
+healing. Corroboration at the loan level (<code>borrower_assistance_status_code</code>): loans that were 60/90+ DPD
+during COVID carried an active assistance flag <strong>75.9%</strong> of the time, vs <strong>15.6%</strong> in the
+calm window (<code>outputs/freddie/eda/_cache_borrower_assistance.parquet</code>, re-extracted this session:
+COVID 91,265 of 120,235 60/90+ rows flagged = 75.9%; calm 16,986 of 108,829 = 15.6%).
+</div>
+
+<div class="warn">
+<b>The modeling danger, stated as the report itself states it.</b> COVID forbearance breaks the naive
+delinquency-based (D90) default definition in the DANGEROUS direction of making COVID look like a WORSE credit
+event than the GFC, not a milder one, as the &sect;11.15 calendar-time series will show explicitly. A hazard model
+trained on D90 as the target across 2020&ndash;2021 without a regime dummy or an explicit exclusion window will
+OVER-estimate default risk in that window — exactly the opposite failure mode of the naive assumption that
+"forbearance suppresses defaults". Chapter&nbsp;12's COVID/forbearance-regime comparison (naive vs additive-dummy vs
+exclude) is the project's direct response to this exact finding.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A colleague reads only the current&rarr;30 column and concludes "COVID's delinquency onset rate was actually
+LOWER than the GFC's — COVID must have been the milder credit event." What is wrong with this conclusion, using
+only the table above?
+  <details><summary>Answer</summary>
+  <div class="answer">The conclusion ignores the rest of the ladder: 60&rarr;90+ is the HIGHEST of the three
+  windows in COVID (58.25% vs 47.43% GFC), while 90+&rarr;liquidation COLLAPSES in COVID (0.21% vs 2.02% GFC) — a
+  single column cannot characterize the whole regime; reading current&rarr;30 in isolation misses that COVID's
+  delinquency-STATUS escalation looks worse than the GFC while its TRUE terminal-loss rate collapsed, the exact
+  opposite of what a "COVID was milder" reading based on one column alone would suggest.</div>
+  </details>
+</li>
+<li>Why is 90+&rarr;liquidation, not current&rarr;30 or 60&rarr;90+, described as "the true terminal credit event"
+in the interpretation above?
+  <details><summary>Answer</summary>
+  <div class="answer">Because current&rarr;30 and 60&rarr;90+ are both delinquency-STATUS transitions — they can
+  advance on a contractual reporting schedule even for a loan under an active forbearance/repayment-plan agreement,
+  independent of whether the borrower is actually being pursued for foreclosure. Liquidation is a genuine servicer
+  DISPOSITION event (the loan actually resolves to a realized loss) — it cannot fire on administrative schedule
+  alone, which is exactly why its collapse in COVID (unlike the delinquency-ladder cells) is read as the real
+  signal.</div>
+  </details>
+</li>
+<li>The borrower-assistance corroboration shows 75.9% of COVID 60/90+ loan-months carried an active assistance
+flag, vs 15.6% in the calm window. Why does this strengthen the forbearance explanation rather than merely being a
+second, unrelated fact?
+  <details><summary>Answer</summary>
+  <div class="answer">It is independent, loan-level, programmatic evidence (not just an aggregate rate coincidence)
+  that the SPECIFIC loans driving the 60&rarr;90+ spike were disproportionately under an active assistance program
+  during COVID — directly supporting the causal story that administrative/forbearance mechanics, not organic credit
+  deterioration, explain the elevated delinquency-ladder transitions, rather than the collapse in liquidation being
+  an unrelated coincidence.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-11">11.11 Interactive: transition-matrix explorer</h3>
+<!-- ============================================================== -->
+<p>The widget below reproduces &sect;11.10's three real matrices as a live, heat-colored table — toggle between eras
+with the buttons to see the same forbearance signature the static Exhibit&nbsp;11.6 shows, cell by cell.</p>
+
+<div class="widget">
+<h4>Live widget — toggle the era, real transition matrices</h4>
+<div class="widget-controls" id="tm-controls"></div>
+<div id="tm-table"></div>
+<p class="small" style="margin-top:8px;">Rows: starting bucket this month. Columns: bucket next month. Cell shading
+scales with probability (white = 0%, dark red = 100%), matching Exhibit&nbsp;11.6's own colormap.</p>
+</div>
+
+<script>
+(function () {
+  // Real row-normalized transition-count matrices, re-extracted this
+  // session from outputs/freddie/eda/_cache_roll_rate_transitions.parquet
+  // (the same cache freddie/eda.py's plot_roll_rate_matrices reads) via
+  // the exact pivot/normalize logic _matrix_for_window uses (section 11.8's
+  // derived estimator). Rows: current,30,60,90+. Columns: current,30,60,
+  // 90+,prepaid,default_terminal. Every cell matches Exhibit 11.6 / section
+  // 11.10's table to the displayed decimal.
+  var TM_ROWS = ['current', '30', '60', '90+'];
+  var TM_COLS = ['current', '30', '60', '90+', 'prepaid', 'default_terminal'];
+  var TM_DATA = {
+    'GFC 2007-2009': [
+      [97.86, 0.94, 0.01, 0.00, 1.18, 0.00],
+      [34.77, 41.79, 22.43, 0.19, 0.79, 0.02],
+      [10.38, 12.92, 28.70, 47.43, 0.47, 0.10],
+      [3.42, 0.73, 1.24, 92.27, 0.32, 2.02]
+    ],
+    'Calm 2015-2018': [
+      [98.40, 0.59, 0.00, 0.00, 1.00, 0.00],
+      [36.92, 46.93, 15.18, 0.12, 0.85, 0.01],
+      [13.24, 17.22, 39.77, 28.76, 0.99, 0.02],
+      [5.39, 0.86, 1.91, 88.67, 0.67, 2.50]
+    ],
+    'COVID 2020-2021': [
+      [96.70, 0.73, 0.00, 0.00, 2.56, 0.00],
+      [36.12, 29.28, 32.37, 0.09, 2.14, 0.00],
+      [13.77, 7.30, 19.50, 58.25, 1.16, 0.01],
+      [8.07, 0.67, 0.86, 89.05, 1.14, 0.21]
+    ]
+  };
+
+  var tmState = { era: 'GFC 2007-2009' };
+  var tmControls = document.getElementById('tm-controls');
+
+  function heatColor(v) {
+    // white (255,255,255) -> matplotlib "Reds"-like accent (192,57,43), linear in v/100
+    var t = Math.max(0, Math.min(1, v / 100));
+    var r = Math.round(255 + t * (192 - 255));
+    var g = Math.round(255 + t * (57 - 255));
+    var b = Math.round(255 + t * (43 - 255));
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  Object.keys(TM_DATA).forEach(function (era) {
+    var btn = document.createElement('button');
+    btn.className = 'toggle-btn' + (era === tmState.era ? ' on' : '');
+    btn.textContent = era;
+    btn.addEventListener('click', function () {
+      tmState.era = era;
+      Array.prototype.forEach.call(tmControls.children, function (b) { b.className = 'toggle-btn'; });
+      btn.className = 'toggle-btn on';
+      tmRedraw();
+    });
+    tmControls.appendChild(btn);
+  });
+
+  var tableEl = document.createElement('table');
+  document.getElementById('tm-table').appendChild(tableEl);
+
+  function tmRedraw() {
+    var mat = TM_DATA[tmState.era];
+    tableEl.innerHTML = '';
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    var cornerTh = document.createElement('th');
+    cornerTh.textContent = 'From \\ To';
+    headRow.appendChild(cornerTh);
+    TM_COLS.forEach(function (c) {
+      var th = document.createElement('th');
+      th.textContent = c;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    tableEl.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    TM_ROWS.forEach(function (rowName, i) {
+      var tr = document.createElement('tr');
+      var rowTh = document.createElement('th');
+      rowTh.textContent = rowName;
+      tr.appendChild(rowTh);
+      mat[i].forEach(function (v) {
+        var td = document.createElement('td');
+        td.className = 'heatcell';
+        td.textContent = v.toFixed(2) + '%';
+        td.style.backgroundColor = heatColor(v);
+        td.style.color = v > 55 ? '#ffffff' : '#1a1a1a';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    tableEl.appendChild(tbody);
+  }
+  tmRedraw();
+})();
+</script>
+
+<div class="interpretation">
+<b>What to try.</b> Toggle from "Calm 2015-2018" to "COVID 2020-2021" and watch two cells specifically: the
+60&rarr;90+ cell darkens sharply (28.76%&rarr;58.25%) while the 90+&rarr;default_terminal cell fades to nearly white
+(2.50%&rarr;0.21%) — the SAME forbearance signature &sect;11.10 describes in words, made visually immediate by the
+heat coloring moving in opposite directions on two cells that a naive single-number summary would never separate.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Toggle to "COVID 2020-2021". Which row has the darkest 90+ cell overall, and does that match the row-normalized
+estimator's own logic (&sect;11.8) — should each row's probabilities sum to roughly 100%?
+  <details><summary>Answer</summary>
+  <div class="answer">The "90+" row's own "90+" (stay-in-bucket) cell is darkest at 89.05% — consistent with
+  90+-DPD being a highly persistent state month to month. Each row does sum to (approximately) 100% by construction
+  (the row-normalized MLE from &sect;11.8's derivation guarantees $\sum_j\hat p_{ij}=1$ for every row $i$), which
+  is exactly why a single row's cells can be compared directly as a probability distribution over next-month
+  outcomes.</div>
+  </details>
+</li>
+<li>Why does the "current" row's "default_terminal" column stay at 0.00% in all three eras, while the "90+" row's
+does not?
+  <details><summary>Answer</summary>
+  <div class="answer">A loan reported as fully current this month cannot jump straight to a liquidation
+  zero-balance code next month under Freddie's servicing/reporting conventions — a loan has to progress through the
+  delinquency ladder first. Only loans already at 90+ DPD are structurally eligible to reach a liquidation
+  disposition in a single one-month transition, which is why only that row shows a nonzero
+  default_terminal probability.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-12">11.12 Net credit loss: discounting a realised loss (Derivation Backlog D-7)</h3>
+<!-- ============================================================== -->
+<p>The generic textbook worked example this chapter absorbs from Chapter&nbsp;4's open backlog (D-7,
+<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;11.3, "Discounting future values"): every post-default
+cash flow — recoveries AND workout expenses — must be discounted to the default date at the loan's original
+effective interest rate (EIR) before netting, because IFRS&nbsp;9 defines expected credit loss in present-value
+terms, not face-value terms.</p>
+
+<div class="derivation">
+<b>Net credit loss, derived cash-flow by cash-flow (no skipped steps).</b>
+<div class="step"><span class="stepno">1.</span> <strong>Enumerate the cash flows.</strong> At the default event
+($t=0$), the loan carries exposure-at-default $\text{EAD}_0$. Over the workout period, the servicer records $K$
+recoveries $R_k$ at months $m_k$ (collateral sale proceeds, mortgage-insurance claims, other recoveries) and $J$
+direct workout expenses $C_j$ at months $m_j$ (legal/foreclosure costs, taxes/insurance/maintenance on the
+property).</div>
+<div class="step"><span class="stepno">2.</span> <strong>Face-value (undiscounted) loss — the naive netting.</strong>
+$$ L_{\text{face}} = \text{EAD}_0 + \sum_j C_j - \sum_k R_k. $$
+This ignores WHEN each cash flow arrives — a recovery received in month&nbsp;2 and a recovery of the same face
+amount received in month&nbsp;23 are treated identically.</div>
+<div class="step"><span class="stepno">3.</span> <strong>The time-value correction.</strong> IFRS&nbsp;9 requires
+discounting each cash flow back to the default date at the loan's ORIGINAL effective interest rate, using
+$$ DF(m) = (1+\text{EIR})^{-m/12}, $$
+$m$ measured in months from the default date. Each recovery and each expense gets its OWN discount factor, at its
+own timing.</div>
+<div class="step"><span class="stepno">4.</span> <strong>The EIR-discounted net credit loss.</strong>
+$$ \text{NCL}_{PV} = \text{EAD}_0 + \sum_j C_j\,DF(m_j) - \sum_k R_k\,DF(m_k), \qquad
+\text{discounted LGD} = \frac{\text{NCL}_{PV}}{\text{EAD}_0}. $$
+Because every recovery discount factor is $&lt;1$ (recoveries arrive in the future, so their present value is LESS
+than their face value) while $\text{EAD}_0$ is already at $t=0$ (undiscounted, by definition), discounting
+SHRINKS the recovery offset relative to face value — the discounted loss is necessarily $\ge$ the face-value loss
+whenever any recovery arrives after $t=0$, which is the entire point: waiting for a recovery has a real economic
+cost that the face-value view hides.</div>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> The face-value view and the EIR-discounted view answer two different questions.
+Face value asks "how much cash, in total, did the trust net out of this default" — a useful accounting summary, but
+one that treats a dollar received today and a dollar received two years from now as interchangeable. The
+EIR-discounted view asks "what is this default worth TODAY" — the question IFRS&nbsp;9's expected-credit-loss
+framework actually requires an answer to, since ECL is itself a present value. &sect;11.13's fixture walkthrough
+shows the gap between the two is not cosmetic: 12.5% face-value severity vs 20.2% EIR-discounted severity on the
+same cash flows — discounting alone adds nearly 8 points of severity.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is $\text{EAD}_0$ never multiplied by a discount factor in the NCL formula, while every recovery and every
+expense is?
+  <details><summary>Answer</summary>
+  <div class="answer">$\text{EAD}_0$ is defined AT the default event, i.e. at $t=0$ on this cash-flow timeline — its
+  own discount factor would be $DF(0)=(1+\text{EIR})^{0}=1$, so multiplying by it changes nothing; it is the
+  reference point every other cash flow is discounted BACK to, not itself a future flow.</div>
+  </details>
+</li>
+<li>Under what condition would the EIR-discounted loss equal the face-value loss exactly?
+  <details><summary>Answer</summary>
+  <div class="answer">Only if every recovery and every expense arrived at exactly $m=0$ (the default date itself) —
+  then every discount factor would equal 1 and the two formulas would coincide. Any cash flow arriving strictly
+  after the default date, at a positive EIR, necessarily makes the discounted view diverge from the face-value
+  view.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-13">11.13 <code>compute_ncl.py</code> — fixture walkthrough, and the tie to realized LGD</h3>
+<!-- ============================================================== -->
+<p>Recomputed live this session, <code>uv run --no-sync python tests/fixtures/compute_ncl.py</code> — every
+RESULTS value below matches its TARGET to the displayed decimal (20/20 OK). Stated inputs: default UPB
+$=\text{EUR}\,200{,}000$ at the credit event ($t=0$), $\text{EIR}=5.5\%$; recoveries: REO sale proceeds
+EUR&nbsp;170,000 at month&nbsp;20, mortgage-insurance recoveries EUR&nbsp;12,000 at month&nbsp;22, non-MI
+recoveries EUR&nbsp;2,000 at month&nbsp;23; expenses: taxes/insurance/maintenance EUR&nbsp;5,000 at month&nbsp;10,
+legal/foreclosure EUR&nbsp;4,000 at month&nbsp;16.</p>
+
+<div class="ex">
+<b>Step 1 — discount each of the 5 cash flows individually, $DF(m)=(1.055)^{-m/12}$.</b>
+<div class="table-wrap">
+<table>
+<tr><th>component</th><th>kind</th><th>month $m$</th><th>face amount (EUR)</th><th>$DF(m)=(1.055)^{-m/12}$</th><th>$PV=\text{amount}\times DF(m)$ (EUR)</th></tr>
+<tr><td>taxes/insurance/maintenance</td><td>expense</td><td class="num">10</td><td class="num">5,000</td><td class="num">0.9564</td><td class="num"><strong>4,782</strong></td></tr>
+<tr><td>legal/foreclosure</td><td>expense</td><td class="num">16</td><td class="num">4,000</td><td class="num">0.9311</td><td class="num"><strong>3,724</strong></td></tr>
+<tr><td>net sale proceeds (REO)</td><td>recovery</td><td class="num">20</td><td class="num">170,000</td><td class="num">0.9146</td><td class="num"><strong>155,487</strong></td></tr>
+<tr><td>MI recoveries</td><td>recovery</td><td class="num">22</td><td class="num">12,000</td><td class="num">0.9065</td><td class="num"><strong>10,878</strong></td></tr>
+<tr><td>non-MI recoveries</td><td>recovery</td><td class="num">23</td><td class="num">2,000</td><td class="num">0.9025</td><td class="num"><strong>1,805</strong></td></tr>
+</table>
+</div>
+Every $DF(m)$ above is $&lt;1$ and DECREASING in $m$ (further-out cash flows discount more heavily) — exactly
+&sect;11.12's derivation, applied five times at five different timings.
+</div>
+
+<div class="ex">
+<b>Step 2 — sum recoveries and expenses, face and discounted.</b>
+<div class="table-wrap">
+<table>
+<tr><th>quantity</th><th>face (EUR)</th><th>discounted PV (EUR)</th></tr>
+<tr><td>Sum of recoveries</td><td class="num">184,000</td><td class="num"><strong>168,170</strong></td></tr>
+<tr><td>Sum of expenses</td><td class="num">9,000</td><td class="num"><strong>8,506</strong></td></tr>
+</table>
+</div>
+Discounting shrinks the recovery total by EUR&nbsp;15,830 (184,000&rarr;168,170) but the expense total by only
+EUR&nbsp;494 (9,000&rarr;8,506) — the recoveries arrive later (months 20&ndash;23) and are far larger in face value
+than the expenses (months 10&ndash;16), so time-value erosion hits the recovery side much harder in both absolute
+and relative terms.
+</div>
+
+<div class="ex">
+<b>Step 3 — three measures of the same default, side by side.</b>
+<div class="table-wrap">
+<table>
+<tr><th>measure</th><th>formula</th><th>loss (EUR)</th><th>severity</th></tr>
+<tr><td>Face-value (timing-ignorant)</td><td>$200{,}000+9{,}000-184{,}000$</td><td class="num">25,000</td><td class="num"><strong>12.5%</strong></td></tr>
+<tr><td>EIR-discounted (IFRS 9)</td><td>$200{,}000+8{,}506-168{,}170$</td><td class="num"><strong>40,336</strong></td><td class="num"><strong>20.2%</strong></td></tr>
+<tr><td>Agency nominal (face loss + accrued interest)</td><td>$25{,}000+\big(200{,}000\times0.055\times26/12\big)$</td><td class="num">48,833</td><td class="num">24.4%</td></tr>
+</table>
+</div>
+The agency "nominal" row adds simple (non-compounded) accrued interest on the UPB over the loan's roughly 26-month
+non-performing span (EUR&nbsp;23,833) — a different, non-IFRS-9 convention some servicer/agency reporting uses,
+included here for contrast only, not as the discounting derivation's own output.
+</div>
+
+<div class="interpretation">
+<b>What this means — the discounting effect is not cosmetic.</b> Face-value severity (12.5%) and EIR-discounted
+severity (20.2%) differ by 7.7 points on the IDENTICAL underlying cash flows — nothing about WHICH cash flows
+occurred changed between the two rows, only WHEN they are treated as arriving relative to the default date. A loss-
+estimation process that nets cash flows at face value, ignoring timing entirely, understates this loan's true
+economic loss by more than a third relative to the EIR-discounted figure (12.5% vs 20.2%, a 38% relative gap) —
+exactly the "not cosmetic" framing &sect;11.12's interpretation box promises, now with real numbers behind it.
+</div>
+
+<div class="warn">
+<b>Tying this to SFLLD's own realized-loss field — a conceptual match, not a formula reproduction, stated
+honestly.</b> <code>outputs/freddie/eda/eda_report.md</code> Exhibit&nbsp;5 defines realized LGD on the SFLLD panel
+as $LGD=-\text{actual\_loss\_calculation}/\text{zero\_balance\_removal\_upb}$ (negated because Freddie's own
+<code>actual_loss_calculation</code> field is NEGATIVE for an economic loss to the trust, per the User Guide,
+confirmed empirically). This is the SAME accounting concept as &sect;11.12's derivation — net recoveries against
+exposure, net of workout expenses — but SFLLD exposes it as a single, already-computed, AUDITED number per loan,
+not individually dated cash flows this chapter can re-discount from scratch. This chapter does NOT claim Freddie's
+own internal formula for <code>actual_loss_calculation</code> matches &sect;11.12's EIR-discounting construction
+step for step (no source consulted here documents Freddie's exact internal computation) — the tie is conceptual (the
+same net-recoveries-against-exposure idea, told twice: once as a from-scratch discounted derivation on a synthetic
+loan, once as an audited real-world outcome), and this distinction is stated explicitly rather than glossed over.
+</div>
+
+<div class="ex">
+<b>The realized-LGD population this ties to, real numbers (<code>outputs/freddie/eda/eda_report.md</code>
+Exhibit&nbsp;5).</b> Population: 13,836 D90-defaulted loans (of 44,593 total D90 defaults, &sect;11.3's table — only
+&asymp;31.0% reach this population) that reach a liquidation zero-balance code with
+<code>actual_loss_calculation</code> populated; 4 loans with removal UPB $&lt;\$1{,}000$ excluded as data
+artifacts (a near-zero denominator blows up the ratio). Median realized LGD $=49.4\%$, mean $=51.3\%$; $2.3\%$ of
+loans realize a NEGATIVE LGD (a net gain at disposition — property sold for more than removal UPB plus costs).
+By LIQUIDATION year (not origination or default year), severity does NOT show a clean 2008&ndash;2011 crisis peak
+that then falls — it climbs from the 2008 onset and stays on a PLATEAU (mean LGD $\ge50\%$ every year) through
+2011&ndash;2016, actually PEAKING in <strong>2016</strong> (median 57.8%, mean 60.8%) — years after the GFC's
+origination/default wave — before declining sharply from 2017 onward and again over 2020&ndash;2022 alongside
+record HPI appreciation.
+</div>
+
+<img class="fig" src="../assets/img/ch11/07_realized_lgd.png" alt="Two panels: left, box plots of realized LGD by disposition type (reo_disposition, short_sale_or_charge_off, third_party_sale, whole_loan_sale), all centered near 40-55%; right, a line chart of realized LGD by liquidation year 2006-2025, rising from near 0% in 2006 to a plateau of 50-60% from 2011-2016, peaking in 2016, then declining sharply, with a shaded band marking the 2011-2016 plateau">
+<div class="figcap"><b>Exhibit 11.7</b> — Realized LGD first look, D90-default population. Embedded from
+<code>outputs/freddie/eda/exhibit5_realized_lgd.png</code>.</div>
+
+<div class="gotcha">
+<b>Gotcha — liquidation-year severity is a LAGGING indicator of the origination-era credit event, not a
+coincident one.</b> A reader expecting realized LGD to peak in 2008&ndash;2009 (when the GFC's default wave actually
+hit) is measuring the wrong clock: loans that first went 90+&nbsp;DPD in 2008&ndash;2009 often did not reach a
+liquidation zero-balance code — and therefore did not realize their measured loss — until years later, while the
+market was still absorbing crisis-era REO/short-sale inventory. Exhibit&nbsp;11.7's 2016 severity peak is the tail
+of the SAME 2008&ndash;2009 credit event, observed through a multi-year liquidation-pipeline delay, not a second,
+later crisis.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does &sect;11.13 explicitly decline to claim Freddie's <code>actual_loss_calculation</code> field is
+computed using the exact EIR-discounting formula derived in &sect;11.12?
+  <details><summary>Answer</summary>
+  <div class="answer">Because no source consulted in this build documents Freddie's own internal computation for
+  that field precisely enough to confirm it — SFLLD exposes only the final, already-computed, audited number per
+  loan, not the individually dated cash flows a from-scratch reproduction would require. Claiming a formula match
+  without that evidence would be an unsupported assertion; the honest claim is a CONCEPTUAL one (both measure net
+  recoveries against exposure, net of expenses), stated as such.</div>
+  </details>
+</li>
+<li>Only about 31.0% of D90 defaults reach the realized-LGD population used in Exhibit&nbsp;11.7. What does this
+imply for a model trained naively on just this 13,836-loan subset?
+  <details><summary>Answer</summary>
+  <div class="answer">It would be conditioning on a SELECTED, worse-than-average-outcome subsample (loans that cure,
+  modify, or remain open/censored — likely the less-severe D90 defaults, on average — are excluded by construction)
+  without an explicit selection/censoring correction, which <code>outputs/freddie/eda/eda_report.md</code>'s own
+  "Modeling cautions" section flags directly as a risk for any LGD model built on this population alone.</div>
+  </details>
+</li>
+<li>Why does the 2016 realized-LGD peak not contradict &sect;11.4's finding that the 2007 ORIGINATION vintage has
+the highest cumulative D90 RATE of any vintage?
+  <details><summary>Answer</summary>
+  <div class="answer">They are measured on different clocks entirely — &sect;11.4's D90 rate is indexed to
+  ORIGINATION vintage and months-on-book (when the loan was originated and how long it took to first default),
+  while Exhibit 11.7's severity plateau is indexed to LIQUIDATION year (when the loss was finally realized,
+  potentially years after the original default). A 2007-vintage loan that first defaulted in 2009 could easily not
+  reach liquidation, and therefore not contribute its realized loss, until 2016 — both facts are consistent, not
+  contradictory, once the two different clocks are kept separate.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-14">11.14 State heterogeneity: the collateral channel</h3>
+<!-- ============================================================== -->
+<p>Restricting to the 2006&ndash;2007 vintages (the peak of the pre-crisis bubble, &sect;11.4) and states with 200+
+sampled loans, the worst-performing states are exactly the "sand states" of the 2006&ndash;2008 housing bust:</p>
+<div class="table-wrap">
+<table>
+<tr><th>Rank</th><th>State</th><th>2006&ndash;07 vintage cumulative D90 rate</th></tr>
+<tr><td>Worst</td><td>NV</td><td class="num"><strong>38.0%</strong></td></tr>
+<tr><td></td><td>FL</td><td class="num"><strong>32.6%</strong></td></tr>
+<tr><td></td><td>AZ</td><td class="num"><strong>27.9%</strong></td></tr>
+<tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr>
+<tr><td></td><td>VT</td><td class="num">4.8%</td></tr>
+<tr><td></td><td>AK</td><td class="num">5.3%</td></tr>
+<tr><td>Best</td><td>WY</td><td class="num">6.2%</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/freddie/eda/eda_report.md</code> Exhibit&nbsp;4.</p>
+
+<img class="fig" src="../assets/img/ch11/08_state_heterogeneity.png" alt="Two panels: left, a horizontal bar chart of top/bottom 10 states by cumulative D90 rate for 2006-07 vintages, NV FL AZ CA highlighted red at the top around 20-38%, TX highlighted green near the bottom around 8%; right, a scatter plot of state peak-to-trough HPI drawdown 2006-2012 vs 2006-07 vintage D90 rate across 49 states with a fitted regression line, r=0.89, NV FL AZ CA labeled as outliers in the upper right">
+<div class="figcap"><b>Exhibit 11.8</b> — State heterogeneity, 2006&ndash;2007 vintages. Embedded from
+<code>outputs/freddie/eda/exhibit4_state_heterogeneity.png</code>.</div>
+
+<div class="interpretation">
+<b>What this means.</b> The scatter of state peak-to-trough HPI drawdown (2006&ndash;2012) against 2006&ndash;07
+vintage default rate, across 49 states (GU/PR/VI excluded — no state-level HPI series, &sect;11.5's coverage note),
+fits a slope of $0.491$ points-of-default per point-of-drawdown, $r=0.89$, $p=2\times10^{-17}$ — this is
+&sect;11.6's single-loan collateral channel (updated LTV rising as HPI falls), aggregated up to the state level and
+shown to be the DOMINANT explanation for cross-state default-rate dispersion in this vintage cohort. NV/AZ/FL/CA
+(the bubble sand-states) sit far above TX/ND, which never had a comparable house-price boom-bust — a result the
+DCR panel, with no state field at all (&sect;11.1's table), cannot show under any specification.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — $r=0.89$ is a strong linear fit, not a claim that HPI drawdown is the ONLY driver of state-level default
+dispersion.</b> An $r=0.89$ correlation leaves roughly $1-0.89^2\approx21\%$ of the variance in state-level default
+rates unexplained by HPI drawdown alone — underwriting-standard differences, local labour-market conditions, and
+state-specific foreclosure-law timelines (judicial vs non-judicial states, which affects how quickly a defaulted
+loan reaches a terminal outcome within the observation window) are all plausible contributors to that residual
+variance that this single-variable scatter does not decompose.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why are GU, PR, and VI excluded from the 49-state scatter, when the state list elsewhere in this chapter
+includes them?
+  <details><summary>Answer</summary>
+  <div class="answer">FRED has no state-level HPI series (<code>{POSTAL}STHPI</code>) for any of the three
+  (&sect;11.5's coverage note: GU, PR, VI are all HPI-fallback territories) — the scatter specifically needs a
+  genuinely STATE-level HPI drawdown figure for each point, and substituting the national HPI drawdown for all
+  three would not measure what the scatter claims to measure, so they are excluded rather than plotted with a
+  misleading proxy value.</div>
+  </details>
+</li>
+<li>Why does this section restrict to the 2006&ndash;2007 VINTAGE specifically, rather than pooling all 17
+vintages together for the state-heterogeneity scatter?
+  <details><summary>Answer</summary>
+  <div class="answer">The collateral channel this scatter is designed to isolate is specifically about the
+  2006&ndash;2012 HOUSE-PRICE BUST — restricting to the 2006&ndash;2007 origination vintages (loans underwritten
+  right before that bust, at pre-crash property valuations) gives a cohort whose subsequent default experience is
+  most directly attributable to that specific collateral shock. Pooling in later vintages (underwritten AFTER the
+  crash, at already-depressed valuations, or during entirely different macro regimes like COVID) would blend in
+  unrelated credit cycles and weaken the specific HPI-drawdown-to-default relationship being demonstrated.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s11-15">11.15 The calendar-time credit cycle: COVID vs GFC, read correctly</h3>
+<!-- ============================================================== -->
+<p>The combined-vintage monthly D90-entry rate's GLOBAL peak, across the entire 2005&ndash;2025 panel, is not the
+GFC — it is the COVID spike: <strong>1.775%</strong> in 2020-06, roughly <strong>4.5&times;</strong> the GFC's own
+peak of <strong>0.396%</strong> in 2009-10.</p>
+
+<img class="fig" src="../assets/img/ch11/09_calendar_time_series.png" alt="Two stacked line charts sharing an x-axis from 2005 to 2025: top, monthly D90-entry rate across all vintages combined, with a moderate hump during the GFC-shaded band 2008-2009 peaking near 0.4%, and a much taller sharp spike during the COVID-shaded band 2020 peaking near 1.8%, plus a dotted loans-at-risk composition line; bottom, national unemployment rate over the same period, showing a slow rise to about 10% during the GFC and a much sharper spike to about 15% at the start of COVID before rapidly declining" >
+<div class="figcap"><b>Exhibit 11.9</b> — Monthly D90-entry rate, all vintages combined, 2005&ndash;2025, vs national
+UER. Embedded from <code>outputs/freddie/eda/exhibit3_calendar_time_series.png</code>.</div>
+
+<div class="warn">
+<b>The definitional caution, stated as directly as the source states it.</b> Read alongside &sect;11.10's roll-rate
+finding, the COVID D90-entry spike is NOT evidence that COVID was a WORSE credit event than the GFC — it is the
+SAME forbearance-accounting artifact. The naive D90 definition (<code>dlq_num&gt;=3</code>) fires on administrative
+delinquency-status ADVANCEMENT for loans in forbearance, even though &sect;11.10's liquidation-rate collapse (0.21%
+in COVID vs 2.02% GFC) shows the true terminal-loss event virtually STOPPED during the same window. A D90
+entry-rate spike alone, read WITHOUT the liquidation-rate context this chapter builds alongside it, would badly
+mislead a reader into treating COVID as the larger of the two credit events by a factor of 4.5&times; — the exact
+opposite of what actually happened to realized losses.
+</div>
+
+<div class="interpretation">
+<b>What this means — the composition caveat.</b> The loans-at-risk series (Exhibit&nbsp;11.9's dotted line, right-
+hand axis) shows the panel's own denominator shrinking and refilling as vintages amortize/terminate and new
+vintages are added — the entry-rate series is NOT a fixed-cohort rate; it mixes vintages of different ages and
+different eras' underwriting standards at every calendar point, by construction. This is exactly why &sect;11.7's
+vintage-curve view (indexed to months-on-book, one vintage at a time) and this section's calendar-time view (indexed
+to calendar date, all vintages pooled) are complementary, not substitutes — each hides a dimension of variation the
+other one controls for.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "COVID's D90-entry rate was 4.5x the GFC's" and "COVID was 4.5x worse for the trust's realized losses"
+are not the same claim, and only one of them is true.</b> The 4.5&times; figure describes a delinquency-STATUS
+entry rate under a naive definition known (&sect;11.10) to be distorted by forbearance accounting in exactly this
+window. The realized-loss evidence in this same chapter (&sect;11.10's 90+&rarr;liquidation collapse; &sect;11.13's
+realized-LGD population) points the opposite direction for the ACTUAL credit event's severity. Quoting the 4.5x
+figure alone, without immediately pairing it with the liquidation-rate context, is the single most misleading
+number this chapter contains if read out of context — which is exactly why every mention of it here is paired with
+the collapse finding.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does this chapter insist the COVID D90-entry spike and the GFC D90-entry spike CANNOT be compared as
+"COVID was 4.5x worse," even though the raw entry-rate numbers say exactly that?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the D90 definition itself behaves differently in the two windows: in the GFC, a D90
+  entry genuinely tracked toward eventual liquidation at roughly the historical rate (2.02%, &sect;11.10); in
+  COVID, the SAME D90 entry event was frequently an administrative artifact of a loan under forbearance whose
+  contractual delinquency-status ladder kept advancing while its actual liquidation probability collapsed to 0.21%
+  — the two 'D90 entries' are not measuring the same underlying economic event, so comparing their raw rates
+  directly is comparing two different things dressed in the same label.</div>
+  </details>
+</li>
+<li>What would a hazard model trained naively on D90 as its target across the full 2005&ndash;2025 panel, with no
+regime adjustment, most likely do wrong specifically because of the pattern shown in Exhibit&nbsp;11.9?
+  <details><summary>Answer</summary>
+  <div class="answer">It would learn to treat the 2020&ndash;2021 forbearance window's macro conditions (the sharp
+  UER spike, visible in the bottom panel) as predicting an unusually severe default outcome — because the D90
+  target itself spiked 4.5x above the GFC peak in that window — when the true credit outcome (liquidation) was
+  actually MILDER than the GFC in the same window; this is precisely why Chapter&nbsp;12's champion hazard fit
+  excludes the COVID window from its own estimation entirely, and why its "naive"/"additive"/"exclude" regime
+  comparison exists as a documented sensitivity check.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="summary">
+<b>Chapter 11 summary.</b> The SFLLD rung-3 build upgrades the DCR engine's synthetic panel on exactly three axes —
+real calendar dates, real states, real realized losses (&sect;11.1) — over 17 vintages (837,500 loans, 39,522,565
+loan-months, D90 rates spanning 0.04%&ndash;16.26%, &sect;11.4), guarded against the headerless-format's off-by-one
+risk by empirical sentinel/valid-value checks run across all 17 vintages independently (&sect;11.2). The D90
+absorbing default — first 90+DPD or REO acquisition, tie-broken toward the disposition code on a same-row conflict,
+censored thereafter — is derived precisely (&sect;11.3) and contrasted against D180 and liquidation as alternative
+definitions, each with a documented reason it was NOT chosen as the modeling target. State-level FRED macros
+(genuinely live-pulled, unlike the DCR panel's vendor-premerged national series, &sect;11.5) feed a state-adapted
+updated-LTV formula, worked twice on real NV loans through both the crash and the recovery (&sect;11.6). Two
+derivations orphaned by Chapter&nbsp;4 finally get their full expansion here: the roll-rate transition-matrix
+estimator is derived as a multinomial MLE (&sect;11.8), walked through the generic 90/120/150-DPD bridge fixture
+step by step (&sect;11.9, $R=0.602102$, $PD_{90}=3.32\%$), and then applied to the REAL SFLLD matrices, where the
+forbearance signature emerges precisely: 60&rarr;90+ rises to 58.25% in COVID (vs 47.43% GFC) while 90+&rarr;
+liquidation collapses to 0.21% (vs 2.02% GFC), corroborated by a 75.9%-vs-15.6% borrower-assistance-flag gap
+(&sect;11.10&ndash;11.11). Net credit loss discounting is derived cash-flow by cash-flow (&sect;11.12), walked
+through the generic EUR&nbsp;200,000 workout fixture (12.5% face severity vs 20.2% EIR-discounted severity,
+&sect;11.13), and tied — conceptually, not formulaically — to SFLLD's own realized-LGD population (median 49.4%,
+peaking in LIQUIDATION-year 2016 at 57.8% median, a multi-year lag behind the 2008&ndash;2009 origination-era
+credit event that actually caused it). The chapter closes with the two exhibits that most directly motivate
+Chapter&nbsp;12's modeling judgment: the state-level collateral channel ($r=0.89$, &sect;11.14) and the calendar-
+time caution that COVID's 4.5&times;-the-GFC D90-entry spike is a forbearance-accounting artifact, not a worse
+credit event, when read against the same window's collapsed liquidation rate (&sect;11.15). Chapter&nbsp;12 turns to
+what the Phase-B hazard, realized-LGD, and LSTM-challenger models built on this exact panel actually learn — and
+how the COVID=exclude decision this chapter's own findings motivate holds up under backtest.
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from <code>outputs/freddie/ingest/dq_report.md</code>, <code>outputs/freddie/eda/eda_report.md</code>,
+<code>outputs/panel/waterfall.md</code>, <code>freddie/ingest.py</code>, <code>freddie/build_panel.py</code>,
+<code>freddie/macro.py</code>, <code>tests/fixtures/compute_ncl.py</code>,
+<code>tests/fixtures/compute_rollrate.py</code>, and <code>data/processed/freddie/*.parquet</code> (read live this
+session) on 2026-07-19.
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.10 — Docker & Deployment Guidebook | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 10: DOCKER & DEPLOYMENT GUIDEBOOK
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md), CSS
+  block copied verbatim from ch08_the_agent.html for visual consistency
+  across the compendium. Standalone deliverable (notes/chapters/ holds
+  independent chapter files, matching ch01-ch08's established practice, not
+  the single-growing-file plan conventions.md originally sketched) -- own
+  <h1>/TOC/closing <hr>; <h2 id="s10"> is written so a later merge into a
+  single-file compendium is a straight splice. MathJax kept for house-style
+  consistency with every other chapter (the "accepted project exception"),
+  even though this chapter has no derivations and almost no inline math.
+
+  NO widgets.js: per notes/plan/chapters.md's own Ch.10 scope note ("Planned
+  interactive widgets: None planned (static reference chapter) -- a
+  collapsible stage-by-stage Dockerfile walkthrough (plain HTML <details>,
+  no JS needed) substitutes") -- see s10.2's <details> tree.
+
+  GROUNDING DISCIPLINE: this is an infra chapter with no tests/fixtures/
+  compute_*.py (topic_map.md's D5 entry: "Fixtures: none (theory-only / no
+  worked numeric example)") -- every number below is read directly from
+  Dockerfile, .dockerignore, requirements.docker.txt, agent/tools_tier1.py,
+  or quoted verbatim from outputs/gate/*.md / wiki/memory/log.md, cited
+  inline at first use. Where two project artifacts tell slightly different
+  versions of the same incident (s10.4's dockerignore lesson; s10.2's stale
+  Dockerfile comment), both are shown and reconciled explicitly rather than
+  silently picking one -- that reconciliation IS the operational lesson.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  pre.trace { white-space: pre-wrap; font-size: 12.2px; background: var(--code-bg); padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+
+  /* Dockerfile stage-by-stage walkthrough: nested <details>, native expand/collapse */
+  .dockertree details { margin: 3px 0 3px 4px; border-left: 2px solid var(--rule); padding-left: 10px; }
+  .dockertree summary { cursor: pointer; font-weight: 600; color: var(--accent-soft); padding: 3px 0; font-family: inherit; }
+  .dockertree summary:hover { color: var(--accent); }
+  .dockertree .rule-body { font-size: 12.8px; margin: 4px 0 8px 4px; padding: 6px 10px; background: var(--page-bg); border: 1px solid var(--rule); border-radius: 4px; }
+  .dockertree pre { margin: 4px 0; white-space: pre-wrap; }
+  .dockertree .tag { display:inline-block; font-size: 10.6px; font-variant: small-caps; letter-spacing: 0.4px; padding: 1px 7px; border-radius: 10px; margin-left: 6px; color: white; }
+  .tag-stage1 { background: var(--accent-soft); }
+  .tag-stage2 { background: var(--good); }
+  .tag-security { background: var(--warn); }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 10 — Docker &amp; Deployment Guidebook</h1>
+<div class="subtitle">Reading the multi-stage Dockerfile and the HF Spaces ship pipeline as they were actually built — including the failures</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 10 of 13. Compiled from <code>Dockerfile</code>, <code>.dockerignore</code>, <code>requirements.docker.txt</code>, <code>agent/tools_tier1.py</code>, <code>app/api/main.py</code>, <code>app/ui/vite.config.js</code>, <code>README.md</code>, <code>outputs/gate/{day4,appv2,stretch,uiv3,mdd_freddie,macro_interp}_gate_report.md</code>, <code>wiki/memory/log.md</code>, <code>wiki/pages/agent-layer.md</code>, and git log entries <code>4647e5d</code>/<code>8c1f039</code>, all read live on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s10-1">10.1 One container, one platform</a></li>
+<li><a href="#s10-2">10.2 The multi-stage Dockerfile, stage by stage</a></li>
+<li><a href="#s10-3">10.3 <code>requirements.docker.txt</code> and the torch-pruning decision</a></li>
+<li><a href="#s10-4">10.4 The <code>.dockerignore</code> whitelist and the 9-failure lesson</a></li>
+<li><a href="#s10-5">10.5 HF Spaces deployment: port 7860, secrets, the README metadata block</a></li>
+<li><a href="#s10-6">10.6 The ship pipeline as practiced: the state machine</a></li>
+<li><a href="#s10-7">10.7 The queue-stall playbook: <code>factory_reboot</code> vs bump-commit</a></li>
+<li><a href="#s10-8">10.8 Local dev flow: uvicorn + vite</a></li>
+<li><a href="#s10-9">10.9 Image contents inventory: what ships, what doesn't, and why</a></li>
+<li><a href="#s10-10">10.10 Cold vs warm start: the joblib cache-slimming story</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s10">10&nbsp; Docker &amp; Deployment Guidebook</h2>
+<p>Chapters&nbsp;1&ndash;7 built and validated a frozen ECL engine; Chapter&nbsp;8 wrapped it in an agent; Chapter&nbsp;9
+documents the app that puts both in front of a user. None of that reaches anyone until it is packaged into a
+single container and shipped to a place the public internet can reach — this chapter is that packaging and
+shipping, read at the same level of operational detail as the rest of the compendium, not glossed over as
+"and then we deployed it." The project's deployment target throughout has been a single Hugging Face Space,
+Docker SDK, public: <code>https://huggingface.co/spaces/Preetomsorkar/ifrs9-ecl-copilot</code>. This is a
+theory-light, infra-heavy chapter — <code>notes/plan/topic_map.md</code>'s D5 entry records no fixture and no
+theory anchor for this topic, and there are accordingly no derivations here. What there is instead is a real,
+occasionally messy operational history: six recorded ship sessions (Day&nbsp;4, a stretch phase, App&nbsp;v2,
+UI&nbsp;v3, the MDD/Freddie ship, and a macro-interpretation ship) across which the
+same Dockerfile and the same Space were built, broken, diagnosed, and fixed in ways worth reading closely —
+&sect;10.6&ndash;10.7's own <code>runtime.stage</code> table draws on five of those six specifically (every
+session after Day&nbsp;4, whose own gate report predates that explicit stage-polling practice) — because the
+failure modes recur in any team's first few Docker-on-a-managed-platform deployments.</p>
+
+<!-- ============================================================== -->
+<h3 id="s10-1">10.1 One container, one platform</h3>
+<!-- ============================================================== -->
+<div class="defn">
+<b>The deployment shape.</b>
+<p style="margin:4px 0 0 0;">One <code>Dockerfile</code> at the repo root builds <em>one</em> image containing
+both the API (FastAPI, serving the agent and every engine-backed endpoint) and the built single-page app (the
+Preact/ECharts SPA, mounted as static files at <code>/</code>). There is no separate frontend host, no reverse
+proxy, no second container — Hugging Face Spaces' <b>Docker SDK</b> runs exactly one container per Space,
+listening on a single port, and that constraint is what shapes almost every decision in this chapter: the
+Dockerfile has to build the SPA itself (there is no CI step outside the container to hand it a pre-built
+<code>dist/</code>), and the FastAPI app has to serve that <code>dist/</code> directly (<code>app/api/main.py</code>
+mounts <code>StaticFiles(directory=UI_DIST, html=True)</code> at <code>/</code>, with a graceful "UI not built"
+fallback page if <code>dist/</code> is absent — see &sect;10.8's local-dev gotcha).</p>
+</div>
+
+<img class="fig" src="../assets/img/ch10/01_multistage_build.png" alt="Multi-stage Dockerfile flowchart: stage 1 (node:22-alpine) installs npm dependencies, copies UI source, and runs npm run build to produce /build/dist; stage 2 (python:3.13-slim) installs pinned Python dependencies, creates a non-root appuser, copies an explicit allowlist of runtime directories, copies the built SPA from stage 1, fixes ownership, switches to the non-root user, then exposes port 7860 and runs uvicorn">
+<div class="figcap"><b>Exhibit 10.1</b> — The multi-stage build: two <code>FROM</code> stages, one runtime image
+(<code>Dockerfile</code> lines 33&ndash;135).</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> "One container, one platform" is a real constraint, not a stylistic choice — it forces
+the two build toolchains (Node for the SPA, Python for the API) into two Dockerfile <code>FROM</code> stages
+that never coexist at runtime (&sect;10.2), forces every secret to travel through Space-level environment
+injection rather than a build argument (&sect;10.5), and forces the whole "did the new build actually go live"
+question in &sect;10.6&ndash;10.7 down to a single container's <code>runtime.stage</code> value rather than a
+fleet of independently-rolling services. Every operational story in this chapter is a consequence of that one
+constraint.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "the Space" is two different repos that happen to share a name.</b> The GitHub-hosted project repo
+(where this compendium lives) and the Hugging Face Space (<code>Preetomsorkar/ifrs9-ecl-copilot</code>, a
+<em>separate</em> git repository that HF's platform builds from) are not the same git history — code is
+<em>uploaded</em> to the Space via <code>huggingface_hub.HfApi</code> calls (<code>upload_file</code>,
+<code>upload_folder</code>, <code>create_commit</code>), each call creating its own commit on the Space's own
+timeline. This distinction is the root cause of two separate incidents in &sect;10.5 (the README and
+<code>.gitattributes</code> clobbers) and is worth internalising before anything else in this chapter: a file
+being correct in the project repo says nothing about whether the Space's copy of that file agrees with it,
+until someone diffs the two or uploads explicitly.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does the Dockerfile need to run <code>npm run build</code> itself, rather than the project shipping a
+pre-built <code>app/ui/dist/</code> and having the Dockerfile just <code>COPY</code> it in?
+  <details><summary>Answer</summary>
+  <div class="answer">Because HF Spaces' Docker SDK builds the image from the Space repo's own content with no
+  external CI step in between — there is nowhere else for a "pre-build the SPA, then hand the Dockerfile a
+  finished <code>dist/</code>" step to run. The Dockerfile has to be self-sufficient: stage&nbsp;1 installs
+  Node, runs <code>npm ci</code> and <code>npm run build</code> inside the build itself, and only the
+  resulting <code>/build/dist</code> artifact crosses into stage&nbsp;2 (&sect;10.2). <code>app/ui/dist</code>
+  is itself <code>.dockerignore</code>d from the build CONTEXT (&sect;10.9) precisely so a stale local build
+  can never accidentally get copied in place of a fresh one.</div>
+  </details>
+</li>
+<li>What would have to change about this project's deployment story if it needed the API and the SPA to scale
+independently (e.g. many API replicas behind one static CDN)?
+  <details><summary>Answer</summary>
+  <div class="answer">The single-container, single-Dockerfile shape would have to split into two images (or an
+  image plus a separate static host) — Docker SDK Spaces are fundamentally one-process-per-Space, so
+  independent scaling was never a design goal here, and nothing in the current Dockerfile/StaticFiles-mount
+  design anticipates it. This is a genuine known limitation of the current architecture, not a hidden
+  feature.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-2">10.2 The multi-stage Dockerfile, stage by stage</h3>
+<!-- ============================================================== -->
+<p>The Dockerfile is 135 lines. What follows is every instruction that actually runs, grouped into the two
+<code>FROM</code> stages, expandable in place — collapse what you already know, expand what you don't. Every
+line is quoted verbatim from the current <code>Dockerfile</code>.</p>
+
+<div class="dockertree">
+
+<details>
+<summary>Stage 1 — <code>FROM node:22-alpine AS ui</code> (lines 33&ndash;40) <span class="tag tag-stage1">build only</span></summary>
+<div class="rule-body">
+<pre class="trace">WORKDIR /build
+COPY app/ui/package.json app/ui/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY app/ui/index.html app/ui/vite.config.js ./
+COPY app/ui/src ./src
+COPY app/ui/scripts ./scripts
+RUN npm run build</pre>
+<p style="margin:4px 0 0 0;">The <code>package.json</code>/<code>package-lock.json</code> <code>COPY</code>
+happens <em>before</em> the source-code <code>COPY</code>s, deliberately — this is the standard Docker
+layer-cache trick: as long as the lockfile doesn't change, <code>npm ci</code>'s layer is reused on every
+rebuild, and only source-code changes (the far more frequent case) invalidate the cheaper, later layers.
+<code>npm run build</code>'s <code>prebuild</code> script runs <code>verify:waterfall</code> first (10/10
+regression checks against the historical-mode waterfall adapter, per <code>outputs/gate/mdd_freddie_gate.md</code>
+and <code>macro_interp_gate.md</code>) — a broken UI build fails the Docker build itself, before any Python
+code is even touched. The stage's <em>only</em> output that matters downstream is <code>/build/dist</code>;
+everything else (the Node runtime, <code>node_modules</code>, npm's cache) is thrown away when the stage
+ends.</p>
+</div>
+</details>
+
+<details>
+<summary>Stage 2 — <code>FROM python:3.13-slim AS runtime</code>, dependencies (lines 43&ndash;53) <span class="tag tag-stage2">runtime</span></summary>
+<div class="rule-body">
+<pre class="trace">ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+COPY requirements.docker.txt ./
+RUN pip install --no-cache-dir -r requirements.docker.txt</pre>
+<p style="margin:4px 0 0 0;"><code>requirements.docker.txt</code> is <code>COPY</code>'d and installed before
+<em>any</em> project code — same layer-cache logic as stage&nbsp;1: dependency changes are rare, source changes
+are frequent, so the expensive <code>pip install</code> layer should sit as early (and therefore as cacheable)
+as possible. <code>PIP_NO_CACHE_DIR=1</code> keeps pip's own download cache out of the image layer entirely
+(there is no benefit to caching downloads inside a throwaway build context). &sect;10.3 covers what's actually
+in this file and why torch is missing from it.</p>
+</div>
+</details>
+
+<details>
+<summary>Non-root user (line 56) <span class="tag tag-security">security</span></summary>
+<div class="rule-body">
+<pre class="trace">RUN useradd -m -u 1000 appuser</pre>
+<p style="margin:4px 0 0 0;">Comment in the Dockerfile calls this the "HF Spaces convention: run as non-root uid
+1000" — Spaces are a shared multi-tenant platform, so running as root inside the container is treated as bad
+practice even though nothing in this specific app needs elevated privileges. The <code>USER appuser</code>
+switch itself doesn't happen until line&nbsp;132, <em>after</em> every file-owning <code>COPY</code> — file
+ownership under a non-root user has to be arranged (<code>chown</code>, line&nbsp;130) before the process
+drops privileges, not after.</p>
+</div>
+</details>
+
+<details>
+<summary>The explicit COPY allowlist (lines 59&ndash;124) <span class="tag tag-stage2">runtime</span></summary>
+<div class="rule-body">
+<p style="margin:0 0 6px 0;">Rather than <code>COPY . .</code> plus a broad <code>.dockerignore</code> exclude
+list, the Dockerfile lists every runtime directory it needs, one <code>COPY</code> line at a time, each with an
+inline comment explaining what reads it:</p>
+<pre class="trace">COPY engine ./engine                    # the FROZEN five (hazard/lgd/ead/staging/ecl)
+COPY agent ./agent
+COPY app/__init__.py ./app/__init__.py
+COPY app/api ./app/api
+COPY analysis ./analysis
+
+COPY wiki ./wiki                        # Tier-3 retrieval sources (agent/tier3_retrieval.py)
+COPY knowledge/corpus ./knowledge/corpus
+COPY knowledge/index ./knowledge/index
+
+COPY .claude/skills/llm-wiki/scripts/wiki_query.py .claude/skills/llm-wiki/scripts/wiki_graph.py \
+     ./.claude/skills/llm-wiki/scripts/
+COPY .claude/skills/pageindex-plus/scripts/pageindex_query.py \
+     ./.claude/skills/pageindex-plus/scripts/
+
+COPY data/__init__.py ./data/__init__.py
+COPY data/ingest ./data/ingest
+COPY data/processed/panel.parquet ./data/processed/panel.parquet
+COPY data/scenarios/*.csv ./data/scenarios/
+
+COPY outputs/models ./outputs/models    # pre-fitted joblib cache, see s10.10
+
+COPY outputs/variable_dictionary.md ./outputs/variable_dictionary.md
+COPY outputs/hazard ./outputs/hazard
+COPY outputs/lgd ./outputs/lgd
+COPY outputs/staging ./outputs/staging
+COPY outputs/eda ./outputs/eda
+COPY outputs/vasicek ./outputs/vasicek
+COPY outputs/scenario_ecl ./outputs/scenario_ecl
+COPY outputs/challenger ./outputs/challenger
+COPY outputs/freddie ./outputs/freddie
+COPY outputs/mdd ./outputs/mdd</pre>
+<p style="margin:4px 0 0 0;">&sect;10.9 has the full "what's in, what's out, and why" inventory; &sect;10.4
+walks the <code>outputs/freddie</code>/<code>outputs/mdd</code> lines' own build history in detail — they were
+the two most recently added lines in this block, and they broke the build nine times before shipping clean.</p>
+</div>
+</details>
+
+<details>
+<summary>Crossing the stage boundary, permissions, and the entrypoint (lines 127&ndash;135) <span class="tag tag-stage2">runtime</span></summary>
+<div class="rule-body">
+<pre class="trace">COPY --from=ui /build/dist ./app/ui/dist
+
+RUN mkdir -p outputs/agent_log && chown -R appuser:appuser /app/outputs
+
+USER appuser
+
+EXPOSE 7860
+CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1"]</pre>
+<p style="margin:4px 0 0 0;"><code>COPY --from=ui</code> is the only line in stage&nbsp;2 that reaches back into
+stage&nbsp;1 — the syntax is what makes this a genuine <em>multi-stage</em> build rather than two unrelated
+Dockerfiles pasted together: stage&nbsp;1's entire filesystem is discarded except for this one named artifact.
+<code>outputs/</code> is made writable for <code>appuser</code> specifically (the agent's audit trail,
+<code>outputs/agent_log/*.jsonl</code>, and a possible model-cache refresh both write there at runtime — see
+&sect;10.10) — everything else copied into the image stays read-only under the non-root user, which is the
+correct default for reference material nothing should ever mutate. <code>--workers 1</code> matters
+operationally: the in-process singleton engine state (Chapter&nbsp;8's <code>_STATE</code>, warmed once at
+startup) would be duplicated, refit, and inconsistently warmed across multiple worker processes — this is a
+single-worker design by necessity, not an oversight, and the SSE trace-replay endpoint documented in Chapter&nbsp;8
+is a recorded consequence of that same constraint.</p>
+</div>
+</details>
+
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the allowlist pattern trades an easy mistake for a visible one.</b> <code>COPY . .</code> plus a
+<code>.dockerignore</code> exclude list is less typing, but a forgotten exclude silently ships something (a
+secret, a multi-gigabyte raw-data directory, dev tooling) with no build-time signal that anything went wrong —
+the build just succeeds, quietly larger or less safe than intended. The explicit allowlist inverts the failure
+mode: forgetting to add a new output directory's <code>COPY</code> line means that directory is
+<strong>simply absent at runtime</strong> — visible immediately as a 404/500 from the endpoint that needed it
+(exactly what happened before <code>outputs/freddie</code>/<code>outputs/mdd</code> were added, &sect;10.4)
+rather than a silent security lapse discovered later. The project accepts the extra Dockerfile verbosity for
+that trade.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is <code>package.json</code>/<code>package-lock.json</code> copied and <code>npm ci</code> run in a
+separate, earlier layer from the rest of the UI source in stage&nbsp;1?
+  <details><summary>Answer</summary>
+  <div class="answer">Docker caches layers by instruction and by the hash of what that instruction touches —
+  putting the lockfile-driven install in its own early layer means a rebuild that only changed
+  <code>.jsx</code> source (the common case) reuses the cached <code>npm ci</code> layer instead of
+  reinstalling every dependency from scratch. If the source <code>COPY</code> came first, any source change
+  would invalidate every layer after it, including the expensive install.</div>
+  </details>
+</li>
+<li><code>USER appuser</code> appears near the very end of the Dockerfile, not right after
+<code>useradd</code>. Why does the ordering matter?
+  <details><summary>Answer</summary>
+  <div class="answer">Every <code>COPY</code> and file-creating <code>RUN</code> between <code>useradd</code>
+  and <code>USER appuser</code> still executes as root (the default until <code>USER</code> switches it),
+  which is required — root has the permissions to write into <code>/app</code> and to <code>chown</code> the
+  outputs directory to <code>appuser</code>. Switching to the unprivileged user any earlier would make several
+  of those <code>COPY</code>/<code>RUN</code> instructions fail outright, and switching it any later (or not at
+  all) would leave the running container process privileged unnecessarily.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-3">10.3 <code>requirements.docker.txt</code> and the torch-pruning decision</h3>
+<!-- ============================================================== -->
+<p><code>requirements.docker.txt</code> is not hand-maintained — its own header records exactly how it is
+produced:</p>
+<div class="ex">
+<pre class="trace">uv export --no-dev --no-hashes --no-emit-project --prune torch \
+    -o requirements.docker.txt</pre>
+<p style="margin:4px 0 0 0;">Run against <code>uv.lock</code>, this resolves the project's exact locked
+dependency graph — <b>73 pinned packages</b> (verified live this session: <code>grep -c "^[a-zA-Z0-9_.-]\+=="
+requirements.docker.txt</code> &rarr; 73), each with its own <code>pip</code> version pin and a comment trail
+recording which other package pulled it in (e.g. <code>fastapi==0.139.0 &nbsp;# via ifrs9-ecl-copilot</code>).
+<code>--no-dev</code> drops pytest/mypy/the review tooling; <code>--no-emit-project</code> drops the project's
+own package entry (nothing needs to <code>pip install</code> itself); <code>--prune torch</code> is the
+deliberate exclusion this section is about.</p>
+</div>
+
+<div class="defn">
+<b>Why torch, specifically.</b> <code>pyproject.toml</code> lists <code>torch&gt;=2.12.1</code> as a real
+project dependency — it is not unused code, it backs the LSTM/MLP challenger study (<code>challenger/</code>,
+Chapter&nbsp;7/12's territory: the permutation-importance and reliability-diagram comparisons against the
+production cloglog hazard). But <em>nothing under <code>engine/</code>, <code>agent/</code>, or
+<code>app/</code> imports it</em> — the challenger study is an offline research artifact whose <em>results</em>
+(fitted coefficients, AUC comparisons, the saved <code>.pt</code> checkpoint) get read as static reports and
+PNGs, never re-executed at request time. A full <code>uv export</code> without <code>--prune torch</code>
+would pull in torch's CUDA-capable wheel regardless of whether a GPU is present — the Dockerfile's own comment
+puts the avoided cost at <b>~5&nbsp;GB</b>, confirmed independently in <code>wiki/pages/agent-layer.md</code>'s
+"Known caveats": "torch pruned from the Docker image (challenger-only, would add ~5GB)". Grepping the actual
+file confirms the prune took effect: <code>grep -i "^torch" requirements.docker.txt</code> returns nothing.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> This is the general shape of a healthy Python-project-to-Docker-image pipeline: a
+project's full dependency set (research tooling included) is allowed to be broader than any one deployed
+service's <em>runtime</em> dependency set, and the export step is where that gap gets closed explicitly
+(<code>--prune</code>) rather than left to whoever writes the Dockerfile to notice and hand-edit a
+requirements file that then silently drifts from <code>uv.lock</code>. Because <code>requirements.docker.txt</code>
+is regenerated from <code>uv.lock</code> by the same one-line command every time, the image's dependency set
+can never quietly diverge from what the project's own lockfile says it should be, apart from the one named,
+intentional prune.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — pruning torch is a statement about <em>this</em> image's call graph, not about torch being
+generically unnecessary.</b> If a future Tier-1 tool or engine module ever needed torch at request time (a
+served neural challenger, say, replacing the offline-only MLP), the prune would have to be removed and the
+~5&nbsp;GB cost paid — <code>--prune torch</code> is safe today only because it is verifiably true today
+(no runtime import graph reaches it), not because torch is inherently something to always exclude from a
+Docker image. Anyone re-running <code>uv export --prune torch</code> after adding a new runtime dependency on
+torch would silently ship a broken image (an <code>ImportError</code> at the first request that needs it) —
+worth a grep for <code>import torch</code> under <code>engine/</code>/<code>agent/</code>/<code>app/</code>
+before ever touching that flag.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li><b>Why is torch not in the image?</b>
+  <details><summary>Answer</summary>
+  <div class="answer"><code>pyproject.toml</code> declares torch as a real dependency, but it is used only by
+  the offline challenger study (<code>challenger/</code>), which is not shipped and never imported by any
+  runtime module (<code>engine/</code>, <code>agent/</code>, <code>app/</code>). Its CUDA-capable wheel would
+  add roughly 5&nbsp;GB to the image for zero runtime benefit, so the Docker image's own dependency export uses
+  <code>uv export --prune torch</code> to drop it deliberately, leaving 73 other pinned packages that
+  <em>are</em> reachable from the runtime import graph. Confirmed by grep: torch does not appear anywhere in
+  <code>requirements.docker.txt</code>.</div>
+  </details>
+</li>
+<li>Someone proposes hand-editing <code>requirements.docker.txt</code> directly to bump one package's pinned
+version, without touching <code>uv.lock</code>. What goes wrong with that workflow over time?
+  <details><summary>Answer</summary>
+  <div class="answer">The file's own header says it is autogenerated from <code>uv.lock</code> via
+  <code>uv export</code> — a hand-edit would work for exactly one build, then get silently overwritten (or
+  drift further out of sync) the next time someone regenerates the file correctly, and in the meantime the
+  image's actual dependency set would no longer match what <code>uv.lock</code> (and therefore the local dev
+  environment, <code>uv sync</code>) resolves to — a classic two-source-of-truth bug. The correct fix is always
+  to change <code>pyproject.toml</code>/re-run <code>uv lock</code>, then regenerate
+  <code>requirements.docker.txt</code> from the updated lockfile.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-4">10.4 The <code>.dockerignore</code> whitelist and the 9-failure lesson</h3>
+<!-- ============================================================== -->
+<p><code>.dockerignore</code> uses a <b>deny-most, allow-some</b> pattern for <code>outputs/</code> specifically
+(everything else in the file is a simpler flat exclude list — secrets, VCS metadata, node_modules, raw data,
+dev-only directories):</p>
+<div class="ex">
+<pre class="trace">outputs/*
+!outputs/models
+!outputs/variable_dictionary.md
+!outputs/hazard
+!outputs/lgd
+!outputs/staging
+!outputs/eda
+!outputs/vasicek
+!outputs/scenario_ecl
+!outputs/challenger
+!outputs/freddie
+!outputs/mdd</pre>
+<p style="margin:4px 0 0 0;"><code>outputs/*</code> excludes everything under <code>outputs/</code> from the
+Docker build <b>context</b> by default (a directory has dozens of subdirectories — <code>agent_log/</code>,
+<code>demo/</code>, <code>gate/</code>, <code>satellite/</code>, <code>panel/</code>, <code>ecl/</code>,
+<code>ead/</code>, <code>scenarios/</code>, <code>mcp/</code>, and more — that are dev-only reports/traces
+never meant to ship), then each <code>!outputs/X</code> line re-admits exactly one subdirectory the Dockerfile
+actually <code>COPY</code>s. This is deliberately the mirror image of &sect;10.2's Dockerfile allowlist: the
+Dockerfile lists what it wants to <code>COPY</code>, and <code>.dockerignore</code> has to separately list
+what it will <em>let through</em> for that <code>COPY</code> to find — two lists that must stay in sync, and
+the failure mode below is exactly what happens when they don't.</p>
+</div>
+
+<div class="warn">
+<b>The mechanism that matters: <code>.dockerignore</code> filters the build CONTEXT, before the daemon ever
+sees a file.</b> When a Docker (or HF Spaces' managed BuildKit) build starts, the client first assembles a
+build context — the subset of the repository tree that gets sent to the build daemon at all — and
+<code>.dockerignore</code> is applied at exactly that step, client-side, before a single <code>COPY</code>
+instruction runs. A path excluded by <code>.dockerignore</code> does not exist from the daemon's point of view,
+full stop — it is not merely hidden or deprioritised, it was <em>never transmitted</em>. This single fact is
+the whole explanation for the incident below.
+</div>
+
+<h4>The 9-failure incident, reconstructed</h4>
+<p>Commit <code>4647e5d</code> ("MDD + Freddie 'Real Data' tab: final build items") added two new
+<code>COPY</code> lines to the Dockerfile — <code>COPY outputs/freddie ./outputs/freddie</code> and
+<code>COPY outputs/mdd ./outputs/mdd</code> — to serve the newly-built Freddie ("Real Data") tab and the
+compiled Model Development Document. <code>outputs/gate/mdd_freddie_gate.md</code> records what happened when
+that Dockerfile was pushed to the Space: <b>9 consecutive build attempts, 0 successes</b>, over roughly 29
+minutes, every single one failing with the identical Docker error <code>failed to calculate checksum ...
+"/outputs/freddie": not found</code> (or the equivalent for <code>/outputs/mdd</code>) — despite
+<code>list_repo_files</code> confirming, at every failing commit SHA, that the files genuinely existed in the
+Space's git repo, and despite the underlying LFS-tracked PNGs resolving correctly over plain HTTP throughout.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>What was tried</th><th>Result</th></tr>
+<tr><td>Plain <code>restart_space()</code> &times;3</td><td class="num">same checksum failure each time</td></tr>
+<tr><td>Content-change re-push</td><td class="num">same checksum failure</td></tr>
+<tr><td><code>restart_space(factory_reboot=True)</code></td><td class="num">same checksum failure</td></tr>
+<tr><td>Atomic delete+recreate of both directories</td><td class="num">self-inflicted: briefly deleted BOTH dirs from the repo entirely (caught immediately via file-count diff, restored); same checksum failure on the corrected commit</td></tr>
+</table>
+</div>
+
+<p>The gate report's working theory at the time was a genuine platform-side issue — "a persistent
+LFS/context-resolution race," matching a documented class of Hugging Face community reports and one prior
+occurrence recorded in <em>the Space's own</em> git history — not the project's GitHub repo, per &sect;10.1's
+gotcha — commit <code>cc466315de667c87c...</code>, "Retrigger stalled build (queue wedge, content
+unchanged)". Given a live Space sitting at HTTP&nbsp;503 the whole time, the session shipped a
+<b>workaround</b>: the two new <code>COPY</code> lines were commented out of the Dockerfile (both directories
+remained present in the Space's git repo, just not baked into the image), the build succeeded immediately, and
+the report's own verdict was explicitly <b>PARTIAL</b> — the Real Data tab and the live MDD page were
+acknowledged as not-yet-functional pending "re-enablement... likely simply elapsed wall-clock time... for
+whatever storage tier the Docker build's context-fetcher reads from to catch up."</p>
+
+<div class="gotcha">
+<b>Gotcha — the platform-race theory was plausible, recorded in good faith, and wrong.</b> The commit
+(<code>4647e5d</code>) that actually shipped cleanly — <em>the same commit whose message narrates this whole
+incident</em> — reveals the real root cause in its own summary line: <code>"Ship fix: .dockerignore
+outputs/* whitelist was missing outputs/freddie + outputs/mdd -&gt; 9 identical HF COPY failures; whitelisted
++ COPY lines restored."</code> The two-line diff that fixed it is exactly the two <code>!outputs/freddie</code>
+/ <code>!outputs/mdd</code> lines shown above. In other words: <code>outputs/freddie</code> and
+<code>outputs/mdd</code> were never actually reaching the Docker build context <em>at all</em> — the blanket
+<code>outputs/*</code> exclude in <code>.dockerignore</code> was silently stripping them out before the build
+even started, on every single one of the 9 attempts, regardless of what the Space's git repo, LFS, or hardware
+allocation were doing. Every mitigation tried (restarting, factory-rebooting, re-uploading, waiting) was
+aimed at the wrong layer of the pipeline: none of those levers can put a file back into a build context that
+<code>.dockerignore</code> is actively excluding, because the exclusion happens before any of those levers'
+effects would even be visible. "Not found" was not a flaky platform error masquerading as a real one — it was
+a completely accurate error describing a real, self-inflicted, and easily fixable gap.
+</div>
+
+<div class="warn">
+<b>A residual inconsistency, left as found, worth naming plainly.</b> The current <code>Dockerfile</code>'s own
+inline comment block above these two <code>COPY</code> lines (lines&nbsp;14&ndash;23, headed <code># NOTE
+(2026-07-19)</code>) still narrates the platform-race theory and points to
+<code>outputs/gate/mdd_freddie_gate.md</code> for "the eventual resolution (longer wall-clock wait for backend
+propagation, not more aggressive cache-busting)" — and the comment directly above the two <code>COPY</code>
+lines themselves (lines&nbsp;110&ndash;122) is still headed <code># TEMPORARILY DISABLED</code> and instructs a
+future reader to "uncomment... once the platform-side build issue clears," even though those two lines are
+<em>not</em> commented out in the file as it stands today (verified by reading the live file). Both comment
+blocks were written and committed in the same commit whose own message identifies the real, different root
+cause and confirms the fix shipped. Read the commit message and the <code>.dockerignore</code> diff as the
+authoritative account of what actually happened and what actually fixed it; read the Dockerfile's own inline
+prose as a snapshot of the mid-incident working theory that was superseded before the commit closed, never
+corrected in the comment text itself. This is exactly the kind of gap a reader should learn to check a diff
+for, not just trust a nearby comment.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The general lesson generalises past this one incident: any time a Dockerfile's
+<code>COPY</code> instruction reports a path as "not found" for a directory that plainly exists in the
+repository, the very first thing to check — before any platform-side theory, before any restart, before any
+re-upload — is whether <code>.dockerignore</code> actually admits that path into the build context. A
+deny-most/allow-some pattern (<code>outputs/*</code> then a list of re-admits) is exactly the shape most prone
+to this failure mode, because adding a new <code>COPY outputs/X</code> line to the Dockerfile is a one-file
+edit that <em>feels</em> complete on its own — nothing about editing the Dockerfile forces a corresponding
+<code>.dockerignore</code> edit, and nothing short of an actual build attempt surfaces the gap.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li><b>Why did <code>COPY outputs/freddie ./outputs/freddie</code> fail with "not found" when
+<code>outputs/freddie</code> was demonstrably present in the Space's git repository at the failing commit
+SHA?</b>
+  <details><summary>Answer</summary>
+  <div class="answer">Because "present in the repo" and "present in the Docker build context" are different
+  things — <code>.dockerignore</code>'s <code>outputs/*</code> line excluded <code>outputs/freddie</code> (and
+  <code>outputs/mdd</code>) from the context assembled for the build, and that filtering happens client-side,
+  before the daemon receives anything. From the daemon's point of view the path genuinely did not exist among
+  the files it was given, so "not found" was a true, accurate error — not a flaky platform bug. The fix was two
+  added lines, <code>!outputs/freddie</code> and <code>!outputs/mdd</code>, re-admitting those directories into
+  the context (see the <code>.dockerignore</code> diff above).</div>
+  </details>
+</li>
+<li>The gate report and the shipping commit message disagree about the root cause of the same incident. How
+should a reader reconcile that, in general, when a project's own historical documents conflict?
+  <details><summary>Answer</summary>
+  <div class="answer">Trust the artifact closest to the actual fix and furthest from the in-the-moment
+  narrative: the commit's diff (the two <code>.dockerignore</code> lines) and its own summary line are what
+  the shipped, working state of the repository is actually built on, whereas the gate report is a faithful
+  record of a diagnosis-in-progress that was later superseded. Neither document is dishonest — the gate report
+  correctly records what was tried and known <em>at that point in the session</em>; the commit message records
+  what was learned <em>afterward</em>, before the final ship. When they conflict, the later artifact that
+  matches the code as it actually stands (here, the presence of the two <code>!outputs/</code> lines) is the
+  one to believe.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-5">10.5 HF Spaces deployment: port 7860, secrets, the README metadata block</h3>
+<!-- ============================================================== -->
+<div class="defn">
+<b>Port 7860.</b> Hugging Face Spaces' Docker SDK convention: the container must <code>EXPOSE</code> and listen
+on port <b>7860</b> (the Dockerfile's final line: <code>EXPOSE 7860</code> +
+<code>CMD [..., "--port", "7860", ...]</code>) — the platform routes public traffic to that port specifically;
+a container listening anywhere else simply never receives a request. The same port convention is baked into
+<code>app/ui/vite.config.js</code>'s dev-server proxy target (&sect;10.8) and into every local
+<code>docker run -p 7860:7860</code> invocation in the README's quickstart.
+</div>
+
+<div class="defn">
+<b>Secrets: never in the image, injected at container runtime.</b> The one credential this app needs,
+<code>OPENROUTER_API_KEY</code>, is set as an HF <b>Space secret</b> (via the Space's Settings &rarr;
+"Variables and secrets" panel) and injected as an environment variable when the container starts — it is never
+a build argument, never baked into a layer, and the frontend never sees it. Locally, the equivalent is
+<code>docker run -e OPENROUTER_API_KEY -p 7860:7860 ifrs9-ecl-copilot</code>. Enforcement is layered:
+<code>.dockerignore</code> excludes <code>.env</code>/<code>.env.*</code>/<code>*.key</code>/<code>*credentials*</code>/<code>*.pem</code>
+from the build context outright, and the Day-4 gate report records the actual verification step —
+<code>docker save ifrs9-ecl-copilot:day4 | grep -a -c "sk-or-"</code> against every layer of the saved image,
+<b>0 matches</b>. Without the key set at all, the app still serves: a deterministic keyword router answers the
+four Tier-1 tool families offline and refuses everything else — "a demoed feature," per the Dockerfile's own
+top comment, not a degraded fallback to apologise for.
+</div>
+
+<div class="ex">
+<pre class="trace"># local
+docker build -t ifrs9-ecl-copilot .
+docker run -e OPENROUTER_API_KEY -p 7860:7860 ifrs9-ecl-copilot</pre>
+<p style="margin:4px 0 0 0;">(<code>README.md</code>, "Docker (what the HF Space runs)" — the exact command the
+live Space's own container invocation mirrors.)</p>
+</div>
+
+<h4>The README metadata block — and the two-README trap</h4>
+<p>Hugging Face Spaces read their configuration (SDK type, the app's listening port, title, colour theme, short
+description) from a YAML frontmatter block at the very top of the Space's own <code>README.md</code> — the
+convention looks like:</p>
+<div class="ex">
+<pre class="trace">---
+title: IFRS 9 ECL Copilot
+sdk: docker
+app_port: 7860
+pinned: false
+---</pre>
+<p style="margin:4px 0 0 0;">This file is <b>not</b> the project's own root <code>README.md</code> — it is a
+separately, independently maintained file that lives only in the Space's own git repo, with no corresponding
+source file tracked in the project repository (confirmed by diffing the two before editing, per
+<code>outputs/gate/mdd_freddie_gate.md</code> &sect;4). The project README documents the codebase for GitHub
+readers; the Space README's frontmatter is machine-read configuration for HF's platform, plus a short
+human-facing pitch below it.</p>
+</div>
+
+<div class="warn">
+<b>The recorded trap: blanket-uploading the project's own <code>README.md</code> clobbers the Space's
+frontmatter.</b> Both the App&nbsp;v2 gate and the (independent) stretch gate hit this same incident: an upload
+step used an <code>allow_patterns</code> list that happened to include the repository's plain
+<code>README.md</code> — which carries no <code>sdk:</code>/<code>app_port:</code> frontmatter at all — and
+overwrote the Space's tailored README wholesale. Consequence: the platform could no longer determine how to
+build or run the Space, and it dropped into runtime stage <code>CONFIG_ERROR</code> immediately. Both
+incidents were caught and fixed within the same session (rebuild the Space README from its own last-known-good
+frontmatter + an updated body, upload it as its own targeted commit), but the App&nbsp;v2 gate report is blunt
+about the generalisable lesson: <i>"never blanket-upload the repo's own <code>.gitattributes</code>/
+<code>README.md</code> to the Space without diffing against the Space's current copy first — they are
+separate, independently-evolved files."</i> A second, related incident in the same session — overwriting the
+Space's <code>.gitattributes</code> with the repo's bare version, which lacked the correct
+<code>filter=lfs</code> rules for <code>*.parquet</code>/<code>*.joblib</code> — produced a <em>different</em>
+failure signature entirely: the build succeeded, but the container crashed at startup with
+<code>pyarrow.lib.ArrowInvalid: Could not open Parquet input source '&lt;Buffer&gt;': Parquet magic bytes not
+found in footer</code>, because the checkout smudged
+LFS pointer text instead of real file content into <code>data/processed/panel.parquet</code>. HF's platform
+surfaced that as runtime stage <code>RUNTIME_ERROR</code> — a different stage entirely from
+<code>CONFIG_ERROR</code>, because the build itself had genuinely succeeded; only the running container was
+broken.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Both incidents in this section share one root shape with &sect;10.4's
+<code>.dockerignore</code> lesson: a file that looks single and canonical from inside the project repo
+(<code>README.md</code>, <code>.gitattributes</code>) is, from the Space's point of view, actually two
+independently-evolved files that happen to share a path — and any tooling that treats "upload everything that
+changed in the project repo" as safe by default will eventually clobber the Space-specific half of that pair.
+Every ship session <em>after</em> the App&nbsp;v2 gate adopted the same fix as policy: scope uploads to exactly
+the changed application files, and touch the Space's <code>README.md</code>/<code>.gitattributes</code> only
+via their own narrowly-targeted, diffed-first commits (UI&nbsp;v3's gate report explicitly names this as a
+lesson learned from App&nbsp;v2's incident, applied proactively).
+</div>
+
+<div class="gotcha">
+<b>Gotcha — <code>CONFIG_ERROR</code> and <code>RUNTIME_ERROR</code> look similar from the outside (the Space
+is down) but mean opposite things about where to look.</b> <code>CONFIG_ERROR</code> means the platform never
+even attempted to interpret the Dockerfile — usually a malformed or missing frontmatter, fixable by inspecting
+the README's top block. <code>RUNTIME_ERROR</code> means the build succeeded and the image is valid Docker, but
+the process inside it crashed — the fix lives in application code, data integrity, or environment/secrets, not
+in the README at all. Conflating the two wastes debugging time in the wrong file.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is <code>OPENROUTER_API_KEY</code> injected at container <em>runtime</em> (a Space secret) rather than
+passed as a Docker build argument?
+  <details><summary>Answer</summary>
+  <div class="answer">A build argument gets baked into the image's build history/layers (and in Docker's
+  default behaviour, potentially into cache metadata) — anyone with access to the image, including a saved/
+  exported copy, could recover it. Runtime environment injection means the key exists only in the running
+  container's process environment, never written into any image layer, which is exactly what the Day-4 gate's
+  <code>docker save | grep</code> check verifies (0 matches for the key's known prefix across every saved
+  layer).</div>
+  </details>
+</li>
+<li>A teammate wants to "just re-upload the whole repo" to refresh the Space after a big local change. What two
+files should be excluded from that blanket upload, per this section's recorded incidents, and why?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>README.md</code> and <code>.gitattributes</code> — both are independently
+  maintained on the Space (the README carries HF-specific YAML frontmatter the project's own README lacks; the
+  <code>.gitattributes</code> carries LFS filter rules for large tracked binaries the project's bare version
+  doesn't declare). Blanket-including either one clobbers the Space's own correct copy and produces a real
+  outage (<code>CONFIG_ERROR</code> for the README, <code>RUNTIME_ERROR</code> for
+  <code>.gitattributes</code>), as recorded in two separate gate sessions.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-6">10.6 The ship pipeline as practiced: the state machine</h3>
+<!-- ============================================================== -->
+<p>Every ship session polls the same underlying signal — <code>HfApi.space_info(..., expand=["runtime"])</code>'s
+<code>runtime.stage</code> field — from the moment a commit lands on the Space until the app answers real
+traffic. The literal stage values recorded across five ship sessions (quoted verbatim from the gate reports,
+not paraphrased) are shown in Exhibit&nbsp;10.2.</p>
+
+<img class="fig" src="../assets/img/ch10/02_deploy_state_machine.png" alt="Deploy pipeline state machine: upload commits to the Space repo, which either goes to CONFIG_ERROR on bad README frontmatter or enters RUNNING_BUILDING; from there it proceeds to RUNNING_APP_STARTING and then RUNNING, or can fail with a build-time checksum error or a runtime error; factory_reboot and bump-commit are shown as two different recovery levers with different applicability, and a note states the domain stays READY and old builds keep serving throughout any stall">
+<div class="figcap"><b>Exhibit 10.2</b> — The HF Space deploy pipeline as practiced: <code>runtime.stage</code>
+values recorded across five ship sessions (<code>outputs/gate/{stretch,uiv3,appv2,mdd_freddie,macro_interp}_gate_report.md</code>).</div>
+
+<div class="ex">
+<pre class="trace">[08:17:47] stage=RUNNING_BUILDING       sha=6675237...
+[08:18:03] stage=RUNNING_APP_STARTING
+[08:18:47] stage=RUNNING_BUILDING       (rebuild churn, same commit)
+[08:19:02] stage=RUNNING</pre>
+<p style="margin:4px 0 0 0;">(<code>outputs/gate/macro_interp_gate.md</code> &sect;4 — the cleanest recorded
+run: RUNNING reached ~75s after push, "no queue stall this time." Note the churn: even a clean run can bounce
+back into <code>RUNNING_BUILDING</code> briefly before settling — the state machine is not strictly
+monotonic.)</p>
+</div>
+
+<h4>Byte-identical verification, not just "it says RUNNING"</h4>
+<p>Reaching <code>RUNNING</code> confirms the container started; it does not by itself confirm the <em>right</em>
+code is running. Every recorded ship session adds an explicit content check on top of the stage signal:</p>
+<ul>
+<li><b>SPA bundle-hash match.</b> The Day-4 and MDD/Freddie gates both fetch the live Space's served JS bundle
+filename (e.g. <code>/assets/index-DP9C4-QY.js</code>) and confirm it matches the hash <code>npm run build</code>
+produced locally in the same session — a mismatched hash would mean the live Space is still serving an older
+build even though its stage reads <code>RUNNING</code>.</li>
+<li><b>Raw file byte-comparison.</b> The UI&nbsp;v3 gate, mid-stall, downloaded <code>Dockerfile</code>,
+<code>app/ui/package.json</code>, and <code>app/ui/scripts/verify-waterfall.mjs</code> straight from the Space
+repo and diffed them byte-for-byte against the local, already-verified copies — confirming the upload itself
+was correct even while the build queue had not yet cleared.</li>
+<li><b>Live endpoint re-verification.</b> Every gate closes with the same four-question demo E2E (a shock
+question, a Tier-2 analysis question, a Tier-3 citation question, a refusal) re-run against the <em>public</em>
+URL, not just a local container — <code>macro_interp_gate.md</code> goes further still, independently
+recomputing a served coefficient's <code>hazard_ratio_per_unit</code> as <code>round(exp(coef), 6)</code> in
+its own verify script and confirming an exact match against the API's own field, for three sampled rows.</li>
+</ul>
+
+<div class="interpretation">
+<b>Interpretation.</b> The state machine (Exhibit&nbsp;10.2) answers "did a build happen and did a process
+start" — a necessary but not sufficient question. Every recorded ship session treats <code>RUNNING</code> as
+the start of verification, not the end of it, precisely because the README/<code>.gitattributes</code>
+incidents (&sect;10.5) and the <code>outputs/freddie</code>/<code>outputs/mdd</code> incident (&sect;10.4)
+each demonstrate a distinct way a Space can look healthy from the stage signal alone while actually serving
+stale, broken, or incomplete functionality.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a Docker Space does not keep serving a prior successful container once a new build fails.</b> The
+MDD/Freddie gate records this explicitly: partway through the 9-failure incident, the live Space itself went to
+HTTP&nbsp;503 ("Your space is in error") — unlike a rolling-deployment platform that keeps the last-known-good
+version live while a new one fails to build, a Docker Space commits to the new build attempt, and a failure
+there takes the whole Space down, not merely leaves it un-updated. This makes &sect;10.7's zero-downtime
+property (during a <em>queue stall</em>, not a build <em>failure</em>) worth distinguishing carefully: a stall
+before the build starts is safe; a build that starts and fails is not.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A gate report says the Space reached <code>RUNNING</code> and <code>/api/health</code> returned 200. Is
+that sufficient evidence the newly-pushed code is what's actually live?
+  <details><summary>Answer</summary>
+  <div class="answer">No — <code>RUNNING</code> and a healthy <code>/api/health</code> only confirm
+  <em>some</em> container started and its process is answering, which could in principle be a stale build if
+  the deploy pipeline malfunctioned in a way that didn't prevent startup. Every recorded ship session adds a
+  content-level check on top — a bundle-hash comparison, a byte-for-byte file diff, or a live functional
+  re-verification of the actual feature that changed — specifically because stage-level health alone doesn't
+  distinguish "the right new code is running" from "a container is running."</div>
+  </details>
+</li>
+<li>Why does <code>macro_interp_gate.md</code> independently recompute <code>hazard_ratio_per_unit</code> as
+<code>exp(coef)</code> in its own script, rather than just checking that the live endpoint returns 200 with a
+non-null field?
+  <details><summary>Answer</summary>
+  <div class="answer">A 200 response with a plausible-looking non-null number would not catch a subtly wrong
+  formula, a stale cached value, or a sign error — independently deriving the same number from the coefficient
+  using the documented transformation and checking for an exact match is the only check that verifies
+  correctness, not just presence. This mirrors the project's general "recompute every number" discipline
+  (conventions.md &sect;5) applied to a live-deploy verification step rather than a notes chapter.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-7">10.7 The queue-stall playbook: <code>factory_reboot</code> vs bump-commit</h3>
+<!-- ============================================================== -->
+<p>Two genuinely different failure classes have both, at different times, left a Space stuck short of
+<code>RUNNING</code> for an extended period — and the fix that works for one does <em>not</em> work for the
+other. Distinguishing them is the entire playbook.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Case</th><th>Stuck stage</th><th>Duration</th><th>Remedy tried</th><th>Outcome</th></tr>
+<tr><td>Stretch gate</td><td class="num">APP_STARTING, hardware: null</td><td class="num">~25 min</td><td>restart_space(factory_reboot=True)</td><td class="num">cleared</td></tr>
+<tr><td>App&nbsp;v2 gate</td><td class="num">APP_STARTING (recurrence)</td><td class="num">~8 min</td><td>restart_space(factory_reboot=True)</td><td class="num">cleared, RUNNING within ~3 more min</td></tr>
+<tr><td>UI&nbsp;v3 gate, attempt 1</td><td class="num">RUNNING_BUILDING</td><td class="num">~55 min</td><td>none yet (queue log pinned at "Queued")</td><td class="num">still stuck</td></tr>
+<tr><td>UI&nbsp;v3 gate, attempt 2</td><td class="num">RUNNING_BUILDING</td><td class="num">~57 min more</td><td>restart_space(factory_reboot=True)</td><td class="num"><b>did NOT clear it</b></td></tr>
+<tr><td>UI&nbsp;v3 cycle, resolution</td><td class="num">RUNNING_BUILDING</td><td class="num">~7.5&nbsp;h total</td><td>bump-commit (new content-changed push)</td><td class="num">cleared at 07:27; live-verified</td></tr>
+</table>
+</div>
+<p class="src">Sources: <code>outputs/gate/{stretch,appv2,uiv3}_gate_report.md</code>;
+<code>wiki/memory/log.md</code> ("HF Space build queue stuck in RUNNING_BUILDING ~2h (factory_reboot did not
+clear it this time — it is a queue stall, not the APP_STARTING hang)" and "UI v3 LIVE on the Space (build
+finally cleared HF's ~7.5h builder backlog at 07:27; bump-commit lever worked, zero downtime throughout)").</p>
+
+<div class="defn">
+<b>Two levers, two different failure classes.</b>
+<ul>
+<li><b><code>factory_reboot=True</code></b> — a stronger container reset than a plain restart. Effective
+against an <code>APP_STARTING</code>/<code>hardware: null</code> hang: the platform allocated no hardware to
+the container and a reboot re-triggers allocation. <b>Not</b> effective against a genuine
+<code>RUNNING_BUILDING</code> queue backlog — rebooting a container that was never running yet has nothing to
+reset.</li>
+<li><b>Bump-commit</b> — push a new, content-changed commit (re-queuing the build, effectively moving it to a
+fresh position in whatever internal queue the platform maintains). This is what actually cleared the recorded
+7.5-hour <code>RUNNING_BUILDING</code> stall, after a <code>factory_reboot</code> had already been tried and
+failed on the same stall.</li>
+</ul>
+</div>
+
+<div class="ex">
+<pre class="trace">RUNNING_BUILDING (queue) 21:54 ---(~55min, log pinned "Queued")---> still RUNNING_BUILDING
+  -> factory_reboot=True (22:53, queue timestamp advances)
+  -> RUNNING_BUILDING (queue, again) ---(~57min more)---> still RUNNING_BUILDING
+  -> [gap: Freddie Phase A session logs "platform backlog ~3h+, old app live, watcher running"]
+  -> bump-commit
+  -> RUNNING at 07:27  (total elapsed ~7.5h)</pre>
+<p style="margin:4px 0 0 0;">Reconstructed from <code>outputs/gate/uiv3_gate_report.md</code> &sect;8 and
+<code>wiki/memory/log.md</code>'s three consecutive entries spanning the UI&nbsp;v3 ship cycle. The Space's
+<code>domains.stage</code> stayed <code>READY</code> and the pre-UI-v3 build kept serving <code>200</code>
+throughout the entire ~7.5&nbsp;hour window — zero visitor-facing downtime, even though the new build was not
+yet live.</p>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The practical playbook this history supports: check <code>runtime.stage</code> first.
+If it's <code>APP_STARTING</code> with <code>hardware: null</code>, a <code>factory_reboot</code> is the
+proportionate, historically effective first move. If it's <code>RUNNING_BUILDING</code> with the build log
+pinned at a single unchanging line (not advancing even under a live-streamed <code>follow=True</code> poll),
+that is evidence of a genuine queue backlog rather than a hardware hang — a <code>factory_reboot</code> is not
+known to help there (it failed once, on the one occasion it was tried against this exact symptom), and the
+lever that eventually worked was simply pushing a new commit and waiting again, for a total of several hours
+if necessary. Both levers share one safety property worth relying on: neither one takes the live site down,
+because the previous successful build keeps serving throughout.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a second reboot is not obviously safer than waiting.</b> The UI&nbsp;v3 gate explicitly declined to
+try a second <code>factory_reboot</code> after the first one failed to clear the stall, reasoning that "the
+first one gave no evidence of helping, and forcing another risks discarding whatever progress the platform has
+made silently in the background" — the build queue's own log staying silent for the ENTIRE duration of even
+the successful eventual build (not just the stuck attempts) means log silence is not, by itself, evidence of
+zero progress. Repeatedly rebooting a queue that might already be partway through a slow build risks resetting
+real progress rather than fixing a hang.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A Space is stuck at <code>runtime.stage == "RUNNING_BUILDING"</code> for 40 minutes with the build log
+showing only a single unchanging "Queued" line. Based on the recorded cases in this section, is
+<code>factory_reboot=True</code> a good first move?
+  <details><summary>Answer</summary>
+  <div class="answer">Not obviously — this symptom (stuck in <code>RUNNING_BUILDING</code>, log pinned, not
+  <code>APP_STARTING</code>/<code>hardware: null</code>) matches the UI&nbsp;v3 gate's queue-backlog case, where
+  a <code>factory_reboot</code> was tried and explicitly did NOT clear it; the lever that eventually worked for
+  that exact symptom was a bump-commit, after a total of ~7.5 hours. <code>factory_reboot</code>'s recorded
+  successes are both against a different symptom (<code>APP_STARTING</code>, <code>hardware: null</code>).
+  Matching the symptom to the case in the table above matters more than reaching for the same remedy every
+  time.</div>
+  </details>
+</li>
+<li>Why did the project consider the multi-hour <code>RUNNING_BUILDING</code> stalls acceptable to simply wait
+out, rather than treating them as an emergency requiring an immediate workaround?
+  <details><summary>Answer</summary>
+  <div class="answer">Because a queue stall (as opposed to a build FAILURE, s10.6's gotcha) leaves
+  <code>domains.stage</code> at <code>READY</code> and the previous successful build keeps serving live traffic
+  the entire time — zero visitor-facing downtime was confirmed and re-confirmed throughout every recorded
+  stall. The cost of waiting was a delay in shipping the NEW code, not an outage, which is a much lower-stakes
+  trade-off than it would be if the site itself were down.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-8">10.8 Local dev flow: uvicorn + vite</h3>
+<!-- ============================================================== -->
+<p>Two distinct local flows exist, for two different purposes — a production-shaped single-process flow (what
+the Docker image itself does), and a fast iterative dev-loop flow (what a UI change is actually developed
+against).</p>
+
+<h4>Production-shaped: build once, one process serves everything</h4>
+<div class="ex">
+<pre class="trace">uv sync
+cp .env.example .env                          # add OPENROUTER_API_KEY (optional)
+cd app/ui && npm install && npm run build && cd ../..
+uv run --no-sync uvicorn app.api.main:app --port 7860
+# open http://localhost:7860</pre>
+<p style="margin:4px 0 0 0;">(<code>README.md</code>, "Local (uv, Python 3.13)".) This mirrors exactly what the
+Dockerfile does: build the SPA once into <code>app/ui/dist</code>, then let the one FastAPI process serve both
+the API and the static bundle via the same <code>StaticFiles(directory=UI_DIST, html=True)</code> mount at
+<code>/</code> used in the container. The port is conventionally <b>7860</b> to match the Docker/HF Spaces
+target, but any free local port works equally — the orchestrator note behind this chapter, for instance,
+records running locally on <b>7861</b> when 7860 was already occupied; nothing in the app itself is hardcoded
+to 7860 outside the Dockerfile's own <code>EXPOSE</code>/<code>CMD</code> and the vite proxy target below.</p>
+</div>
+
+<h4>Dev-loop: two processes, hot-reloading UI, API held constant</h4>
+<div class="ex">
+<pre class="trace"># terminal 1 — backend, unchanged between UI edits
+uv run --no-sync uvicorn app.api.main:app --port 7860
+
+# terminal 2 — frontend dev server with hot module reload
+cd app/ui && npm run dev          # vite, default port 5173</pre>
+<p style="margin:4px 0 0 0;"><code>app/ui/vite.config.js</code>'s dev server proxies both <code>/api</code> and
+<code>/static</code> to <code>http://localhost:7860</code> (<code>target</code>, <code>changeOrigin: true</code>)
+— so a browser pointed at the vite dev server's own port sees a live, hot-reloading UI while every data call
+transparently reaches the real FastAPI backend running unchanged in the other terminal. The config also sets
+<code>watch: { usePolling: true }</code> with an inline comment explaining why: "9P / WSL2 drvfs mount:
+inotify is unreliable, poll instead" — a concrete example of a dev-environment detail baked directly into
+project config because the default (filesystem-event-based watching) silently failed to detect edits on this
+particular filesystem.</p>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The two flows exist for different reasons and should not be conflated: the
+production-shaped flow is what to run when the question is "does this behave like the deployed container," and
+is the one worth running before any Docker rebuild to catch a UI/API integration bug cheaply. The dev-loop flow
+is what to run while actively editing <code>.jsx</code> files, because rebuilding the whole SPA (a multi-second
+<code>vite build</code>) on every keystroke would make iteration painfully slow — vite's dev server serves
+unbundled modules with hot module replacement instead. Both ultimately talk to the exact same FastAPI backend
+process; only how the UI layer is served differs.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — forgetting <code>npm run build</code> before the production-shaped flow does not crash the
+backend.</b> <code>app/api/main.py</code> guards the static mount: if <code>app/ui/dist</code> doesn't exist,
+FastAPI serves a graceful fallback page at <code>/</code> instead ("up (see <code>/docs</code>), but
+<code>app/ui/dist</code> [missing]" — paraphrased from the guard's own response text) rather than throwing a
+500 or refusing to start. Every API route (<code>/api/*</code>, including <code>/docs</code>) still works
+normally in this state — only the root SPA route degrades. This is the same guarded-mount pattern used for
+<code>outputs/freddie</code>/<code>outputs/mdd</code> (&sect;10.4's <code>FREDDIE_DIR.exists()</code> /
+<code>MDD_DIR.exists()</code> checks) — the app is written throughout to degrade a missing optional asset
+gracefully rather than fail hard, which is exactly why the Real Data tab's 500s during the 9-failure incident
+were the tab's own endpoint calls failing (data genuinely absent), not a boot-time crash of the whole app.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does the dev-loop flow run TWO processes (uvicorn on 7860, vite on 5173) instead of just pointing a
+browser at <code>localhost:7860</code> after every UI edit?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the production-shaped flow requires a full <code>npm run build</code> (a
+  multi-second bundling step) before the FastAPI static mount serves the new UI code at all — fine for
+  confirming production-like behaviour occasionally, far too slow for iterative editing. The dev-loop flow's
+  vite dev server serves the UI with hot module replacement (near-instant updates on save) and simply proxies
+  data calls through to the unchanged backend process on 7860, so only the UI half of the stack needs to
+  restart/reload on every edit.</div>
+  </details>
+</li>
+<li>A developer runs the production-shaped flow but skips <code>npm run build</code>. What actually happens
+when they open <code>http://localhost:7860/</code>?
+  <details><summary>Answer</summary>
+  <div class="answer">Not a crash — <code>app/api/main.py</code>'s static mount is guarded: with
+  <code>app/ui/dist</code> absent, it serves a graceful fallback page noting the API is up (with a link to
+  <code>/docs</code>) but the UI hasn't been built, and every <code>/api/*</code> route continues to work
+  normally. This mirrors the same defensive "missing optional asset degrades gracefully" pattern used for the
+  Freddie/MDD directories.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-9">10.9 Image contents inventory: what ships, what doesn't, and why</h3>
+<!-- ============================================================== -->
+<img class="fig" src="../assets/img/ch10/03_image_layers.png" alt="Image contents inventory shown as two labeled panels: on the left, what is shipped inside the runtime image, sized roughly by weight — the python base and 73 pinned dependencies dominate, followed by runtime code, wiki and knowledge retrieval sources, two skill scripts, the data panel and scenario CSVs, the 88.7 megabyte joblib model cache, the outputs exhibit directories, and the built SPA; on the right, what is excluded by dockerignore — torch at roughly five gigabytes, raw and non-whitelisted processed data, tests scripts docs and the challenger study, non-shipped knowledge sources, node_modules and the pre-copy dist, and secrets/credentials patterns">
+<div class="figcap"><b>Exhibit 10.3</b> — What is (and is not) in the runtime image (<code>Dockerfile</code>,
+<code>.dockerignore</code>; last full size measurement 1.45&nbsp;GB, day-4 gate).</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Category</th><th>Ships?</th><th>Why</th></tr>
+<tr><td>python:3.13-slim + 73 pinned deps</td><td class="num">yes</td><td>runtime dependency closure per <code>requirements.docker.txt</code>, torch pruned (&sect;10.3)</td></tr>
+<tr><td><code>engine/ agent/ app/api analysis/</code></td><td class="num">yes</td><td>the code that actually runs a request</td></tr>
+<tr><td><code>wiki/</code> + <code>knowledge/{corpus,index}</code></td><td class="num">yes</td><td>Tier-3 <code>query_model_docs</code> retrieval sources (Chapter&nbsp;8), read-only, no LLM/network at retrieval time</td></tr>
+<tr><td>2 skill scripts (<code>wiki_query.py</code>+sibling, <code>pageindex_query.py</code>)</td><td class="num">yes</td><td>loaded by file path via <code>importlib</code> from <code>agent/tier3_retrieval.py</code></td></tr>
+<tr><td><code>data/ingest</code>, <code>panel.parquet</code>, <code>scenarios/*.csv</code></td><td class="num">yes</td><td>the one panel and scenario set every engine call needs; nothing else under <code>data/</code></td></tr>
+<tr><td><code>outputs/models/</code> (joblib cache)</td><td class="num">yes</td><td>warm-start the fitted models, &sect;10.10</td></tr>
+<tr><td><code>outputs/{hazard,lgd,staging,eda,vasicek,scenario_ecl,challenger,freddie,mdd}</code></td><td class="num">yes</td><td>markdown reports + PNGs the exhibit/model/policy/Freddie endpoints parse and StaticFiles-serve</td></tr>
+<tr><td>built SPA (<code>app/ui/dist</code>)</td><td class="num">yes</td><td>served at <code>/</code>, the only artifact crossing the stage boundary</td></tr>
+<tr><td>torch</td><td class="num">no</td><td>challenger-only, no runtime import, ~5&nbsp;GB avoided (&sect;10.3)</td></tr>
+<tr><td><code>data/raw</code>, most of <code>data/processed/*</code></td><td class="num">no</td><td>licensed raw data, not redistributed; not needed once the panel is built</td></tr>
+<tr><td><code>tests/ scripts/ docs/ challenger/</code></td><td class="num">no</td><td>dev tooling and the offline study torch's prune already excludes the runtime need for</td></tr>
+<tr><td><code>knowledge/{sources,code_map.md,code_fp.json,captions.json}</code></td><td class="num">no</td><td>raw licensed docs / dev-only PageIndex metadata, not retrieval sources</td></tr>
+<tr><td><code>app/ui/node_modules</code>, source <code>app/ui/dist</code></td><td class="num">no</td><td>stage&nbsp;1 rebuilds <code>dist</code> fresh inside the image every time; a stale local copy must never leak in</td></tr>
+<tr><td><code>.env</code>/keys/credentials/<code>.pem</code></td><td class="num">no</td><td>secrets, enforced by <code>.dockerignore</code> + the CI grep check (&sect;10.5)</td></tr>
+</table>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Reading this table as a whole, the shipped set is exactly "what a live request needs to
+answer correctly" — code, fitted models, retrieval sources, and the specific reference reports the UI parses —
+while the excluded set is everything that exists to <em>produce</em> those artifacts (raw data, training
+scripts, the offline challenger study, dev tooling) but is never touched again once they're produced. This is
+the general shape of a well-separated build/runtime boundary: the image is a snapshot of outputs, not a copy of
+the workshop that made them.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "small" is relative, and the dominant cost is the Python dependency closure, not the project's own
+code.</b> Every one of <code>engine/</code>, <code>agent/</code>, <code>app/api/</code>, <code>analysis/</code>,
+the 2 skill scripts, and even <code>wiki/</code>+<code>knowledge/corpus</code> together are small (the
+<code>.dockerignore</code> comment for the skills scripts notes ~272K total for the whole <code>.claude/</code>
+directory before whitelisting trims it to two files) — the 73-package Python dependency closure
+(pandas/numpy/scipy/statsmodels/FastAPI/LangGraph/the OpenAI SDK, etc.) and the base <code>python:3.13-slim</code>
+image itself account for the overwhelming majority of the reported 1.45&nbsp;GB. Pruning torch (&sect;10.3)
+was worth doing precisely because it targeted the single largest addressable line item, not because every
+excluded item individually mattered at that scale.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does <code>knowledge/corpus</code> ship but <code>knowledge/sources</code> does not, even though both
+are under the same top-level <code>knowledge/</code> directory?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>knowledge/corpus</code> (plus <code>knowledge/index</code>) is the pre-processed,
+  indexed retrieval source Tier-3's <code>query_model_docs</code> actually reads at request time.
+  <code>knowledge/sources</code> holds the raw, licensed source documents the corpus was built FROM — dev-only
+  input to a one-time preprocessing step, never read again once the corpus exists, and (being licensed raw
+  material) not something to redistribute inside a public image regardless.</div>
+  </details>
+</li>
+<li>If the reported 1.45&nbsp;GB image size needed to shrink further, which single category in the table above
+would be the highest-leverage target, and why?
+  <details><summary>Answer</summary>
+  <div class="answer">The base image + 73 pinned Python dependencies — per the gotcha above, this dominates the
+  total far more than any of the project's own code or reference-report directories, all of which are
+  individually small. (Torch, the other historically large item, is already pruned.) A further reduction would
+  most likely come from auditing whether every one of the 73 packages is genuinely load-bearing at runtime,
+  the same kind of scrutiny that identified torch as prunable in the first place.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s10-10">10.10 Cold vs warm start: the joblib cache-slimming story</h3>
+<!-- ============================================================== -->
+<p>Chapter&nbsp;8 introduced the Tier-1 tools' heavy engine state (fitted hazard and LGD models, recovered
+systematic factor <code>Z</code>, the fitted satellite, the scenario set) as built once, lazily, on first use.
+This section is the deployment-facing half of that same mechanism: what actually happens to a request the
+first time a fresh container serves it, and why the on-disk cache is 88.7&nbsp;MB rather than the ~750&nbsp;MB
+the raw fitted models would otherwise weigh.</p>
+
+<div class="defn">
+<b>The staleness-keyed cache (<code>agent/tools_tier1.py</code>).</b> <code>warm_up()</code> is called once
+from the FastAPI <code>lifespan</code> startup hook (<code>await run_in_threadpool(tools.warm_up)</code>,
+<code>app/api/main.py</code>), so the cost is paid before the container accepts its first request, not on it.
+<code>_fit_or_load_models()</code> computes a <b>fingerprint</b> — a SHA-256 hash over
+<code>data/processed/panel.parquet</code>'s size+mtime, the literal bytes of <code>engine/hazard.py</code> and
+<code>engine/lgd.py</code>, and a manually-bumped <code>CACHE_VERSION</code> constant — and checks it against
+the fingerprint stored alongside the cached models in <code>outputs/models/tier1_models.joblib</code>. A match
+loads the cache (a <b>warm start</b>); a mismatch silently triggers a full refit (a <b>cold start</b>).
+</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Path</th><th>Cost</th><th>Recorded observations</th></tr>
+<tr><td>Cold (fresh refit)</td><td class="num">~10&ndash;50s</td><td class="num">module docstring's own estimate for the three models (four fitted <code>statsmodels</code> objects, since LGD splits into cure + severity)</td></tr>
+<tr><td>Warm (joblib load)</td><td class="num">~9&ndash;25s</td><td class="num">9s (<code>wiki/pages/agent-layer.md</code>); 12.81s, 13.2s, 16.46s, 24.87s across gate sessions and environments (12.81s/24.87s are the day-4 gate's own local-container vs. live-Space checks, not two separate sessions)</td></tr>
+</table>
+</div>
+<p class="src">Sources: <code>agent/tools_tier1.py</code> module docstring; <code>outputs/gate/{day4,appv2,
+mdd_freddie}_gate_report.md</code>; <code>wiki/pages/agent-layer.md</code>. The spread within "warm" reflects
+different hardware/container conditions — including, within the day-4 gate alone, a local Docker container
+(12.81s) versus the live HF Space (24.87s) — not a changing cache.</p>
+
+<div class="ex">
+<b>The slimming story, worked from the actual code.</b>
+<p style="margin:4px 0 8px 0;">Freshly-fit <code>statsmodels</code> result objects each drag their entire estimation
+sample along by default — endog/exog arrays, working weights, residuals, fitted values — and
+<code>_strip_training_data()</code>'s own docstring puts the <b>combined</b> weight of the four objects it
+strips (the default and prepayment hazard fits, plus the LGD model's cure and severity fits) at
+<b>~750&nbsp;MB on this panel</b> — in line with the ~777&nbsp;MB actually recorded before stripping (below).
+Every downstream engine call only ever needs <code>result.params</code>, formula-based
+<code>result.predict(new_df)</code>, and <code>result.model.data.design_info</code> — so three specific
+reductions are applied to a deep copy of each object before it is dumped to disk:</p>
+<ol style="margin:0 0 8px 20px;">
+<li><code>remove_data()</code> drops the <em>n</em>obs-length arrays outright (scalar diagnostics like
+<code>llf</code>/<code>llnull</code> are touched first, so they're cached before the data they depend on
+disappears).</li>
+<li>The retained <code>data.frame</code> is pruned to only the <b>columns</b> the fitted formula actually
+references (same rows) — needed because patsy's <code>design_info</code> can't itself be pickled;
+<code>statsmodels</code>' own <code>__setstate__</code> rebuilds it at load time by re-running
+<code>dmatrices(formula, frame)</code> against these exact retained rows, which reproduces a bit-identical
+<code>design_info</code> (including stateful transforms like spline knots and centering means) without needing
+the full original sample.</li>
+<li><code>orig_endog</code>/<code>orig_exog</code> are nulled — <code>__setstate__</code> only falls back to
+them when <code>frame</code> is absent, and no engine code path reads them.</li>
+</ol>
+<p style="margin:0;">The <b>same stripped copy</b> is both what gets dumped to
+<code>outputs/models/tier1_models.joblib</code> <em>and</em> what runs in-process on a cold fit — so a
+warm-started session and a freshly-fit session run bit-identical objects, a property <code>tests/test_tools.py</code>
+pins directly. <code>wiki/pages/agent-layer.md</code> records the measured before/after as
+<b>777&nbsp;MB &rarr; 88.7&nbsp;MB</b>. Verified independently this session against the actual file on disk:
+<code>outputs/models/tier1_models.joblib</code> is <b>88,745,269 bytes</b> — 88.7&nbsp;MB to the same precision
+the wiki page records.</p>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> This is the deployment payoff of the stripping work: an unstripped ~750&nbsp;MB cache
+(the combined weight of the four fitted objects — default hazard, prepayment hazard, and the LGD model's cure
+and severity fits — before stripping) would have made <code>outputs/models/</code> itself
+one of the single largest items in the image, working directly against &sect;10.9's whole "keep the image lean"
+discipline — instead it is a comfortably small, single 88.7&nbsp;MB file that turns a ~10&ndash;50s cold refit
+into a ~9&ndash;25s warm load on every container start where the panel and the frozen engine files haven't
+changed. The fingerprint mechanism is what makes this safe rather than merely fast: a cache built against a
+different panel or a different (even byte-level) version of <code>hazard.py</code>/<code>lgd.py</code> is never
+silently reused.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a redeployed Space can trigger a "surprise" cold start even with no code change.</b> The fingerprint
+includes <code>data/processed/panel.parquet</code>'s <b>size and mtime</b> — not its content hash. A fresh HF
+Spaces container checkout can, depending on how the platform materialises files, present a different mtime for
+an unchanged file, which is exactly the scenario the Dockerfile's own top-of-file comment names directly:
+<i>"a fingerprint mismatch — e.g. fresh file mtimes on HF Spaces — triggers a one-off ~50s refit in the
+FastAPI lifespan, after which every tool call answers in seconds."</i> A slow first health check after a
+redeploy is therefore not necessarily a sign of a problem — it may simply be this one-off refit, self-resolving
+and never repeating until the next redeploy.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>What three specific things does <code>_strip_training_data()</code> remove from a fitted
+<code>statsmodels</code> result before it's cached, and why is each one safe to drop?
+  <details><summary>Answer</summary>
+  <div class="answer">(1) The full <em>n</em>obs-length training arrays via <code>remove_data()</code> — safe
+  because only <code>params</code>/<code>predict</code>/<code>design_info</code> are used downstream, never
+  the raw training sample; scalar diagnostics are cached first. (2) The retained data frame is pruned to only
+  the formula's referenced columns — safe because <code>statsmodels</code>' own deserialization rebuilds
+  <code>design_info</code> from exactly those columns via <code>dmatrices</code>, reproducing it bit-identically.
+  (3) <code>orig_endog</code>/<code>orig_exog</code> are nulled — safe because they're only a fallback path used
+  when <code>frame</code> is absent, which it never is here.</div>
+  </details>
+</li>
+<li>Why might two different gate sessions record different "warm start" times (9s vs. 24.87s) for what is
+described as the same cache-loading mechanism?
+  <details><summary>Answer</summary>
+  <div class="answer">The mechanism itself (a single 88.7&nbsp;MB joblib load, fingerprint match) is identical
+  across sessions — the recorded spread reflects different underlying hardware/container conditions (disk I/O
+  speed, CPU allocation, whether this is a local Docker container or a freshly-allocated HF Spaces container)
+  at the moment each session's health check ran, not a change in the cache or the code doing the loading.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="summary">
+<b>Chapter&nbsp;10 summary.</b> The deployment story is a single Docker image, built in two stages (Node for
+the SPA, Python for the API and engine), shipped to one Hugging Face Space via an explicit
+<code>COPY</code> allowlist mirrored by an equally explicit <code>.dockerignore</code> whitelist — and every
+non-obvious lesson in this chapter traces back to one of those two lists briefly falling out of sync, or to the
+Space's own README/<code>.gitattributes</code> being mistaken for the project's. The headline incident — nine
+identical "not found" build failures on two newly-added <code>COPY</code> lines — was diagnosed in the moment
+as a platform-side propagation race and worked around by disabling the lines, but the artifact that actually
+shipped clean reveals a mundane, entirely self-inflicted cause: <code>.dockerignore</code>'s
+<code>outputs/*</code> exclude pattern had simply never been told to re-admit the two new directories, so the
+build context genuinely never contained them — no amount of restarting or waiting could have fixed a file that
+was never sent. The same "two lists, two READMEs, two failure classes" theme recurs in the queue-stall playbook
+(<code>factory_reboot</code> fixes a hardware hang, not a queue backlog — proven the hard way across a
+recorded 7.5-hour stall) and in the joblib cache-slimming story, where three narrow, well-justified reductions
+to each fitted model's pickled state turn a ~750&nbsp;MB combined training payload into an 88.7&nbsp;MB warm-start
+cache without changing a single served number. None of this is presented as flawless — the Dockerfile still
+carries a stale comment narrating a superseded theory, and the project's own gate reports are the reason that
+gap is visible at all rather than hidden.
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from <code>Dockerfile</code>, <code>.dockerignore</code>, <code>requirements.docker.txt</code>,
+<code>pyproject.toml</code>, <code>agent/tools_tier1.py</code>, <code>app/api/main.py</code>,
+<code>app/ui/vite.config.js</code>, <code>app/ui/package.json</code>, <code>README.md</code>,
+<code>outputs/gate/{day4,appv2,stretch,uiv3,mdd_freddie,macro_interp}_gate_report.md</code>,
+<code>wiki/memory/log.md</code>, <code>wiki/pages/agent-layer.md</code>, project git commits <code>4647e5d</code> /
+<code>8c1f039</code>, the HF Space's own (separate) git commit <code>cc466315de</code>, and live verification against
+<code>outputs/models/tier1_models.joblib</code> on disk, all read on 2026-07-19.
+</div>
+
+</body>
+</html>

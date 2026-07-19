@@ -47,6 +47,24 @@
       "slug": "ch08_the_agent.html",
       "assets": [],
       "figures": 0
+    },
+    "ch09_app_guide.html": {
+      "hash": "e79b25c6e7ec9169",
+      "slug": "ch09_app_guide.html",
+      "assets": [],
+      "figures": 0
+    },
+    "ch10_docker_deployment.html": {
+      "hash": "e5516d9a8caaa203",
+      "slug": "ch10_docker_deployment.html",
+      "assets": [],
+      "figures": 0
+    },
+    "ch11_freddie_panel_eda.html": {
+      "hash": "e16440524cfebb94",
+      "slug": "ch11_freddie_panel_eda.html",
+      "assets": [],
+      "figures": 0
     }
   }
 }

@@ -109,3 +109,7 @@ Req-12 macro interpretation SHIPPED: 7 interpretation fields on all coefficient 
 ## 2026-07-19 12:10 UTC — tags: notes, batchC
 
 Notes batch C COMPLETE (10/10): ch06 scenarios/satellite/Jensen (coherent-shock chain reproduced the recorded $30.5m->$31.7m agent trace TO THE DOLLAR via live rerun; Vasicek convexity inflections computed; renderQA CLEAN), ch07 challengers, ch08 agent. Reindexed + coverage updated. NEXT: batch D = ch09 APP GUIDE (req11) + ch10 docker + ch11 Freddie panel.
+
+## 2026-07-19 13:26 UTC — tags: notes, batchD
+
+Notes batch D COMPLETE (10/10): ch09 exhaustive app guide (req11: code-derived checklist, 35 pdoc blocks, ALL values live-captured incl. 3 real chat exchanges; renderQA fixed a 24-vs-22 endpoint count error), ch10 docker guide, ch11 Freddie panel+EDA (D-7 NCL + D-8 roll-rate expanded). NEXT: batch E FINAL = ch12 Freddie models (D-4 Merton) + ch13 governance + master landing page + campaign-wide adversarial pass.
