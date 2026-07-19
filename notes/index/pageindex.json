@@ -1,10 +1,13 @@
 {
   "doc_name": "IFRS9 Study Notes",
-  "doc_description": "PageIndex RAG built from 2 file(s) in notes/corpus.",
-  "total_pages": 79,
+  "doc_description": "PageIndex RAG built from 5 file(s) in notes/corpus.",
+  "total_pages": 222,
   "sources": [
     "notes/corpus/ch01_ifrs9_foundations_staging.html.md",
-    "notes/corpus/ch02_ecl_mechanics.html.md"
+    "notes/corpus/ch02_ecl_mechanics.html.md",
+    "notes/corpus/ch03_hazard_modeling.html.md",
+    "notes/corpus/ch04_lgd_ead.html.md",
+    "notes/corpus/ch05_vasicek.html.md"
   ],
   "structure": [
     {
@@ -108,14 +111,14 @@
       "title": "Chapter 2 — ECL Mechanics",
       "node_id": "0014",
       "start_index": 40,
-      "end_index": 79,
+      "end_index": 78,
       "summary": "From a single cash shortfall to the movement waterfall: deriving, computing, and reconciling Expected Credit Loss IFRS9 ECL Study-Notes Compendium — Chapter 2 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §3 & §9.4, tests/fixtures/compute_ecl.py , tests/fixtures/compute_grossup.py , and outputs/ecl/ecl_report.md on 2026-07-19. Contents. 2.1 From cash shortfall to the ECL formula 2.2 The survival function: deriving S(t) from the hazard chain 2.3 Flagship worked example: the 5-year amortising loan, digit by digit 2.4 12-month vs lifetime ECL, and the gross-up factor 2.5 The ...",
       "nodes": [
         {
           "title": "2  ECL Mechanics",
           "node_id": "0015",
           "start_index": 41,
-          "end_index": 79,
+          "end_index": 78,
           "summary": "This chapter answers the question every other chapter's outputs feed into: given a curve of default hazards, a loss-given-default rate, an exposure profile, and a discount rate, how does IFRS 9 turn those four ingredients into a single provision number? We derive the ECL decomposition theorem from first principles (not just state it), walk the flagship five-year worked example one number at a time, resolve the 12-month/lifetime boundary and the gross-up trick banks use to extend short-horizon models to lifetime, reconcile a real period-over-period allowance movement down to the cent, and ...",
           "nodes": [
             {
@@ -164,17 +167,361 @@
               "title": "2.7 Interactive: ECL vs LGD & EIR",
               "node_id": "0022",
               "start_index": 75,
-              "end_index": 79,
+              "end_index": 78,
               "summary": "The widget below re-implements §2.3's exact formula in JavaScript — same five-year hazard path and EAD schedule, same survival-product identity — and recomputes the full schedule live as you move the $LGD$ and $EIR$ sliders. At the defaults ($LGD=35\\%$, $EIR=6\\%$) it reproduces the golden fixture values exactly : 12-month ECL EUR 4,952.83, lifetime ECL EUR 16,571.39 (verified in a hidden comment in the page source, cross-checked against tests/fixtures/compute_ecl.py ).",
               "nodes": [
                 {
                   "title": "Live widget — drag the sliders",
                   "node_id": "0023",
                   "start_index": 75,
-                  "end_index": 79,
+                  "end_index": 78,
                   "summary": "12-month ECL Lifetime ECL 12-month ECL (year-1 term) lifetime ECL (full 5-year sum) What to try. Push $LGD$ toward 60% (a downturn severity assumption) and watch every year's contribution — and both the 12-month and lifetime totals — scale linearly (LGD multiplies every term identically, since it is constant across years in this example). Then push $EIR$ down toward 1%: later years' discount factors rise toward 1, so the lifetime figure grows faster than the 12-month figure (which only has one year's discounting to lose) — watch the lifetime/12m ratio in the table's final row increase."
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch03_hazard_modeling.html",
+      "node_id": "0024",
+      "start_index": 79,
+      "end_index": 79,
+      "summary": "Ch.3 — Hazard Modelling (PD Term Structure) | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 3 — Hazard Modelling (PD Term Structure)",
+      "node_id": "0025",
+      "start_index": 79,
+      "end_index": 141,
+      "summary": "From the continuous-time proportional-hazards integral to the discrete-time cloglog PD engine: competing risks, panel construction, the seasoning hump, and validation IFRS9 ECL Study-Notes Compendium — Chapter 3 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §6.2, engine/hazard.py , data/panel/build_panel.py , tests/fixtures/compute_validation.py , outputs/hazard/{fit_stats.md,hazard_ratios.md} , outputs/panel/waterfall.md , outputs/eda/eda_report.md , outputs/variable_dictionary.md , and outputs/freddie/hazard/hazard_report.md on 2026-07-19. Contents. 3.1 From ...",
+      "nodes": [
+        {
+          "title": "3  Hazard Modelling (PD Term Structure)",
+          "node_id": "0026",
+          "start_index": 80,
+          "end_index": 141,
+          "summary": "Chapter 2 took the hazard curve $\\lambda_t$ as a given input to the ECL sum. The discrete-time hazard model is the workhorse PD engine for retail portfolios with a loan-month (or loan-quarter) panel: one binary regression, fit on at-risk rows, produces the entire term structure of conditional default probabilities in a single coherent object — no separate model per horizon, no ad-hoc extrapolation. We derive the model's link function from the continuous-time proportional-hazards assumption it approximates (not just state it), extend Chapter 2's survival identity to the competing-risk case ...",
+          "nodes": [
+            {
+              "title": "3.1 From continuous-time hazards to the discrete-time cloglog link",
+              "node_id": "0027",
+              "start_index": 82,
+              "end_index": 88,
+              "summary": "The source notes' THEOREM box for the discrete-time hazard model (§6.2) states the model's link function without derivation: \"fit a binary GLM on at-risk rows with a logit or complementary log-log link... The cloglog link is the exact grouped-duration analogue of the continuous-time Cox model.\" This section derives that claim from first principles (derivation backlog item D-3 , flagged explicitly for expansion) — why cloglog, specifically, and not logit, is the link implied by an underlying continuous-time hazard. Definitions. $T$ — the (continuous) random time to the event of interest ..."
+            },
+            {
+              "title": "3.2 The survival function under competing risks",
+              "node_id": "0028",
+              "start_index": 89,
+              "end_index": 94,
+              "summary": "Chapter 2 §2.2 derived $S(t)=\\prod_{k\\le t}(1-\\lambda_k)$ for a single exit route (default only). A mortgage panel has two competing exits — default and prepayment — and Chapter 2 §2.6 already relied on the extended, competing-risk version of $S(t)$ without deriving it. Derivation — survival with two competing exits. 1."
+            },
+            {
+              "title": "3.3 Building the panel: at-risk rows and the eligibility waterfall",
+              "node_id": "0029",
+              "start_index": 95,
+              "end_index": 100,
+              "summary": "A discrete-time hazard model is fit on a loan-quarter panel : one row per loan per quarter it is at risk, with an event flag. Getting this panel right — so that a plain binomial GLM on at-risk rows really is the discrete-time survival likelihood — is data/panel/build_panel.py 's job. This project's raw source is the Baesens–Rösch–Scheule / Deep Credit Risk 50,000-loan US mortgage panel ( dcr_full.csv ), which the source notes themselves flag as carrying \"realistic left truncation & right censoring\" (§5.1) — exactly the two panel-construction hazards this section and the next work through."
+            },
+            {
+              "title": "3.4 Left truncation on the DCR panel",
+              "node_id": "0030",
+              "start_index": 101,
+              "end_index": 105,
+              "summary": "Right censoring (a loan still alive when the observation window ends) is the more familiar survival-analysis hazard. Left truncation is its mirror image at the start of the window: a loan that originated before the panel begins observing it enters already seasoned — its true loan age at first observation is greater than zero. What ignoring left truncation would bias, reasoned from the likelihood. 1."
+            },
+            {
+              "title": "3.5 The seasoning hump: DCR's ~12-quarter peak and the SFLLD 42–48-month corroboration",
+              "node_id": "0031",
+              "start_index": 106,
+              "end_index": 109,
+              "summary": "The baseline hazard $\\alpha_t$ (§3.1) is fitted as a natural cubic spline in loan_age ( cr(loan_age, df=5) , engine/hazard.py ) — flexible enough to reproduce the classic retail-mortgage seasoning hump : default risk rises over the first few years on book as weaker underwriting reveals itself, peaks, then declines as the pool of loans still on book increasingly consists of survivors who have already proven themselves through several years of scheduled payments. Exhibit 3.4 — DCR: fitted cloglog age-baseline spline (peak 12 quarters) against the raw empirical age-hazard scatter (peak 10 ..."
+            },
+            {
+              "title": "3.6 Timing convention: lagged macro vs current-state exceptions",
+              "node_id": "0032",
+              "start_index": 110,
+              "end_index": 115,
+              "summary": "Every macro-conditioned PD model risks lookahead bias : using information that would not actually have been available to a lender at the moment the quarter's default/prepay decision was being made. engine/hazard.py 's TIMING CONVENTION is the project's explicit, review-enforced rule for avoiding it — and its two deliberate exceptions are worth reading carefully, because they look at first glance like violations of the rule they sit next to. The rule, verbatim in spirit ( engine/hazard.py module docstring). All macro regressors are lagged : uer_lag1 , uer_chg4_lag1 , hpi_growth_lag1 , gdp_lag1 ..."
+            },
+            {
+              "title": "3.7 The DCR champion coefficient table",
+              "node_id": "0033",
+              "start_index": 116,
+              "end_index": 122,
+              "summary": "The fitted default-hazard coefficients, read as hazard ratios $HR=\\exp(\\beta)$ — a genuine hazard-ratio interpretation thanks to §3.1's derivation — on 418,418 training loan-quarters with 11,354 default events ( outputs/hazard/hazard_ratios.md , McFadden pseudo-$R^2=0.0761$). Covariate HR 95% CI $p$ Economic reading Intercept 0.2658 [0.153, 0.461] 2.4e-06 baseline level at reference age/covariates FICO at orig. (per 100 pts) 0.6314 [0.613, 0.651] <1e-16 ability/willingness to pay — 100 more FICO points cuts the hazard by 37% Updated LTV (per 10pp, at mean UER) 1.2250 [1.210, 1.240] <1e-16 ..."
+            },
+            {
+              "title": "3.8 Evaluation I: discrimination — AUC, train vs OOT",
+              "node_id": "0034",
+              "start_index": 123,
+              "end_index": 126,
+              "summary": "Discrimination asks a narrower question than calibration (§3.9): not \"are the predicted probabilities the right size ?\" but \"does the model rank loans that actually default above loans that don't?\" — the property a lender needs to prioritise collections, risk-based pricing, or staging thresholds correctly, independent of whether the absolute PD level itself is exactly right. AUC (area under the ROC curve). $\\mathrm{AUC}=P(\\hat{\\lambda}_{\\text{event row}}>\\hat{\\lambda}_{\\text{non-event row}})$ for a randomly drawn (event, non-event) pair of at-risk rows scored by the same model — the ..."
+            },
+            {
+              "title": "3.9 Evaluation II: calibration and stability — the PSI walkthrough",
+              "node_id": "0035",
+              "start_index": 127,
+              "end_index": 131,
+              "summary": "Calibration asks whether predicted probabilities are the right size , not just correctly ranked. Population stability asks a related but distinct question: has the scored population itself shifted enough, relative to the population the model was developed on, that its scores may no longer mean what they meant at development? The Population Stability Index (PSI) is the standard band-by-band answer (derivation backlog item D-10 )."
+            },
+            {
+              "title": "3.10 Evaluation III: the binomial backtest fixture",
+              "node_id": "0036",
+              "start_index": 132,
+              "end_index": 135,
+              "summary": "A grade-level backtest asks a third, complementary question: for a specific PD grade, does the realised default count over a horizon look statistically consistent with the assigned PD, given how many obligors were in the grade? (derivation backlog item D-9 .) Setup ( tests/fixtures/compute_validation.py ). A grade with $n=1{,}000$ obligors, assigned $PD=2\\%$, observed $d=28$ defaults over the horizon."
+            },
+            {
+              "title": "3.11 Interactive: the hazard-curve widget",
+              "node_id": "0037",
+              "start_index": 136,
+              "end_index": 138,
+              "summary": "Drag the FICO, LTV, and unemployment sliders below to see the term-structure plot recompute live, using the real champion cloglog formula (§3.1, §3.7). The baseline curve is the DCR \"median\"-profile term structure from outputs/hazard/pd_term_structure.csv exactly (macro frozen at $t=40$, the last training/stress quarter, per analysis/fit_hazard.py 's profile construction); each slider shifts the cloglog-scale linear predictor by that covariate's fitted hazard-ratio coefficient, exactly as §3.7 read the table. Survival and cumulative PD are then recomputed via §3.2's derived competing-risk ...",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0038",
+                  "start_index": 137,
+                  "end_index": 138,
+                  "summary": "At the default slider values (FICO 676, LTV 79.4%, UER 10.0% — the DCR training panel's median FICO/LTV and the stress-quarter UER) the widget reproduces pd_term_structure.csv 's \"median\" profile exactly: 12-quarter cumulative PD 17.59%, 40-quarter (lifetime, this horizon) cumulative PD 31.03%. Drag FICO down toward 600 (a subprime-adjacent score) and watch the curve shift up uniformly on the cloglog scale — then drag LTV up past 100% (underwater collateral) on top of that and watch the term structure approach the \"risky high-LTV investor\" profile's shape shown statically in Exhibit 3.6. Push ..."
+                }
+              ]
+            },
+            {
+              "title": "3.12 Interactive: the seasoning-hump explorer",
+              "node_id": "0039",
+              "start_index": 139,
+              "end_index": 141,
+              "summary": "Drag the age slider to read off the DCR champion's fitted default hazard, at that exact loan age, for three real covariate profiles side by side — and see how far that age sits from the DCR's own fitted seasoning peak (12 quarters, §3.5) and from the SFLLD corroboration's empirical peak band (42–48 months, converted to 14–16 quarters for a direct comparison on this widget's quarterly axis).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the age slider",
+                  "node_id": "0040",
+                  "start_index": 140,
+                  "end_index": 141,
+                  "summary": "Sweep the slider from age 0 to 39 and watch all three curves rise, peak, and decline together — the seasoning shape is a property of the shared age-baseline spline $\\alpha_t$ (§3.1), while the three profiles' relative spacing (roughly a 5× gap between \"risky high-LTV investor\" and \"prime low-LTV\" at every age) comes entirely from their fixed FICO/LTV/investor-flag covariates (§3.7). The DCR peak (age 12) and the SFLLD-equivalent band (age 14–16) sit close together on this shared quarterly axis — exactly the corroboration §3.5 discussed, now visible as a live readout rather than a static ..."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch04_lgd_ead.html",
+      "node_id": "0041",
+      "start_index": 142,
+      "end_index": 142,
+      "summary": "Ch.4 — LGD & EAD | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 4 — LGD & EAD",
+      "node_id": "0042",
+      "start_index": 143,
+      "end_index": 188,
+      "summary": "The two-stage cure × severity architecture, the excess-loss tail nobody clips, and the exposure profile that must never double-count prepayment IFRS9 ECL Study-Notes Compendium — Chapter 4 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §10 & §12, outputs/lgd/lgd_report.md , outputs/freddie/lgd/lgd_report.md , outputs/ead/ead_report.md , tests/fixtures/compute_ecl.py , and engine/ead.py on 2026-07-19. Contents. 4.1 The two-stage LGD architecture: from a bimodal outcome to E[LGD] 4.2 Resolved workouts only: quantifying the selection bias 4.3 The DCR cure/severity fit: ...",
+      "nodes": [
+        {
+          "title": "4  LGD & EAD",
+          "node_id": "0043",
+          "start_index": 144,
+          "end_index": 188,
+          "summary": "Chapter 2 derived $\\mathrm{ECL}=\\sum_t S(t-1)\\lambda_t\\, LGD_t\\, EAD_t\\,(1+EIR)^{-t}$ and treated $LGD_t$ and $EAD_t$ as given inputs so it could focus on the survival/discounting machinery around them. This chapter builds those two curves from first principles. Workout LGD is not a single number to regress — it is bimodal (a cure spike near zero loss, a write-off hump at high loss), so a plain regression through it predicts a value that almost never occurs (§10.2).",
+          "nodes": [
+            {
+              "title": "4.1 The two-stage LGD architecture: from a bimodal outcome to E[LGD]",
+              "node_id": "0044",
+              "start_index": 146,
+              "end_index": 150,
+              "summary": "Workout LGD collects every post-default cash flow — recoveries $R_k$ (payments, collateral-sale proceeds, guarantee/insurance claims) and direct workout costs $C_k$ — discounts them at the loan's original EIR back to the default date, and sets $$ LGD = 1 - RR = 1 - \\frac{\\sum_k PV(R_k) - \\sum_k PV(C_k)}{EAD_{\\text{default}}} $$ (§10.1). IFRS 9 LGD must be unbiased and point-in-time — a deliberate contrast with Basel IRB's downturn-calibrated, conservatism-loaded LGD. But the distribution this ratio actually takes across a defaulted population is not the smooth, roughly-normal shape a plain ..."
+            },
+            {
+              "title": "4.2 Resolved workouts only: quantifying the selection bias",
+              "node_id": "0045",
+              "start_index": 151,
+              "end_index": 154,
+              "summary": "Both stages above are fit on resolved defaults — workouts that have reached a final cure or write-off outcome by the time the fit sample is built. Defaults still open at the data window's end have no observed final $LGD$ yet, so they cannot be labelled cure or non-cure. The obvious response — exclude them and fit on what is observed — is exactly what both the DCR and SFLLD builds do, and exactly what §10.3's own \"Incomplete workouts\" pitfall warns creates bias: \"excluding them biases LGD toward fast, favourable resolutions.\" Worked example — the DCR fit sample, every subtraction shown ( ..."
+            },
+            {
+              "title": "4.3 The DCR cure/severity fit: coefficients and interpretation",
+              "node_id": "0046",
+              "start_index": 155,
+              "end_index": 160,
+              "summary": "With the resolved sample from §4.2 in hand, the two stages are fit as two independent regressions — a logistic cure model, and a fractional-logit severity model conditioned on non-cure ( engine/lgd.py , outputs/lgd/lgd_report.md ). Stage 1 — cure logit: cure ~ ltv10 + uer_lag1 + fico_s + loan_age coef se z p odds ratio Intercept 4.4489 0.3402 13.08 0.0000 85.53 ltv10 −0.7640 0.0252 −30.26 0.0000 0.4658 uer_lag1 +0.2774 0.0334 8.31 0.0000 1.3197 fico_s −0.1402 0.0555 −2.53 0.0115 0.8692 loan_age −0.0727 0.0064 −11.44 0.0000 0.9299 Stage 2 — fractional-logit severity | non-cure: sev_capped ~ ..."
+            },
+            {
+              "title": "4.4 The LGD>1 tail: deriving the excess-loss loading, never clipped",
+              "node_id": "0047",
+              "start_index": 161,
+              "end_index": 165,
+              "summary": "A fractional-logit severity regression is bounded on $(0,1)$ by construction — but realised severity is not. Workout costs, accrued interest, and legal/holding expenses can push the total loss past the exposure at default, so realised $LGD>1$ is a genuine, observed outcome: 14.2% of the DCR train non-cure sample has $LGD>1$, with a mean excess of 0.1790 among that 14.2%. A model that structurally cannot output above 1 will therefore systematically under-predict the tail unless something is added back on top of it."
+            },
+            {
+              "title": "4.5 Interactive: LGD decomposition",
+              "node_id": "0048",
+              "start_index": 166,
+              "end_index": 166,
+              "summary": "The widget below re-implements §4.1's exact formula, $\\mathbb{E}[LGD]=(1-P(\\text{cure}))\\times (\\text{severity}+\\text{loading})$, live in JavaScript. At the default slider values (cure probability 12.24%, severity 65.70% before loading) with the loading toggle ON, it reproduces the DCR train mean predicted LGD exactly : $(1-0.1224)\\times(0.6570+0.0255)=(1-0.1224)\\times0.6825=0.5990$ — verifiable against outputs/lgd/lgd_report.md 's OOT-calibration table (\"mean predicted LGD\" train row, 0.5990).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders, toggle the loading",
+                  "node_id": "0049",
+                  "start_index": 166,
+                  "end_index": 166,
+                  "summary": "E[LGD] E[LGD] = (1 − P(cure)) × (severity + loading) What to try. Toggle the loading OFF and back ON without moving the sliders — E[LGD] drops from 0.5990 to $(1-0.1224)\\times0.6570=0.5766$, a $0.0224$ swing (close to, but not exactly, the raw $0.0255$ loading, because the loading itself is scaled by $(1-P(\\text{cure}))$ once it is inside the severity term). Then push $P(\\text{cure})$ toward 0 (a stressed, low-cure regime) — E[LGD] rises toward the full severity-plus-loading figure, since almost every default is now assumed to reach the non-cure branch."
+                }
+              ]
+            },
+            {
+              "title": "4.6 The SFLLD cross-check: 0.0148 and cycle dependence",
+              "node_id": "0050",
+              "start_index": 167,
+              "end_index": 169,
+              "summary": "The Freddie Mac single-family loan-level (SFLLD) refit ( freddie/lgd.py , outputs/freddie/lgd/lgd_report.md ) reruns the identical two-stage architecture on 44,593 had-D90-event loans, but reconstructs realised loss from Freddie's own disclosed cash components ( net_sale_proceeds , mi_recoveries , total_expenses , …) rather than trusting an opaque vendor lgd_time column, and spans a much longer, GFC-through-2025 liquidation-year cycle than the DCR panel. Its overall (DCR-style) constant excess-loss loading comes out at 0.0148 — materially below DCR's 0.0255 (a $0.0107$ absolute gap, ratio ..."
+            },
+            {
+              "title": "4.7 EAD for term loans: deriving the contractual annuity balance B(t)",
+              "node_id": "0051",
+              "start_index": 170,
+              "end_index": 176,
+              "summary": "For an amortising term loan, §12.1 states EAD is \"the projected outstanding balance along the contractual schedule, adjusted for expected prepayment\" — but the project's engine/ead.py deliberately separates these into two independently-owned components: the contractual amortisation path derived here, and prepayment, which lives entirely inside the survival function $S(t)$ from Chapter 3's hazard model (why, and what goes wrong if you don't keep them separate, is §4.10's subject). This section derives the contractual balance $B(t)$ itself. Deriving the level-payment (annuity) balance formula, ..."
+            },
+            {
+              "title": "4.8 Interactive: amortisation balance",
+              "node_id": "0052",
+              "start_index": 177,
+              "end_index": 178,
+              "summary": "The widget below re-implements §4.7's exact closed form in JavaScript for a fixed $B_0=\\$100{,}000$ reference loan, live-recomputing the full remaining-balance path as you move the rate, term, and age sliders. At the defaults (rate 8%, term 20 quarters, age 0) it reproduces the worked example above exactly.",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0053",
+                  "start_index": 177,
+                  "end_index": 178,
+                  "summary": "Push the age slider up while holding rate and term fixed: the plotted path always starts from the current-age balance $B_{\\text{age}}$ and runs to the same fixed maturity ($t=$ term) — watch how a loan already well into its schedule has a visibly steeper (more convex) remaining decline than a fresh loan of the same original term, since it is further into the acceleration phase §4.7's gotcha described. Gotcha — the widget's reference $B_0$ is fixed at $\\$100{,}000$; sliding \"age\" does not change the opening principal. Moving the age slider changes where along the fixed-$B_0$, fixed-term ..."
+                }
+              ]
+            },
+            {
+              "title": "4.9 The revolver CCF: the EUR 14.0m gross-up, step by step",
+              "node_id": "0054",
+              "start_index": 179,
+              "end_index": 182,
+              "summary": "Term loans amortise on a known schedule; revolving facilities (credit cards, overdrafts, undrawn commitments) do not — a borrower can draw down further headroom before default, so EAD must account for exposure that has not yet been drawn. §12.2 defines the mechanism: Definition — credit conversion factor (CCF). For a facility with undrawn headroom, $$ EAD = \\text{Drawn} + CCF\\times(\\text{Limit}-\\text{Drawn}), $$ where the CCF is estimated, from defaulted accounts, as the share of headroom at the observation point that had been drawn by the time of default. Alternatives include loan-equivalent ..."
+            },
+            {
+              "title": "4.10 The double-counting rule, revisited",
+              "node_id": "0055",
+              "start_index": 183,
+              "end_index": 188,
+              "summary": "Chapter 2 §2.6 derived, at the ECL level, why the competing-risk survival $S(t)=\\prod_{k\\le t}(1-\\lambda_k-\\pi_k)$ must never be paired with an EAD path that is also scaled down by prepayment survival — doing so double-counts prepayment (once inside $S(t-1)$, again inside $EAD_t$) and understates lifetime ECL (that worked example: EUR 15,482.15 correct vs EUR 14,533.96 double-counted, a EUR 948.19 / 6.12% understatement). This is exactly why engine/ead.py 's docstring is emphatic that its contractual path is \"deliberately NOT prepayment-scaled\" — the module this chapter has been building all ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch05_vasicek.html",
+      "node_id": "0056",
+      "start_index": 189,
+      "end_index": 189,
+      "summary": "Ch.5 — The Vasicek One-Factor Model (PIT vs TTC) | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 5 — The Vasicek One-Factor Model (PIT vs TTC)",
+      "node_id": "0057",
+      "start_index": 189,
+      "end_index": 222,
+      "summary": "From an asset-value latent factor to the conditional PD curve — deriving, verifying, and calibrating point-in-time credit risk IFRS9 ECL Study-Notes Compendium — Chapter 5 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §8, tests/fixtures/compute_vasicek.py , engine/vasicek.py , outputs/vasicek/vasicek_report.md , and wiki/pages/scenario-layer.md on 2026-07-19. Contents. 5.1 TTC vs PIT: the philosophical distinction 5.2 The one-factor Gaussian asset-value model 5.3 Derivation: from asset value to PD_PIT(Z) 5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC 5.5 Interactive: ...",
+      "nodes": [
+        {
+          "title": "5  The Vasicek One-Factor Model (PIT vs TTC)",
+          "node_id": "0058",
+          "start_index": 190,
+          "end_index": 222,
+          "summary": "Every hazard model in Chapter 3 was fit on historical panel data — it necessarily blends calm years and stressed years into one set of coefficients. IFRS 9 does not want that blend: it wants a probability of default that reflects current and forecast conditions (§5.5.17), not the long-run average. This chapter derives, from first principles, the single most important transformation layer in credit risk modelling — the one that turns a through-the-cycle (TTC) PD into a point-in-time (PIT) PD conditional on where the economy sits in the credit cycle, and (the harder direction) recovers that ...",
+          "nodes": [
+            {
+              "title": "5.1 TTC vs PIT: the philosophical distinction",
+              "node_id": "0059",
+              "start_index": 191,
+              "end_index": 192,
+              "summary": "Before any algebra, the two philosophies this whole chapter reconciles need to be stated precisely — they answer different questions about the same borrower. Through-the-cycle (TTC) PD , $PD_{TTC}$ — the cycle-neutral, long-run average default probability for a grade or portfolio: what you'd predict for a borrower with these characteristics averaged across an entire economic cycle, ignoring whether today happens to be a boom or a recession. Point-in-time (PIT) PD , $PD_{PIT}$ — the default probability conditional on current and forecast economic conditions: higher in a downturn, lower in an ..."
+            },
+            {
+              "title": "5.2 The one-factor Gaussian asset-value model",
+              "node_id": "0060",
+              "start_index": 193,
+              "end_index": 196,
+              "summary": "The Vasicek/ASRF (Asymptotic Single Risk Factor) framework builds PIT conditioning out of a structural story about why a borrower defaults, in the spirit of Merton's model from Chapter 3 (§A9): a borrower defaults when some latent \"asset value\" falls below a threshold. The one-factor model's specific move is to decompose that latent asset value into a part every borrower shares (the economy) and a part unique to each borrower. Definitions (every symbol used from here on). $A_i$ — borrower $i$'s standardised asset return : a latent, unobserved continuous variable (not a literal balance-sheet ..."
+            },
+            {
+              "title": "5.3 Derivation: from asset value to PD_PIT(Z)",
+              "node_id": "0061",
+              "start_index": 197,
+              "end_index": 202,
+              "summary": "This is the derivation flagged explicitly in the campaign brief (backlog D-5) — the notes present $PD_{PIT}(Z)=\\Phi\\big[(\\Phi^{-1}(PD_{TTC})-\\sqrt{\\rho}Z)/\\sqrt{1-\\rho}\\big]$ as a given formula; every step from the asset-value representation to that formula is shown here, with no skipped algebra. Derivation — the Vasicek conditional-PD formula. 1. $A_i$ is standard normal unconditionally. $A_i=\\sqrt{\\rho}Z+\\sqrt{1-\\rho}\\,\\varepsilon_i$ is a linear combination of two independent standard normals, hence itself normal, with mean ..."
+            },
+            {
+              "title": "5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC",
+              "node_id": "0062",
+              "start_index": 203,
+              "end_index": 205,
+              "summary": "The model would be useless as a TTC-consistent transformation layer if averaging $PD_{PIT}(Z)$ back over the cycle did not return exactly $PD_{TTC}$. This section proves that it does, analytically, then verifies it two independent numerical ways. With $Z\\sim N(0,1)$ and $PD_{PIT}(Z)$ as derived in §5.3, $$ \\mathbb{E}_Z\\big[PD_{PIT}(Z)\\big] = PD_{TTC}. $$ Proof — via the tower property / law of total probability. 1."
+            },
+            {
+              "title": "5.5 Interactive: PD_PIT vs Z & ρ, and a TTC↔PIT converter",
+              "node_id": "0063",
+              "start_index": 206,
+              "end_index": 208,
+              "summary": "The widget below re-implements §5.3's boxed formula in JavaScript — an independent normal CDF/inverse-CDF pair, not a lookup table — and recomputes the curve and the marked-point table live as you drag $PD_{TTC}$ and $\\rho$. At the defaults ($PD_{TTC}=2\\%$, $\\rho=0.12$) the six marked points reproduce §5.3's golden-fixture table exactly, annotated as dots on the curve. Below it, a small converter box runs the §5.6 INVERSE direction: given an observed rate and a TTC anchor, recover the implied $Z$.",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0064",
+                  "start_index": 207,
+                  "end_index": 207,
+                  "summary": "At the defaults the marked-point table below the curve reproduces tests/fixtures/compute_vasicek.py 's golden values exactly (e.g. $PD_{PIT}(-2.0)=7.34\\%$, $PD_{PIT}(+2.0)=0.17\\%$) — this page's JS normal-CDF/PPF are independent re-implementations of the same closed form the Python fixture computes with scipy.stats.norm , so agreement to 2 displayed decimals cross-checks both."
+                },
+                {
+                  "title": "TTC↔PIT converter",
+                  "node_id": "0065",
+                  "start_index": 207,
+                  "end_index": 207,
+                  "summary": "Forward direction (TTC→PIT) is the widget above. This box runs the INVERSE direction §5.6 needs: given an observed default rate $DR$ for some period and a TTC anchor, invert §5.3's formula to recover the implied systematic factor $Z$ — the same invert_z operation engine/vasicek.py runs once per panel quarter."
+                },
+                {
+                  "title": "Recover Z from an observed rate",
+                  "node_id": "0066",
+                  "start_index": 207,
+                  "end_index": 208,
+                  "summary": "The converter's defaults are the panel's own 2008Q1 row ( outputs/vasicek/z_path.csv : observed $DR=4.15\\%$, composition-adjusted anchor $PD_{TTC,t}=1.67\\%$, calibrated $\\rho=0.0227$) — it recovers $Z\\approx-2.74$, the credit-cycle trough §5.7 reports. Push the observed rate toward the anchor value and watch $Z\\to 0$; push $\\rho$ toward 0 and watch small differences between observed and anchor blow $|Z|$ up (the $1/\\sqrt{\\rho}$ factor in the inversion formula), which is exactly the mechanism §5.7's Belkin calibration exploits to pin down $\\rho$. Gotcha — the flagship widget's curve is NOT the ..."
+                }
+              ]
+            },
+            {
+              "title": "5.6 Z-recovery on the panel: why raw counts mislead",
+              "node_id": "0067",
+              "start_index": 209,
+              "end_index": 212,
+              "summary": "Sections 5.1–5.5 assumed $Z$ was handed to you. In practice nobody hands you the cycle factor — it has to be RECOVERED from a history of observed default rates by inverting §5.3's formula. This section walks the recovery pipeline actually run on this project's 50k-loan mortgage panel ( engine/vasicek.py , method documented in outputs/vasicek/vasicek_report.md )."
+            },
+            {
+              "title": "5.7 Belkin calibration and the credit cycle",
+              "node_id": "0068",
+              "start_index": 213,
+              "end_index": 218,
+              "summary": "§5.6 recovered $Z_t$ GIVEN a value of $\\rho$. Belkin, Suchower & Forest (1998)'s answer: calibrate $\\rho$ so that the recovered path's own variance matches the model's premise that $Z\\sim N(0,1)$, i.e. $\\mathrm{Var}(Z)=1$. Solve for the $\\rho$ that makes $\\mathrm{Var}(Z_t(\\rho))=1$ (sample variance, ddof=1, over all periods) where $Z_t(\\rho)$ is §5.6's inversion formula evaluated at that $\\rho$."
+            },
+            {
+              "title": "5.8 The damped hybrid PIT/TTC variant",
+              "node_id": "0069",
+              "start_index": 219,
+              "end_index": 222,
+              "summary": "A fully PIT PD ($\\alpha=1$, §5.3's formula as derived) swings all the way with the cycle — useful for ECL, but sometimes a bank wants a PRESENTATION dial that trades some cycle pass-through for smoothness (rating stability, capital-planning narratives). The Aguais/Forest \"dual ratings\" convention formalises this as a single damping parameter. Damped hybrid PD. $$ PD_{\\text{hybrid}}(Z,\\alpha) = PD_{PIT}(\\alpha Z), \\qquad \\alpha\\in[0,1]. $$ $\\alpha=1$ recovers the fully PIT curve of §5.3; $\\alpha=0$ collapses to $PD_{PIT}(0)$, a CYCLE-NEUTRAL PD that is constant regardless of where $Z$ actually ..."
             }
           ]
         }

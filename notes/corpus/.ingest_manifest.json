@@ -11,6 +11,24 @@
       "slug": "ch02_ecl_mechanics.html",
       "assets": [],
       "figures": 0
+    },
+    "ch03_hazard_modeling.html": {
+      "hash": "028ade2cbb7f24c7",
+      "slug": "ch03_hazard_modeling.html",
+      "assets": [],
+      "figures": 0
+    },
+    "ch04_lgd_ead.html": {
+      "hash": "340297b8d4920c2c",
+      "slug": "ch04_lgd_ead.html",
+      "assets": [],
+      "figures": 0
+    },
+    "ch05_vasicek.html": {
+      "hash": "10c714ec7dc97ac1",
+      "slug": "ch05_vasicek.html",
+      "assets": [],
+      "figures": 0
     }
   }
 }
