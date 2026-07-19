@@ -1,0 +1,184 @@
+{
+  "doc_name": "IFRS9 Study Notes",
+  "doc_description": "PageIndex RAG built from 2 file(s) in notes/corpus.",
+  "total_pages": 79,
+  "sources": [
+    "notes/corpus/ch01_ifrs9_foundations_staging.html.md",
+    "notes/corpus/ch02_ecl_mechanics.html.md"
+  ],
+  "structure": [
+    {
+      "title": "ch01_ifrs9_foundations_staging.html",
+      "node_id": "0001",
+      "start_index": 1,
+      "end_index": 1,
+      "summary": ""
+    },
+    {
+      "title": "Chapter 1  —  IFRS 9 Foundations & Staging",
+      "node_id": "0002",
+      "start_index": 1,
+      "end_index": 38,
+      "summary": "From incurred loss to expected credit loss: classification, the three-stage model, default, and the relative SICR test IFRS 9 ECL study-notes compendium, Chapter 1 of 13. Compiled from knowledge/corpus/ifrs9_credit_risk_notes.md §§1–2, outputs/staging/staging_report.md , outputs/ecl/ecl_report.md , engine/staging.py . Contents. 1 IFRS 9 Foundations & Staging 1.1 Why ECL replaced incurred loss 1.2 Classification: business model + SPPI, and the special regimes 1.3 IFRS 9 vs Basel IRB vs CECL 1.4 The three-stage impairment model and the definition of default 1.5 SICR — the relative lifetime-PD ...",
+      "nodes": [
+        {
+          "title": "1   IFRS 9 Foundations & Staging",
+          "node_id": "0003",
+          "start_index": 2,
+          "end_index": 38,
+          "summary": "This chapter covers the front matter of IFRS 9 impairment: why the standard exists in its current forward-looking form, how an asset is classified into the population ECL even applies to, and the mechanics of the three-stage model that decides how much ECL a given exposure carries. The chapter closes by walking the project's own staging engine end to end — the exact rule implemented, the calm-vs-stress finding it produces on the synthetic Data Consortium (DCR) panel, and the ECL consequence of getting the stage wrong. Later chapters build on this: Chapter 2 derives the ECL formula itself in ...",
+          "nodes": [
+            {
+              "title": "1.1 Why ECL replaced incurred loss",
+              "node_id": "0004",
+              "start_index": 2,
+              "end_index": 3,
+              "summary": "IFRS 9 Financial Instruments (IASB) replaced IAS 39 with effect from annual periods beginning on or after 1 January 2018 . IAS 39's incurred-loss model recognised a credit loss only after a loss event had already occurred — judged “too little, too late” in the post-2008 review, and structurally procyclical: because no loss could be booked before a triggering event, provisions arrived in a cliff at exactly the point in the cycle when a bank could least afford it. IFRS 9 replaces that with a forward-looking expected credit loss (ECL) model that provisions from initial recognition — before any ..."
+            },
+            {
+              "title": "1.2 Classification: business model + SPPI, and the special regimes",
+              "node_id": "0005",
+              "start_index": 4,
+              "end_index": 8,
+              "summary": "Before ECL can be computed at all, an asset must be routed into the population ECL applies to. ECL applies to financial assets at amortised cost and debt instruments at FVOCI ; lease receivables (IFRS 16); contract assets (IFRS 15); and loan commitments and financial guarantee contracts not measured at FVTPL. Equity instruments and anything at FVTPL sit outside ECL scope entirely — their fair-value movements already absorb credit deterioration (knowledge/corpus/ifrs9_credit_risk_notes.md §1.1)."
+            },
+            {
+              "title": "1.3 IFRS 9 vs Basel IRB vs CECL",
+              "node_id": "0006",
+              "start_index": 9,
+              "end_index": 11,
+              "summary": "The most common interview discriminator, and the most common implementation error, is re-using Basel IRB parameters in an ECL engine without stripping their built-in conservatism. The three regimes answer different questions on purpose (knowledge/corpus/ifrs9_credit_risk_notes.md §4): Dimension IFRS 9 ECL Basel IRB US CECL (ASC 326) Objective accounting provision (expected loss) capital for unexpected loss accounting provision PD horizon 12-month (Stage 1) / lifetime (Stages 2–3) always 12-month lifetime for all assets, day 1 PD philosophy point-in-time , forward-looking often ..."
+            },
+            {
+              "title": "1.4 The three-stage impairment model and the definition of default",
+              "node_id": "0007",
+              "start_index": 12,
+              "end_index": 15,
+              "summary": "Exhibit 1.2 — The general (three-stage) model, redrawn in this compendium's palette from the source concept (knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig001.png; knowledge/corpus/ifrs9_credit_risk_notes.md §2). Stage 1 (no significant increase in credit risk since origination): 12-month ECL — the portion of lifetime ECL arising from default events possible within 12 months . This is not a 12-month-truncated lifetime loss, and not the loss restricted to loans certain to default within the year — it is the full expected-loss calculation, applied to a shorter horizon."
+            },
+            {
+              "title": "1.5 SICR — the relative lifetime-PD test (with a worked toy example)",
+              "node_id": "0008",
+              "start_index": 16,
+              "end_index": 25,
+              "summary": "SICR is a relative deterioration test, not an absolute credit-quality test: compare the lifetime PD over the remaining life at the reporting date with the lifetime PD expected for that same period at initial recognition . A loan originated risky and still equally risky has not suffered SICR — it was priced and provisioned for that risk level from day one (knowledge/corpus/ifrs9_credit_risk_notes.md §2.2). Typical implementations combine: Quantitative: a relative threshold on (annualised) lifetime PD — a doubling (200% relative increase) is the most common convention, used in the EBA 2018 ..."
+            },
+            {
+              "title": "1.6 The project's SICR implementation: thresholds, probation, the inert 30-DPD backstop",
+              "node_id": "0009",
+              "start_index": 26,
+              "end_index": 29,
+              "summary": "The DCR engine ( engine/staging.py ) implements the §1.5 rule exactly, at portfolio scale: for every loan at reporting quarter $t$ with remaining contractual life $R=\\text{mat\\_time}-t$ (floored at 1 quarter), it computes lifetime_pd_now and lifetime_pd_orig over the identical age window $t{+}1,\\dots,t{+}R$ — the same age baseline $\\lambda_0(a)$ enters both legs, so only the frozen covariate offset differs between them, exactly matching the derivation in §1.5. Origination covariates are reconstructed per loan from panel columns (contractual origination LTV, FICO/occupancy at origination, ..."
+            },
+            {
+              "title": "1.7 Finding: Stage 2 is empty in calm markets, dominant in stress",
+              "node_id": "0010",
+              "start_index": 30,
+              "end_index": 33,
+              "summary": "Running the rule above on two DCR snapshots — a calm quarter ($t=20$) and a stress quarter ($t=40$) — produces a striking result ( outputs/staging/staging_report.md ): snapshot staged rows Stage 1 Stage 2 Stage 3 default incidence t=20 (calm) 8,662 98.90% 0.00% 1.10% 1.10% t=40 (stress) 13,863 20.98% 75.78% 3.25% 3.25% Exhibit 1.3 — IFRS 9 stage distribution, calm vs stress snapshot, regenerated from outputs/staging/staging_report.md (2× + 0.5pp p.a. relative SICR test). At $t=20$, not a single loan in the staged book (0 of 8,662) clears the SICR trigger — deterioration since origination ...",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the SICR threshold slider",
+                  "node_id": "0011",
+                  "start_index": 32,
+                  "end_index": 33,
+                  "summary": "Drives directly off the same four (threshold, Stage-2 share) pairs plotted in Exhibit 1.4 — these are the only four points the project actually evaluated, so the slider snaps to them rather than interpolating a fifth number that was never computed. Reading the table left to right: loosening the threshold from the adopted 2.0x to 1.5x would move Stage 2 from 75.76% to 85.10% of the stress-quarter book (+9.3pp) — tightening it to 4.0x collapses Stage 2 to 3.32% (−72.4pp). At no threshold in this sweep does the calm quarter produce a nonzero Stage-2 share: the finding is not an artifact of the ..."
+                }
+              ]
+            },
+            {
+              "title": "1.8 Staging's ECL consequence: the coverage gradient",
+              "node_id": "0012",
+              "start_index": 34,
+              "end_index": 38,
+              "summary": "Staging is not an academic label — it directly re-scales the allowance. Because Stage 1 books 12-month ECL and Stages 2–3 book lifetime ECL, the same underlying loan can carry a very different allowance purely depending on which stage it lands in, holding its actual default risk fixed. The project's ECL engine ( outputs/ecl/ecl_report.md ) makes this concrete at the $t{=}40$ stress snapshot: stage loans EAD (\\$m) allowance (\\$m) coverage mean LGD mean lifetime PD 1 2,908 514.3 18.26 3.551% 0.419 0.541 2 10,505 3,005.0 939.59 31.268% 0.615 0.766 3 450 117.5 74.76 63.646% 0.638 0.810 total ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch02_ecl_mechanics.html",
+      "node_id": "0013",
+      "start_index": 39,
+      "end_index": 39,
+      "summary": "Ch.2 — ECL Mechanics | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 2 — ECL Mechanics",
+      "node_id": "0014",
+      "start_index": 40,
+      "end_index": 79,
+      "summary": "From a single cash shortfall to the movement waterfall: deriving, computing, and reconciling Expected Credit Loss IFRS9 ECL Study-Notes Compendium — Chapter 2 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §3 & §9.4, tests/fixtures/compute_ecl.py , tests/fixtures/compute_grossup.py , and outputs/ecl/ecl_report.md on 2026-07-19. Contents. 2.1 From cash shortfall to the ECL formula 2.2 The survival function: deriving S(t) from the hazard chain 2.3 Flagship worked example: the 5-year amortising loan, digit by digit 2.4 12-month vs lifetime ECL, and the gross-up factor 2.5 The ...",
+      "nodes": [
+        {
+          "title": "2  ECL Mechanics",
+          "node_id": "0015",
+          "start_index": 41,
+          "end_index": 79,
+          "summary": "This chapter answers the question every other chapter's outputs feed into: given a curve of default hazards, a loss-given-default rate, an exposure profile, and a discount rate, how does IFRS 9 turn those four ingredients into a single provision number? We derive the ECL decomposition theorem from first principles (not just state it), walk the flagship five-year worked example one number at a time, resolve the 12-month/lifetime boundary and the gross-up trick banks use to extend short-horizon models to lifetime, reconcile a real period-over-period allowance movement down to the cent, and ...",
+          "nodes": [
+            {
+              "title": "2.1 From cash shortfall to the ECL formula",
+              "node_id": "0016",
+              "start_index": 42,
+              "end_index": 46,
+              "summary": "Start from what actually happens to money, not from the formula. A performing loan is expected to repay in full according to its contract. If the borrower defaults at some future date, the lender does not receive the contractual cash flow in full — it receives whatever is recovered instead."
+            },
+            {
+              "title": "2.2 The survival function: deriving S(t) from the hazard chain",
+              "node_id": "0017",
+              "start_index": 47,
+              "end_index": 52,
+              "summary": "The theorem box in §2.1 defines $S(t)=\\prod_{k\\le t}(1-\\lambda_k)$ but does not derive it — the source notes assert it. Here is the missing step (derivation backlog item D-1 ). Derivation — survival is a product of one-period conditional non-default probabilities. 1."
+            },
+            {
+              "title": "2.3 Flagship worked example: the 5-year amortising loan, digit by digit",
+              "node_id": "0018",
+              "start_index": 53,
+              "end_index": 58,
+              "summary": "The source notes' worked example (§3): a 5-year amortising loan, principal EUR 1,000,000 repaid in five equal EUR 200,000 year-end instalments, effective interest rate $EIR=6\\%$, constant $LGD=35\\%$, default losses crystallising at year-end, with hazards following a mild retail \"seasoning hump\" ($\\lambda=1.5\\%,2.0\\%,2.2\\%,2.0\\%,1.8\\%$ for $t=1,\\ldots,5$). Every number below is tests/fixtures/compute_ecl.py 's RESULTS , printed by running the fixture module directly (derivation backlog item D-2 ) — nothing here is hand-typed. Worked example — every term of the ECL sum. $EAD_t$ is the balance ..."
+            },
+            {
+              "title": "2.4 12-month vs lifetime ECL, and the gross-up factor",
+              "node_id": "0019",
+              "start_index": 59,
+              "end_index": 62,
+              "summary": "§2.3 truncated the same sum at two different horizons ($t=1$ vs $t=1,\\ldots,5$) because both the hazard curve and the exposure profile were fully known out to five years. In practice a bank often trusts its point-in-time (PIT) conditioned hazard curve only over a shorter reasonable-and- supportable (R&S) window — commonly 2–3 years — beyond which macro forecasts are not credible, and reverts the hazard to a long-run through-the-cycle (TTC) level for the remainder of the contractual life (§9.4). The gross-up factor is how a short-horizon PD/ECL estimate is scaled up to a lifetime figure ..."
+            },
+            {
+              "title": "2.5 The movement waterfall: opening → closing",
+              "node_id": "0020",
+              "start_index": 63,
+              "end_index": 67,
+              "summary": "ECL is not just a point-in-time number — banks report how the allowance moved from one period to the next, decomposed into named drivers (IFRS 7 disclosure requirement, Chapter 13). This project's ECL engine ( engine/ecl.py ) computes exactly such a movement between two real DCR book snapshots: t=20 (a calm quarter) and t=40 (a stressed quarter), sourced from outputs/ecl/ecl_report.md . Definition — the five-component movement decomposition ( outputs/ecl/ecl_report.md )."
+            },
+            {
+              "title": "2.6 The double-counting rule (EAD vs. survival)",
+              "node_id": "0021",
+              "start_index": 68,
+              "end_index": 74,
+              "summary": "Term loans face two competing exit routes before a fixed maturity: default and prepayment . A production-grade survival function must be a competing-risk survival — it should fall when either hazard fires. But EAD and survival are two separate model components ( engine/ead.py , Chapter 4, and engine/hazard.py , Chapter 3, respectively), built and maintained independently — which creates exactly one place a subtle but material bug can creep in."
+            },
+            {
+              "title": "2.7 Interactive: ECL vs LGD & EIR",
+              "node_id": "0022",
+              "start_index": 75,
+              "end_index": 79,
+              "summary": "The widget below re-implements §2.3's exact formula in JavaScript — same five-year hazard path and EAD schedule, same survival-product identity — and recomputes the full schedule live as you move the $LGD$ and $EIR$ sliders. At the defaults ($LGD=35\\%$, $EIR=6\\%$) it reproduces the golden fixture values exactly : 12-month ECL EUR 4,952.83, lifetime ECL EUR 16,571.39 (verified in a hidden comment in the page source, cross-checked against tests/fixtures/compute_ecl.py ).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0023",
+                  "start_index": 75,
+                  "end_index": 79,
+                  "summary": "12-month ECL Lifetime ECL 12-month ECL (year-1 term) lifetime ECL (full 5-year sum) What to try. Push $LGD$ toward 60% (a downturn severity assumption) and watch every year's contribution — and both the 12-month and lifetime totals — scale linearly (LGD multiplies every term identically, since it is constant across years in this example). Then push $EIR$ down toward 1%: later years' discount factors rise toward 1, so the lifetime figure grows faster than the 12-month figure (which only has one year's discounting to lose) — watch the lifetime/12m ratio in the table's final row increase."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

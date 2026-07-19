@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.2 — ECL Mechanics | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 2: ECL MECHANICS
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md).
+  widgets.js loaded RELATIVE ("../assets/js/widgets.js") -- this chapter lives
+  in notes/chapters/, widgets.js lives in notes/assets/js/; both sit inside
+  the repo, so the relative load is preferred over inlining (conventions.md
+  "Inlined vs relative widgets.js").
+  Standalone deliverable for this build phase: notes/chapters/ is currently
+  empty except this file, so it is self-contained (own <h1>/TOC/closing
+  <hr>) rather than str_replace'd into a not-yet-existing master file; per
+  conventions.md this chapter's <h2 id="s2"> is written so a later merge
+  into notes/chapters/ifrs9_ecl_study_notes.html is a straight splice.
+  MathJax SVG renderer is the only external dependency (CDN, accepted
+  project exception); everything else here is self-contained/inline.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+
+  .bar-outer { position: relative; height: 34px; background: var(--code-bg); border-radius: 4px; overflow: hidden; margin: 10px 0 4px 0; border: 1px solid var(--rule); }
+  .bar-seg-12m { position: absolute; top:0; left:0; height:100%; background: var(--warn); opacity: 0.75; transition: width 0.12s; }
+  .bar-seg-life { position: absolute; top:0; height:100%; background: var(--accent); opacity: 0.55; transition: width 0.12s, left 0.12s; }
+  .bar-label { display:flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 2px;}
+  .bar-legend { display:flex; gap: 18px; font-size: 11.5px; margin-top: 4px; }
+  .bar-legend span.swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align: -1px; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 2 — ECL Mechanics</h1>
+<div class="subtitle">From a single cash shortfall to the movement waterfall: deriving, computing, and reconciling Expected Credit Loss</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 2 of 13. Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;3 &amp; &sect;9.4, <code>tests/fixtures/compute_ecl.py</code>, <code>tests/fixtures/compute_grossup.py</code>, and <code>outputs/ecl/ecl_report.md</code> on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s2-1">2.1 From cash shortfall to the ECL formula</a></li>
+<li><a href="#s2-2">2.2 The survival function: deriving S(t) from the hazard chain</a></li>
+<li><a href="#s2-3">2.3 Flagship worked example: the 5-year amortising loan, digit by digit</a></li>
+<li><a href="#s2-4">2.4 12-month vs lifetime ECL, and the gross-up factor</a></li>
+<li><a href="#s2-5">2.5 The movement waterfall: opening &rarr; closing</a></li>
+<li><a href="#s2-6">2.6 The double-counting rule (EAD vs. survival)</a></li>
+<li><a href="#s2-7">2.7 Interactive: ECL vs LGD &amp; EIR</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s2">2&nbsp; ECL Mechanics</h2>
+<p>This chapter answers the question every other chapter's outputs feed into: given a curve of default
+hazards, a loss-given-default rate, an exposure profile, and a discount rate, how does IFRS&nbsp;9 turn
+those four ingredients into a single provision number? We derive the ECL decomposition theorem from
+first principles (not just state it), walk the flagship five-year worked example one number at a time,
+resolve the 12-month/lifetime boundary and the gross-up trick banks use to extend short-horizon models to
+lifetime, reconcile a real period-over-period allowance movement down to the cent, and close with the
+EAD/survival double-counting rule that a surprising fraction of production ECL engines get wrong. Source
+anchor: <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;3 (<a href="#s2-1">2.1</a>&ndash;<a href="#s2-3">2.3</a>)
+and &sect;9.4 (<a href="#s2-4">2.4</a>); project evidence from <code>outputs/ecl/ecl_report.md</code>
+(<a href="#s2-5">2.5</a>) and <code>outputs/ead/ead_report.md</code> / <code>wiki/pages/ead-model.md</code>
+(<a href="#s2-6">2.6</a>).</p>
+
+<!-- ============================================================== -->
+<h3 id="s2-1">2.1 From cash shortfall to the ECL formula</h3>
+<!-- ============================================================== -->
+<p>Start from what actually happens to money, not from the formula. A performing loan is expected to
+repay in full according to its contract. If the borrower defaults at some future date, the lender does
+not receive the contractual cash flow in full — it receives whatever is recovered instead. The
+<em>shortfall</em> is the gap between what was contractually owed and what is actually recovered, and ECL
+is nothing more than the probability-weighted, discounted value of every shortfall that might occur over
+the loan's life.</p>
+
+<div class="defn">
+<b>Definitions (every symbol used from here on).</b>
+<ul>
+<li>$t=1,\dots,T$ — discrete time periods over the loan's <strong>remaining contractual life</strong> $T$
+(years in the textbook's worked example; quarters in this project's DCR engine — the theorem is agnostic
+to period length, see the note below).</li>
+<li>$\lambda_t$ — the <strong>hazard</strong> (conditional default probability): $\lambda_t=P(T_{\text{default}}=t\mid T_{\text{default}}\ge t)$,
+the probability of defaulting in period $t$ <em>given the loan has survived to the start of period $t$</em>.</li>
+<li>$S(t)$ — the <strong>survival function</strong>: $S(t)=P(T_{\text{default}}>t)$, the probability the loan
+is still performing at the end of period $t$. By convention $S(0)=1$ (certain to be alive at the reporting date).</li>
+<li>$LGD_t$ — loss given default: the fraction of exposure not recovered, conditional on default occurring in period $t$.</li>
+<li>$EAD_t$ — exposure at default: the balance at risk if default occurs in period $t$.</li>
+<li>$EIR$ — the loan's <strong>original effective interest rate</strong> (fixed at origination) — IFRS&nbsp;9
+requires discounting at this rate, never a current market rate or WACC (&sect;3, &sect;10.1).</li>
+</ul>
+</div>
+
+<div class="derivation">
+<b>Derivation — from a single shortfall to the ECL sum.</b>
+<div class="step"><span class="stepno">1.</span> Suppose default happens in exactly period $t$ (not before, not after). The cash shortfall
+crystallising at that moment is the unrecovered fraction of the exposure at risk: $\text{shortfall}_t = LGD_t\cdot EAD_t$.
+This is a <em>conditional</em> statement — it is the loss <em>given</em> that default lands in period $t$.</div>
+<div class="step"><span class="stepno">2.</span> "Default lands in exactly period $t$" is not the same event as "default has happened by time
+$t$". The probability that default lands in exactly period $t$ — the <strong>marginal default
+probability</strong> — is the probability of surviving to the start of period $t$, <em>times</em> the
+conditional probability of defaulting in that period: $P(T_{\text{default}}=t) = S(t-1)\cdot\lambda_t$.
+(Formal justification for the survival term is &sect;2.2, D-1.)</div>
+<div class="step"><span class="stepno">3.</span> The <strong>expected</strong> shortfall attributable to period $t$, viewed from today, is the
+shortfall size times the probability it occurs: $\mathbb{E}[\text{shortfall}_t] = S(t-1)\,\lambda_t\cdot LGD_t\cdot EAD_t$.
+This is a cash flow expected to land $t$ periods in the future, in expectation — it still needs to be
+brought back to a present value.</div>
+<div class="step"><span class="stepno">4.</span> IFRS&nbsp;9 fixes the discount rate as the loan's original EIR (not a market or risk-free rate) —
+the same rate the loan's own interest income is being recognised at, so that expected credit losses are
+measured on a basis consistent with the asset's carrying amount. The discount factor for a shortfall
+landing at period $t$ is $DF(t)=(1+EIR)^{-t}$.</div>
+<div class="step"><span class="stepno">5.</span> Every period's expected, discounted shortfall is an independent contribution to today's
+provision (the events "default in period 1", "default in period 2", … are mutually exclusive — a loan
+can only default once). Summing every period's contribution over the full remaining life gives the ECL
+decomposition theorem:</div>
+</div>
+
+<div class="thm">
+<b>Theorem — the ECL decomposition</b> (<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;3).
+$$ \mathrm{ECL} \;=\; \sum_{t=1}^{T} \underbrace{S(t-1)\,\lambda_t}_{\text{marginal PD}_t} \cdot LGD_t \cdot EAD_t \cdot (1+EIR)^{-t}, $$
+with <strong>12-month ECL</strong> the same sum truncated at $t=12$ months (Stage&nbsp;1 loans), and
+<strong>lifetime ECL</strong> the sum run to the full remaining contractual life $T$ (Stage&nbsp;2/3 loans,
+Chapter&nbsp;1 &sect;A2). Three related PD concepts, disambiguated: <em>conditional/hazard PD</em>
+$\lambda_t$ (default in $t$ given survival to $t-1$); <em>marginal PD</em> $S(t-1)\lambda_t$
+(unconditional probability default lands exactly in period $t$); <em>cumulative PD</em> $F(t)=1-S(t)$
+(probability default has happened by any point up to $t$).
+</div>
+
+<div class="note">
+<b>Periodicity is a modelling choice, not part of the theorem.</b> The textbook's flagship example
+(&sect;2.3) runs $t$ in whole years with an annual $EIR$. This project's production engine
+(<code>engine/ecl.py</code>) runs $t$ in quarters and writes the same theorem as
+$\mathrm{ECL}=\sum_t S(t-1)\lambda_t\, LGD_t\, EAD_t\,(1+EIR_q)^{-t}$ (<code>wiki/pages/ecl-engine.md</code>),
+where $EIR_q$ is the loan's note rate compounded to a quarterly rate ($EIR_q=\text{note\_rate}/400$,
+matching the divisor already used to build the EAD annuity — <code>outputs/ecl/ecl_report.md</code>). The
+algebra is identical either way; only the meaning of one unit of $t$ changes.
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> Every term of the ECL sum answers one question: "what is the expected,
+time-discounted cost of the loan defaulting in <em>this specific</em> period?" Nothing in the formula is
+exotic — it is a textbook expected-value calculation (probability &times; loss size) applied period by
+period, then discounted and summed. Everything the rest of this study-notes compendium builds — hazard
+models (Ch.3), LGD models (Ch.4), EAD models (Ch.4), PIT/TTC conditioning (Ch.5), scenario weighting
+(Ch.6) — exists to produce better estimates of the three curves $\lambda_t$, $LGD_t$, $EAD_t$ that feed
+this one sum.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — marginal PD, not cumulative PD, belongs in the sum.</b> A common mis-derivation writes
+$\mathrm{ECL}=\sum_t F(t)\cdot LGD_t\cdot EAD_t\cdot DF(t)$ using the <em>cumulative</em> PD $F(t)$ instead
+of the marginal PD $S(t-1)\lambda_t$. This overstates ECL, because $F(t)$ already includes every default
+that could have happened in periods $1,\ldots,t-1$ — using it at every $t$ effectively counts those
+earlier defaults' losses again at every later period. Only the marginal PD isolates "the loss that
+crystallises <em>if and only if</em> default happens in exactly this period," which is what actually
+happens to the loan's cash flows. See &sect;2.2 for the survival-product identity that keeps the marginal
+terms disjoint and summing correctly to $F(T)$.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does IFRS&nbsp;9 discount at the loan's original EIR rather than at a current market rate?
+  <details><summary>Answer</summary>
+  <div class="answer">Discounting at the original EIR keeps ECL measurement consistent with how the
+  asset's interest income and amortised cost carrying value are already being recognised — using a
+  current market rate would make the provision inconsistent with the balance the provision is meant to
+  offset, and would let ECL move with interest-rate changes that have nothing to do with credit risk.</div>
+  </details>
+</li>
+<li>What event does the marginal probability $S(t-1)\lambda_t$ actually represent, in words?
+  <details><summary>Answer</summary>
+  <div class="answer">"The loan survives (does not default) through periods $1,\ldots,t-1$, AND then
+  defaults in period $t$." It is the probability of the compound, mutually-exclusive event "default lands
+  in exactly period $t$" — not "default has happened by period $t$" (that is the cumulative PD $F(t)$).</div>
+  </details>
+</li>
+<li>If you summed $F(t)$ (cumulative PD) instead of $S(t-1)\lambda_t$ (marginal PD) across all $t=1,\ldots,T$
+  in the ECL formula, would the result be too high, too low, or unaffected? Why?
+  <details><summary>Answer</summary>
+  <div class="answer">Too high (overstated). $F(t)$ is non-decreasing and re-includes every prior period's
+  default probability at every subsequent $t$, so the same underlying default event contributes to
+  multiple terms of the sum instead of exactly one. Only the marginal PDs partition the probability space
+  disjointly across $t=1,\ldots,T$ (plus the residual "survives to $T$" probability $S(T)$).</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s2-2">2.2 The survival function: deriving S(t) from the hazard chain</h3>
+<!-- ============================================================== -->
+<p>The theorem box in &sect;2.1 defines $S(t)=\prod_{k\le t}(1-\lambda_k)$ but does not derive it — the
+source notes assert it. Here is the missing step (derivation backlog item <strong>D-1</strong>).</p>
+
+<div class="derivation">
+<b>Derivation — survival is a product of one-period conditional non-default probabilities.</b>
+<div class="step"><span class="stepno">1.</span> By definition, $S(t) = P(T_{\text{default}}>t)$, the
+probability of not having defaulted by the end of period $t$.</div>
+<div class="step"><span class="stepno">2.</span> Write "survive to $t$" as the intersection of $t$
+one-period survival events: $\{T_{\text{default}}>t\} = \{T_{\text{default}}>1\}\cap
+\{T_{\text{default}}>2\mid T_{\text{default}}>1\}\cap\cdots\cap\{T_{\text{default}}>t\mid T_{\text{default}}>t-1\}$
+— surviving to $t$ requires surviving period 1, <em>then</em> surviving period 2 given you survived period
+1, and so on. This is always a valid decomposition of any joint event into a chain of conditionals (the
+chain rule of probability), regardless of any independence assumption.</div>
+<div class="step"><span class="stepno">3.</span> By the chain rule, $P(T_{\text{default}}>t) =
+\prod_{k=1}^{t} P(T_{\text{default}}>k \mid T_{\text{default}}>k-1)$.</div>
+<div class="step"><span class="stepno">4.</span> Each factor is a one-period conditional survival
+probability: $P(T_{\text{default}}>k\mid T_{\text{default}}>k-1) = 1-P(T_{\text{default}}=k\mid
+T_{\text{default}}\ge k) = 1-\lambda_k$, by the definition of the hazard $\lambda_k$ in &sect;2.1.</div>
+<div class="step"><span class="stepno">5.</span> Substituting: $S(t) = \prod_{k=1}^{t}(1-\lambda_k)$,
+and by the same argument $S(t-1)=\prod_{k=1}^{t-1}(1-\lambda_k)$ — the survival term that appears in the
+ECL sum's marginal-PD factor.</div>
+</div>
+
+<div class="ex">
+<b>Worked check — the flagship loan's hazard path.</b> Using the same annual hazards as the &sect;2.3
+worked example ($\lambda=1.50\%,2.00\%,2.20\%,2.00\%,1.80\%$ for $t=1,\ldots,5$,
+<code>tests/fixtures/compute_ecl.py</code>, array <code>HAZARDS</code>), the survival-product identity
+gives:
+<div class="table-wrap">
+<table>
+<tr><th>$t$</th><th>$S(t)=\prod_{k\le t}(1-\lambda_k)$</th><th>computed as</th></tr>
+<tr><td>0</td><td class="num">1.00000</td><td>(by convention)</td></tr>
+<tr><td>1</td><td class="num">0.98500</td><td>$1-0.0150$</td></tr>
+<tr><td>2</td><td class="num">0.96530</td><td>$0.98500\times(1-0.0200)$</td></tr>
+<tr><td>3</td><td class="num">0.94406</td><td>$0.96530\times(1-0.0220)$</td></tr>
+<tr><td>4</td><td class="num">0.92518</td><td>$0.94406\times(1-0.0200)$</td></tr>
+<tr><td>5</td><td class="num">0.90853</td><td>$0.92518\times(1-0.0180)$</td></tr>
+</table>
+</div>
+So $1-S(5) = 0.09147 = 9.15\%$ — matching <code>compute_ecl.py</code>'s
+<code>cumulative_pd_5y_pct</code> golden value <strong>9.15%</strong> exactly (derived independently here
+via the survival identity; script: this chapter's <code>derive_ecl.py</code>, run against the golden
+fixture inputs). $S(0),\ldots,S(4)$ above are exactly <code>compute_ecl.py</code>'s
+<code>survival_start_year_1</code>&ndash;<code>survival_start_year_5</code> (the $S(t-1)$ column of &sect;2.3's table).
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> The survival product is not an approximation or a modelling convenience — it
+follows mechanically from the chain rule of probability applied to the definition of the hazard. No
+independence assumption between periods is required (the chain rule holds for any joint distribution);
+what <em>is</em> assumed is that $\lambda_k$ as fitted (Chapter&nbsp;3) already correctly conditions on
+survival to $k$ — i.e. it is estimated on the "at-risk" population at each period, which is exactly how
+discrete-time hazard models are fitted in practice.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — $S(t)$ decays multiplicatively, not by subtracting hazards.</b> A frequent error is computing
+survival as $1-\sum_{k\le t}\lambda_k$ (subtracting hazards) instead of $\prod_{k\le t}(1-\lambda_k)$
+(multiplying survival factors). The two agree only to first order for small $\lambda_k$ — e.g. at
+$t=5$ the sum-of-hazards approximation gives $1-(0.0150+0.0200+0.0220+0.0200+0.0180)=0.9050$, close to
+but not equal to the correct $S(5)=0.90853$ (a 0.35pp gap here; the gap widens as hazards grow, and can
+become material over long lifetime horizons or in stressed scenarios with double-digit annual hazards).
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Does the survival-product derivation require default events in different periods to be
+statistically independent?
+  <details><summary>Answer</summary>
+  <div class="answer">No. The chain rule of probability, $P(A\cap B)=P(A)P(B\mid A)$, holds for any joint
+  distribution regardless of independence — it is exactly what conditioning "given survival to $k-1$"
+  already captures. The derivation only relies on $\lambda_k$ being defined as a <em>conditional</em>
+  probability (conditional on survival to the start of period $k$).</div>
+  </details>
+</li>
+<li>Given hazards $\lambda_1=5\%,\lambda_2=8\%$, compute $S(2)$ and compare it to the naive
+$1-(\lambda_1+\lambda_2)$ approximation.
+  <details><summary>Answer</summary>
+  <div class="answer">$S(2)=(1-0.05)\times(1-0.08)=0.95\times0.92=0.874$. The naive sum gives
+  $1-(0.05+0.08)=0.87$ — close (0.4pp gap) but not exact; the multiplicative form is the derived, correct
+  identity.</div>
+  </details>
+</li>
+<li>Why is $S(t-1)$ — not $S(t)$ — the survival term multiplying $\lambda_t$ in the marginal PD?
+  <details><summary>Answer</summary>
+  <div class="answer">$\lambda_t$ is already conditional on survival to the <em>start</em> of period $t$,
+  i.e. to the end of period $t-1$. Multiplying by $S(t-1)$ (survival through period $t-1$) converts that
+  conditional probability into the unconditional ("from today") probability of defaulting exactly in
+  period $t$; multiplying by $S(t)$ would double-apply period $t$'s own survival.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<img class="fig" src="../assets/img/ch02/01_cash_shortfall_timeline.png" alt="Cash-shortfall timeline showing survival bar shrinking across 5 years with default arrows at each period">
+<div class="figcap"><b>Exhibit 2.1</b> — The cash-shortfall timeline: at each period $t$, a shortfall of
+$LGD_t\cdot EAD_t$ can crystallise with marginal probability $S(t-1)\lambda_t$; every such shortfall is
+discounted back to the reporting date and summed to ECL (survival values and marginal PDs from
+<code>tests/fixtures/compute_ecl.py</code>, regenerated in matplotlib).</div>
+
+<!-- ============================================================== -->
+<h3 id="s2-3">2.3 Flagship worked example: the 5-year amortising loan, digit by digit</h3>
+<!-- ============================================================== -->
+<p>The source notes' worked example (&sect;3): a 5-year amortising loan, principal EUR&nbsp;1,000,000
+repaid in five equal EUR&nbsp;200,000 year-end instalments, effective interest rate $EIR=6\%$, constant
+$LGD=35\%$, default losses crystallising at year-end, with hazards following a mild retail "seasoning
+hump" ($\lambda=1.5\%,2.0\%,2.2\%,2.0\%,1.8\%$ for $t=1,\ldots,5$). Every number below is
+<code>tests/fixtures/compute_ecl.py</code>'s <code>RESULTS</code>, printed by running the fixture module
+directly (derivation backlog item <strong>D-2</strong>) — nothing here is hand-typed.</p>
+
+<div class="ex">
+<b>Worked example — every term of the ECL sum.</b> $EAD_t$ is the balance <em>after</em> $t-1$
+repayments have been made (the exposure at risk entering year $t$, before that year's own repayment):
+$EAD_1=1{,}000{,}000$, $EAD_2=800{,}000$, …, $EAD_5=200{,}000$. Discount factor
+$DF_t=(1.06)^{-t}$.
+<div class="table-wrap">
+<table>
+<tr><th>$t$</th><th>$\lambda_t$</th><th>$S(t-1)$</th><th>marginal PD $=S(t-1)\lambda_t$</th><th>$EAD_t$ (EUR)</th><th>$DF_t=(1.06)^{-t}$</th><th>contribution (EUR)</th><th>running sum (EUR)</th></tr>
+<tr><td>1</td><td class="num">1.50%</td><td class="num">1.00000</td><td class="num">0.01500</td><td class="num">1,000,000</td><td class="num">0.9434</td><td class="num">4,952.83</td><td class="num">4,952.83</td></tr>
+<tr><td>2</td><td class="num">2.00%</td><td class="num">0.98500</td><td class="num">0.01970</td><td class="num">800,000</td><td class="num">0.8900</td><td class="num">4,909.22</td><td class="num">9,862.05</td></tr>
+<tr><td>3</td><td class="num">2.20%</td><td class="num">0.96530</td><td class="num">0.02124</td><td class="num">600,000</td><td class="num">0.8396</td><td class="num">3,744.44</td><td class="num">13,606.49</td></tr>
+<tr><td>4</td><td class="num">2.00%</td><td class="num">0.94406</td><td class="num">0.01888</td><td class="num">400,000</td><td class="num">0.7921</td><td class="num">2,093.80</td><td class="num">15,700.29</td></tr>
+<tr><td>5</td><td class="num">1.80%</td><td class="num">0.92518</td><td class="num">0.01665</td><td class="num">200,000</td><td class="num">0.7473</td><td class="num">871.10</td><td class="num"><b>16,571.39</b></td></tr>
+</table>
+</div>
+Each year-$t$ contribution is <code>marginal_pd</code> &times; $LGD(35\%)$ &times; $EAD_t$ &times; $DF_t$
+— e.g. year 1: $0.01500\times0.35\times1{,}000{,}000\times0.9434=4{,}952.83$. Sanity check on the sum:
+$4{,}952.83+4{,}909.22+3{,}744.44+2{,}093.80+871.10=16{,}571.39$ (re-added independently in
+<code>derive_ecl.py</code>, matching to the last displayed cent).
+<ul>
+<li><strong>12-month ECL</strong> = the $t=1$ term only = <strong>EUR&nbsp;4,952.83</strong>
+(<code>ecl_12m_eur</code>).</li>
+<li><strong>Lifetime ECL</strong> = the full running sum = <strong>EUR&nbsp;16,571.39</strong>
+(<code>ecl_lifetime_eur</code>).</li>
+<li><strong>Lifetime / 12m ratio</strong> = $16{,}571.39/4{,}952.83=$ <strong>3.35&times;</strong>
+(<code>lifetime_over_12m_ratio</code>) — the source notes' "a 3.35&times; jump on Stage&nbsp;2 transfer."</li>
+<li><strong>5-year cumulative PD</strong> = $1-S(5)=$ <strong>9.15%</strong> (<code>cumulative_pd_5y_pct</code>,
+cross-checked against &sect;2.2's independent survival-product derivation).</li>
+</ul>
+</div>
+
+<img class="fig" src="../assets/img/ch02/03_ecl_term_structure.png" alt="Bar chart of annual ECL contributions with cumulative line, highlighting the 12-month window">
+<div class="figcap"><b>Exhibit 2.2</b> — Annual ECL contributions (bars, left axis) and the cumulative running
+sum (line, right axis) for the flagship 5-year loan; the shaded bar is the 12-month ECL window
+(<code>tests/fixtures/compute_ecl.py</code>, regenerated in matplotlib).</div>
+
+<div class="interpretation">
+<b>What this means.</b> Notice the EUR contribution is <em>largest in year&nbsp;1</em> and falls in every
+subsequent year (4,952.83 &rarr; 4,909.22 &rarr; 3,744.44 &rarr; 2,093.80 &rarr; 871.10) — even though the
+underlying marginal PD itself keeps <em>rising</em> for one year longer, peaking in year&nbsp;3 at 2.124%
+(1.500%&rarr;1.970%&rarr;2.124%&rarr;1.888%&rarr;1.665%). The two curves tell different stories because the
+EUR contribution is a <em>product</em> of the marginal PD with $EAD_t$ and $DF_t$, and both of the latter
+are falling every single year: $EAD_t$ by a fixed EUR&nbsp;200,000 (a &minus;20% relative cut from year 1
+to 2, widening to &minus;50% from year 4 to 5), and $DF_t$ by the constant factor $1/1.06$ ($\approx-5.7\%$
+per year). From year&nbsp;1 to year&nbsp;2 alone, marginal PD rises 31.3% (0.01500&rarr;0.01970) but
+$EAD_t\times DF_t$ falls 24.5% (0.8&times;0.94340), so the product already declines (by 0.88%) despite the
+still-rising default probability — and from year&nbsp;3 onward every driver is falling together, so the
+EUR figure drops off steeply. This is the generic shape of a retail term-loan ECL profile: largest near
+origination, when the full balance is least amortised and least discounted, declining thereafter as
+exposure and discounting overwhelm the seasoning hump in the per-period default probability. The
+3.35&times; lifetime/12m ratio is exactly why a loan's transfer from Stage&nbsp;1 to Stage&nbsp;2
+(Chapter&nbsp;1) is a step-change in the balance-sheet provision, not a gradual one — SICR does not
+increase $\lambda_t$ itself, it only changes which years' terms enter the sum.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the falling $EAD_t$ schedule is amortisation, not prepayment.</b> In this flagship example
+$EAD_t$ falls because the loan is contractually amortising (EUR&nbsp;200,000 scheduled repayment per
+year) — it is <em>not</em> a prepayment adjustment. Confusing scheduled amortisation with prepayment-scaled
+EAD is exactly the double-counting trap covered in &sect;2.6: the survival term $S(t-1)$ here only carries
+default risk (this example has no competing prepayment hazard), so $EAD_t$ correctly stays on its
+contractual path.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>The annual EUR ECL contribution is largest in year 1 and falls every year after that, yet the marginal
+PD $S(t-1)\lambda_t$ itself keeps rising until year 3. How can both be true at once?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the EUR contribution is the <em>product</em> of the marginal PD with $EAD_t$
+  and $DF_t$, and those two factors are already falling fast enough to outweigh the marginal PD's rise from
+  the very first year: $EAD_t$ drops by a fixed EUR&nbsp;200,000/year (&minus;20% relative from year 1 to
+  2) and $DF_t$ shrinks by the constant factor $1/1.06$ (&minus;5.7%/year), a combined &minus;24.5% pull
+  against only a +31.3% rise in the marginal PD — so the product already declines from year 1 to year 2,
+  and keeps declining every year after, even in year 2 where the marginal PD is still rising.</div>
+  </details>
+</li>
+<li>If this loan were reclassified to Stage 2 the day after origination, what would the reported ECL jump to, and by what multiple over the 12-month figure?
+  <details><summary>Answer</summary>
+  <div class="answer">EUR&nbsp;16,571.39 (the full lifetime sum), a 3.35&times; jump over the
+  EUR&nbsp;4,952.83 12-month figure — precisely the <code>lifetime_over_12m_ratio</code> golden value.</div>
+  </details>
+</li>
+<li>Recompute the year-3 discount factor $DF_3$ from the stated $EIR=6\%$ and confirm it matches the table.
+  <details><summary>Answer</summary>
+  <div class="answer">$DF_3=(1.06)^{-3}=1/1.191016=0.8396$, matching the table exactly.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s2-4">2.4 12-month vs lifetime ECL, and the gross-up factor</h3>
+<!-- ============================================================== -->
+<p>&sect;2.3 truncated the same sum at two different horizons ($t=1$ vs $t=1,\ldots,5$) because both the
+hazard curve and the exposure profile were fully known out to five years. In practice a bank often trusts
+its <em>point-in-time (PIT)</em> conditioned hazard curve only over a shorter <strong>reasonable-and-
+supportable (R&amp;S) window</strong> — commonly 2&ndash;3 years — beyond which macro forecasts are not
+credible, and reverts the hazard to a long-run through-the-cycle (TTC) level for the remainder of the
+contractual life (&sect;9.4). The <strong>gross-up factor</strong> is how a short-horizon PD/ECL estimate is
+scaled up to a lifetime figure without re-running the full term structure by hand.</p>
+
+<div class="defn">
+<b>Definition — the gross-up factor</b> (&sect;9.4). When a model is trusted only to horizon $H$ but
+lifetime is longer, $$ GU(H\to\text{life}) = \frac{\text{cumulative PD to maturity}}{\text{cumulative PD to } H}, \qquad \mathrm{ECL}_{\text{life}} \approx GU\cdot \mathrm{ECL}_H. $$
+</div>
+
+<div class="ex">
+<b>Worked example — grossing up a 7-year loan</b> (derivation backlog item <strong>D-11</strong>,
+<code>tests/fixtures/compute_grossup.py</code>). A 7-year loan's hazard is PIT-elevated for the first
+three years (the R&amp;S window, decaying $2.50\%\to2.20\%\to1.90\%$), reverts through a single
+mid-point year at $1.70\%$, then holds flat at the $1.50\%$ TTC level to maturity — the full 7-year
+annual hazard path recovered from the notes' printed cumulative-PD table is
+<code>[2.50%, 2.20%, 1.90%, 1.70%, 1.50%, 1.50%, 1.50%]</code>. ECL here is simplified to
+$\text{cumPD}(H)\times LGD\times EAD$ (undiscounted, isolating the horizon effect; $EAD=100$, $LGD=30\%$).
+<div class="table-wrap">
+<table>
+<tr><th>Horizon $H$</th><th>Cumulative PD to $H$</th><th>Gross-up $GU(H\to\text{life})$</th><th>ECL($H$)</th></tr>
+<tr><td>12 months</td><td class="num">2.50%</td><td class="num">4.85&times;</td><td class="num">0.75</td></tr>
+<tr><td>36 months (R&amp;S)</td><td class="num">6.46%</td><td class="num">1.88&times;</td><td class="num">1.94</td></tr>
+<tr><td>60 months (reliable)</td><td class="num">9.43%</td><td class="num">1.29&times;</td><td class="num">2.83</td></tr>
+<tr><td>Lifetime (84 months)</td><td class="num">12.12%</td><td class="num">1.00&times;</td><td class="num">3.64</td></tr>
+</table>
+</div>
+Every cumulative PD is $\text{CPD}(n)=1-\prod_{k\le n}(1-h_k)$ (the same survival identity as &sect;2.2,
+applied year by year to this loan's hazard path) — e.g. $\text{CPD}(3)=1-(1-0.025)(1-0.022)(1-0.019) =
+6.46\%$. Recall the definition $GU(H\to\text{life})=\text{CPD(life)}/\text{CPD}(H)$: at $H=12$m,
+$GU=12.12\%/2.50\%=4.85\times$; at $H=60$m, $GU=12.12\%/9.43\%=1.29\times$ — matching the table (all four
+values reproduced exactly from <code>compute_grossup.py</code>'s <code>RESULTS</code>).
+</div>
+
+<img class="fig" src="../assets/img/ch02/05_grossup_horizons.png" alt="Cumulative PD rising and gross-up factor shrinking toward 1.0x across 7 years">
+<div class="figcap"><b>Exhibit 2.3</b> — Cumulative PD rises monotonically toward lifetime while the
+gross-up factor shrinks toward 1.00&times; as the horizon $H$ approaches the 84-month lifetime
+(<code>tests/fixtures/compute_grossup.py</code>, regenerated in matplotlib).</div>
+
+<div class="interpretation">
+<b>What this means.</b> The gross-up factor is largest exactly where it matters most operationally — a
+bank holding only a 12-month PIT PD model (common in retail Basel-IRB shops repurposing IRB infrastructure
+for IFRS&nbsp;9, Chapter&nbsp;1 &sect;A4) needs a $4.85\times$ multiplier to reach a defensible lifetime
+figure from that one number. As $H$ approaches the true lifetime, $GU\to1.00\times$ by construction (the
+numerator and denominator converge). The chart's monotonic cumulative-PD curve also makes visible why the
+R&amp;S window boundary (shaded) matters: everything to its right is TTC-flat-hazard extrapolation, not
+macro-conditioned forecast — the credibility of the tail figure rests entirely on the TTC reversion
+assumption, not on any forward-looking scenario information.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a single gross-up factor assumes the calibration vintages' default-timing shape holds beyond
+$H$.</b> This breaks for back-loaded products (balloon or interest-only structures, where losses cluster
+late in the life) or where the tail sits in a different macro regime than the vintages the factor was
+calibrated on. The source notes' own caution (&sect;9.4): segment the factor by product/vintage where
+data allows, and prefer an explicit TTC-extended term structure (as built here) over a single blanket
+multiplier whenever the underlying hazard path is available.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does $GU(H\to\text{life})$ always equal exactly $1.00\times$ when $H$ equals the lifetime itself?
+  <details><summary>Answer</summary>
+  <div class="answer">By definition $GU(H\to\text{life})=\text{CPD(life)}/\text{CPD}(H)$; when $H=$life
+  the numerator and denominator are the same quantity, so the ratio is identically 1.</div>
+  </details>
+</li>
+<li>A bank has only a 12-month PIT PD of 2.5% for a loan whose true lifetime cumulative PD works out to
+12.12%. Using the gross-up approach, what lifetime PD would it estimate, and how does it compare to the
+true figure?
+  <details><summary>Answer</summary>
+  <div class="answer">$GU(12\text{m}\to\text{life})=4.85\times$, so estimated lifetime PD
+  $\approx 2.5\%\times4.85=12.13\%$ — matching the true 12.12% cumulative PD to within rounding, because
+  the gross-up factor in this worked example was itself derived from the same hazard path (a
+  self-consistency check, not an independent validation of the method).</div>
+  </details>
+</li>
+<li>Name one type of loan for which a single, portfolio-wide gross-up factor would be a poor
+approximation, and explain why.
+  <details><summary>Answer</summary>
+  <div class="answer">A balloon or interest-only loan — its default timing is back-loaded (concentrated
+  near the balloon/maturity date) relative to a typical amortising loan's default-timing shape, so a
+  gross-up factor calibrated on amortising vintages would understate its true lifetime tail risk.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s2-5">2.5 The movement waterfall: opening &rarr; closing</h3>
+<!-- ============================================================== -->
+<p>ECL is not just a point-in-time number — banks report how the allowance <em>moved</em> from one period
+to the next, decomposed into named drivers (IFRS&nbsp;7 disclosure requirement, Chapter&nbsp;13). This
+project's ECL engine (<code>engine/ecl.py</code>) computes exactly such a movement between two real DCR
+book snapshots: <strong>t=20</strong> (a calm quarter) and <strong>t=40</strong> (a stressed quarter),
+sourced from <code>outputs/ecl/ecl_report.md</code>.</p>
+
+<div class="defn">
+<b>Definition — the five-component movement decomposition</b> (<code>outputs/ecl/ecl_report.md</code>).
+Sequential and order-dependent: (1) <strong>stage migration</strong> — surviving loans re-marked at their
+new stage but frozen $t{=}20$ marks; (2) <strong>remeasurement</strong> — the same migrated loans,
+re-marked at $t{=}40$'s actual PD/LGD/EAD; (3) <strong>derecognitions</strong> — loans present at $t{=}20$
+but no longer in the book at $t{=}40$, removed at their opening marks; (4) <strong>new loans</strong> —
+loans present at $t{=}40$ only, entered at their closing marks. A different component ordering would
+allocate the migration&times;remeasurement interaction differently — this is a stated modelling choice,
+not a unique decomposition.
+</div>
+
+<div class="ex">
+<b>Worked example — the real t=20&rarr;t=40 waterfall</b> (<code>outputs/ecl/ecl_report.md</code>,
+"Movement decomposition" table; all figures in USD millions, the DCR book's reporting currency).
+<div class="table-wrap">
+<table>
+<tr><th>Component</th><th>$m</th><th>Loans</th><th>Running total ($m)</th></tr>
+<tr><td>Opening (t=20)</td><td class="num">+24.54</td><td class="num">8,662</td><td class="num">24.54</td></tr>
+<tr><td>Stage migration</td><td class="num">+3.88</td><td class="num">498</td><td class="num">28.42</td></tr>
+<tr><td>Remeasurement</td><td class="num">+26.01</td><td class="num">1,948</td><td class="num">54.43</td></tr>
+<tr><td>Derecognitions</td><td class="num">&minus;21.18</td><td class="num">6,714</td><td class="num">33.25</td></tr>
+<tr><td>New loans</td><td class="num">+999.36</td><td class="num">11,915</td><td class="num">1,032.61</td></tr>
+<tr><td>Closing (t=40)</td><td class="num">1,032.61</td><td class="num">13,863</td><td class="num"><b>1,032.61</b></td></tr>
+</table>
+</div>
+Identity check: $24.54+3.88+26.01-21.18+999.36 = 1{,}032.61$, matching closing exactly —
+<code>outputs/ecl/ecl_report.md</code>'s own gate reports the identity residual at <strong>&lt;
+\$0.01</strong> (floating-point noise only). Two useful sub-totals the report calls out: net portfolio
+change (derecognitions + new loans) $=-21.18+999.36=+978.18$m; net "same-loan" P&amp;L-style movement
+(stage migration + remeasurement, i.e. everything <em>not</em> driven by book turnover)
+$=3.88+26.01=+29.89$m.
+</div>
+
+<img class="fig" src="../assets/img/ch02/04_movement_waterfall.png" alt="Waterfall chart from opening 24.54 to closing 1032.61 via stage migration, remeasurement, derecognitions and new loans">
+<div class="figcap"><b>Exhibit 2.4</b> — The t=20&rarr;t=40 movement waterfall: opening allowance of \$24.54m
+grows to \$1,032.61m, overwhelmingly through new loans entering the book at stressed marks
+(<code>outputs/ecl/ecl_report.md</code>, regenerated in matplotlib).</div>
+
+<div class="interpretation">
+<b>What this means.</b> The headline "22&times; coverage" number ($1.279\%\to28.393\%$, from
+<code>outputs/ecl/ecl_report.md</code>'s headline table) could be misread as a story purely about existing
+loans getting worse. The waterfall shows otherwise: the <em>same-loan</em> effect (stage migration +
+remeasurement) is only +\$29.89m — real, but small next to the +\$999.36m from new loans entering the book
+already carrying stressed marks (this is a synthetic-book construction artifact of how the t=20/t=40
+snapshots were built, not a claim about real-world portfolio dynamics — see
+<code>outputs/ecl/ecl_report.md</code>'s documented simplifications). The practical lesson generalises:
+a period-over-period allowance movement always needs the waterfall decomposition, not just the headline
+delta, to separate "our existing book got riskier" from "the book's composition changed."
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the decomposition is order-dependent, so its components are not uniquely defined.</b> Running
+stage migration before remeasurement (as here) attributes the interaction between "which stage a loan
+lands in" and "how its PD/LGD/EAD re-mark" entirely to the remeasurement step. Reversing the order would
+shift some of that +\$26.01m into the migration component instead. The <em>total</em> movement
+(opening&rarr;closing) is order-independent — only the internal split between named components is a
+modelling choice, and it must be stated explicitly whenever a waterfall is published (exactly as
+<code>engine/ecl.py</code>'s docstring does).
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>What two components together represent the "same-loan" P&amp;L-style movement, as opposed to book
+turnover, and what does their sum equal here?
+  <details><summary>Answer</summary>
+  <div class="answer">Stage migration (+\$3.88m) and remeasurement (+\$26.01m), summing to +\$29.89m — the
+  change in allowance attributable to loans that were on the book at both snapshots, isolated from
+  loans entering or leaving the book.</div>
+  </details>
+</li>
+<li>Why can't you simply re-order the five components and expect the same closing total?
+  <details><summary>Answer</summary>
+  <div class="answer">You can — the closing total (opening + all deltas) is order-independent by simple
+  arithmetic (addition commutes). What changes under a different ordering is how much of the total
+  movement gets attributed to each <em>named</em> component, since stage migration and remeasurement
+  interact (a loan's new stage affects how its remeasurement is priced) — reordering reallocates that
+  interaction term between the two components without changing their sum.</div>
+  </details>
+</li>
+<li>The headline coverage ratio jumps 22&times; from t=20 to t=40. Does the waterfall support the
+interpretation that the existing book deteriorated 22&times; in risk? Why or why not?
+  <details><summary>Answer</summary>
+  <div class="answer">No. The same-loan movement (migration + remeasurement) is only +\$29.89m against an
+  opening base of \$24.54m — roughly a 2.2&times; effect on the surviving book, not 22&times;. The bulk of
+  the headline jump (+\$999.36m of the +\$1,008.07m total increase) comes from new loans entering the book
+  already carrying stressed marks, which is a book-composition effect, not existing-loan deterioration.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s2-6">2.6 The double-counting rule (EAD vs. survival)</h3>
+<!-- ============================================================== -->
+<p>Term loans face two competing exit routes before a fixed maturity: <strong>default</strong> and
+<strong>prepayment</strong>. A production-grade survival function must be a <em>competing-risk</em>
+survival — it should fall when either hazard fires. But EAD and survival are two separate model
+components (<code>engine/ead.py</code>, Chapter&nbsp;4, and <code>engine/hazard.py</code>, Chapter&nbsp;3,
+respectively), built and maintained independently — which creates exactly one place a subtle but material
+bug can creep in.</p>
+
+<div class="warn">
+<b>The rule</b> (<code>outputs/ead/ead_report.md</code>, <code>wiki/pages/ead-model.md</code>,
+<code>engine/ead.py</code> module docstring). If the survival function $S(t)$ used in the ECL sum is a
+<strong>competing-risk</strong> survival — i.e. it already falls with <em>both</em> the default hazard
+$\lambda_t$ and a prepayment hazard $\pi_t$ — then $EAD_t$ must stay on its <strong>contractual</strong>
+amortisation path and must <strong>never</strong> be additionally scaled down by a prepayment-survival
+factor. Doing so double-counts the prepayment effect (once inside $S(t-1)$, a second time inside
+$EAD_t$) and <strong>understates</strong> lifetime ECL.
+</div>
+
+<div class="derivation">
+<b>Illustrative derivation — why the double count understates ECL</b> (self-authored worked example built
+on the &sect;2.3 flagship loan's exact schedule and default hazards, with an added illustrative flat
+prepayment hazard $\pi_t=5\%$/year to make the effect visible; script:
+<code>derive_doublecount.py</code>, run against these stated inputs — this is not one of the 133 golden
+fixtures, and is labeled as illustrative throughout).
+<div class="step"><span class="stepno">1.</span> <strong>Correct treatment.</strong> Competing-risk
+survival uses <em>both</em> hazards: $S_{\text{correct}}(t)=\prod_{k\le t}(1-\lambda_k-\pi_k)$. $EAD_t$
+stays exactly on the same contractual schedule as &sect;2.3
+($1{,}000{,}000, 800{,}000, \ldots, 200{,}000$) — prepayment risk is already fully reflected in the lower
+survival probability multiplying every term, so EAD needs no further adjustment.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Double-counted (wrong) treatment.</strong> A
+naive implementation additionally scales EAD by a prepayment-only survival factor
+$EAD'_t = EAD_t\times\prod_{k&lt;t}(1-\pi_k)$ — reasoning (incorrectly) that "loans that would have prepaid
+should carry less exposure." But $S_{\text{correct}}(t-1)$ already reduced the marginal PD to reflect
+exactly this population that is no longer at risk of default because it prepaid.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Numeric comparison</strong> (both use the SAME
+correct $S_{\text{correct}}(t-1)\lambda_t$ marginal-PD factor — the only thing that differs is which EAD
+path is multiplied in):
+<div class="table-wrap">
+<table>
+<tr><th>$t$</th><th>$EAD_t$ contractual (correct)</th><th>prepay survival $\prod_{k&lt;t}(1-\pi_k)$</th><th>$EAD'_t$ (double-counted)</th></tr>
+<tr><td>1</td><td class="num">1,000,000</td><td class="num">1.00000</td><td class="num">1,000,000</td></tr>
+<tr><td>2</td><td class="num">800,000</td><td class="num">0.95000</td><td class="num">760,000</td></tr>
+<tr><td>3</td><td class="num">600,000</td><td class="num">0.90250</td><td class="num">541,500</td></tr>
+<tr><td>4</td><td class="num">400,000</td><td class="num">0.85737</td><td class="num">342,950</td></tr>
+<tr><td>5</td><td class="num">200,000</td><td class="num">0.81451</td><td class="num">162,901</td></tr>
+</table>
+</div>
+</div>
+<div class="step"><span class="stepno">4.</span> Summing the ECL identically otherwise (same
+$LGD=35\%$, same $EIR=6\%$, same $S_{\text{correct}}(t-1)\lambda_t$ marginal PDs):
+$\mathrm{ECL}_{\text{correct}}=\text{EUR }15{,}482.15$ vs.
+$\mathrm{ECL}_{\text{wrong}}=\text{EUR }14{,}533.96$ — the double-counted version understates ECL by
+<strong>EUR&nbsp;948.19 (6.12% of the correct figure)</strong>, purely from re-applying the prepayment
+survival factor a second time on top of the competing-risk survival that already carries it.</div>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> This is exactly the rule this project's own EAD engine enforces by construction:
+<code>engine/ead.py</code>'s docstring states the contractual path is <strong>"deliberately NOT
+prepayment-scaled"</strong> because <code>engine/hazard.py</code>'s survival is already the competing-risk
+survival including prepayment (<code>outputs/ead/ead_report.md</code>: <em>"the ECL survival $S(t)=
+\prod(1-\lambda_{\text{default}}-\lambda_{\text{prepay}})$ ... already carries prepayment; scaling EAD as
+well would double-count and understate lifetime ECL"</em>). The illustrative 6.12% understatement above is
+a small-hazard, short-horizon example — the effect compounds multiplicatively over more periods and grows
+with the size of the prepayment hazard, so on a long-lived mortgage book with material CPR (conditional
+prepayment rate) this bug is not a rounding error.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "EAD should reflect that some loans will have left the book" sounds intuitively correct, and
+is exactly how the bug gets introduced.</b> The intuition is not wrong — it is just already handled, by
+the survival term. EAD's job is to answer "how much exposure is at risk <em>if</em> the loan is still
+alive and defaults in period $t$" — a conditional quantity — while survival's job is to answer "what is
+the probability the loan is still alive to default at all." Keeping these two jobs cleanly separated (one
+model, one hazard mechanism, no overlap) is the entire discipline; the revolver CCF worked example
+(&sect;12, $EAD=5+0.6\times(20-5)=14.0$m, <code>compute_ecl.py</code>'s <code>revolver_ead_eur_m</code>,
+Chapter&nbsp;4) is a different exposure mechanism entirely and is not subject to this particular
+prepayment/survival interaction.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In the illustrative example, which direction does the double-counting bug bias ECL — overstated or
+understated — and why?
+  <details><summary>Answer</summary>
+  <div class="answer">Understated. Both EAD and the marginal-PD factor shrink with the same prepayment
+  effect when it is double-counted, so the product $S(t-1)\lambda_t\times EAD_t$ is scaled down twice by
+  (roughly) the same prepayment-survival factor instead of once, making every later-year contribution to
+  ECL too small.</div>
+  </details>
+</li>
+<li>If the survival function used in an ECL engine carries <em>only</em> default risk (no competing
+prepayment hazard), is it then correct to scale EAD down by a separate prepayment-survival factor?
+  <details><summary>Answer</summary>
+  <div class="answer">In that specific case scaling EAD by prepayment survival would not double-count
+  (since survival no longer carries prepayment at all) — but it would still be the wrong place to put it
+  for a full expected-loss calculation, because prepayment should instead reduce the population still at
+  risk of default (i.e. it belongs in the survival/hazard side as a competing risk), not silently shrink
+  the exposure of loans that are still assumed 100% likely to reach period $t$ performing.</div>
+  </details>
+</li>
+<li>Why does the double-counting understatement in the illustrative example grow relative to the correct
+ECL as $t$ increases (compare the year-5 EAD gap to the year-2 EAD gap)?
+  <details><summary>Answer</summary>
+  <div class="answer">The wrongly-applied prepayment-survival factor $\prod_{k&lt;t}(1-\pi_k)$ compounds
+  multiplicatively with $t$ — by year 5 it has fallen to 0.81451 (an 18.5% haircut on top of the already-
+  correct survival-weighted marginal PD), versus only a 5% haircut by year 2 — so later years' EAD, and
+  hence their ECL contribution, are proportionally more suppressed the longer the loan has been exposed to
+  the double-counted prepayment factor.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s2-7">2.7 Interactive: ECL vs LGD &amp; EIR</h3>
+<!-- ============================================================== -->
+<p>The widget below re-implements &sect;2.3's exact formula in JavaScript — same five-year hazard path and
+EAD schedule, same survival-product identity — and recomputes the full schedule live as you move the
+$LGD$ and $EIR$ sliders. At the defaults ($LGD=35\%$, $EIR=6\%$) it reproduces the golden fixture values
+<strong>exactly</strong>: 12-month ECL EUR&nbsp;4,952.83, lifetime ECL EUR&nbsp;16,571.39 (verified in a
+hidden comment in the page source, cross-checked against <code>tests/fixtures/compute_ecl.py</code>).</p>
+
+<div class="widget">
+<h4>Live widget — drag the sliders</h4>
+<div class="widget-controls" id="ecl-controls"></div>
+<div class="bar-label"><span>12-month ECL</span><span>Lifetime ECL</span></div>
+<div class="bar-outer" id="ecl-bar">
+  <div class="bar-seg-life" id="ecl-bar-life"></div>
+  <div class="bar-seg-12m" id="ecl-bar-12m"></div>
+</div>
+<div class="bar-legend">
+  <span><span class="swatch" style="background:var(--warn);"></span>12-month ECL (year-1 term)</span>
+  <span><span class="swatch" style="background:var(--accent);"></span>lifetime ECL (full 5-year sum)</span>
+</div>
+<div id="ecl-table"></div>
+</div>
+
+<div class="note">
+<b>What to try.</b> Push $LGD$ toward 60% (a downturn severity assumption) and watch every year's
+contribution — and both the 12-month and lifetime totals — scale linearly (LGD multiplies every term
+identically, since it is constant across years in this example). Then push $EIR$ down toward 1%: later
+years' discount factors rise toward 1, so the lifetime figure grows faster than the 12-month figure (which
+only has one year's discounting to lose) — watch the lifetime/12m ratio in the table's final row increase.
+</div>
+
+<script src="../assets/js/widgets.js"></script>
+<script>
+(function () {
+  // Same inputs as tests/fixtures/compute_ecl.py's flagship worked example
+  // (HAZARDS, PRINCIPAL, REPAYMENT) -- LGD and EIR are the two live sliders.
+  var HAZARDS = [0.015, 0.020, 0.022, 0.020, 0.018];
+  var PRINCIPAL = 1000000.0;
+  var REPAYMENT = 200000.0;
+
+  function eadSchedule() {
+    var out = [];
+    for (var i = 0; i < HAZARDS.length; i++) out.push(PRINCIPAL - REPAYMENT * i);
+    return out;
+  }
+
+  function eclSchedule(lgd, eirAnnual) {
+    var ead = eadSchedule();
+    var S = 1.0;
+    var rows = [];
+    var ecl12 = 0, eclLife = 0;
+    for (var i = 0; i < HAZARDS.length; i++) {
+      var t = i + 1;
+      var Sprev = S;
+      var lambda = HAZARDS[i];
+      var marginal = Sprev * lambda;
+      var df = Math.pow(1 + eirAnnual, -t);
+      var contribution = marginal * lgd * ead[i] * df;
+      eclLife += contribution;
+      if (t === 1) ecl12 = contribution;
+      rows.push({ t: t, lambda: lambda, Sprev: Sprev, marginal: marginal, ead: ead[i], df: df, contribution: contribution });
+      S = Sprev * (1 - lambda);
+    }
+    return { rows: rows, ecl12: ecl12, eclLife: eclLife };
+  }
+
+  // --- Hidden correctness check: defaults MUST reproduce the golden fixture ---
+  // var check = eclSchedule(0.35, 0.06);
+  // check.ecl12 -> 4952.83..., check.eclLife -> 16571.39...
+  // matches tests/fixtures/compute_ecl.py RESULTS['ecl_12m_eur'] / ['ecl_lifetime_eur']
+  // to the fixture's displayed 2-decimal precision. Verified during chapter build.
+
+  var state = { lgd: 0.35, eir: 0.06 };
+  var controls = document.getElementById('ecl-controls');
+
+  Widgets.makeSlider(controls, {
+    label: 'LGD', min: 0.05, max: 0.80, step: 0.01, value: state.lgd,
+    format: function (v) { return (v * 100).toFixed(0) + '%'; },
+    onInput: function (v) { state.lgd = v; redraw(); }
+  });
+  Widgets.makeSlider(controls, {
+    label: 'EIR (annual)', min: 0.01, max: 0.15, step: 0.005, value: state.eir,
+    format: function (v) { return (v * 100).toFixed(1) + '%'; },
+    onInput: function (v) { state.eir = v; redraw(); }
+  });
+
+  var table = Widgets.makeLiveTable(document.getElementById('ecl-table'), {
+    columns: [
+      { key: 't', label: 't' },
+      { key: 'lambda', label: 'lambda_t', format: function (v) { return (v * 100).toFixed(2) + '%'; } },
+      { key: 'Sprev', label: 'S(t-1)', format: function (v) { return v.toFixed(5); } },
+      { key: 'marginal', label: 'marginal PD', format: function (v) { return v.toFixed(5); } },
+      { key: 'ead', label: 'EAD_t (EUR)', format: function (v) { return v.toLocaleString('en-US', {maximumFractionDigits:0}); } },
+      { key: 'df', label: 'DF_t', format: function (v) { return v.toFixed(4); } },
+      { key: 'contribution', label: 'contribution (EUR)', format: function (v) { return v.toLocaleString('en-US', {maximumFractionDigits:2}); } }
+    ],
+    rows: []
+  });
+
+  var BAR_SCALE = 30000; // EUR full-width reference; grows if lifetime ECL exceeds it
+
+  function redraw() {
+    var result = eclSchedule(state.lgd, state.eir);
+    table.update(result.rows);
+
+    var scale = Math.max(BAR_SCALE, result.eclLife * 1.08);
+    var pct12 = Math.min(100, (result.ecl12 / scale) * 100);
+    var pctLife = Math.min(100, (result.eclLife / scale) * 100);
+    document.getElementById('ecl-bar-life').style.width = pctLife.toFixed(2) + '%';
+    document.getElementById('ecl-bar-12m').style.width = pct12.toFixed(2) + '%';
+
+    var label = document.querySelector('.bar-label');
+    label.innerHTML =
+      '<span>12-month ECL: EUR ' + result.ecl12.toLocaleString('en-US', {maximumFractionDigits: 2}) + '</span>' +
+      '<span>Lifetime ECL: EUR ' + result.eclLife.toLocaleString('en-US', {maximumFractionDigits: 2}) +
+      '  (' + (result.eclLife / result.ecl12).toFixed(2) + 'x the 12-month figure)</span>';
+  }
+
+  redraw();
+})();
+</script>
+
+<div class="gotcha">
+<b>Gotcha — the widget's "lifetime" is always the same fixed 5-year contractual life.</b> Moving the
+sliders changes $LGD$ and $EIR$, not the loan's remaining term or its hazard path — this widget isolates
+the effect of loss severity and discounting on a <em>fixed</em> exposure/hazard profile. Changing the
+hazard curve itself is a Chapter&nbsp;3 (hazard modelling) concern, and changing the horizon boundary is
+&sect;2.4's gross-up mechanism, not this widget.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>At the default slider values, what should the widget's 12-month and lifetime ECL read, and against
+which source can you verify them?
+  <details><summary>Answer</summary>
+  <div class="answer">EUR&nbsp;4,952.83 (12-month) and EUR&nbsp;16,571.39 (lifetime) — verifiable against
+  <code>tests/fixtures/compute_ecl.py</code>'s <code>RESULTS['ecl_12m_eur']</code> and
+  <code>RESULTS['ecl_lifetime_eur']</code>, the same golden fixture &sect;2.3's static table is built from.</div>
+  </details>
+</li>
+<li>If you double LGD from 35% to 70% (holding EIR fixed), what happens to every year's contribution and
+to the lifetime/12m ratio?
+  <details><summary>Answer</summary>
+  <div class="answer">Every year's contribution exactly doubles (LGD is a constant multiplicative factor
+  applied identically to every term of the sum), so both the 12-month and lifetime totals double — and
+  the lifetime/12m <em>ratio</em> is unchanged, because it is a ratio of two quantities that both scaled
+  by the same factor.</div>
+  </details>
+</li>
+<li>Why does lowering EIR toward 1% increase the lifetime/12m ratio, rather than leaving it unchanged like
+an LGD change does?
+  <details><summary>Answer</summary>
+  <div class="answer">Discounting is $t$-dependent ($DF_t=(1+EIR)^{-t}$), so a lower EIR raises later
+  years' discount factors proportionally more than year 1's (which only has one year of discounting to
+  begin with) — later years' contributions grow faster than year 1's, so the lifetime sum grows faster
+  than the 12-month figure and the ratio between them rises.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="summary">
+<b>Chapter 2 summary.</b> ECL is the discounted, marginal-probability-weighted sum of every period's
+expected cash shortfall — never the cumulative-PD version, and the survival term inside it is a rigorous
+consequence of the chain rule, not an assertion. The flagship five-year loan example reproduces every one
+of <code>compute_ecl.py</code>'s golden values digit by digit; the gross-up factor extends a short-horizon
+model to lifetime by the ratio of cumulative PDs; the real DCR movement waterfall reconciles a
+\$24.54m to \$1,032.61m swing to the cent through five named, order-dependent components;
+and the EAD/survival double-counting rule is the single most consequential implementation detail this
+chapter covers — get it wrong and lifetime ECL is silently understated. Chapter&nbsp;3 picks up the first
+of the three input curves this chapter treats as given — $\lambda_t$ — and derives where the cloglog
+hazard-model link function actually comes from.
+</div>
+
+<img class="fig" src="../assets/img/ch02/02_hazard_survival_pv_pipeline.png" alt="Four-stage flowchart: hazard, survival, expected shortfall, discount and sum">
+<div class="figcap"><b>Exhibit 2.5</b> — The four computational stages behind every ECL term: hazard
+(Chapter&nbsp;3) &rarr; survival (&sect;2.2's derived identity) &rarr; expected shortfall (LGD &times; EAD,
+Chapter&nbsp;4) &rarr; discount and sum (this chapter). Regenerated in matplotlib as a box-arrow diagram.</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;3 &amp; &sect;9.4, <code>tests/fixtures/compute_ecl.py</code>, <code>tests/fixtures/compute_grossup.py</code>, <code>outputs/ecl/ecl_report.md</code>, and <code>outputs/ead/ead_report.md</code> / <code>wiki/pages/ead-model.md</code> on 2026-07-19.
+</div>
+
+</body>
+</html>
