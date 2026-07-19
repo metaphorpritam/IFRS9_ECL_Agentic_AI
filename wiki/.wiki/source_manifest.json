@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-18T20:47:54+00:00",
+  "updated": "2026-07-19T18:01:03+00:00",
   "files": {
     ".claude/skills/llm-wiki/SKILL.md": "4026f4aabe3e51b5",
     ".claude/skills/pageindex-plus/SKILL.md": "00af9cba829b27ad",
@@ -18,7 +18,7 @@
     "analysis/fit_vasicek.py": "a99843a6fc0bb2a3",
     "analysis/run_ecl.py": "a142650611e1f449",
     "analysis/run_scenarios.py": "a133741d7efa6d0e",
-    "app/api/main.py": "4d89def56c113e2b",
+    "app/api/main.py": "5c6ee8703b2a412c",
     "challenger/mlp.py": "7ba071a0a1cf7893",
     "data/ingest/dfast.py": "8ae2c1437485e79f",
     "data/panel/build_panel.py": "ff45ef82dbed1a62",
@@ -69,7 +69,7 @@
     "tests/fixtures/compute_vasicek.py": "182c086be3d694a5",
     "tests/test_api.py": "6ca7302517d1f6bb",
     "tests/test_challenger.py": "986841636746cb22",
-    "tests/test_contract.py": "310b030cd38e63a1",
+    "tests/test_contract.py": "83c0faabc8a091a7",
     "tests/test_ead.py": "4a83f56efb2ad90b",
     "tests/test_ecl.py": "ffda71e3702c5d0b",
     "tests/test_fixtures.py": "9c33322b2cf543bc",

@@ -1,7 +1,7 @@
 {
   "doc_name": "IFRS9 Study Notes",
-  "doc_description": "PageIndex RAG built from 11 file(s) in notes/corpus.",
-  "total_pages": 650,
+  "doc_description": "PageIndex RAG built from 13 file(s) in notes/corpus.",
+  "total_pages": 791,
   "sources": [
     "notes/corpus/ch01_ifrs9_foundations_staging.html.md",
     "notes/corpus/ch02_ecl_mechanics.html.md",
@@ -13,7 +13,9 @@
     "notes/corpus/ch08_the_agent.html.md",
     "notes/corpus/ch09_app_guide.html.md",
     "notes/corpus/ch10_docker_deployment.html.md",
-    "notes/corpus/ch11_freddie_panel_eda.html.md"
+    "notes/corpus/ch11_freddie_panel_eda.html.md",
+    "notes/corpus/ch12_freddie_models_backtest.html.md",
+    "notes/corpus/ch13_governance_mdd.html.md"
   ],
   "structure": [
     {
@@ -1872,14 +1874,14 @@
       "title": "Chapter 11 — Freddie Mac Panel & EDA",
       "node_id": "0241",
       "start_index": 572,
-      "end_index": 650,
+      "end_index": 649,
       "summary": "Real dates, real states, real losses: the SFLLD rung-3 build, the D90 absorbing default derived precisely, and two orphaned derivations — net credit loss discounting and the roll-rate bridge — finally get their fixture walkthroughs IFRS9 ECL Study-Notes Compendium — Chapter 11 of 13. Compiled from outputs/freddie/ingest/dq_report.md , outputs/freddie/eda/eda_report.md , outputs/panel/waterfall.md , freddie/ingest.py , freddie/build_panel.py , freddie/macro.py , tests/fixtures/compute_ncl.py , tests/fixtures/compute_rollrate.py , and data/processed/freddie/*.parquet (read live this session) on ...",
       "nodes": [
         {
           "title": "11  Freddie Mac Panel & EDA",
           "node_id": "0242",
           "start_index": 574,
-          "end_index": 650,
+          "end_index": 649,
           "summary": "Chapters 1–10 built and read an entire IFRS 9 ECL engine — staging, hazard, LGD/EAD, Vasicek, scenarios, challengers, the agent, the app — on the DCR panel: a synthetic, anonymized-clock, national-macro-only dataset (49,974 loans, 621,736 rows, Chapter 3's own build waterfall). This chapter turns to the project's rung-3 build: the real Freddie Mac Single-Family Loan-Level Dataset (SFLLD) sample, ingested, absorbing-D90-flagged, and merged against genuinely state-level FRED macro series by freddie/ingest.py , freddie/build_panel.py and freddie/macro.py . Two derivations flagged in ...",
           "nodes": [
             {
@@ -2002,12 +2004,26 @@
               "title": "11.15 The calendar-time credit cycle: COVID vs GFC, read correctly",
               "node_id": "0259",
               "start_index": 645,
-              "end_index": 650,
+              "end_index": 649,
               "summary": "The combined-vintage monthly D90-entry rate's GLOBAL peak, across the entire 2005–2025 panel, is not the GFC — it is the COVID spike: 1.775% in 2020-06, roughly 4.5× the GFC's own peak of 0.396% in 2009-10. Exhibit 11.9 — Monthly D90-entry rate, all vintages combined, 2005–2025, vs national UER. Embedded from outputs/freddie/eda/exhibit3_calendar_time_series.png ."
             }
           ]
         }
       ]
+    },
+    {
+      "title": "ch12_freddie_models_backtest.html",
+      "node_id": "0260",
+      "start_index": 650,
+      "end_index": 714,
+      "summary": "Ch.12 — Freddie Models, Backtest & LSTM | IFRS9 ECL Study Notes ☼ # Chapter 12 — Freddie Models, Backtest & LSTM Corporate PD's structural cousin derived to close a two-chapter-old scope note; why the champion hazard subsamples 5% of its own controls; the COVID additive dummy's own coefficient table overturning the case for using it; the 9.42× honesty exhibit walked arithmetic-by-arithmetic; and a challenger whose 0.9925 headline turns out to ride on 4.7% of the book IFRS9 ECL Study-Notes Compendium — Chapter 12 of 13. Compiled from outputs/freddie/hazard/hazard_report.md , ..."
+    },
+    {
+      "title": "ch13_governance_mdd.html",
+      "node_id": "0261",
+      "start_index": 715,
+      "end_index": 791,
+      "summary": "Ch.13 — Governance, MDD & Closing Synthesis | IFRS9 ECL Study Notes ☼ # Chapter 13 — Governance, MDD & Closing Synthesis How this project proves its own numbers: the frozen-engine gate, the wiki-as-MDD process, the brutal limitations register, and the reviews that changed the shipped answer — plus two orphaned derivations (WOE/IV, structural LGD) and the closing interview drill IFRS9 ECL Study-Notes Compendium — Chapter 13 of 13 (closing chapter). Compiled from outputs/gate/*.md , outputs/freddie/gate_phase{A,B}.md , outputs/mdd/MDD.md , wiki/memory/log.md , wiki/memory/decisions.md , ..."
     }
   ]
 }

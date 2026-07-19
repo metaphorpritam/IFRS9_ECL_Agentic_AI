@@ -287,6 +287,19 @@ population is not the smooth, roughly-normal shape a plain OLS or logistic-sever
 to write-off with high, right-skewed loss (&sect;10.2, Fig.&nbsp;8). One regression through both modes at once
 predicts a middling value — say 35% — that essentially no individual loan actually realises.</p>
 
+<div class="note">
+<b>Scope note — the general secured-LGD structural formula (&sect;10.3, concept&nbsp;A17) is not derived in this
+chapter.</b> This chapter's own source anchors (<code>notes/plan/chapters.md</code>) list A15/A16/A17 together as
+"LGD theory, &sect;10.1&ndash;10.3", but only &sect;10.1 (workout LGD, above) and &sect;10.2 (the bimodal
+two-stage architecture, below) are expanded here — &sect;10.3's mortgage structural formula (indexed collateral
+value &times; forced-sale discount, less selling costs and prior charges, after a time-to-repossession lag) is
+instead given its full step-by-step derivation and a dedicated worked example in Chapter&nbsp;13 &sect;13.4,
+after Chapter&nbsp;12 &sect;12.8 states it briefly as the theoretical scaffold behind the project's own realised-
+LGD model. The two-stage architecture derived below and the &sect;10.3 structural formula are complementary, not
+competing: &sect;10.3 prices a single repossession event; the two-stage model turns that per-repossession price
+into a portfolio-level expectation by weighting it against the probability of curing first.
+</div>
+
 <div class="defn">
 <b>Definition — the two-stage (cure) model.</b> Split the outcome into two sequential stages instead of one
 regression: a <em>cure</em> stage (will this defaulted loan return to performing / resolve loss-free?) and a

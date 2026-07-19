@@ -113,3 +113,11 @@ Notes batch C COMPLETE (10/10): ch06 scenarios/satellite/Jensen (coherent-shock 
 ## 2026-07-19 13:26 UTC — tags: notes, batchD
 
 Notes batch D COMPLETE (10/10): ch09 exhaustive app guide (req11: code-derived checklist, 35 pdoc blocks, ALL values live-captured incl. 3 real chat exchanges; renderQA fixed a 24-vs-22 endpoint count error), ch10 docker guide, ch11 Freddie panel+EDA (D-7 NCL + D-8 roll-rate expanded). NEXT: batch E FINAL = ch12 Freddie models (D-4 Merton) + ch13 governance + master landing page + campaign-wide adversarial pass.
+
+## 2026-07-19 14:00 UTC — tags: handoff
+
+HANDOFF 1% tokens: FINAL notes batch E in flight, run wf_a391c8ca-cf1 (script ifrs9-notes-batch-e-final-*.js): ch12+ch13 authored, renderQAs running, then reviews -> landing page -> campaign-wide final pass -> notes/plan/final_report.md. On completion: git add notes wiki + commit 'Study notes E: ch12-13, landing page, final pass', wiki log, report campaign done (13 chapters, 46/46 coverage target). Batches A-D committed through c658978. Resume: continue ultracode on; if E died, Workflow resumeFromRunId wf_a391c8ca-cf1. Housekeeping: user rotates keys+password; GitHub push undecided.
+
+## 2026-07-19 18:01 UTC — tags: notes, campaign, complete
+
+STUDY-NOTES CAMPAIGN COMPLETE: 13 chapters + landing page (notes/index.html), 46/46 topic-map concepts covered (final-pass verified by anchor grep), 11/11 derivations expanded, 18 interactive widgets, all 13 chapters check_notes PASS, suite 665 + fixtures 133 re-verified fresh in the final pass. Batch E: ch12 (Merton via Ito derived, WESML from scratch, Pluto-Tasche, backtest explorer + DD->PD widgets; renderQA fixed a clipped fit-window diagram + dead anchor) + ch13 governance + landing page + campaign-wide adversarial pass (verdict fixed: closed 2 topic-flow gaps A17/A13, byte-compared cross-chapter facts, 3 derivations independently recomputed). Completion certificate: notes/plan/final_report.md. ALL 12 user requirements verified. Project fully complete; open items are user-side only (rotate 4 API keys, change sudo password, GitHub push decision).
