@@ -7,6 +7,16 @@ Live demo: **<https://huggingface.co/spaces/Preetomsorkar/ifrs9-ecl-copilot>**
 (HF Spaces, Docker SDK, public; first load after a cold start takes ~30 s while
 the engine warms).
 
+Study notes (13-chapter interactive compendium — every derivation expanded, every
+number recomputed) + the Model Development Document:
+**<https://metaphorpritam.github.io/IFRS9_ECL_Agentic_AI/>** (GitHub Pages, deployed
+from `notes/` by CI).
+
+Replicating this repo: the licensed loan-level datasets are **not** included — see
+**[DATA_SETUP.md](DATA_SETUP.md)** for the step-by-step download + rebuild guide
+(everything else, including all results and exhibits, is committed and readable
+without any downloads).
+
 Risk teams need to answer questions like *"what happens to the allowance if
 unemployment rises 2 points?"* in minutes, with numbers they can defend to
 audit. LLMs are great at the conversation and terrible at the arithmetic. This

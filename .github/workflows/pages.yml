@@ -1,0 +1,37 @@
+name: Deploy study notes to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site (notes compendium + MDD)
+        run: |
+          mkdir -p _site/mdd
+          cp -r notes/* _site/
+          cp -r outputs/mdd/* _site/mdd/
+          # the corpus/index dirs are tracking artifacts, not site content
+          rm -rf _site/corpus _site/plan/*.json 2>/dev/null || true
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
