@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IFRS 9 ECL Study Notes — Compendium</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — MASTER LANDING PAGE
+  ============================================================================
+  Built from notes/assets/template.html per notes/plan/conventions.md. This
+  file is NOT a chapter (no <h2 id="sN"> section, not part of the 1-13 chain)
+  — it is the compendium's front door: how-to-use, the 13-chapter directory
+  with counts derived from the actual shipped files (grep'd, not guessed),
+  the 46-concept -> chapter index built from notes/plan/topic_map.json, the
+  11-item derivation-backlog index built from notes/plan/derivation_backlog.md
+  cross-checked against what each chapter actually built (several backlog
+  items shipped in a different chapter than originally planned — see the
+  routing-deviation note under the derivation index), and a campaign
+  provenance footer sourced from wiki/memory/log.md + notes/plan/coverage.md.
+  widgets.js NOT used here (no live-recomputed formula on this page) — the
+  one inline <script> below is a plain client-side table filter, unrelated
+  to the widgets.js contract, so it is not subject to conventions.md's
+  "Inlined vs relative widgets.js" choice.
+  notes/index/ already exists as a DIRECTORY (this file's own PageIndex
+  build output: pageindex.json + pages.jsonl) — notes/index.html (a FILE)
+  does not collide with it; both names coexist fine on disk. Confirmed by
+  `ls notes/` before writing this file.
+  MathJax SVG renderer — the only external dependency (CDN, same accepted
+  project exception every chapter carries) — loaded because the chapter-
+  directory summaries below quote a few inline formulas ($S(t)$, $B(t)$,
+  $PD_{PIT}(Z)$, the Jensen-inequality statement) verbatim from the
+  chapters they summarize.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 1120px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 27px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 20px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 36px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 5px 9px; text-align: center; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); position: sticky; top: 0; }
+  td:first-child, th:first-child { text-align: left; }
+  td.left, th.left { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hidden { display: none; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .interpretation b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  /* Chapter directory cards */
+  .chapter-card {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 12px 16px; margin: 12px 0; page-break-inside: avoid;
+  }
+  .chapter-card h3 { margin-top: 0; }
+  .chapter-card .ch-meta { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+  .tag {
+    display: inline-block; background: var(--noteBg); color: var(--accent-soft);
+    border: 1px solid var(--rule); border-radius: 10px; padding: 1px 9px;
+    font-size: 11px; margin: 2px 3px 2px 0;
+  }
+  .count-chip {
+    display: inline-block; font-size: 11px; color: var(--muted); margin-right: 10px;
+  }
+  .count-chip b { color: var(--ink); }
+
+  /* Stat strip */
+  .stat-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+  .stat-tile {
+    flex: 1 1 130px; border: 1px solid var(--rule); border-radius: 6px;
+    background: var(--boxbg); padding: 10px 12px; text-align: center;
+  }
+  .stat-tile .num { font-size: 20px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .stat-tile .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .filter-bar { margin: 10px 0; }
+  .filter-bar input {
+    width: 100%; max-width: 360px; padding: 6px 10px; font-size: 13px;
+    border: 1px solid var(--rule); border-radius: 4px; background: var(--page-bg); color: var(--ink);
+    font-family: inherit;
+  }
+  .filter-bar .hint { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    table, .defn, .thm, .ex, .warn, .note, .interpretation, .chapter-card { break-inside: avoid; }
+    #theme-toggle { display: none; }
+    .filter-bar { display: none; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>IFRS 9 ECL Study Notes &mdash; Compendium</h1>
+<div class="subtitle">A 13-chapter, self-contained study-notes companion to the IFRS 9 ECL Agentic Copilot capstone &mdash; every derivation expanded, every number recomputed, every app panel and governance artifact documented</div>
+<p style="text-align:center; margin: 14px 0 6px 0; font-size: 1.05em;">
+  <a href="https://huggingface.co/spaces/Preetomsorkar/ifrs9-ecl-copilot"><strong>&#9654; Live App (Hugging Face Spaces)</strong></a>
+  &nbsp;&middot;&nbsp; <a href="mdd/MDD.html">Model Development Document</a>
+  &nbsp;&middot;&nbsp; <a href="https://github.com/metaphorpritam/IFRS9_ECL_Agentic_AI">Source on GitHub</a>
+</p>
+<div class="meta-line">Master landing page. Compiled from <code>knowledge/</code> theory, <code>engine/</code>+<code>freddie/</code>+<code>agent/</code>+<code>app/</code> code (read-only citation), <code>outputs/</code> reports, <code>tests/fixtures/</code> golden values, and <code>wiki/</code> project memory, via the PageIndex-plus pipeline, on 2026-07-19.</div>
+
+<div class="stat-strip">
+  <div class="stat-tile"><div class="num">13</div><div class="lbl">chapters</div></div>
+  <div class="stat-tile"><div class="num">46 / 46</div><div class="lbl">topic-map concepts covered</div></div>
+  <div class="stat-tile"><div class="num">11</div><div class="lbl">derivations expanded (backlog)</div></div>
+  <div class="stat-tile"><div class="num">18</div><div class="lbl">live interactive widgets</div></div>
+  <div class="stat-tile"><div class="num">84</div><div class="lbl">numbered exhibits</div></div>
+  <div class="stat-tile"><div class="num">123</div><div class="lbl">quiz topics (2&ndash;4 Qs each)</div></div>
+  <div class="stat-tile"><div class="num">133 / 133</div><div class="lbl">golden fixture values</div></div>
+  <div class="stat-tile"><div class="num">665 / 665</div><div class="lbl">project test suite</div></div>
+</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#how-to-use">How to use this compendium</a></li>
+<li><a href="#chapter-directory">Chapter directory (13 chapters)</a></li>
+<li><a href="#concept-index">Concept &rarr; chapter index (46 concepts)</a></li>
+<li><a href="#derivation-index">Derivation backlog index (11 items)</a></li>
+<li><a href="#provenance">Campaign provenance</a></li>
+</ol>
+</div>
+</div>
+
+<!-- ============================================================== -->
+<h2 id="how-to-use">How to use this compendium</h2>
+
+<div class="note">
+<b>Reading order.</b> The 13 chapters are written to be read in order once &mdash; each later chapter
+leans on results derived earlier (Chapter 2's survival function underpins the gross-up factor in
+&sect;2.4 and the hazard model in Chapter 3; Chapter 5's <code>PD_PIT(Z)</code> conditioning formula is
+the object Chapter 6 proves is convex; Chapter 12's Merton derivation explicitly bridges back to
+Chapter 5's Vasicek machinery; Chapter 13 is a closing synthesis that assumes everything before it). But
+every chapter is also individually self-contained (its own <code>&lt;h1&gt;</code>, table of contents,
+and closing rule) with inline source citations, so jumping straight to one chapter via the
+<a href="#chapter-directory">chapter directory</a> or the <a href="#concept-index">concept index</a>
+below works too &mdash; you lose only the "as derived in Chapter N" cross-references, not the chapter's
+own self-contained argument.
+</div>
+
+<div class="note">
+<b>Widgets.</b> 18 chapters-worth of interactive widgets are live in this compendium (built on
+<code>notes/assets/js/widgets.js</code>, loaded relatively from each chapter) &mdash; every slider
+recomputes the <em>real</em> project formula in JavaScript (Vasicek's <code>PD_PIT(Z,&rho;)</code>,
+the ECL waterfall, the Jensen scenario-weight gap, hazard/seasoning curves, roll-rate and transition
+matrices, LGD/EAD decompositions, amortisation balances, a backtest explorer, an ROC/AUC intuition
+demo, and a Merton distance-to-default converter) rather than reading from a canned lookup table &mdash;
+drag them. Chapters 9, 10, and 13 carry no slider widget by design (product-documentation, static
+infra-reference, and closing-synthesis chapters respectively) but ship the same box-vocabulary
+(<code>.defn</code>/<code>.derivation</code>/<code>.ex</code>/<code>.interpretation</code>/<code>.gotcha</code>/<code>.quiz</code>)
+as every other chapter.
+</div>
+
+<div class="note">
+<b>Data pack.</b> Every number quoted anywhere in the compendium traces to either a fitted-model
+report under <code>outputs/</code> or one of 133 golden fixture values in
+<code>tests/fixtures/compute_*.py</code> &mdash; the browsable version of those 133 values, plus the
+project's coefficient tables and scenario-weight calibration, ships as four Excel workbooks in
+<a href="assets/data/"><code>notes/assets/data/</code></a>:
+<code>fixtures_all.xlsx</code> (all 133 golden values with source anchors),
+<code>dcr_coefficients.xlsx</code> (DCR hazard/prepayment coefficients),
+<code>sflld_coefficients.xlsx</code> (Freddie SFLLD hazard/cure/severity coefficients), and
+<code>scenario_weights_calibration.xlsx</code> (DFAST paths, satellite fit, scenario-ECL summary).
+Regenerate with <code>uv run --no-project notes/assets/data/build_data_pack.py</code> after any change
+to a fixture module or the source reports it reads.
+</div>
+
+<div class="note">
+<b>The app and the MDD.</b> This compendium documents, but does not replace, two other project
+deliverables: the live <a href="https://huggingface.co/spaces/Preetomsorkar/ifrs9-ecl-copilot">IFRS9 ECL
+Copilot app</a> (walked panel-by-panel in <a href="chapters/ch09_app_guide.html">Chapter 9</a>) and the
+<a href="../outputs/mdd/MDD.html">Model Documentation Deliverable</a> (walked structurally in
+<a href="chapters/ch13_governance_mdd.html#s13-6">Chapter 13 &sect;13.6</a>). Where a chapter and the MDD
+both cite a number, both trace to the same <code>outputs/</code> report or fixture &mdash; neither is the
+"more authoritative" copy, they are two different reading paths to the same evidence.
+</div>
+
+<!-- ============================================================== -->
+<h2 id="chapter-directory">Chapter directory</h2>
+
+<p>Counts below (derivations, widgets, exhibits, quiz topics) are grepped directly from each shipped
+chapter file (<code>class="derivation"</code>, <code>class="widget"</code>, distinct <code>Exhibit
+N.M</code> labels, <code>class="quiz"</code>) &mdash; not estimates from the original plan, which in a
+few places (noted per-chapter below) shipped differently than <code>notes/plan/chapters.md</code>
+originally scoped.</p>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch01_ifrs9_foundations_staging.html">Chapter 1 &mdash; IFRS 9 Foundations &amp; Staging</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;&sect;1&ndash;2 &middot; <code>outputs/staging/</code>, <code>outputs/ecl/</code></div>
+<p>From incurred loss to expected credit loss: the business-model and SPPI classification tests, a
+three-way IFRS&nbsp;9 vs Basel IRB vs CECL comparison, the three-stage impairment model and the
+90-DPD/UTP default backstop, the SICR relative lifetime-PD test worked through an explicit toy numeric
+pair, and the project's own staging engine (thresholds, probation, the inert 30-DPD backstop) closing
+with the calm-vs-stress finding: Stage&nbsp;2 empty in calm markets, 75.8% of the book in stress.</p>
+<span class="tag">staging</span><span class="tag">SICR</span><span class="tag">classification</span><span class="tag">default definition</span><span class="tag">IFRS9 vs Basel vs CECL</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>1</b> derivation</span><span class="count-chip"><b>1</b> widget</span><span class="count-chip"><b>5</b> exhibits</span><span class="count-chip"><b>7</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch02_ecl_mechanics.html">Chapter 2 &mdash; ECL Mechanics</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;3, &sect;9.4 &middot; <code>tests/fixtures/compute_ecl.py</code>, <code>compute_grossup.py</code></div>
+<p>Derives ECL from first principles (cash shortfall &rarr; the survival function $S(t)=\prod(1-\lambda_k)$,
+Backlog D-1), walks the flagship 5-year amortising-loan example digit by digit (D-2), covers 12-month vs
+lifetime ECL and the gross-up factor across all 4 horizons (D-11), the movement waterfall, and the
+double-counting rule between EAD and survival &mdash; closing with a live ECL-vs-LGD/EIR widget.</p>
+<span class="tag">ECL formula</span><span class="tag">survival function</span><span class="tag">gross-up factor</span><span class="tag">waterfall</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>3</b> derivations</span><span class="count-chip"><b>1</b> widget</span><span class="count-chip"><b>5</b> exhibits</span><span class="count-chip"><b>7</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch03_hazard_modeling.html">Chapter 3 &mdash; Hazard Modelling (PD Term Structure)</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;6.2 &middot; <code>outputs/hazard/</code> &middot; <code>tests/fixtures/compute_validation.py</code></div>
+<p>Derives the cloglog link from the continuous-time proportional-hazards integral (D-3), extends
+Chapter&nbsp;2's survival identity to competing risks, walks the DCR panel-construction waterfall and
+left-truncation handling, reads the seasoning hump and the champion coefficient table, and &mdash; ahead
+of its nominally planned slot &mdash; expands both the binomial/Jeffreys backtest (D-9) and the PSI
+band-by-band derivation (D-10) here to complete this chapter's own three-pillar validation story. Also
+carries the WOE/IV and Merton/Pluto&ndash;Tasche scope notes that Chapter&nbsp;12 later expands in full.
+Two interactive widgets (hazard curve, seasoning-hump explorer).</p>
+<span class="tag">cloglog</span><span class="tag">survival analysis</span><span class="tag">left truncation</span><span class="tag">PSI</span><span class="tag">binomial backtest</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>6</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>8</b> exhibits</span><span class="count-chip"><b>12</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch04_lgd_ead.html">Chapter 4 &mdash; LGD &amp; EAD</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;&sect;10&ndash;12 &middot; <code>outputs/lgd/</code>, <code>outputs/ead/</code></div>
+<p>The two-stage cure&times;severity LGD architecture and the resolved-workouts selection bias, the DCR
+cure/severity coefficient read, the never-clipped LGD&gt;1 excess-loss loading, the EAD contractual
+annuity balance $B(t)$ derived, and the revolver CCF EUR&nbsp;14.0m gross-up worked step by step. This
+chapter explicitly defers the NCL discounting example (D-7) and the 90-vs-180-DPD roll-rate bridge (D-8)
+to Chapter&nbsp;11, where the Freddie real-data panel gives them a genuine worked instance &mdash; see
+this chapter's own scope note. Two widgets (LGD decomposition, amortisation balance).</p>
+<span class="tag">LGD</span><span class="tag">bimodal loss</span><span class="tag">EAD</span><span class="tag">CCF</span><span class="tag">behavioural life</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>3</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>5</b> exhibits</span><span class="count-chip"><b>10</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch05_vasicek.html">Chapter 5 &mdash; The Vasicek One-Factor Model (PIT vs TTC)</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;8 &middot; <code>tests/fixtures/compute_vasicek.py</code></div>
+<p>The TTC/PIT philosophical distinction; the full one-factor Gaussian asset-value derivation of
+$PD_{PIT}(Z)$ from $A_i=\sqrt\rho Z+\sqrt{1-\rho}\varepsilon_i$ (Backlog D-5), with the anchor property
+$E_Z[PD_{PIT}(Z)]=PD_{TTC}$ proved analytically and cross-checked against both a Gauss&ndash;Hermite and
+a fine-grid numerical integration; Z-recovery on the project panel, the Belkin calibration and credit
+cycle, and a damped hybrid PIT/TTC variant. Two widgets: the $PD_{PIT}$ vs $Z$/&rho; live curve and a
+TTC&harr;PIT converter.</p>
+<span class="tag">Vasicek</span><span class="tag">PIT vs TTC</span><span class="tag">asset correlation</span><span class="tag">Gaussian copula</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>3</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>3</b> exhibits</span><span class="count-chip"><b>8</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch06_scenarios_satellite_jensen.html">Chapter 6 &mdash; Scenarios, Satellite Models &amp; Jensen's Inequality</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;9 &middot; <code>outputs/scenarios/</code>, <code>outputs/satellite/</code></div>
+<p>Why a single base case understates ECL; DFAST ingestion and rebasing to the panel's jump-off quarter;
+the judgmental upside construction and the 40-quarter reasonable-and-supportable extension; the satellite
+macro-link regression; a full proof of Jensen's inequality via the supporting-line argument, chained
+through $PD_{PIT}(Z)$'s convexity to ECL's convexity (Backlog D-6); the toy fixture's 1.9&times;
+understatement and the project's own honest 1.035&times; Jensen gap. Weight-slider widget exposing the
+gap live as scenario probabilities move.</p>
+<span class="tag">scenarios</span><span class="tag">satellite model</span><span class="tag">Jensen's inequality</span><span class="tag">DFAST</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>7</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>7</b> exhibits</span><span class="count-chip"><b>11</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch07_challengers.html">Chapter 7 &mdash; Challengers &amp; Validation</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;13 &middot; <code>outputs/challenger/</code></div>
+<p>The champion-challenger governance pattern and the evidentiary promotion bar; the DCR MLP challenger
+under the like-for-like scoring law; discrimination, calibration, and stability read side by side against
+the champion (re-applying Chapter&nbsp;3's D-9/D-10 derivations to the challenger's own scores);
+permutation importance and partial-dependence plots (with the SHAP-dropped decision documented); the
+seasoning-hump-rediscovery check. AUC-intuition widget (score separation &rarr; live ROC) and a forward
+pointer to Chapter&nbsp;12's SFLLD LSTM challenger.</p>
+<span class="tag">champion/challenger</span><span class="tag">PSI</span><span class="tag">calibration</span><span class="tag">explainability</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>2</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>6</b> exhibits</span><span class="count-chip"><b>9</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch08_the_agent.html">Chapter 8 &mdash; The Agent (LangGraph Copilot)</a></h3>
+<div class="ch-meta">Source: <code>agent/graph.py</code>, <code>agent/tools_tier1.py</code>, <code>agent/tier3_retrieval.py</code> (read-only)</div>
+<p>The three-tier routing logic (docs / analyze / reasoned / refusal); the four deterministic Tier-1
+tools as a coherent-shock re-run pipeline; the Tier-2 sandboxed <code>analyze_data</code> and its
+restricted-AST security model; Tier-3 <code>query_model_docs</code> Graph-RAG retrieval; the
+number-guarded narration guardrail walked as pseudocode with a worked pass/fail example; REASONED and
+refusal as first-class routes, not failure modes; the audit trail and the MCP server surface.</p>
+<span class="tag">LangGraph</span><span class="tag">agent routing</span><span class="tag">sandbox security</span><span class="tag">number guard</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>0</b> derivations</span><span class="count-chip"><b>1</b> widget</span><span class="count-chip"><b>4</b> exhibits</span><span class="count-chip"><b>8</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch09_app_guide.html">Chapter 9 &mdash; The App: A Guidebook</a></h3>
+<div class="ch-meta">Source: <code>app/api/main.py</code>, <code>app/ui/src/</code> (read-only) &middot; <code>docs/api_contract.md</code> &middot; binding scope: <code>notes/plan/requirement_11_app_guide.md</code></div>
+<p>A mechanically-derived, code-checklist walkthrough of all 6 tabs (Executive Overview, The Model,
+Scenario Lab, Policy, Real Data, Copilot) &mdash; what each panel shows, how to read it, how to use every
+control, and its AI affordances (explain icon, selection-explain chip, chat-dock GROUNDED/REASONED/
+THINKING/OUT&nbsp;OF&nbsp;SCOPE states) &mdash; plus the full endpoint&rarr;panel wiring table, the 3
+design directions vs the shipped <code>FINAL_SPEC.md</code>, and a closing "where would you look to
+answer X" quiz bank per Requirement&nbsp;11. Not a tour: provably exhaustive against the live code.</p>
+<span class="tag">app guide</span><span class="tag">FastAPI</span><span class="tag">React UI</span><span class="tag">AI affordances</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>0</b> derivations</span><span class="count-chip"><b>0</b> slider widgets<sup>*</sup></span><span class="count-chip"><b>11</b> exhibits</span><span class="count-chip"><b>4</b> quiz topics</span>
+</div>
+<p class="small">* No <code>class="widget"</code> slider panel shipped here despite the original plan's
+"live endpoint-picker table" (verified by direct grep of the shipped file, not assumed from the plan);
+the endpoint&rarr;panel wiring table in &sect;9.10 is a static reference table instead.</p>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch10_docker_deployment.html">Chapter 10 &mdash; Docker &amp; Deployment Guidebook</a></h3>
+<div class="ch-meta">Source: <code>Dockerfile</code>, <code>.dockerignore</code> (read-only) &middot; <code>outputs/gate/mdd_freddie_gate.md</code></div>
+<p>The multi-stage Dockerfile read stage by stage (node build &rarr; python runtime), the
+<code>requirements.docker.txt</code> torch-pruning decision, the explicit <code>.dockerignore</code>
+COPY-allowlist strategy and the 9-consecutive-build-failure lesson it fixed, HF Spaces port-7860
+deployment (secrets, README metadata), the ship pipeline as a state machine, the queue-stall playbook,
+and the joblib cold/warm-start cache-slimming story.</p>
+<span class="tag">Docker</span><span class="tag">multi-stage build</span><span class="tag">HF Spaces</span><span class="tag">non-root</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>0</b> derivations</span><span class="count-chip"><b>0</b> widgets</span><span class="count-chip"><b>3</b> exhibits</span><span class="count-chip"><b>10</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch11_freddie_panel_eda.html">Chapter 11 &mdash; Freddie Mac Panel &amp; EDA</a></h3>
+<div class="ch-meta">Source: <code>freddie/</code> (read-only) &middot; <code>outputs/freddie/ingest/</code>, <code>outputs/freddie/eda/</code></div>
+<p>The SFLLD ingest pipeline (837,500 loans, 17 vintages, D90 absorbing state derived precisely, 54-state
+macro merge with FRED-provenance honesty per Requirement&nbsp;12); the panel-construction waterfall;
+updated-LTV worked examples; the roll-rate transition-matrix estimator (Backlog D-8, with the full
+<code>compute_rollrate.py</code> fixture walkthrough) and the NCL discounting worked example (Backlog
+D-7, <code>compute_ncl.py</code>) &mdash; both inherited from Chapter&nbsp;4's explicit deferral; state
+heterogeneity (the collateral channel); the COVID-vs-GFC calendar-time credit cycle read correctly. Two
+widgets (vintage-curve explorer, transition-matrix explorer).</p>
+<span class="tag">Freddie SFLLD</span><span class="tag">D90</span><span class="tag">roll-rate</span><span class="tag">NCL</span><span class="tag">real data</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>4</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>9</b> exhibits</span><span class="count-chip"><b>15</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch12_freddie_models_backtest.html">Chapter 12 &mdash; Freddie Models, Backtest &amp; LSTM</a></h3>
+<div class="ch-meta">Source: <code>freddie/</code> (read-only) &middot; <code>outputs/freddie/{hazard,lgd,backtest,lstm}/</code></div>
+<p>Closes three campaign-wide coverage gaps: retail-scorecard WOE/IV lineage (&sect;12.1, resolving A6),
+the full Merton distance-to-default derivation bridged to Vasicek and Pluto&ndash;Tasche (&sect;12.2,
+Backlog D-4), and the general secured-LGD structural formula applied to the realized-LGD model
+(&sect;12.8, resolving A17). Also: the WESML case-control weighted-likelihood derivation (&sect;12.5);
+the champion hazard refit (train/OOT AUC 0.8536/0.6847) read in Requirement-12 style (&sect;12.6); the
+COVID three-way review-overturn story closing with A13's four-part overlay framework (&sect;12.7); the
+ALFRED backtest's 9.42&times;/1.90&times; honesty arithmetic walked step by step (&sect;12.9); and the
+LSTM challenger's honest lift decomposition (&sect;12.11). Two widgets (distance-to-default converter,
+backtest explorer).</p>
+<span class="tag">WOE/IV</span><span class="tag">Merton</span><span class="tag">WESML</span><span class="tag">backtest honesty</span><span class="tag">LSTM</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>4</b> derivations</span><span class="count-chip"><b>2</b> widgets</span><span class="count-chip"><b>12</b> exhibits</span><span class="count-chip"><b>9</b> quiz topics</span>
+</div>
+</div>
+
+<div class="chapter-card">
+<h3><a href="chapters/ch13_governance_mdd.html">Chapter 13 &mdash; Governance, MDD &amp; Closing Synthesis</a></h3>
+<div class="ch-meta">Source: <code>knowledge/</code> &sect;14&ndash;15 &middot; <code>outputs/mdd/MDD.md</code> &middot; <code>outputs/gate/*.md</code> &middot; <code>wiki/memory/log.md</code> (read-only)</div>
+<p>The frozen-engine gate-timeline pattern (fixtures &rarr; freeze &rarr; tripwire &rarr; gate, all 8
+project gates); a champion/challenger governance recap; the WOE/IV and LGD-structural-formula concepts
+recapped from Chapter&nbsp;12 for a self-contained closing read; the wiki-as-MDD compile-don't-retrieve
+process and a structural walkthrough of the MDD deliverable itself (&sect;13.6, resolving D6); the
+validation battery recapped alongside the honest backtest; post-model overlay governance; a limitations
+register organized as a validator would read it; agent governance as a model-adjacent control; four
+independent-review case studies as governance evidence; BCBS&nbsp;d350/IFRS&nbsp;7/CRR&nbsp;Art.&nbsp;473a/
+climate-risk regulatory context (&sect;13.12, resolving A22); and the closing appendix &mdash; learning
+path, interview drill, and a full concept index (&sect;13.13, resolving A23).</p>
+<span class="tag">governance</span><span class="tag">MDD</span><span class="tag">BCBS d350</span><span class="tag">IFRS 7 disclosure</span><span class="tag">interview drill</span>
+<div style="margin-top:6px;">
+<span class="count-chip"><b>0</b> derivations</span><span class="count-chip"><b>1</b> widget</span><span class="count-chip"><b>6</b> exhibits</span><span class="count-chip"><b>13</b> quiz topics</span>
+</div>
+</div>
+
+<!-- ============================================================== -->
+<h2 id="concept-index">Concept &rarr; chapter index</h2>
+
+<p>All 46 concepts from <code>notes/plan/topic_map.json</code> (A1&ndash;A23 IFRS&nbsp;9 theory, B1&ndash;B11
+DCR pipeline, C1&ndash;C6 Freddie SFLLD, D1&ndash;D6 agent/app/docker), each linked to the chapter section
+where it is given full derivation/worked-example depth. Six concepts (A6, A13, A17, A22, A23, D6) were
+still <strong>NOT YET</strong> covered as of the batch-D coverage report (<code>notes/plan/coverage.md</code>)
+and were the explicit closing job of Chapters&nbsp;12&ndash;13 &mdash; all six are verified below (grepped
+directly against the shipped chapter files, not assumed from the plan).</p>
+
+<div class="filter-bar">
+  <input type="text" id="concept-filter" placeholder="Filter by id, title, or topic&hellip; e.g. &quot;A6&quot;, &quot;Vasicek&quot;, &quot;Merton&quot;">
+  <div class="hint">Client-side filter only, matches id/title/topics/family columns.</div>
+</div>
+
+<div class="table-wrap">
+<table id="concept-table">
+<thead>
+<tr><th>Id</th><th class="left">Title</th><th class="left">Family</th><th class="left">Chapter &middot; section</th></tr>
+</thead>
+<tbody>
+<tr><td>A1</td><td class="left">IFRS 9 standard: origins, scope, classification</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch01_ifrs9_foundations_staging.html#s1-1">Ch.1 &sect;1.1&ndash;1.2</a></td></tr>
+<tr><td>A2</td><td class="left">Staging, default definition, SICR</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch01_ifrs9_foundations_staging.html#s1-4">Ch.1 &sect;1.4&ndash;1.6</a></td></tr>
+<tr><td>A3</td><td class="left">ECL mechanics: formula, term structure, worked example</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch02_ecl_mechanics.html#s2-1">Ch.2 &sect;2.1&ndash;2.3</a></td></tr>
+<tr><td>A4</td><td class="left">IFRS 9 vs Basel IRB vs CECL</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch01_ifrs9_foundations_staging.html#s1-3">Ch.1 &sect;1.3</a></td></tr>
+<tr><td>A5</td><td class="left">Data foundations: public datasets, macro series, scenarios, variable dictionary</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-1">Ch.11 &sect;11.1, &sect;11.5</a></td></tr>
+<tr><td>A6</td><td class="left">Retail scorecards: WOE, IV, logistic regression</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-1">Ch.12 &sect;12.1</a> (recap <a href="chapters/ch13_governance_mdd.html#s13-3">Ch.13 &sect;13.3</a>)</td></tr>
+<tr><td>A7</td><td class="left">Lifetime PD via discrete-time survival analysis (hazard/cloglog)</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3-1">Ch.3 &sect;3.1</a></td></tr>
+<tr><td>A8</td><td class="left">Transition matrices (Markov chains) for wholesale/rating books</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3">Ch.3 scope note (intro)</a></td></tr>
+<tr><td>A9</td><td class="left">Corporate &amp; low-default PD: Merton, shadow ratings, Pluto&ndash;Tasche</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-2">Ch.12 &sect;12.2</a> (scope note <a href="chapters/ch03_hazard_modeling.html#s3">Ch.3 intro</a>)</td></tr>
+<tr><td>A10</td><td class="left">PIT vs TTC: the Vasicek one-factor framework</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch05_vasicek.html#s5-1">Ch.5 &sect;5.1&ndash;5.3</a></td></tr>
+<tr><td>A11</td><td class="left">Forward-looking scenarios: satellite (macro-link) models</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch06_scenarios_satellite_jensen.html#s6-5">Ch.6 &sect;6.5</a></td></tr>
+<tr><td>A12</td><td class="left">Multiple probability-weighted scenarios; Jensen's inequality</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch06_scenarios_satellite_jensen.html#s6-7">Ch.6 &sect;6.7</a></td></tr>
+<tr><td>A13</td><td class="left">Post-model adjustments (overlays)</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-7">Ch.12 &sect;12.7</a> (recap <a href="chapters/ch13_governance_mdd.html#s13-8">Ch.13 &sect;13.8</a>)</td></tr>
+<tr><td>A14</td><td class="left">Forecast horizon, lifetime, and the gross-up factor</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch02_ecl_mechanics.html#s2-4">Ch.2 &sect;2.4</a></td></tr>
+<tr><td>A15</td><td class="left">LGD: workout definition and discounting</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch04_lgd_ead.html#s4-1">Ch.4 &sect;4.1</a></td></tr>
+<tr><td>A16</td><td class="left">LGD distributional reality and model families</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch04_lgd_ead.html#s4-1">Ch.4 &sect;4.1</a></td></tr>
+<tr><td>A17</td><td class="left">LGD: secured/unsecured/corporate structural formula</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-8">Ch.12 &sect;12.8</a> (recap <a href="chapters/ch13_governance_mdd.html#s13-4">Ch.13 &sect;13.4</a>)</td></tr>
+<tr><td>A18</td><td class="left">Net Credit Loss (NCL): loan-level vs portfolio-level; discounting worked example</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-12">Ch.11 &sect;11.12&ndash;11.13</a></td></tr>
+<tr><td>A19</td><td class="left">The 90-DPD vs 180-DPD default trigger; roll-rate bridge</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-8">Ch.11 &sect;11.8&ndash;11.10</a></td></tr>
+<tr><td>A20</td><td class="left">EAD: term loans, revolver CCF, behavioural life</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch04_lgd_ead.html#s4-7">Ch.4 &sect;4.7, &sect;4.9</a></td></tr>
+<tr><td>A21</td><td class="left">Validation: discrimination, calibration backtests, stability (PSI)</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch07_challengers.html#s7-4">Ch.7 &sect;7.4&ndash;7.6</a> (first expanded <a href="chapters/ch03_hazard_modeling.html#s3-8">Ch.3 &sect;3.8&ndash;3.10</a>)</td></tr>
+<tr><td>A22</td><td class="left">Governance, disclosure, capital interaction, hot topics</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch13_governance_mdd.html#s13-12">Ch.13 &sect;13.12</a></td></tr>
+<tr><td>A23</td><td class="left">Learning path, tooling, interview drill (meta/appendix)</td><td class="left">IFRS 9 theory</td><td class="left"><a href="chapters/ch13_governance_mdd.html#s13-13">Ch.13 &sect;13.13</a></td></tr>
+<tr><td>B1</td><td class="left">DCR loan-quarter panel construction &amp; waterfall</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch01_ifrs9_foundations_staging.html#s1">Ch.1 intro</a></td></tr>
+<tr><td>B2</td><td class="left">DCR EDA: default rates, hazard by age, LGD, origination quality, prepay</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3">Ch.3</a> / <a href="chapters/ch04_lgd_ead.html#s4">Ch.4</a> intros</td></tr>
+<tr><td>B3</td><td class="left">DCR hazard model (cloglog competing-risk PD engine)</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3-7">Ch.3 &sect;3.7</a></td></tr>
+<tr><td>B4</td><td class="left">DCR LGD model (two-stage cure &times; severity)</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch04_lgd_ead.html#s4-3">Ch.4 &sect;4.3</a></td></tr>
+<tr><td>B5</td><td class="left">DCR EAD model</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch04_lgd_ead.html#s4-7">Ch.4 &sect;4.7</a></td></tr>
+<tr><td>B6</td><td class="left">DCR staging model &amp; threshold sensitivity</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch01_ifrs9_foundations_staging.html#s1-7">Ch.1 &sect;1.7</a></td></tr>
+<tr><td>B7</td><td class="left">DCR ECL engine, gates &amp; golden fixtures</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch02_ecl_mechanics.html#s2-1">Ch.2 &sect;2.1</a></td></tr>
+<tr><td>B8</td><td class="left">Vasicek calibration on the project panel</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch05_vasicek.html#s5-7">Ch.5 &sect;5.7</a></td></tr>
+<tr><td>B9</td><td class="left">DFAST macro scenario paths &amp; satellite fit</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch06_scenarios_satellite_jensen.html#s6-2">Ch.6 &sect;6.2</a></td></tr>
+<tr><td>B10</td><td class="left">Scenario ECL &amp; the project's Jensen-gap exhibit</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch06_scenarios_satellite_jensen.html#s6-9">Ch.6 &sect;6.9</a></td></tr>
+<tr><td>B11</td><td class="left">Challenger scorecard: benchmarking &amp; explainability</td><td class="left">DCR pipeline</td><td class="left"><a href="chapters/ch07_challengers.html#s7-3">Ch.7 &sect;7.3</a></td></tr>
+<tr><td>C1</td><td class="left">SFLLD ingest &amp; data-quality (Phase A)</td><td class="left">Freddie SFLLD</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-2">Ch.11 &sect;11.2&ndash;11.3</a></td></tr>
+<tr><td>C2</td><td class="left">SFLLD EDA: vintage curves, roll-rates, state heterogeneity, COVID regime</td><td class="left">Freddie SFLLD</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-7">Ch.11 &sect;11.7, &sect;11.14&ndash;11.15</a></td></tr>
+<tr><td>C3</td><td class="left">SFLLD hazard model (Phase B) &amp; COVID-regime decision</td><td class="left">Freddie SFLLD</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-6">Ch.12 &sect;12.6&ndash;12.7</a></td></tr>
+<tr><td>C4</td><td class="left">SFLLD LGD (realized) model</td><td class="left">Freddie SFLLD</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-8">Ch.12 &sect;12.8</a></td></tr>
+<tr><td>C5</td><td class="left">SFLLD backtest: the 9.42x honesty exhibit</td><td class="left">Freddie SFLLD</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-9">Ch.12 &sect;12.9&ndash;12.10</a> (product surface <a href="chapters/ch09_app_guide.html#s9-7">Ch.9 &sect;9.7</a>)</td></tr>
+<tr><td>C6</td><td class="left">SFLLD LSTM challenger &amp; lift decomposition</td><td class="left">Freddie SFLLD</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-11">Ch.12 &sect;12.11</a> (product surface <a href="chapters/ch09_app_guide.html#s9-7">Ch.9 &sect;9.7</a>)</td></tr>
+<tr><td>D1</td><td class="left">Agent layer: LangGraph router + Tier-1 deterministic tools</td><td class="left">Agent/app/docker</td><td class="left"><a href="chapters/ch08_the_agent.html#s8-2">Ch.8 &sect;8.2, &sect;8.5</a></td></tr>
+<tr><td>D2</td><td class="left">Agent Tier-2 sandbox &amp; Tier-3 retrieval</td><td class="left">Agent/app/docker</td><td class="left"><a href="chapters/ch08_the_agent.html#s8-3">Ch.8 &sect;8.3&ndash;8.4</a></td></tr>
+<tr><td>D3</td><td class="left">App: FastAPI backend surface</td><td class="left">Agent/app/docker</td><td class="left"><a href="chapters/ch09_app_guide.html#s9-2">Ch.9 &sect;9.2, &sect;9.10</a></td></tr>
+<tr><td>D4</td><td class="left">App: React UI (6 tabs) &amp; design system</td><td class="left">Agent/app/docker</td><td class="left"><a href="chapters/ch09_app_guide.html#s9-3">Ch.9 &sect;9.3&ndash;9.8, &sect;9.12</a></td></tr>
+<tr><td>D5</td><td class="left">Docker &amp; deployment</td><td class="left">Agent/app/docker</td><td class="left"><a href="chapters/ch10_docker_deployment.html#s10-2">Ch.10 &sect;10.2&ndash;10.5</a></td></tr>
+<tr><td>D6</td><td class="left">Model Documentation Deliverable (MDD) &amp; governance close-out</td><td class="left">Agent/app/docker</td><td class="left"><a href="chapters/ch13_governance_mdd.html#s13-6">Ch.13 &sect;13.6</a></td></tr>
+</tbody>
+</table>
+</div>
+
+<script>
+(function () {
+  var input = document.getElementById('concept-filter');
+  var rows = document.querySelectorAll('#concept-table tbody tr');
+  input.addEventListener('input', function () {
+    var q = input.value.trim().toLowerCase();
+    rows.forEach(function (row) {
+      var text = row.textContent.toLowerCase();
+      row.classList.toggle('hidden', q.length > 0 && text.indexOf(q) === -1);
+    });
+  });
+})();
+</script>
+
+<!-- ============================================================== -->
+<h2 id="derivation-index">Derivation backlog index</h2>
+
+<p>All 11 items from <code>notes/plan/derivation_backlog.md</code>, each flagged for full step-by-step
+expansion (every algebraic substitution shown, intermediate numeric values in LaTeX, nothing asserted
+without proof). The <em>shipped</em> chapter/section below is verified against the actual HTML
+(<code>grep -n "Backlog D-N"</code> / "derivation backlog item" markers in each chapter) and in four
+cases differs from the backlog file's originally planned chapter &mdash; a routing decision made
+mid-campaign and recorded in the chapters that made it (see the note column).</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th class="left">Derivation</th><th class="left">Shipped in</th><th class="left">Fixture</th><th class="left">Note</th></tr>
+</thead>
+<tbody>
+<tr><td>D-1</td><td class="left">Survival function from hazard, $S(t)=\prod_{k\le t}(1-\lambda_k)$</td><td class="left"><a href="chapters/ch02_ecl_mechanics.html#s2-2">Ch.2 &sect;2.2</a></td><td class="left"><code>compute_ecl.py</code></td><td class="left">as planned</td></tr>
+<tr><td>D-2</td><td class="left">Full 5-year ECL worked example, every year's substitution</td><td class="left"><a href="chapters/ch02_ecl_mechanics.html#s2-3">Ch.2 &sect;2.3</a></td><td class="left"><code>compute_ecl.py</code></td><td class="left">as planned</td></tr>
+<tr><td>D-3</td><td class="left">Cloglog link from continuous-time proportional hazards</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3-1">Ch.3 &sect;3.1</a></td><td class="left">(architecture, no fixture)</td><td class="left">as planned</td></tr>
+<tr><td>D-4</td><td class="left">Merton distance-to-default and PD</td><td class="left"><a href="chapters/ch12_freddie_models_backtest.html#s12-2">Ch.12 &sect;12.2</a></td><td class="left"><code>compute_pd.py</code></td><td class="left"><strong>routed</strong>: backlog file says Ch.3; shipped in Ch.12 instead (Ch.3 carries only the scope-note aside, per its own declared simplification)</td></tr>
+<tr><td>D-5</td><td class="left">One-factor Gaussian copula &rarr; $PD_{PIT}(Z)$ conditioning formula</td><td class="left"><a href="chapters/ch05_vasicek.html#s5-3">Ch.5 &sect;5.3</a></td><td class="left"><code>compute_vasicek.py</code></td><td class="left">as planned</td></tr>
+<tr><td>D-6</td><td class="left">Jensen's inequality applied to ECL</td><td class="left"><a href="chapters/ch06_scenarios_satellite_jensen.html#s6-7">Ch.6 &sect;6.7</a></td><td class="left"><code>compute_scenarios.py</code></td><td class="left">as planned</td></tr>
+<tr><td>D-7</td><td class="left">NCL discounting, cash-flow by cash-flow</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-12">Ch.11 &sect;11.12</a></td><td class="left"><code>compute_ncl.py</code></td><td class="left"><strong>routed</strong>: backlog file says Ch.4; Ch.4 explicitly deferred it (own scope note) to Ch.11, where the Freddie real-data panel gives it a genuine worked instance</td></tr>
+<tr><td>D-8</td><td class="left">Roll-rate bridge (90&rarr;180 DPD conversion)</td><td class="left"><a href="chapters/ch11_freddie_panel_eda.html#s11-8">Ch.11 &sect;11.8</a></td><td class="left"><code>compute_rollrate.py</code></td><td class="left"><strong>routed</strong>: backlog file says Ch.4; same deferral as D-7</td></tr>
+<tr><td>D-9</td><td class="left">Binomial exact backtest and the Jeffreys alternative</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3-10">Ch.3 &sect;3.10</a></td><td class="left"><code>compute_validation.py</code></td><td class="left"><strong>routed early</strong>: backlog file says Ch.7; expanded in Ch.3 ahead of its nominal slot to complete Ch.3's own validation story (Ch.3's own "scope note" says so), re-applied to the challenger's scores in <a href="chapters/ch07_challengers.html#s7-6">Ch.7 &sect;7.6</a></td></tr>
+<tr><td>D-10</td><td class="left">PSI band-by-band expansion</td><td class="left"><a href="chapters/ch03_hazard_modeling.html#s3-9">Ch.3 &sect;3.9</a></td><td class="left"><code>compute_validation.py</code></td><td class="left"><strong>routed early</strong>: same pattern as D-9, re-applied in <a href="chapters/ch07_challengers.html#s7-6">Ch.7 &sect;7.6</a></td></tr>
+<tr><td>D-11</td><td class="left">Gross-up factor across the 4 horizons</td><td class="left"><a href="chapters/ch02_ecl_mechanics.html#s2-4">Ch.2 &sect;2.4</a></td><td class="left"><code>compute_grossup.py</code></td><td class="left">as planned</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================================================== -->
+<h2 id="provenance">Campaign provenance</h2>
+
+<div class="interpretation">
+<b>How this compendium was built.</b> Every chapter was produced by the same pipeline: theory text and
+figures pulled from the project's <code>knowledge/</code> PageIndex (never re-reading the raw source
+notes directly), project evidence pulled from <code>outputs/*.md</code> reports and
+<code>tests/fixtures/compute_*.py</code> golden values (never hand-typed &mdash; every number in every
+<code>.ex</code>/<code>.derivation</code> box is pasted from a fixture's <code>RESULTS</code> dict or a
+report table and cited back to it), figures regenerated in themed matplotlib where the underlying data
+was recoverable and embedded as extracted PNGs otherwise (every generated image viewed by the authoring
+agent before shipping &mdash; overlapping labels and wrong-direction arrows are invisible to structural
+checks alone), and every chapter run through <code>notes/assets/check_notes.py</code>'s 6-check QA gate
+(tag balance, image resolution, MathJax delimiter parity, no leftover template placeholders, quiz
+answer-reveal shape, widget JS syntax) plus a dedicated adversarial review pass per chapter batch before
+being counted done. The campaign ran in five batches (A: topic map + harness + Ch.1&ndash;2; B: Ch.3&ndash;5;
+C: Ch.6&ndash;8; D: Ch.9&ndash;11; E: Ch.12&ndash;13 + this landing page), each committed separately, with an
+incremental coverage re-diff against the 46-concept topic map after every batch
+(<code>notes/plan/coverage.md</code>) &mdash; the batch-C/D reports are what caught the A6/A13/A17 routing
+gap and the C5/C6 partial-coverage state that Chapters&nbsp;12&ndash;13 were then explicitly scoped to close,
+verified above in the <a href="#concept-index">concept index</a>.
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th class="left">Evidence trail</th><th>Result</th><th class="left">Source</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">ECL engine gate (Day 2)</td><td>187 / 187</td><td class="left"><code>wiki/memory/log.md</code>, 2026-07-05</td></tr>
+<tr><td class="left">Golden fixture values (compendium-wide)</td><td>133 / 133</td><td class="left"><code>tests/fixtures/compute_*.py</code>, cross-checked by <code>notes/assets/data/build_data_pack.py</code></td></tr>
+<tr><td class="left">Freddie SFLLD Phase-B gate</td><td>659 / 659</td><td class="left"><code>wiki/memory/log.md</code>, 2026-07-18</td></tr>
+<tr><td class="left">Project test suite (current)</td><td>665 / 665</td><td class="left"><code>wiki/memory/log.md</code>, 2026-07-19 &mdash; notes work is additive-only, never modifies this suite</td></tr>
+<tr><td class="left">Notes-specific PageIndex (Ch.1&ndash;11 snapshot)</td><td>11 sources / 650 pages / 259 nodes</td><td class="left"><code>notes/plan/coverage.md</code> header</td></tr>
+<tr><td class="left">Topic-map concept coverage, this build</td><td>46 / 46</td><td class="left">verified directly against all 13 shipped chapters (see <a href="#concept-index">concept index</a>)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+<b>Review process.</b> Every chapter went through author &rarr; render/QA (<code>check_notes.py</code> +
+visual figure inspection) &rarr; an adversarial review pass looking specifically for hand-typed numbers,
+skipped derivation steps, missing interpretation/gotcha boxes, and figure defects invisible to
+structural checks &mdash; the adversarial pass caught, across the campaign, issues including arrows
+drawn through bar charts, clipped axis labels, an unescaped-dollar MathJax break, two hand-typed
+arithmetic errors, a wrong peak-year interpretation, an order-of-magnitude gotcha error, a 24-vs-22
+endpoint miscount in Chapter&nbsp;9, and a mislabeled DCR/SFLLD comparison in Chapter&nbsp;3. This
+landing page and the final reindex are the campaign's closing step: a master concept index built by
+independently re-deriving the 46-concept mapping from <code>topic_map.json</code> and the shipped
+chapter anchors (not copied from any single chapter's own internal claims), so a discrepancy between
+what a chapter claims to cover and what it actually contains would surface here.
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+IFRS 9 ECL Study Notes compendium &mdash; 13 chapters, master landing page. Compiled via the
+PageIndex-plus pipeline on 2026-07-19. Project repository:
+<code>/mnt/d/Python-UV/IFRS9_ECL_Agentic_AI</code>.
+</div>
+
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

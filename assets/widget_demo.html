@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Widget demo — Vasicek PD_PIT(Z, rho)</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6; --boxbg: #f7f5ee; --noteBg: #eef3fb;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0; --pageW: 900px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d; --boxbg: #23241f; --noteBg: #1c2733;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d; --boxbg: #23241f; --noteBg: #1c2733;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6; --boxbg: #f7f5ee; --noteBg: #eef3fb;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18); font-size: 14.5px;
+  }
+  h1 { font-size: 23px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 18px; }
+  h2 { font-size: 17px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 26px; }
+  p { margin: 6px 0 10px 0; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  table { border-collapse: collapse; margin: 8px auto; font-size: 12.8px; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .note { border-left: 4px solid #d39e00; background: #fff7e6; padding: 9px 14px; margin: 12px 0; border-radius: 3px; }
+  :root[data-theme="dark"] .note, @media (prefers-color-scheme: dark) { }
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; color: var(--accent); }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 26px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 200px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 90px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50; width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink); font-size: 15px; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center;
+  }
+  .small { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Widget demo</h1>
+<div class="subtitle">Vasicek one-factor PIT-from-TTC conditioning — every widget primitive exercised on the real formula</div>
+
+<p>This page exists to exercise <code>notes/assets/js/widgets.js</code> end to end
+(<code>makeSlider</code>, <code>makeNumberInput</code>, <code>makeLinePlot</code>,
+<code>makeLiveTable</code>) and to double as the reference example a chapter author copies.
+The formula is the Vasicek one-factor conditioning of a through-the-cycle PD onto a systematic
+factor $Z$ (see <code>tests/fixtures/compute_vasicek.py</code>, the golden source):</p>
+
+$$ PD_{PIT}(Z) \;=\; \Phi\!\left( \frac{\Phi^{-1}(PD_{TTC}) - \sqrt{\rho}\, Z}{\sqrt{1-\rho}} \right) $$
+
+<p>where $\Phi$ is the standard-normal CDF, $PD_{TTC}$ the through-the-cycle (unconditional) PD,
+$\rho$ the asset correlation, and $Z \sim N(0,1)$ the systematic credit-cycle factor
+(negative $Z$ = downturn &rarr; higher $PD_{PIT}$).</p>
+
+<div class="widget">
+  <h4>Live widget — drag the sliders</h4>
+  <div class="widget-controls" id="controls"></div>
+  <div id="plot"></div>
+  <div id="table"></div>
+</div>
+
+<div class="note">
+<b>Correctness check.</b> At the defaults ($PD_{TTC}=2\%$, $\rho=0.12$) the table below
+reproduces the golden values in <code>tests/fixtures/compute_vasicek.py</code> exactly
+(e.g. $PD_{PIT}(Z=-2.0) = 7.34\%$, $PD_{PIT}(Z=+2.0)=0.17\%$) — this page's JS normal-CDF/PPF
+are independent re-implementations of the same closed-form used by the Python fixture (which
+uses <code>scipy.stats.norm</code>), so agreement to 2 displayed decimals cross-checks both.
+</div>
+
+<h2>How this page is built</h2>
+<p>Load pattern: <code>&lt;script src="js/widgets.js"&gt;&lt;/script&gt;</code> — the
+<b>relative</b> load, appropriate because this demo lives in <code>notes/assets/</code>
+alongside <code>notes/assets/js/</code>. Chapters under <code>notes/chapters/</code> that
+sit two levels below <code>notes/assets/js/</code> should reference
+<code>../assets/js/widgets.js</code>, or inline the file's contents directly if the chapter
+must be a single self-contained artifact (e.g. exported outside the repo). See
+<code>notes/plan/conventions.md</code> &sect; "Inlined vs relative widgets.js".</p>
+
+<script src="js/widgets.js"></script>
+<script>
+(function () {
+  // --- Standard normal CDF and inverse CDF, independent JS re-implementation ---
+  // erf via Abramowitz & Stegun 7.1.26 (max abs error ~1.5e-7).
+  function erf(x) {
+    var sign = x < 0 ? -1 : 1;
+    x = Math.abs(x);
+    var a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741,
+        a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    var t = 1 / (1 + p * x);
+    var y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+  }
+  function normCdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+
+  // Inverse normal CDF via Acklam's algorithm (rel. error ~1.15e-9).
+  function normPpf(p) {
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+              1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+              6.680131188771972e+01, -1.328068155288572e+01];
+    var c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+              -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    var d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+              3.754408661907416e+00];
+    var plow = 0.02425, phigh = 1 - plow, q, r;
+    if (p < plow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+             ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    } else if (p <= phigh) {
+      q = p - 0.5; r = q * q;
+      return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5]) * q /
+             (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+              ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    }
+  }
+
+  function pdPit(z, pdTtc, rho) {
+    return normCdf((normPpf(pdTtc) - Math.sqrt(rho) * z) / Math.sqrt(1 - rho));
+  }
+
+  var state = { pdTtc: 0.02, rho: 0.12 };
+  var controls = document.getElementById('controls');
+
+  var pdSlider = Widgets.makeSlider(controls, {
+    label: 'PD_TTC', min: 0.005, max: 0.10, step: 0.001, value: state.pdTtc,
+    format: function (v) { return (v * 100).toFixed(1) + '%'; },
+    onInput: function (v) { state.pdTtc = v; redraw(); }
+  });
+  var rhoSlider = Widgets.makeSlider(controls, {
+    label: 'rho (asset correlation)', min: 0.01, max: 0.30, step: 0.01, value: state.rho,
+    format: function (v) { return v.toFixed(2); },
+    onInput: function (v) { state.rho = v; redraw(); }
+  });
+  var zInput = Widgets.makeNumberInput(controls, {
+    label: 'Z (query point)', min: -3, max: 3, step: 0.1, value: -1,
+    format: function (v) { return v.toFixed(1); },
+    onInput: function () { redraw(); }
+  });
+
+  function curvePoints(pdTtc, rho) {
+    var pts = [];
+    for (var z = -3; z <= 3.0001; z += 0.05) {
+      pts.push([z, pdPit(z, pdTtc, rho) * 100]);
+    }
+    return pts;
+  }
+
+  var plot = Widgets.makeLinePlot(document.getElementById('plot'), {
+    width: 640, height: 340,
+    xDomain: [-3, 3], yDomain: [0, 15],
+    xLabel: 'Z (systematic factor, downturn ← → upturn)',
+    yLabel: 'PD_PIT (%)',
+    title: 'PD_PIT(Z) at current PD_TTC, rho',
+    series: [{ name: 'PD_PIT(Z)', color: '#1f3a5f', points: curvePoints(state.pdTtc, state.rho) }]
+  });
+
+  var markedZ = [2.0, 1.0, 0.0, -1.0, -2.0, -2.5];
+  var table = Widgets.makeLiveTable(document.getElementById('table'), {
+    columns: [
+      { key: 'z', label: 'Z', format: function (v) { return v.toFixed(1); } },
+      { key: 'pdPit', label: 'PD_PIT (%)', format: function (v) { return v.toFixed(2); } }
+    ],
+    rows: markedZ.map(function (z) { return { z: z, pdPit: pdPit(z, state.pdTtc, state.rho) * 100 }; })
+  });
+
+  function redraw() {
+    var pts = curvePoints(state.pdTtc, state.rho);
+    var maxY = Math.max(15, Math.ceil(Math.max.apply(null, pts.map(function (p) { return p[1]; })) * 1.15));
+    plot.update([{ name: 'PD_PIT(Z)', color: '#1f3a5f', points: pts }], [0, maxY]);
+    var rows = markedZ.map(function (z) { return { z: z, pdPit: pdPit(z, state.pdTtc, state.rho) * 100 }; });
+    var q = zInput.value;
+    rows.push({ z: q, pdPit: pdPit(q, state.pdTtc, state.rho) * 100 });
+    table.update(rows);
+  }
+
+  redraw();
+})();
+</script>
+
+<hr>
+<div class="small" style="text-align:center;">
+Widget demo for notes/assets/js/widgets.js — see notes/plan/conventions.md.
+</div>
+
+</body>
+</html>

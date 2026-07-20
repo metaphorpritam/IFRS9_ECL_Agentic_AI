@@ -1,0 +1,2029 @@
+{
+  "doc_name": "IFRS9 Study Notes",
+  "doc_description": "PageIndex RAG built from 13 file(s) in notes/corpus.",
+  "total_pages": 791,
+  "sources": [
+    "notes/corpus/ch01_ifrs9_foundations_staging.html.md",
+    "notes/corpus/ch02_ecl_mechanics.html.md",
+    "notes/corpus/ch03_hazard_modeling.html.md",
+    "notes/corpus/ch04_lgd_ead.html.md",
+    "notes/corpus/ch05_vasicek.html.md",
+    "notes/corpus/ch06_scenarios_satellite_jensen.html.md",
+    "notes/corpus/ch07_challengers.html.md",
+    "notes/corpus/ch08_the_agent.html.md",
+    "notes/corpus/ch09_app_guide.html.md",
+    "notes/corpus/ch10_docker_deployment.html.md",
+    "notes/corpus/ch11_freddie_panel_eda.html.md",
+    "notes/corpus/ch12_freddie_models_backtest.html.md",
+    "notes/corpus/ch13_governance_mdd.html.md"
+  ],
+  "structure": [
+    {
+      "title": "ch01_ifrs9_foundations_staging.html",
+      "node_id": "0001",
+      "start_index": 1,
+      "end_index": 1,
+      "summary": ""
+    },
+    {
+      "title": "Chapter 1  —  IFRS 9 Foundations & Staging",
+      "node_id": "0002",
+      "start_index": 1,
+      "end_index": 38,
+      "summary": "From incurred loss to expected credit loss: classification, the three-stage model, default, and the relative SICR test IFRS 9 ECL study-notes compendium, Chapter 1 of 13. Compiled from knowledge/corpus/ifrs9_credit_risk_notes.md §§1–2, outputs/staging/staging_report.md , outputs/ecl/ecl_report.md , engine/staging.py . Contents. 1 IFRS 9 Foundations & Staging 1.1 Why ECL replaced incurred loss 1.2 Classification: business model + SPPI, and the special regimes 1.3 IFRS 9 vs Basel IRB vs CECL 1.4 The three-stage impairment model and the definition of default 1.5 SICR — the relative lifetime-PD ...",
+      "nodes": [
+        {
+          "title": "1   IFRS 9 Foundations & Staging",
+          "node_id": "0003",
+          "start_index": 2,
+          "end_index": 38,
+          "summary": "This chapter covers the front matter of IFRS 9 impairment: why the standard exists in its current forward-looking form, how an asset is classified into the population ECL even applies to, and the mechanics of the three-stage model that decides how much ECL a given exposure carries. The chapter closes by walking the project's own staging engine end to end — the exact rule implemented, the calm-vs-stress finding it produces on the synthetic Data Consortium (DCR) panel, and the ECL consequence of getting the stage wrong. Later chapters build on this: Chapter 2 derives the ECL formula itself in ...",
+          "nodes": [
+            {
+              "title": "1.1 Why ECL replaced incurred loss",
+              "node_id": "0004",
+              "start_index": 2,
+              "end_index": 3,
+              "summary": "IFRS 9 Financial Instruments (IASB) replaced IAS 39 with effect from annual periods beginning on or after 1 January 2018 . IAS 39's incurred-loss model recognised a credit loss only after a loss event had already occurred — judged “too little, too late” in the post-2008 review, and structurally procyclical: because no loss could be booked before a triggering event, provisions arrived in a cliff at exactly the point in the cycle when a bank could least afford it. IFRS 9 replaces that with a forward-looking expected credit loss (ECL) model that provisions from initial recognition — before any ..."
+            },
+            {
+              "title": "1.2 Classification: business model + SPPI, and the special regimes",
+              "node_id": "0005",
+              "start_index": 4,
+              "end_index": 8,
+              "summary": "Before ECL can be computed at all, an asset must be routed into the population ECL applies to. ECL applies to financial assets at amortised cost and debt instruments at FVOCI ; lease receivables (IFRS 16); contract assets (IFRS 15); and loan commitments and financial guarantee contracts not measured at FVTPL. Equity instruments and anything at FVTPL sit outside ECL scope entirely — their fair-value movements already absorb credit deterioration (knowledge/corpus/ifrs9_credit_risk_notes.md §1.1)."
+            },
+            {
+              "title": "1.3 IFRS 9 vs Basel IRB vs CECL",
+              "node_id": "0006",
+              "start_index": 9,
+              "end_index": 11,
+              "summary": "The most common interview discriminator, and the most common implementation error, is re-using Basel IRB parameters in an ECL engine without stripping their built-in conservatism. The three regimes answer different questions on purpose (knowledge/corpus/ifrs9_credit_risk_notes.md §4): Dimension IFRS 9 ECL Basel IRB US CECL (ASC 326) Objective accounting provision (expected loss) capital for unexpected loss accounting provision PD horizon 12-month (Stage 1) / lifetime (Stages 2–3) always 12-month lifetime for all assets, day 1 PD philosophy point-in-time , forward-looking often ..."
+            },
+            {
+              "title": "1.4 The three-stage impairment model and the definition of default",
+              "node_id": "0007",
+              "start_index": 12,
+              "end_index": 15,
+              "summary": "Exhibit 1.2 — The general (three-stage) model, redrawn in this compendium's palette from the source concept (knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig001.png; knowledge/corpus/ifrs9_credit_risk_notes.md §2). Stage 1 (no significant increase in credit risk since origination): 12-month ECL — the portion of lifetime ECL arising from default events possible within 12 months . This is not a 12-month-truncated lifetime loss, and not the loss restricted to loans certain to default within the year — it is the full expected-loss calculation, applied to a shorter horizon."
+            },
+            {
+              "title": "1.5 SICR — the relative lifetime-PD test (with a worked toy example)",
+              "node_id": "0008",
+              "start_index": 16,
+              "end_index": 25,
+              "summary": "SICR is a relative deterioration test, not an absolute credit-quality test: compare the lifetime PD over the remaining life at the reporting date with the lifetime PD expected for that same period at initial recognition . A loan originated risky and still equally risky has not suffered SICR — it was priced and provisioned for that risk level from day one (knowledge/corpus/ifrs9_credit_risk_notes.md §2.2). Typical implementations combine: Quantitative: a relative threshold on (annualised) lifetime PD — a doubling (200% relative increase) is the most common convention, used in the EBA 2018 ..."
+            },
+            {
+              "title": "1.6 The project's SICR implementation: thresholds, probation, the inert 30-DPD backstop",
+              "node_id": "0009",
+              "start_index": 26,
+              "end_index": 29,
+              "summary": "The DCR engine ( engine/staging.py ) implements the §1.5 rule exactly, at portfolio scale: for every loan at reporting quarter $t$ with remaining contractual life $R=\\text{mat\\_time}-t$ (floored at 1 quarter), it computes lifetime_pd_now and lifetime_pd_orig over the identical age window $t{+}1,\\dots,t{+}R$ — the same age baseline $\\lambda_0(a)$ enters both legs, so only the frozen covariate offset differs between them, exactly matching the derivation in §1.5. Origination covariates are reconstructed per loan from panel columns (contractual origination LTV, FICO/occupancy at origination, ..."
+            },
+            {
+              "title": "1.7 Finding: Stage 2 is empty in calm markets, dominant in stress",
+              "node_id": "0010",
+              "start_index": 30,
+              "end_index": 33,
+              "summary": "Running the rule above on two DCR snapshots — a calm quarter ($t=20$) and a stress quarter ($t=40$) — produces a striking result ( outputs/staging/staging_report.md ): snapshot staged rows Stage 1 Stage 2 Stage 3 default incidence t=20 (calm) 8,662 98.90% 0.00% 1.10% 1.10% t=40 (stress) 13,863 20.98% 75.78% 3.25% 3.25% Exhibit 1.3 — IFRS 9 stage distribution, calm vs stress snapshot, regenerated from outputs/staging/staging_report.md (2× + 0.5pp p.a. relative SICR test). At $t=20$, not a single loan in the staged book (0 of 8,662) clears the SICR trigger — deterioration since origination ...",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the SICR threshold slider",
+                  "node_id": "0011",
+                  "start_index": 32,
+                  "end_index": 33,
+                  "summary": "Drives directly off the same four (threshold, Stage-2 share) pairs plotted in Exhibit 1.4 — these are the only four points the project actually evaluated, so the slider snaps to them rather than interpolating a fifth number that was never computed. Reading the table left to right: loosening the threshold from the adopted 2.0x to 1.5x would move Stage 2 from 75.76% to 85.10% of the stress-quarter book (+9.3pp) — tightening it to 4.0x collapses Stage 2 to 3.32% (−72.4pp). At no threshold in this sweep does the calm quarter produce a nonzero Stage-2 share: the finding is not an artifact of the ..."
+                }
+              ]
+            },
+            {
+              "title": "1.8 Staging's ECL consequence: the coverage gradient",
+              "node_id": "0012",
+              "start_index": 34,
+              "end_index": 38,
+              "summary": "Staging is not an academic label — it directly re-scales the allowance. Because Stage 1 books 12-month ECL and Stages 2–3 book lifetime ECL, the same underlying loan can carry a very different allowance purely depending on which stage it lands in, holding its actual default risk fixed. The project's ECL engine ( outputs/ecl/ecl_report.md ) makes this concrete at the $t{=}40$ stress snapshot: stage loans EAD (\\$m) allowance (\\$m) coverage mean LGD mean lifetime PD 1 2,908 514.3 18.26 3.551% 0.419 0.541 2 10,505 3,005.0 939.59 31.268% 0.615 0.766 3 450 117.5 74.76 63.646% 0.638 0.810 total ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch02_ecl_mechanics.html",
+      "node_id": "0013",
+      "start_index": 39,
+      "end_index": 39,
+      "summary": "Ch.2 — ECL Mechanics | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 2 — ECL Mechanics",
+      "node_id": "0014",
+      "start_index": 40,
+      "end_index": 78,
+      "summary": "From a single cash shortfall to the movement waterfall: deriving, computing, and reconciling Expected Credit Loss IFRS9 ECL Study-Notes Compendium — Chapter 2 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §3 & §9.4, tests/fixtures/compute_ecl.py , tests/fixtures/compute_grossup.py , and outputs/ecl/ecl_report.md on 2026-07-19. Contents. 2.1 From cash shortfall to the ECL formula 2.2 The survival function: deriving S(t) from the hazard chain 2.3 Flagship worked example: the 5-year amortising loan, digit by digit 2.4 12-month vs lifetime ECL, and the gross-up factor 2.5 The ...",
+      "nodes": [
+        {
+          "title": "2  ECL Mechanics",
+          "node_id": "0015",
+          "start_index": 41,
+          "end_index": 78,
+          "summary": "This chapter answers the question every other chapter's outputs feed into: given a curve of default hazards, a loss-given-default rate, an exposure profile, and a discount rate, how does IFRS 9 turn those four ingredients into a single provision number? We derive the ECL decomposition theorem from first principles (not just state it), walk the flagship five-year worked example one number at a time, resolve the 12-month/lifetime boundary and the gross-up trick banks use to extend short-horizon models to lifetime, reconcile a real period-over-period allowance movement down to the cent, and ...",
+          "nodes": [
+            {
+              "title": "2.1 From cash shortfall to the ECL formula",
+              "node_id": "0016",
+              "start_index": 42,
+              "end_index": 46,
+              "summary": "Start from what actually happens to money, not from the formula. A performing loan is expected to repay in full according to its contract. If the borrower defaults at some future date, the lender does not receive the contractual cash flow in full — it receives whatever is recovered instead."
+            },
+            {
+              "title": "2.2 The survival function: deriving S(t) from the hazard chain",
+              "node_id": "0017",
+              "start_index": 47,
+              "end_index": 52,
+              "summary": "The theorem box in §2.1 defines $S(t)=\\prod_{k\\le t}(1-\\lambda_k)$ but does not derive it — the source notes assert it. Here is the missing step (derivation backlog item D-1 ). Derivation — survival is a product of one-period conditional non-default probabilities. 1."
+            },
+            {
+              "title": "2.3 Flagship worked example: the 5-year amortising loan, digit by digit",
+              "node_id": "0018",
+              "start_index": 53,
+              "end_index": 58,
+              "summary": "The source notes' worked example (§3): a 5-year amortising loan, principal EUR 1,000,000 repaid in five equal EUR 200,000 year-end instalments, effective interest rate $EIR=6\\%$, constant $LGD=35\\%$, default losses crystallising at year-end, with hazards following a mild retail \"seasoning hump\" ($\\lambda=1.5\\%,2.0\\%,2.2\\%,2.0\\%,1.8\\%$ for $t=1,\\ldots,5$). Every number below is tests/fixtures/compute_ecl.py 's RESULTS , printed by running the fixture module directly (derivation backlog item D-2 ) — nothing here is hand-typed. Worked example — every term of the ECL sum. $EAD_t$ is the balance ..."
+            },
+            {
+              "title": "2.4 12-month vs lifetime ECL, and the gross-up factor",
+              "node_id": "0019",
+              "start_index": 59,
+              "end_index": 62,
+              "summary": "§2.3 truncated the same sum at two different horizons ($t=1$ vs $t=1,\\ldots,5$) because both the hazard curve and the exposure profile were fully known out to five years. In practice a bank often trusts its point-in-time (PIT) conditioned hazard curve only over a shorter reasonable-and- supportable (R&S) window — commonly 2–3 years — beyond which macro forecasts are not credible, and reverts the hazard to a long-run through-the-cycle (TTC) level for the remainder of the contractual life (§9.4). The gross-up factor is how a short-horizon PD/ECL estimate is scaled up to a lifetime figure ..."
+            },
+            {
+              "title": "2.5 The movement waterfall: opening → closing",
+              "node_id": "0020",
+              "start_index": 63,
+              "end_index": 67,
+              "summary": "ECL is not just a point-in-time number — banks report how the allowance moved from one period to the next, decomposed into named drivers (IFRS 7 disclosure requirement, Chapter 13). This project's ECL engine ( engine/ecl.py ) computes exactly such a movement between two real DCR book snapshots: t=20 (a calm quarter) and t=40 (a stressed quarter), sourced from outputs/ecl/ecl_report.md . Definition — the five-component movement decomposition ( outputs/ecl/ecl_report.md )."
+            },
+            {
+              "title": "2.6 The double-counting rule (EAD vs. survival)",
+              "node_id": "0021",
+              "start_index": 68,
+              "end_index": 74,
+              "summary": "Term loans face two competing exit routes before a fixed maturity: default and prepayment . A production-grade survival function must be a competing-risk survival — it should fall when either hazard fires. But EAD and survival are two separate model components ( engine/ead.py , Chapter 4, and engine/hazard.py , Chapter 3, respectively), built and maintained independently — which creates exactly one place a subtle but material bug can creep in."
+            },
+            {
+              "title": "2.7 Interactive: ECL vs LGD & EIR",
+              "node_id": "0022",
+              "start_index": 75,
+              "end_index": 78,
+              "summary": "The widget below re-implements §2.3's exact formula in JavaScript — same five-year hazard path and EAD schedule, same survival-product identity — and recomputes the full schedule live as you move the $LGD$ and $EIR$ sliders. At the defaults ($LGD=35\\%$, $EIR=6\\%$) it reproduces the golden fixture values exactly : 12-month ECL EUR 4,952.83, lifetime ECL EUR 16,571.39 (verified in a hidden comment in the page source, cross-checked against tests/fixtures/compute_ecl.py ).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0023",
+                  "start_index": 75,
+                  "end_index": 78,
+                  "summary": "12-month ECL Lifetime ECL 12-month ECL (year-1 term) lifetime ECL (full 5-year sum) What to try. Push $LGD$ toward 60% (a downturn severity assumption) and watch every year's contribution — and both the 12-month and lifetime totals — scale linearly (LGD multiplies every term identically, since it is constant across years in this example). Then push $EIR$ down toward 1%: later years' discount factors rise toward 1, so the lifetime figure grows faster than the 12-month figure (which only has one year's discounting to lose) — watch the lifetime/12m ratio in the table's final row increase."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch03_hazard_modeling.html",
+      "node_id": "0024",
+      "start_index": 79,
+      "end_index": 79,
+      "summary": "Ch.3 — Hazard Modelling (PD Term Structure) | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 3 — Hazard Modelling (PD Term Structure)",
+      "node_id": "0025",
+      "start_index": 79,
+      "end_index": 141,
+      "summary": "From the continuous-time proportional-hazards integral to the discrete-time cloglog PD engine: competing risks, panel construction, the seasoning hump, and validation IFRS9 ECL Study-Notes Compendium — Chapter 3 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §6.2, engine/hazard.py , data/panel/build_panel.py , tests/fixtures/compute_validation.py , outputs/hazard/{fit_stats.md,hazard_ratios.md} , outputs/panel/waterfall.md , outputs/eda/eda_report.md , outputs/variable_dictionary.md , and outputs/freddie/hazard/hazard_report.md on 2026-07-19. Contents. 3.1 From ...",
+      "nodes": [
+        {
+          "title": "3  Hazard Modelling (PD Term Structure)",
+          "node_id": "0026",
+          "start_index": 80,
+          "end_index": 141,
+          "summary": "Chapter 2 took the hazard curve $\\lambda_t$ as a given input to the ECL sum. The discrete-time hazard model is the workhorse PD engine for retail portfolios with a loan-month (or loan-quarter) panel: one binary regression, fit on at-risk rows, produces the entire term structure of conditional default probabilities in a single coherent object — no separate model per horizon, no ad-hoc extrapolation. We derive the model's link function from the continuous-time proportional-hazards assumption it approximates (not just state it), extend Chapter 2's survival identity to the competing-risk case ...",
+          "nodes": [
+            {
+              "title": "3.1 From continuous-time hazards to the discrete-time cloglog link",
+              "node_id": "0027",
+              "start_index": 82,
+              "end_index": 88,
+              "summary": "The source notes' THEOREM box for the discrete-time hazard model (§6.2) states the model's link function without derivation: \"fit a binary GLM on at-risk rows with a logit or complementary log-log link... The cloglog link is the exact grouped-duration analogue of the continuous-time Cox model.\" This section derives that claim from first principles (derivation backlog item D-3 , flagged explicitly for expansion) — why cloglog, specifically, and not logit, is the link implied by an underlying continuous-time hazard. Definitions. $T$ — the (continuous) random time to the event of interest ..."
+            },
+            {
+              "title": "3.2 The survival function under competing risks",
+              "node_id": "0028",
+              "start_index": 89,
+              "end_index": 94,
+              "summary": "Chapter 2 §2.2 derived $S(t)=\\prod_{k\\le t}(1-\\lambda_k)$ for a single exit route (default only). A mortgage panel has two competing exits — default and prepayment — and Chapter 2 §2.6 already relied on the extended, competing-risk version of $S(t)$ without deriving it. Derivation — survival with two competing exits. 1."
+            },
+            {
+              "title": "3.3 Building the panel: at-risk rows and the eligibility waterfall",
+              "node_id": "0029",
+              "start_index": 95,
+              "end_index": 100,
+              "summary": "A discrete-time hazard model is fit on a loan-quarter panel : one row per loan per quarter it is at risk, with an event flag. Getting this panel right — so that a plain binomial GLM on at-risk rows really is the discrete-time survival likelihood — is data/panel/build_panel.py 's job. This project's raw source is the Baesens–Rösch–Scheule / Deep Credit Risk 50,000-loan US mortgage panel ( dcr_full.csv ), which the source notes themselves flag as carrying \"realistic left truncation & right censoring\" (§5.1) — exactly the two panel-construction hazards this section and the next work through."
+            },
+            {
+              "title": "3.4 Left truncation on the DCR panel",
+              "node_id": "0030",
+              "start_index": 101,
+              "end_index": 105,
+              "summary": "Right censoring (a loan still alive when the observation window ends) is the more familiar survival-analysis hazard. Left truncation is its mirror image at the start of the window: a loan that originated before the panel begins observing it enters already seasoned — its true loan age at first observation is greater than zero. What ignoring left truncation would bias, reasoned from the likelihood. 1."
+            },
+            {
+              "title": "3.5 The seasoning hump: DCR's ~12-quarter peak and the SFLLD 42–48-month corroboration",
+              "node_id": "0031",
+              "start_index": 106,
+              "end_index": 109,
+              "summary": "The baseline hazard $\\alpha_t$ (§3.1) is fitted as a natural cubic spline in loan_age ( cr(loan_age, df=5) , engine/hazard.py ) — flexible enough to reproduce the classic retail-mortgage seasoning hump : default risk rises over the first few years on book as weaker underwriting reveals itself, peaks, then declines as the pool of loans still on book increasingly consists of survivors who have already proven themselves through several years of scheduled payments. Exhibit 3.4 — DCR: fitted cloglog age-baseline spline (peak 12 quarters) against the raw empirical age-hazard scatter (peak 10 ..."
+            },
+            {
+              "title": "3.6 Timing convention: lagged macro vs current-state exceptions",
+              "node_id": "0032",
+              "start_index": 110,
+              "end_index": 115,
+              "summary": "Every macro-conditioned PD model risks lookahead bias : using information that would not actually have been available to a lender at the moment the quarter's default/prepay decision was being made. engine/hazard.py 's TIMING CONVENTION is the project's explicit, review-enforced rule for avoiding it — and its two deliberate exceptions are worth reading carefully, because they look at first glance like violations of the rule they sit next to. The rule, verbatim in spirit ( engine/hazard.py module docstring). All macro regressors are lagged : uer_lag1 , uer_chg4_lag1 , hpi_growth_lag1 , gdp_lag1 ..."
+            },
+            {
+              "title": "3.7 The DCR champion coefficient table",
+              "node_id": "0033",
+              "start_index": 116,
+              "end_index": 122,
+              "summary": "The fitted default-hazard coefficients, read as hazard ratios $HR=\\exp(\\beta)$ — a genuine hazard-ratio interpretation thanks to §3.1's derivation — on 418,418 training loan-quarters with 11,354 default events ( outputs/hazard/hazard_ratios.md , McFadden pseudo-$R^2=0.0761$). Covariate HR 95% CI $p$ Economic reading Intercept 0.2658 [0.153, 0.461] 2.4e-06 baseline level at reference age/covariates FICO at orig. (per 100 pts) 0.6314 [0.613, 0.651] <1e-16 ability/willingness to pay — 100 more FICO points cuts the hazard by 37% Updated LTV (per 10pp, at mean UER) 1.2250 [1.210, 1.240] <1e-16 ..."
+            },
+            {
+              "title": "3.8 Evaluation I: discrimination — AUC, train vs OOT",
+              "node_id": "0034",
+              "start_index": 123,
+              "end_index": 126,
+              "summary": "Discrimination asks a narrower question than calibration (§3.9): not \"are the predicted probabilities the right size ?\" but \"does the model rank loans that actually default above loans that don't?\" — the property a lender needs to prioritise collections, risk-based pricing, or staging thresholds correctly, independent of whether the absolute PD level itself is exactly right. AUC (area under the ROC curve). $\\mathrm{AUC}=P(\\hat{\\lambda}_{\\text{event row}}>\\hat{\\lambda}_{\\text{non-event row}})$ for a randomly drawn (event, non-event) pair of at-risk rows scored by the same model — the ..."
+            },
+            {
+              "title": "3.9 Evaluation II: calibration and stability — the PSI walkthrough",
+              "node_id": "0035",
+              "start_index": 127,
+              "end_index": 131,
+              "summary": "Calibration asks whether predicted probabilities are the right size , not just correctly ranked. Population stability asks a related but distinct question: has the scored population itself shifted enough, relative to the population the model was developed on, that its scores may no longer mean what they meant at development? The Population Stability Index (PSI) is the standard band-by-band answer (derivation backlog item D-10 )."
+            },
+            {
+              "title": "3.10 Evaluation III: the binomial backtest fixture",
+              "node_id": "0036",
+              "start_index": 132,
+              "end_index": 135,
+              "summary": "A grade-level backtest asks a third, complementary question: for a specific PD grade, does the realised default count over a horizon look statistically consistent with the assigned PD, given how many obligors were in the grade? (derivation backlog item D-9 .) Setup ( tests/fixtures/compute_validation.py ). A grade with $n=1{,}000$ obligors, assigned $PD=2\\%$, observed $d=28$ defaults over the horizon."
+            },
+            {
+              "title": "3.11 Interactive: the hazard-curve widget",
+              "node_id": "0037",
+              "start_index": 136,
+              "end_index": 138,
+              "summary": "Drag the FICO, LTV, and unemployment sliders below to see the term-structure plot recompute live, using the real champion cloglog formula (§3.1, §3.7). The baseline curve is the DCR \"median\"-profile term structure from outputs/hazard/pd_term_structure.csv exactly (macro frozen at $t=40$, the last training/stress quarter, per analysis/fit_hazard.py 's profile construction); each slider shifts the cloglog-scale linear predictor by that covariate's fitted hazard-ratio coefficient, exactly as §3.7 read the table. Survival and cumulative PD are then recomputed via §3.2's derived competing-risk ...",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0038",
+                  "start_index": 137,
+                  "end_index": 138,
+                  "summary": "At the default slider values (FICO 676, LTV 79.4%, UER 10.0% — the DCR training panel's median FICO/LTV and the stress-quarter UER) the widget reproduces pd_term_structure.csv 's \"median\" profile exactly: 12-quarter cumulative PD 17.59%, 40-quarter (lifetime, this horizon) cumulative PD 31.03%. Drag FICO down toward 600 (a subprime-adjacent score) and watch the curve shift up uniformly on the cloglog scale — then drag LTV up past 100% (underwater collateral) on top of that and watch the term structure approach the \"risky high-LTV investor\" profile's shape shown statically in Exhibit 3.6. Push ..."
+                }
+              ]
+            },
+            {
+              "title": "3.12 Interactive: the seasoning-hump explorer",
+              "node_id": "0039",
+              "start_index": 139,
+              "end_index": 141,
+              "summary": "Drag the age slider to read off the DCR champion's fitted default hazard, at that exact loan age, for three real covariate profiles side by side — and see how far that age sits from the DCR's own fitted seasoning peak (12 quarters, §3.5) and from the SFLLD corroboration's empirical peak band (42–48 months, converted to 14–16 quarters for a direct comparison on this widget's quarterly axis).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the age slider",
+                  "node_id": "0040",
+                  "start_index": 140,
+                  "end_index": 141,
+                  "summary": "Sweep the slider from age 0 to 39 and watch all three curves rise, peak, and decline together — the seasoning shape is a property of the shared age-baseline spline $\\alpha_t$ (§3.1), while the three profiles' relative spacing (roughly a 5× gap between \"risky high-LTV investor\" and \"prime low-LTV\" at every age) comes entirely from their fixed FICO/LTV/investor-flag covariates (§3.7). The DCR peak (age 12) and the SFLLD-equivalent band (age 14–16) sit close together on this shared quarterly axis — exactly the corroboration §3.5 discussed, now visible as a live readout rather than a static ..."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch04_lgd_ead.html",
+      "node_id": "0041",
+      "start_index": 142,
+      "end_index": 142,
+      "summary": "Ch.4 — LGD & EAD | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 4 — LGD & EAD",
+      "node_id": "0042",
+      "start_index": 143,
+      "end_index": 188,
+      "summary": "The two-stage cure × severity architecture, the excess-loss tail nobody clips, and the exposure profile that must never double-count prepayment IFRS9 ECL Study-Notes Compendium — Chapter 4 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §10 & §12, outputs/lgd/lgd_report.md , outputs/freddie/lgd/lgd_report.md , outputs/ead/ead_report.md , tests/fixtures/compute_ecl.py , and engine/ead.py on 2026-07-19. Contents. 4.1 The two-stage LGD architecture: from a bimodal outcome to E[LGD] 4.2 Resolved workouts only: quantifying the selection bias 4.3 The DCR cure/severity fit: ...",
+      "nodes": [
+        {
+          "title": "4  LGD & EAD",
+          "node_id": "0043",
+          "start_index": 144,
+          "end_index": 188,
+          "summary": "Chapter 2 derived $\\mathrm{ECL}=\\sum_t S(t-1)\\lambda_t\\, LGD_t\\, EAD_t\\,(1+EIR)^{-t}$ and treated $LGD_t$ and $EAD_t$ as given inputs so it could focus on the survival/discounting machinery around them. This chapter builds those two curves from first principles. Workout LGD is not a single number to regress — it is bimodal (a cure spike near zero loss, a write-off hump at high loss), so a plain regression through it predicts a value that almost never occurs (§10.2).",
+          "nodes": [
+            {
+              "title": "4.1 The two-stage LGD architecture: from a bimodal outcome to E[LGD]",
+              "node_id": "0044",
+              "start_index": 146,
+              "end_index": 150,
+              "summary": "Workout LGD collects every post-default cash flow — recoveries $R_k$ (payments, collateral-sale proceeds, guarantee/insurance claims) and direct workout costs $C_k$ — discounts them at the loan's original EIR back to the default date, and sets $$ LGD = 1 - RR = 1 - \\frac{\\sum_k PV(R_k) - \\sum_k PV(C_k)}{EAD_{\\text{default}}} $$ (§10.1). IFRS 9 LGD must be unbiased and point-in-time — a deliberate contrast with Basel IRB's downturn-calibrated, conservatism-loaded LGD. But the distribution this ratio actually takes across a defaulted population is not the smooth, roughly-normal shape a plain ..."
+            },
+            {
+              "title": "4.2 Resolved workouts only: quantifying the selection bias",
+              "node_id": "0045",
+              "start_index": 151,
+              "end_index": 154,
+              "summary": "Both stages above are fit on resolved defaults — workouts that have reached a final cure or write-off outcome by the time the fit sample is built. Defaults still open at the data window's end have no observed final $LGD$ yet, so they cannot be labelled cure or non-cure. The obvious response — exclude them and fit on what is observed — is exactly what both the DCR and SFLLD builds do, and exactly what §10.3's own \"Incomplete workouts\" pitfall warns creates bias: \"excluding them biases LGD toward fast, favourable resolutions.\" Worked example — the DCR fit sample, every subtraction shown ( ..."
+            },
+            {
+              "title": "4.3 The DCR cure/severity fit: coefficients and interpretation",
+              "node_id": "0046",
+              "start_index": 155,
+              "end_index": 160,
+              "summary": "With the resolved sample from §4.2 in hand, the two stages are fit as two independent regressions — a logistic cure model, and a fractional-logit severity model conditioned on non-cure ( engine/lgd.py , outputs/lgd/lgd_report.md ). Stage 1 — cure logit: cure ~ ltv10 + uer_lag1 + fico_s + loan_age coef se z p odds ratio Intercept 4.4489 0.3402 13.08 0.0000 85.53 ltv10 −0.7640 0.0252 −30.26 0.0000 0.4658 uer_lag1 +0.2774 0.0334 8.31 0.0000 1.3197 fico_s −0.1402 0.0555 −2.53 0.0115 0.8692 loan_age −0.0727 0.0064 −11.44 0.0000 0.9299 Stage 2 — fractional-logit severity | non-cure: sev_capped ~ ..."
+            },
+            {
+              "title": "4.4 The LGD>1 tail: deriving the excess-loss loading, never clipped",
+              "node_id": "0047",
+              "start_index": 161,
+              "end_index": 165,
+              "summary": "A fractional-logit severity regression is bounded on $(0,1)$ by construction — but realised severity is not. Workout costs, accrued interest, and legal/holding expenses can push the total loss past the exposure at default, so realised $LGD>1$ is a genuine, observed outcome: 14.2% of the DCR train non-cure sample has $LGD>1$, with a mean excess of 0.1790 among that 14.2%. A model that structurally cannot output above 1 will therefore systematically under-predict the tail unless something is added back on top of it."
+            },
+            {
+              "title": "4.5 Interactive: LGD decomposition",
+              "node_id": "0048",
+              "start_index": 166,
+              "end_index": 166,
+              "summary": "The widget below re-implements §4.1's exact formula, $\\mathbb{E}[LGD]=(1-P(\\text{cure}))\\times (\\text{severity}+\\text{loading})$, live in JavaScript. At the default slider values (cure probability 12.24%, severity 65.70% before loading) with the loading toggle ON, it reproduces the DCR train mean predicted LGD exactly : $(1-0.1224)\\times(0.6570+0.0255)=(1-0.1224)\\times0.6825=0.5990$ — verifiable against outputs/lgd/lgd_report.md 's OOT-calibration table (\"mean predicted LGD\" train row, 0.5990).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders, toggle the loading",
+                  "node_id": "0049",
+                  "start_index": 166,
+                  "end_index": 166,
+                  "summary": "E[LGD] E[LGD] = (1 − P(cure)) × (severity + loading) What to try. Toggle the loading OFF and back ON without moving the sliders — E[LGD] drops from 0.5990 to $(1-0.1224)\\times0.6570=0.5766$, a $0.0224$ swing (close to, but not exactly, the raw $0.0255$ loading, because the loading itself is scaled by $(1-P(\\text{cure}))$ once it is inside the severity term). Then push $P(\\text{cure})$ toward 0 (a stressed, low-cure regime) — E[LGD] rises toward the full severity-plus-loading figure, since almost every default is now assumed to reach the non-cure branch."
+                }
+              ]
+            },
+            {
+              "title": "4.6 The SFLLD cross-check: 0.0148 and cycle dependence",
+              "node_id": "0050",
+              "start_index": 167,
+              "end_index": 169,
+              "summary": "The Freddie Mac single-family loan-level (SFLLD) refit ( freddie/lgd.py , outputs/freddie/lgd/lgd_report.md ) reruns the identical two-stage architecture on 44,593 had-D90-event loans, but reconstructs realised loss from Freddie's own disclosed cash components ( net_sale_proceeds , mi_recoveries , total_expenses , …) rather than trusting an opaque vendor lgd_time column, and spans a much longer, GFC-through-2025 liquidation-year cycle than the DCR panel. Its overall (DCR-style) constant excess-loss loading comes out at 0.0148 — materially below DCR's 0.0255 (a $0.0107$ absolute gap, ratio ..."
+            },
+            {
+              "title": "4.7 EAD for term loans: deriving the contractual annuity balance B(t)",
+              "node_id": "0051",
+              "start_index": 170,
+              "end_index": 176,
+              "summary": "For an amortising term loan, §12.1 states EAD is \"the projected outstanding balance along the contractual schedule, adjusted for expected prepayment\" — but the project's engine/ead.py deliberately separates these into two independently-owned components: the contractual amortisation path derived here, and prepayment, which lives entirely inside the survival function $S(t)$ from Chapter 3's hazard model (why, and what goes wrong if you don't keep them separate, is §4.10's subject). This section derives the contractual balance $B(t)$ itself. Deriving the level-payment (annuity) balance formula, ..."
+            },
+            {
+              "title": "4.8 Interactive: amortisation balance",
+              "node_id": "0052",
+              "start_index": 177,
+              "end_index": 178,
+              "summary": "The widget below re-implements §4.7's exact closed form in JavaScript for a fixed $B_0=\\$100{,}000$ reference loan, live-recomputing the full remaining-balance path as you move the rate, term, and age sliders. At the defaults (rate 8%, term 20 quarters, age 0) it reproduces the worked example above exactly.",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0053",
+                  "start_index": 177,
+                  "end_index": 178,
+                  "summary": "Push the age slider up while holding rate and term fixed: the plotted path always starts from the current-age balance $B_{\\text{age}}$ and runs to the same fixed maturity ($t=$ term) — watch how a loan already well into its schedule has a visibly steeper (more convex) remaining decline than a fresh loan of the same original term, since it is further into the acceleration phase §4.7's gotcha described. Gotcha — the widget's reference $B_0$ is fixed at $\\$100{,}000$; sliding \"age\" does not change the opening principal. Moving the age slider changes where along the fixed-$B_0$, fixed-term ..."
+                }
+              ]
+            },
+            {
+              "title": "4.9 The revolver CCF: the EUR 14.0m gross-up, step by step",
+              "node_id": "0054",
+              "start_index": 179,
+              "end_index": 182,
+              "summary": "Term loans amortise on a known schedule; revolving facilities (credit cards, overdrafts, undrawn commitments) do not — a borrower can draw down further headroom before default, so EAD must account for exposure that has not yet been drawn. §12.2 defines the mechanism: Definition — credit conversion factor (CCF). For a facility with undrawn headroom, $$ EAD = \\text{Drawn} + CCF\\times(\\text{Limit}-\\text{Drawn}), $$ where the CCF is estimated, from defaulted accounts, as the share of headroom at the observation point that had been drawn by the time of default. Alternatives include loan-equivalent ..."
+            },
+            {
+              "title": "4.10 The double-counting rule, revisited",
+              "node_id": "0055",
+              "start_index": 183,
+              "end_index": 188,
+              "summary": "Chapter 2 §2.6 derived, at the ECL level, why the competing-risk survival $S(t)=\\prod_{k\\le t}(1-\\lambda_k-\\pi_k)$ must never be paired with an EAD path that is also scaled down by prepayment survival — doing so double-counts prepayment (once inside $S(t-1)$, again inside $EAD_t$) and understates lifetime ECL (that worked example: EUR 15,482.15 correct vs EUR 14,533.96 double-counted, a EUR 948.19 / 6.12% understatement). This is exactly why engine/ead.py 's docstring is emphatic that its contractual path is \"deliberately NOT prepayment-scaled\" — the module this chapter has been building all ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch05_vasicek.html",
+      "node_id": "0056",
+      "start_index": 189,
+      "end_index": 189,
+      "summary": "Ch.5 — The Vasicek One-Factor Model (PIT vs TTC) | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 5 — The Vasicek One-Factor Model (PIT vs TTC)",
+      "node_id": "0057",
+      "start_index": 189,
+      "end_index": 221,
+      "summary": "From an asset-value latent factor to the conditional PD curve — deriving, verifying, and calibrating point-in-time credit risk IFRS9 ECL Study-Notes Compendium — Chapter 5 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §8, tests/fixtures/compute_vasicek.py , engine/vasicek.py , outputs/vasicek/vasicek_report.md , and wiki/pages/scenario-layer.md on 2026-07-19. Contents. 5.1 TTC vs PIT: the philosophical distinction 5.2 The one-factor Gaussian asset-value model 5.3 Derivation: from asset value to PD_PIT(Z) 5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC 5.5 Interactive: ...",
+      "nodes": [
+        {
+          "title": "5  The Vasicek One-Factor Model (PIT vs TTC)",
+          "node_id": "0058",
+          "start_index": 190,
+          "end_index": 221,
+          "summary": "Every hazard model in Chapter 3 was fit on historical panel data — it necessarily blends calm years and stressed years into one set of coefficients. IFRS 9 does not want that blend: it wants a probability of default that reflects current and forecast conditions (§5.5.17), not the long-run average. This chapter derives, from first principles, the single most important transformation layer in credit risk modelling — the one that turns a through-the-cycle (TTC) PD into a point-in-time (PIT) PD conditional on where the economy sits in the credit cycle, and (the harder direction) recovers that ...",
+          "nodes": [
+            {
+              "title": "5.1 TTC vs PIT: the philosophical distinction",
+              "node_id": "0059",
+              "start_index": 191,
+              "end_index": 192,
+              "summary": "Before any algebra, the two philosophies this whole chapter reconciles need to be stated precisely — they answer different questions about the same borrower. Through-the-cycle (TTC) PD , $PD_{TTC}$ — the cycle-neutral, long-run average default probability for a grade or portfolio: what you'd predict for a borrower with these characteristics averaged across an entire economic cycle, ignoring whether today happens to be a boom or a recession. Point-in-time (PIT) PD , $PD_{PIT}$ — the default probability conditional on current and forecast economic conditions: higher in a downturn, lower in an ..."
+            },
+            {
+              "title": "5.2 The one-factor Gaussian asset-value model",
+              "node_id": "0060",
+              "start_index": 193,
+              "end_index": 196,
+              "summary": "The Vasicek/ASRF (Asymptotic Single Risk Factor) framework builds PIT conditioning out of a structural story about why a borrower defaults, in the spirit of Merton's model from Chapter 3 (§A9): a borrower defaults when some latent \"asset value\" falls below a threshold. The one-factor model's specific move is to decompose that latent asset value into a part every borrower shares (the economy) and a part unique to each borrower. Definitions (every symbol used from here on). $A_i$ — borrower $i$'s standardised asset return : a latent, unobserved continuous variable (not a literal balance-sheet ..."
+            },
+            {
+              "title": "5.3 Derivation: from asset value to PD_PIT(Z)",
+              "node_id": "0061",
+              "start_index": 197,
+              "end_index": 202,
+              "summary": "This is the derivation flagged explicitly in the campaign brief (backlog D-5) — the notes present $PD_{PIT}(Z)=\\Phi\\big[(\\Phi^{-1}(PD_{TTC})-\\sqrt{\\rho}Z)/\\sqrt{1-\\rho}\\big]$ as a given formula; every step from the asset-value representation to that formula is shown here, with no skipped algebra. Derivation — the Vasicek conditional-PD formula. 1. $A_i$ is standard normal unconditionally. $A_i=\\sqrt{\\rho}Z+\\sqrt{1-\\rho}\\,\\varepsilon_i$ is a linear combination of two independent standard normals, hence itself normal, with mean ..."
+            },
+            {
+              "title": "5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC",
+              "node_id": "0062",
+              "start_index": 203,
+              "end_index": 205,
+              "summary": "The model would be useless as a TTC-consistent transformation layer if averaging $PD_{PIT}(Z)$ back over the cycle did not return exactly $PD_{TTC}$. This section proves that it does, analytically, then verifies it two independent numerical ways. With $Z\\sim N(0,1)$ and $PD_{PIT}(Z)$ as derived in §5.3, $$ \\mathbb{E}_Z\\big[PD_{PIT}(Z)\\big] = PD_{TTC}. $$ Proof — via the tower property / law of total probability. 1."
+            },
+            {
+              "title": "5.5 Interactive: PD_PIT vs Z & ρ, and a TTC↔PIT converter",
+              "node_id": "0063",
+              "start_index": 206,
+              "end_index": 208,
+              "summary": "The widget below re-implements §5.3's boxed formula in JavaScript — an independent normal CDF/inverse-CDF pair, not a lookup table — and recomputes the curve and the marked-point table live as you drag $PD_{TTC}$ and $\\rho$. At the defaults ($PD_{TTC}=2\\%$, $\\rho=0.12$) the six marked points reproduce §5.3's golden-fixture table exactly, annotated as dots on the curve. Below it, a small converter box runs the §5.6 INVERSE direction: given an observed rate and a TTC anchor, recover the implied $Z$.",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the sliders",
+                  "node_id": "0064",
+                  "start_index": 207,
+                  "end_index": 207,
+                  "summary": "At the defaults the marked-point table below the curve reproduces tests/fixtures/compute_vasicek.py 's golden values exactly (e.g. $PD_{PIT}(-2.0)=7.34\\%$, $PD_{PIT}(+2.0)=0.17\\%$) — this page's JS normal-CDF/PPF are independent re-implementations of the same closed form the Python fixture computes with scipy.stats.norm , so agreement to 2 displayed decimals cross-checks both."
+                },
+                {
+                  "title": "TTC↔PIT converter",
+                  "node_id": "0065",
+                  "start_index": 207,
+                  "end_index": 207,
+                  "summary": "Forward direction (TTC→PIT) is the widget above. This box runs the INVERSE direction §5.6 needs: given an observed default rate $DR$ for some period and a TTC anchor, invert §5.3's formula to recover the implied systematic factor $Z$ — the same invert_z operation engine/vasicek.py runs once per panel quarter."
+                },
+                {
+                  "title": "Recover Z from an observed rate",
+                  "node_id": "0066",
+                  "start_index": 207,
+                  "end_index": 208,
+                  "summary": "The converter's defaults are the panel's own 2008Q1 row ( outputs/vasicek/z_path.csv : observed $DR=4.15\\%$, composition-adjusted anchor $PD_{TTC,t}=1.67\\%$, calibrated $\\rho=0.0227$) — it recovers $Z\\approx-2.74$, the credit-cycle trough §5.7 reports. Push the observed rate toward the anchor value and watch $Z\\to 0$; push $\\rho$ toward 0 and watch small differences between observed and anchor blow $|Z|$ up (the $1/\\sqrt{\\rho}$ factor in the inversion formula), which is exactly the mechanism §5.7's Belkin calibration exploits to pin down $\\rho$. Gotcha — the flagship widget's curve is NOT the ..."
+                }
+              ]
+            },
+            {
+              "title": "5.6 Z-recovery on the panel: why raw counts mislead",
+              "node_id": "0067",
+              "start_index": 209,
+              "end_index": 212,
+              "summary": "Sections 5.1–5.5 assumed $Z$ was handed to you. In practice nobody hands you the cycle factor — it has to be RECOVERED from a history of observed default rates by inverting §5.3's formula. This section walks the recovery pipeline actually run on this project's 50k-loan mortgage panel ( engine/vasicek.py , method documented in outputs/vasicek/vasicek_report.md )."
+            },
+            {
+              "title": "5.7 Belkin calibration and the credit cycle",
+              "node_id": "0068",
+              "start_index": 213,
+              "end_index": 218,
+              "summary": "§5.6 recovered $Z_t$ GIVEN a value of $\\rho$. Belkin, Suchower & Forest (1998)'s answer: calibrate $\\rho$ so that the recovered path's own variance matches the model's premise that $Z\\sim N(0,1)$, i.e. $\\mathrm{Var}(Z)=1$. Solve for the $\\rho$ that makes $\\mathrm{Var}(Z_t(\\rho))=1$ (sample variance, ddof=1, over all periods) where $Z_t(\\rho)$ is §5.6's inversion formula evaluated at that $\\rho$."
+            },
+            {
+              "title": "5.8 The damped hybrid PIT/TTC variant",
+              "node_id": "0069",
+              "start_index": 219,
+              "end_index": 221,
+              "summary": "A fully PIT PD ($\\alpha=1$, §5.3's formula as derived) swings all the way with the cycle — useful for ECL, but sometimes a bank wants a PRESENTATION dial that trades some cycle pass-through for smoothness (rating stability, capital-planning narratives). The Aguais/Forest \"dual ratings\" convention formalises this as a single damping parameter. Damped hybrid PD. $$ PD_{\\text{hybrid}}(Z,\\alpha) = PD_{PIT}(\\alpha Z), \\qquad \\alpha\\in[0,1]. $$ $\\alpha=1$ recovers the fully PIT curve of §5.3; $\\alpha=0$ collapses to $PD_{PIT}(0)$, a CYCLE-NEUTRAL PD that is constant regardless of where $Z$ actually ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch06_scenarios_satellite_jensen.html",
+      "node_id": "0070",
+      "start_index": 222,
+      "end_index": 222,
+      "summary": "Ch.6 — Scenarios, Satellite Models & Jensen's Inequality | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 6 — Scenarios, Satellite Models & Jensen's Inequality",
+      "node_id": "0071",
+      "start_index": 222,
+      "end_index": 287,
+      "summary": "From DFAST supervisory paths through a fitted satellite model to a proof that probability-weighted ECL exceeds single-path ECL IFRS9 ECL Study-Notes Compendium — Chapter 6 of 13. Compiled from knowledge/sources/ifrs9_credit_risk_notes.md §9, tests/fixtures/compute_scenarios.py , engine/scenarios.py , engine/satellite.py , agent/tools_tier1.py , outputs/scenarios/scenarios_report.md , outputs/satellite/satellite_report.md , outputs/scenario_ecl/scenario_ecl_report.md , and docs/api_contract.md on 2026-07-19. Contents. 6.1 Why a single base case is not enough 6.2 DFAST ingestion and the ...",
+      "nodes": [
+        {
+          "title": "6  Scenarios, Satellite Models & Jensen's Inequality",
+          "node_id": "0072",
+          "start_index": 223,
+          "end_index": 287,
+          "summary": "Chapter 5 built the machine that turns a systematic factor $Z$ into a point-in-time PD — but never said where $Z$ comes from when you are trying to look forward rather than recover it from history. IFRS 9 §5.5.17(c) requires ECL to reflect reasonable and supportable information about future conditions, and §5.5.18/B5.5.42 goes further: it must be an unbiased, probability-weighted estimate evaluated across a range of outcomes, not the single most-likely path. This chapter builds the whole forward-looking rung end to end — ingesting supervisory stress-test paths, fitting a small regression that ...",
+          "nodes": [
+            {
+              "title": "6.1 Why a single base case is not enough",
+              "node_id": "0073",
+              "start_index": 225,
+              "end_index": 227,
+              "summary": "Every hazard model up to this point produces one number per loan-quarter. Feed it one macro path and you get one ECL. IFRS 9's answer to \"which macro path?\" is deliberately not \"the most likely one\" — it is several , weighted by their probability of occurring."
+            },
+            {
+              "title": "6.2 DFAST ingestion and the rebasing convention",
+              "node_id": "0074",
+              "start_index": 228,
+              "end_index": 234,
+              "summary": "Hand-rolling three internally-coherent macro paths (unemployment, house prices, GDP and rates all moving together the way a real recession or boom actually moves them) is genuinely hard to do credibly from scratch. The project's answer: ingest the shapes a supervisor already designed. DFAST (the Dodd-Frank Act Stress Test) publishes 28-variable macro paths built for exactly this kind of coherence check — data/ingest/dfast.py parses the 2026 vintage's Baseline and Severely-Adverse 13-quarter CSVs (2026Q1–2029Q1) plus a 200-quarter historic-actuals file, and maps four of those columns onto the ...",
+              "nodes": [
+                {
+                  "title": "The rebasing problem: two clocks that do not overlap",
+                  "node_id": "0075",
+                  "start_index": 229,
+                  "end_index": 234,
+                  "summary": "The project's DCR loan panel ends its own clock at $t=60\\sim$2015Q1 (calendar-verified against FRED UNRATE, §5.7) — but the DFAST 2026 paths run 2026Q1–2029Q1, eleven years later. Splicing DFAST's raw levels onto the panel would create a nonsensical jump (unemployment does not teleport from a 2015 value to whatever the 2026 print happens to be) purely as an artefact of two unrelated calendars meeting. DFAST's real value is not its absolute levels in 2026 — it is the coherent multivariate shape a supervisor designed (unemployment, HPI, GDP and rates moving together the way a real stress ..."
+                }
+              ]
+            },
+            {
+              "title": "6.3 The judgmental upside construction",
+              "node_id": "0076",
+              "start_index": 235,
+              "end_index": 237,
+              "summary": "DFAST publishes a Baseline and a Severely-Adverse path — no upside. IFRS 9's probability-weighted range of outcomes still needs one (the project adopts three named scenarios: base/down/up), so an upside has to be constructed rather than ingested. The damped-mirror convention. $$ \\delta^{up}_h(c) \\;=\\; \\kappa \\cdot \\delta^{down}_h(c), \\qquad \\kappa = -0.35 \\ \\text{(the damping factor)}, $$ applied to the SAME severely-adverse deltas $\\delta^{down}_h(c)$ §6.2 already computed, for every concept $c$ and every horizon quarter $h$."
+            },
+            {
+              "title": "6.4 Extending to 40 quarters: the R&S window and reversion",
+              "node_id": "0077",
+              "start_index": 238,
+              "end_index": 241,
+              "summary": "§6.2–6.3 built 13 quarters of rebased path per scenario — the length of the DFAST supervisory window. A mortgage book's remaining contractual life can run far longer than 13 quarters, and IFRS 9's own §9.4 R&S-horizon logic (Chapter 2's gross-up factor is the other half of this same idea) is explicit that forward-looking macro information is only reasonable and supportable over a limited window — commonly two to three years — beyond which forecast errors compound and instability sets in. The standard response, applied here: condition PIT over the R&S window, then revert to the long-run TTC ..."
+            },
+            {
+              "title": "6.5 The satellite macro-link model",
+              "node_id": "0078",
+              "start_index": 242,
+              "end_index": 254,
+              "summary": "None of that is usable by the Vasicek machinery from Chapter 5 until it is converted into a $Z$ path — the \"satellite\" (macro-link) model is exactly that converter: a small regression of the RECOVERED credit-cycle factor $Z_t$ (Chapter 5's Belkin inversion) on lagged macro drivers, standard architecture per §9.1: \"regress a credit index… on macro drivers (GDP growth, unemployment, HPI, rates)\". The fitted satellite model. $$ Z_t \\;=\\; -1.6942 \\;+\\; 13.6424\\cdot hpi\\_growth\\_lag1_t \\;+\\; 0.7302\\cdot gdp\\_growth\\_lag2_t \\;+\\; e_t $$ OLS, $n=57$ quarters (2001Q1–2015Q1 — the common estimation ...",
+              "nodes": [
+                {
+                  "title": "Variable cards (Requirement 12 — every macro term, full honesty)",
+                  "node_id": "0079",
+                  "start_index": 244,
+                  "end_index": 246,
+                  "summary": "Both regressors below are curated from the same source of truth the app's own /api/model/macro_glossary endpoint serves ( docs/api_contract.md , app/api/main.py ) — the notes and the app cannot silently disagree on what these terms mean. Variable card — hpi_growth_lag1 (National HPI, log-growth, 1-quarter lag). The DCR panel's own national House Price Index series."
+                },
+                {
+                  "title": "Stationarity and lag-selection hygiene",
+                  "node_id": "0080",
+                  "start_index": 247,
+                  "end_index": 254,
+                  "summary": "Before any coefficient can be trusted, the driver candidates need the standard time-series hygiene check §9.1 lists: ADF (null: unit root) and KPSS (null: stationarity) run together (they are complementary, not redundant — agreement between opposite-null tests is much stronger evidence than either alone), Durbin-Watson for residual autocorrelation, and AIC-based lag/spec selection. series $n$ ADF $p$ KPSS $p$ verdict $Z$ (recovered) 60 0.521 0.033 unit root — I(1); difference before use $uer$ level 60 0.458 0.018 unit root — I(1); difference before use $duer$ (first difference) 59 0.222 0.100 ..."
+                }
+              ]
+            },
+            {
+              "title": "6.6 The missing UER term and the coherent-shock convention",
+              "node_id": "0081",
+              "start_index": 255,
+              "end_index": 263,
+              "summary": "§6.5's chosen satellite spec is $Z_t=f(hpi\\_growth\\_lag1,\\ gdp\\_growth\\_lag2)$ — unemployment does not appear anywhere in it. That has a real, load-bearing consequence for anyone (a human analyst, or the project's own Copilot agent) wanting to ask \"what if unemployment rose by 2pp?\". Derivation — why a univariate UER shock cannot reach $Z$. 1. $Z_t$ is an EXPLICIT function of exactly two inputs: $Z_t = -1.6942+13.6424\\cdot hpi\\_growth\\_lag1_t+0.7302\\cdot gdp\\_growth\\_lag2_t$ (§6.5).",
+              "nodes": [
+                {
+                  "title": "The solution: shock along the DFAST severe-minus-base co-movement direction",
+                  "node_id": "0082",
+                  "start_index": 257,
+                  "end_index": 263,
+                  "summary": "Since DFAST's supervisory paths already encode a jointly-plausible multivariate co-movement (§6.2 — that coherence is the entire reason the project ingests DFAST rather than hand-rolling paths), the fix reuses that structure: a \"UER shock\" is implemented not as a UER-only move, but as a co-moving shift of ALL THREE concepts, in the SAME relative proportions the DFAST severely-adverse path itself moves them. Define the co-movement loading of concept $c$ onto a $1$-unit move of the named shock variable $v$ as $$ \\beta_{v\\to c} \\;=\\; \\frac{\\langle \\delta_v,\\ \\delta_c\\rangle}{\\langle \\delta_v,\\ ..."
+                }
+              ]
+            },
+            {
+              "title": "6.7 Jensen's inequality, proved",
+              "node_id": "0083",
+              "start_index": 264,
+              "end_index": 271,
+              "summary": "§6.1 quoted the theorem: \"ECL is a convex function of the macro state… hence $\\mathbb{E}[f(X)]\\ge f(\\mathbb{E}[X])$\". This section proves BOTH halves that quote asserts without deriving: Jensen's inequality itself, and the specific claim that ECL is convex in $Z$ — the flagged expansion, backlog D-6.",
+              "nodes": [
+                {
+                  "title": "Lemma — averaging the macro paths IS averaging $Z$ (because the satellite is linear)",
+                  "node_id": "0084",
+                  "start_index": 264,
+                  "end_index": 264,
+                  "summary": "Let $x_{1,h,s}, x_{2,h,s}$ denote scenario $s$'s $hpi\\_growth\\_lag1$, $gdp\\_growth\\_lag2$ at horizon $h$, and $Z_{h,s}=c+b_1 x_{1,h,s}+b_2 x_{2,h,s}$ the satellite (§6.5), with weights $w_s$, $\\sum_s w_s=1$. 1. The weighted-AVERAGE macro path's own driver values at $h$ are, by definition, $\\bar x_{1,h}=\\sum_s w_s x_{1,h,s}$ and $\\bar x_{2,h}=\\sum_s w_s x_{2,h,s}$ (§6.1's $\\overline{path}$ definition). 2. Evaluate the satellite AT that averaged path: $Z(\\bar{path})_h = c+b_1\\bar x_{1,h}+b_2\\bar x_{2,h}$. 3."
+                },
+                {
+                  "title": "Part (a) — Jensen's inequality for a general convex function",
+                  "node_id": "0085",
+                  "start_index": 265,
+                  "end_index": 266,
+                  "summary": "A twice-differentiable function $f$ is CONVEX on an interval if $f''(x)\\ge0$ for every $x$ in that interval. Equivalently (the definition the proof below uses): at every point $\\mu$, the tangent line $\\ell(x)=f(\\mu)+f'(\\mu)(x-\\mu)$ lies entirely ON OR BELOW the curve: $\\ell(x)\\le f(x)$ for all $x$ — a convex function always sits above its own tangent lines. Derivation — Jensen's inequality via the supporting-line argument. 1."
+                },
+                {
+                  "title": "Part (b) — $PD_{PIT}(Z)$ is convex in $Z$ (the Vasicek second derivative)",
+                  "node_id": "0086",
+                  "start_index": 267,
+                  "end_index": 268,
+                  "summary": "Chapter 5 derived $PD_{PIT}(Z)=\\Phi\\!\\big((c-\\sqrt{\\rho}Z)/\\sqrt{1-\\rho}\\big)$, $c=\\Phi^{-1}(PD_{TTC})$. Rewrite it in a form the calculus below is easiest to carry through: Derivation — the sign of $\\partial^2 PD_{PIT}/\\partial Z^2$. 1. Let $A=\\dfrac{c}{\\sqrt{1-\\rho}}$ and $B=\\sqrt{\\dfrac{\\rho}{1-\\rho}}>0$ (both constants, given $PD_{TTC}$ and $\\rho$)."
+                },
+                {
+                  "title": "Part (c) — convexity survives the scale-up from $PD_{PIT}$ to ECL",
+                  "node_id": "0087",
+                  "start_index": 269,
+                  "end_index": 271,
+                  "summary": "Derivation. 1. $ECL(Z) = EAD\\cdot LGD\\cdot PD_{PIT}(Z)$ (Chapter 2's ECL formula, holding $EAD$ and $LGD$ fixed at their scenario-invariant values — §6.9 returns to exactly this simplification for the project's own book). 2. $EAD\\cdot LGD$ is a POSITIVE constant with respect to $Z$ (both are positive quantities, and neither depends on $Z$ under this simplification), so $$ \\frac{d^2 ECL}{dZ^2} = EAD\\cdot LGD\\cdot\\frac{d^2 PD_{PIT}}{dZ^2}. $$ 3. Since $EAD\\cdot LGD>0$, the sign of $d^2 ECL/dZ^2$ is IDENTICAL to the sign of $d^2 PD_{PIT}/dZ^2$ — multiplying a function by a positive constant ..."
+                }
+              ]
+            },
+            {
+              "title": "6.8 The toy fixture: quantifying a 1.9× understatement",
+              "node_id": "0088",
+              "start_index": 272,
+              "end_index": 276,
+              "summary": "§6.7 proved the DIRECTION of the Jensen gap. This section quantifies it on the source notes' own toy 3-scenario example — every step, every intermediate value, pasted directly from tests/fixtures/compute_scenarios.py 's RESULTS (which reproduces the source notes' own printed §9.2 table to displayed precision). The toy setup (§9.2's worked example). $EAD=$€$100$m, $LGD=40\\%$, $PD_{TTC}=2\\%$, $\\rho=0.12$ — the SAME calibration Chapter 5 §5.3's golden fixture uses, so its already-computed threshold constants carry over unchanged: $c=\\Phi^{-1}(0.02)=-2.053749$, $\\sqrt{\\rho}=0.346410$, ..."
+            },
+            {
+              "title": "6.9 The project's honest 1.035×",
+              "node_id": "0089",
+              "start_index": 277,
+              "end_index": 283,
+              "summary": "§6.8's toy example isolates the Jensen mechanism in its purest, most exaggerated form. Run the SAME logic on the project's own 7,849-loan book, through the SAME frozen ECL engine every other chapter uses, and the gap survives — but it is far smaller. That gap between $1.9\\times$ (toy) and $1.035\\times$ (real book) is itself worth explaining honestly, not glossing over. scenario weight mean $Z$ (13q R&S) UER peak (pp) 12m ECL lifetime ECL reported allowance coverage upside 0.25 −0.85 6.4 27.4 289.6 27.7 1.654% base 0.50 −0.88 6.4 30.2 282.9 30.5 1.820% severe 0.25 −1.55 11.2 47.4 296.2 47.6 ...",
+              "nodes": [
+                {
+                  "title": "Why our ratio is far below the toy's $\\sim1.9\\times$ — the honest decomposition",
+                  "node_id": "0090",
+                  "start_index": 280,
+                  "end_index": 281,
+                  "summary": "Four compounding reasons, all documented, none hidden. Calibrated $\\rho=0.0227$ vs the toy's $0.12$. Chapter 5 §5.7 already established the empirical asset correlation of this panel is roughly $5\\times$ smaller than the toy's illustrative value — §6.7 part (b)'s convexity analysis shows a smaller $\\rho$ pushes the inflection point FURTHER out (more robustly convex in principle) but ALSO makes the $PD_{PIT}$ curve itself far FLATTER in absolute PD terms across the relevant $Z$ range (the same $\\sqrt{\\rho}$ term that scales $Z$'s influence on the numerator), so the same $Z$ spread bends PD — ..."
+                },
+                {
+                  "title": "Weights sensitivity — the governance exhibit §6.1 promised",
+                  "node_id": "0091",
+                  "start_index": 282,
+                  "end_index": 283,
+                  "summary": "weights (base/down/up) reported allowance coverage vs adopted 50/25/25 (adopted) \\$34.0m 2.034% +0.0% 40/30/30 \\$34.8m 2.077% +2.1% 60/20/20 \\$33.3m 1.991% −2.1% Source: outputs/scenario_ecl/scenario_ecl_report.md \"Weights sensitivity\". The swing across two reasonable alternative weightings is small — about $\\pm2.1\\%$ on the reported allowance — next to the gap BETWEEN scenarios themselves (severe vs base is $1.56\\times$ on the allowance, $47.6/30.5$). This is the practical payoff of §6.1's governance framing: since weights are not statistically identified, what matters for audit purposes is ..."
+                }
+              ]
+            },
+            {
+              "title": "6.10 Interactive: scenario weights and a Z-shock explorer",
+              "node_id": "0092",
+              "start_index": 284,
+              "end_index": 287,
+              "summary": "Both widgets below re-implement REAL closed-form formulas in JavaScript — the same Vasicek $PD_{PIT}(Z,\\rho)$ pair Chapter 5's widget uses, and (for the second widget) the satellite equation itself — never a canned lookup table, per the campaign's golden rule.",
+              "nodes": [
+                {
+                  "title": "Widget 1 — scenario weights vs the Jensen gap (the toy fixture, live)",
+                  "node_id": "0093",
+                  "start_index": 285,
+                  "end_index": 285,
+                  "summary": "Drag $w_{up}$ and $w_{down}$; $w_{base}$ is whatever is left, and all three are renormalised to sum to exactly 1 (the same tolerance-then-renormalise convention agent/tools_tier1.py 's reweight_scenarios tool uses). At the defaults ($w_{up}=0.25$, $w_{down}=0.25$, so $w_{base}=0.50$) the readout below reproduces §6.8's golden-fixture values EXACTLY: weighted ECL €$1.74$m, single-path ECL €$0.90$m, ratio $1.93\\times$."
+                },
+                {
+                  "title": "Live widget — drag the weight sliders",
+                  "node_id": "0094",
+                  "start_index": 285,
+                  "end_index": 285,
+                  "summary": "What happens to the Jensen gap, and why? Answer The ratio collapses toward $1.0\\times$ (no gap) — with zero weight on the one scenario whose $Z$ sits deep in the convex region's steep part, the remaining upside/base weights sit close enough together in $Z$-space that $PD_{PIT}$ is nearly linear across the small range actually visited, so Jensen's inequality's bite becomes negligible. This is the SAME mechanism §6.9's decomposition reason 2 describes for the real book's much gentler scenario spread."
+                },
+                {
+                  "title": "Widget 2 — Z-shock explorer (real satellite + Vasicek formulas)",
+                  "node_id": "0095",
+                  "start_index": 286,
+                  "end_index": 286,
+                  "summary": "This widget chains §6.5's fitted satellite equation directly into Chapter 5's Vasicek $PD_{PIT}(Z,\\rho)$ formula, at the project's OWN calibration ($\\rho=0.0227$) and its own flat TTC anchor ($1.3488\\%$, Chapter 5 §5.7). The shock slider moves $uer$ and applies the §6.6 co-movement betas to shift $hpi\\_growth\\_lag1$ and $gdp\\_growth\\_lag2$ coherently away from the panel's own $t=60$ jump-off state — the same mechanism §6.6's worked example walks by hand, now live."
+                },
+                {
+                  "title": "Live widget — drag the shock slider",
+                  "node_id": "0096",
+                  "start_index": 286,
+                  "end_index": 287,
+                  "summary": "This is a PORTFOLIO-LEVEL illustration using the flat composition- adjusted TTC anchor ($1.3488\\%$) — it shows how the portfolio-average PIT PD responds to a coherent macro shock via the exact satellite+Vasicek formula chain. It is NOT a re-implementation of the full per-loan engine (each of the 7,849 loans has its own $\\lambda_{TTC}$, LGD and EAD) — §6.6's worked example already ran that full chain once, by hand, reproducing the recorded \\$30.454m$\\to$\\$31.694m result exactly; this widget lets you explore the DIRECTION and rough SCALE of the PD response to shocks of different sizes, using ..."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch07_challengers.html",
+      "node_id": "0097",
+      "start_index": 288,
+      "end_index": 288,
+      "summary": "Ch.7 — Challengers: The Champion-Challenger Governance Pattern | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 7 — Challengers: The Champion-Challenger Governance Pattern",
+      "node_id": "0098",
+      "start_index": 289,
+      "end_index": 328,
+      "summary": "Why a model that loses still earns its keep — the DCR MLP challenger, the like-for-like law, and reading a scorecard honestly IFRS9 ECL Study-Notes Compendium — Chapter 7 of 13. Compiled from outputs/challenger/scorecard.md , analysis/fit_challenger.py , challenger/mlp.py , engine/hazard.py , tests/fixtures/compute_validation.py , wiki/memory/log.md , and this chapter's own recompute ( notes/assets/img/ch07/recompute_challenger_scoring.py ) on 2026-07-19. Contents. 7.1 The champion-challenger governance pattern 7.2 What evidence would promote a challenger — the promotion bar 7.3 The DCR MLP ...",
+      "nodes": [
+        {
+          "title": "7  Challengers: The Champion-Challenger Governance Pattern",
+          "node_id": "0099",
+          "start_index": 290,
+          "end_index": 328,
+          "summary": "Chapter 3 built and trusted a cloglog hazard model with a hand-engineered age spline and a hand-built LTV×unemployment interaction. Every one of those design choices was a human decision — an analyst deciding that default hazard is non-monotone in loan age, and that collateral risk and macro stress compound rather than add. This chapter asks the obvious follow-up question a model-risk function is supposed to ask: if a flexible learner is given the same raw information and no hints, does it find the same structure on its own?",
+          "nodes": [
+            {
+              "title": "7.1 The champion-challenger governance pattern",
+              "node_id": "0100",
+              "start_index": 291,
+              "end_index": 293,
+              "summary": "Model-risk practice (the discipline behind supervisory guidance such as the Federal Reserve's SR 11-7, and echoed in IFRS 9's own governance expectations picked up again in Chapter 13) asks for effective challenge : every production model needs a critical, technically competent, empowered counter-voice — not a rubber stamp, and not merely a one-off validation memo filed away and forgotten. A champion-challenger programme operationalises effective challenge as a recurring cycle rather than a single event. Champion — the model whose output actually drives the ledger: in this project, the frozen ..."
+            },
+            {
+              "title": "7.2 What evidence would promote a challenger — the promotion bar",
+              "node_id": "0101",
+              "start_index": 294,
+              "end_index": 296,
+              "summary": "\"The challenger scored lower this cycle\" is not, by itself, the reason production stays with the champion — the reason is that nothing on this list was cleared . Listing the bar explicitly is what turns \"challenger never champion\" from a slogan into an auditable governance rule. The promotion bar — what would have to be true."
+            },
+            {
+              "title": "7.3 The DCR MLP challenger: architecture & the like-for-like law",
+              "node_id": "0102",
+              "start_index": 297,
+              "end_index": 302,
+              "summary": "The challenger is a small feed-forward network (an MLP, multi-layer perceptron) fit on the exact same loan-quarter panel Chapter 3's champion uses, with the exact same one-quarter-ahead default_event target. champion challenger form cloglog GLM, natural cubic spline in age (df=5), centered LTV×UER interaction MLP (64, 32) hidden units, ReLU, dropout 0.2, AdamW weight decay 0.0001 class imbalance none needed (GLM likelihood) pos_weight-weighted BCE + prior correction (pos_weight = 35.9) early stopping n/a (IRLS convergence) by TIME: fit t≤32, validate t=33..40 (2008Q2–2010Q1); best epoch 8 ..."
+            },
+            {
+              "title": "7.4 Scorecard read: discrimination (AUC)",
+              "node_id": "0103",
+              "start_index": 303,
+              "end_index": 305,
+              "summary": "One-quarter-ahead default AUC, train (t≤40) and out-of-time (t=41..60), for both models. This chapter's own recompute ( notes/assets/img/ch07/recompute_challenger_scoring.py — champion refit via engine.hazard.fit_default_hazard , challenger re-scored, not retrained, from outputs/challenger/mlp_challenger.pt ) reproduces every value in scorecard.md to the 4th decimal. Worked numbers — recomputed, not retyped. model train AUC (t≤40) OOT AUC (t=41..60) train−OOT gap champion 0.7476 0.6609 0.0867 challenger 0.7632 0.6417 0.1214 delta (challenger − champion) +0.0156 −0.0191 +0.0347 Rounded to the ..."
+            },
+            {
+              "title": "7.5 Calibration: reliability — champion vs challenger",
+              "node_id": "0104",
+              "start_index": 306,
+              "end_index": 309,
+              "summary": "A reliability diagram bins scored rows into quantiles of predicted hazard and plots each bin's MEAN predicted hazard against its mean OBSERVED event rate. Perfect calibration sits on the 45-degree diagonal; points above the diagonal mean the model UNDER-predicts in that bin (observed exceeds predicted), points below mean it OVER-predicts. Exhibit 7.3 — Reliability (20 score-quantile bins), champion vs challenger, train and out-of-time.",
+              "nodes": [
+                {
+                  "title": "Interactive: reliability-curve comparator",
+                  "node_id": "0105",
+                  "start_index": 309,
+                  "end_index": 309,
+                  "summary": "Toggle each model on/off and switch between the train and out-of-time splits — every point plotted below is the SAME 20-bin recomputed data tabulated above and charted in Exhibit 7.3 (linear axes here, rather than the exhibit's log-log, for direct visual comparison against the diagonal at typical portfolio scale)."
+                },
+                {
+                  "title": "Live widget — reliability-curve comparator (real 20-bin data, this chapter's own recompute)",
+                  "node_id": "0106",
+                  "start_index": 309,
+                  "end_index": 309,
+                  "summary": "Gotcha — \"well calibrated on average\" and \"well calibrated\" are different claims. A model whose book-level predicted total equals its book-level observed total can still be badly mis-calibrated at the loan level, systematically over-pricing some segment of the book and under-pricing another by an equal and offsetting amount. Any absolute (not just rank-ordering) use of a PD — ECL itself, most obviously — is exposed to this even when a single summary ratio looks reassuring; the fix is always to check calibration bin-by-bin (or segment-by-segment), never by the portfolio mean alone."
+                }
+              ]
+            },
+            {
+              "title": "7.6 Stability: PSI, train→OOT",
+              "node_id": "0107",
+              "start_index": 310,
+              "end_index": 316,
+              "summary": "The Population Stability Index (PSI) measures how much a score DISTRIBUTION has shifted between two populations — here, the training-time score distribution vs the out-of-time score distribution, for each model separately. Derivation — PSI's band-by-band formula, from its KL-divergence motivation. 1. For two discrete distributions $P$ (a baseline/expected population) and $Q$ (a current/actual population) split into the same $n$ bands with shares $p_i,q_i$, the Kullback–Leibler divergence $D_{KL}(Q\\Vert P)=\\sum_i q_i\\ln(q_i/p_i)$ measures how surprised you'd be seeing $Q$'s data if you ..."
+            },
+            {
+              "title": "7.7 Interpretability for nonlinear models: permutation importance, PDP, and the SHAP-dropped decision",
+              "node_id": "0108",
+              "start_index": 317,
+              "end_index": 321,
+              "summary": "A GLM's coefficients are self-interpreting (Chapter 3's hazard-ratio reading applies directly). An MLP's weights are not — interpretability has to be reconstructed from the model's INPUT-OUTPUT behaviour rather than read off its parameters. Permutation importance — for a fitted model and a held-out set, randomly shuffle (permute) one feature (or a block of features) across rows, breaking its relationship with the target while leaving its marginal distribution untouched, and measure how much the evaluation metric (OOT AUC here) drops.",
+              "nodes": [
+                {
+                  "title": "The SHAP-dropped decision — an engineering-tradeoff lesson",
+                  "node_id": "0109",
+                  "start_index": 320,
+                  "end_index": 321,
+                  "summary": "The original project plan called for SHAP (Shapley-value attribution) alongside the MLP challenger and out-of-time scorecard. It was dropped during Day 3 of the build, recorded verbatim in the project's own handoff memory: Recorded decision. \" Torch from PyPI (cu126 index TLS-blocked; decision), shap dropped (numba/np2.5 conflict; permutation importance+PDP instead). \" — wiki/memory/log.md , Day 3 handoff entry. SHAP's exact-computation paths pull in numba as a transitive dependency for JIT-compiled kernels; numba pins compatible numpy versions tightly, and lagged behind this project's numpy ..."
+                }
+              ]
+            },
+            {
+              "title": "7.8 The seasoning-hump-rediscovery check",
+              "node_id": "0110",
+              "start_index": 322,
+              "end_index": 324,
+              "summary": "The champion's age effect is a DELIBERATE, hand-built natural cubic spline (df=5) — encoding the analyst's prior that default hazard rises then falls with loan age (the \"seasoning hump\", first introduced in Chapter 3's empirical hazard-by-age exhibit, peaking around 10–12 quarters on book). The challenger receives raw loan_age as a single unconstrained input, with no spline basis, no monotonicity constraint, no hint of any hump. If the hump is a real structural feature of the DATA rather than an artefact of the champion's chosen basis, a sufficiently flexible learner given the same raw ..."
+            },
+            {
+              "title": "7.9 Interactive: AUC intuition — score separation → live ROC",
+              "node_id": "0111",
+              "start_index": 325,
+              "end_index": 327,
+              "summary": "Every AUC number in this chapter (0.6609, 0.6417, and the rest) is a single scalar summarising an entire ROC curve. This section builds the intuition for what that scalar actually MEANS in terms of how separated two score distributions are, using the simplest case with a clean closed form: two Gaussian score distributions of equal variance. Proposition (Mann-Whitney / concordance interpretation of AUC).",
+              "nodes": [
+                {
+                  "title": "Live widget — drag the separation slider",
+                  "node_id": "0112",
+                  "start_index": 327,
+                  "end_index": 327,
+                  "summary": "The widget computes AUC TWO independent ways at every slider position — the closed form $\\Phi(d/\\sqrt2)$, and trapezoidal integration of the numerically swept ROC curve itself — and displays both in the readout box below the plot; they agree to within numerical-integration error at every setting, the same style of dual cross-check Chapter 5 uses for the Vasicek anchor property. Gotcha — real score distributions are never exactly Gaussian, and this widget does not claim they are. The clean closed form $\\Phi(d/\\sqrt2)$ is a teaching device for building intuition about the RELATIONSHIP between ..."
+                }
+              ]
+            },
+            {
+              "title": "7.10 Forward pointer: Chapter 12's SFLLD LSTM challenger",
+              "node_id": "0113",
+              "start_index": 328,
+              "end_index": 328,
+              "summary": "This chapter's MLP asked a narrow, rigorously like-for-like question: given the EXACT SAME 12 raw covariates the champion uses, does a flexible cross-sectional learner find the same structure? Chapter 12 runs a structurally different challenger experiment against the Freddie Mac SFLLD hazard baseline (AUC 0.8536 train / 0.6847 OOT): an LSTM (sequence model) given each loan's trailing 24-month DELINQUENCY-PATH history — a feature the champion hazard does not use AT ALL, not merely uses less flexibly. The result there is dramatic (LSTM OOT AUC 0.9925, a +0.3078 delta) precisely BECAUSE it is ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch08_the_agent.html",
+      "node_id": "0114",
+      "start_index": 329,
+      "end_index": 329,
+      "summary": "Ch.8 — The Agent (LangGraph Copilot) | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 8 — The Agent (LangGraph Copilot)",
+      "node_id": "0115",
+      "start_index": 329,
+      "end_index": 394,
+      "summary": "A grounded, three-tier agent that never computes a number itself — reading the router, the guard stack, and the sandbox that let it write code safely IFRS9 ECL Study-Notes Compendium — Chapter 8 of 13. Compiled from agent/graph.py , agent/tools_tier1.py , agent/tools_tier2.py , agent/tier3_retrieval.py , agent/mcp_server.py , wiki/pages/agent-layer.md , outputs/agent_log/*.jsonl , outputs/demo/*.json , outputs/gate/reasoned_route_gate.md , tests/test_tier2.py , and live reproduction against the local engine on 2026-07-19. Contents. 8.1 The governing rule and the three-tier split 8.2 Tier-1: ...",
+      "nodes": [
+        {
+          "title": "8  The Agent (LangGraph Copilot)",
+          "node_id": "0116",
+          "start_index": 331,
+          "end_index": 394,
+          "summary": "Chapters 1–7 built a frozen, deterministic IFRS 9 ECL engine and validated it exhaustively. This chapter is about the layer sitting on top of that engine that lets a bank risk analyst ask it questions in plain English — and the entire design problem it solves is trust: a large language model is fluent, but it is also a confident maker-upper of plausible-sounding numbers. The project's answer, built across four phases (Day 4's LangGraph router and four Tier-1 tools; a stretch phase adding Tier-3 documentation retrieval and an MCP server; App v2 adding the Tier-2 sandboxed code interpreter; and ...",
+          "nodes": [
+            {
+              "title": "8.1 The governing rule and the three-tier split",
+              "node_id": "0117",
+              "start_index": 332,
+              "end_index": 334,
+              "summary": "The governing rule (verbatim, agent/graph.py module docstring). \"THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic and never states a fact from its own memory. Every NUMBER in every Tier-1 answer comes from the frozen engine via the four Tier-1 tools in agent/tools_tier1.py . Every CLAIM in a Tier-3 ( query_model_docs ) answer comes from a retrieved wiki/knowledge-corpus passage, cited."
+            },
+            {
+              "title": "8.2 Tier-1: four validated tools",
+              "node_id": "0118",
+              "start_index": 335,
+              "end_index": 349,
+              "summary": "Tier-1 ( agent/tools_tier1.py ) is four pure, deterministic Python functions the router may call: shock_macro , reweight_scenarios , rerun_ecl , decompose_waterfall . Each has a pydantic argument model with extra=\"forbid\" — malformed or extraneous arguments raise ValidationError BEFORE any engine code runs, and the router never gets a second chance to guess: a validation failure collapses straight to refusal ( decide_route , §8.5). Every one of the six heavy artifacts these tools need (fitted hazard and LGD models, recovered systematic factor Z , the fitted satellite, the DFAST scenario set, ...",
+              "nodes": [
+                {
+                  "title": "shock_macro — the coherent-shock convention",
+                  "node_id": "0119",
+                  "start_index": 338,
+                  "end_index": 340,
+                  "summary": "shock_macro(var, shock, shape) perturbs the base scenario's macro path and reruns the satellite→Z→PIT→ECL chain (Chapters 5–6) for the t=60 book. The interesting design decision is what happens to a UNIVARIATE shock: the project's fitted satellite is $Z=f(\\text{hpi\\_growth\\_lag1},\\ \\text{gdp\\_growth\\_lag2})$ — the unemployment driver was EXCLUDED by the economic-sign governance constraint on this one-cycle panel (Chapter 6, outputs/satellite/ satellite_report.md ). A UER-only path move would therefore be entirely invisible to the credit-cycle factor $Z$ — not because unemployment doesn't ..."
+                },
+                {
+                  "title": "reweight_scenarios",
+                  "node_id": "0120",
+                  "start_index": 341,
+                  "end_index": 341,
+                  "summary": "reweight_scenarios(w_up, w_base, w_down) recomputes the weighted allowance from the three CACHED per-scenario ECL totals (no re-run) and reports the Jensen ratio — weighted allowance divided by the allowance AT the weighted-average macro path (Chapter 6's Jensen's-inequality gap, made interactively queryable). Recorded exchange — reweight_scenarios(0.3, 0.4, 0.3) . Audit-log entry, quoted verbatim from outputs/agent_log/tool_calls.jsonl (seq 2): {\"tool\": \"reweight_scenarios\", \"args\": {\"w_up\": 0.3, \"w_base\": 0.4, \"w_down\": 0.3}, \"headline\": \"weights up/base/down = 0.30/0.40/0.30: weighted ..."
+                },
+                {
+                  "title": "rerun_ecl",
+                  "node_id": "0121",
+                  "start_index": 342,
+                  "end_index": 344,
+                  "summary": "rerun_ecl(segment) filters the cached per-loan scenario books by segment ( all , stage1 , stage2 , stage3 , investor , high_ltv — current updated LTV > 80) and reports the scenario-weighted allowance, stage mix, and share of the total book allowance — pure decomposition of already-computed numbers, no re-run. Recorded exchange — rerun_ecl(\"high_ltv\") . Audit-log entry, outputs/agent_log/ tool_calls.jsonl (seq 3): headline \"segment 'high_ltv' (current updated LTV > 80): 3,201 loans, balance \\$756.7m, scenario-weighted allowance \\$18.9m (55.6% of the book allowance), coverage 2.50%\" ."
+                },
+                {
+                  "title": "decompose_waterfall",
+                  "node_id": "0122",
+                  "start_index": 345,
+                  "end_index": 349,
+                  "summary": "decompose_waterfall(t0, t1) runs the FROZEN engine's movement_decomposition (Chapter 2) between two rung-1 snapshots: opening + stage_migration + remeasurement + derecognitions + new_loans = closing, an identity asserted inside the frozen engine itself. Recorded exchange — decompose_waterfall(20, 40) . Audit-log entry, outputs/ agent_log/tool_calls.jsonl (seq 4): headline \"allowance waterfall t=20 (2005Q1) -> t=40 (2010Q1): opening \\$24.5m, stage migration +3.9m, remeasurement +26.0m, derecognitions -21.2m, new loans +999.4m, closing \\$1,032.6m\" ."
+                }
+              ]
+            },
+            {
+              "title": "8.3 Tier-2: the sandboxed",
+              "node_id": "0123",
+              "start_index": 350,
+              "end_index": 361,
+              "summary": "analyze_data Tier-1's four tools cover the questions someone anticipated in advance. Real analysts ask long-tail questions no fixed parameter set covers — \"which FICO band drives the most allowance\", \"top 10 loans by exposure\", \"average LTV of Stage 2 loans\". Tier-2's analyze_data ( agent/ tools_tier2.py ) answers these by letting the LLM WRITE pandas code against three read-only DataFrames ( book , scenarios , z_path — built once from the already-run Tier-1 engine state, documented in full in the module's own docstring) — but the number shown to the user always comes from EXECUTING that ..."
+            },
+            {
+              "title": "8.4 Tier-3:",
+              "node_id": "0124",
+              "start_index": 362,
+              "end_index": 365,
+              "summary": "query_model_docs Tier-1 and Tier-2 answer questions with a NUMBER. Tier-3 ( agent/tier3_retrieval.py ) answers questions about what the project's OWN documentation says — methodology, definitions, design rationale — strictly by retrieving and quoting real passages, with NO LLM involved in the retrieval step itself. Two sources, reused from two existing skills rather than reimplemented: the model-development wiki's typed graph ( .claude/skills/llm-wiki/scripts/wiki_query.py — lexical seed scoring + a 1-hop graph expansion) and the indexed IFRS 9 knowledge corpus ( ..."
+            },
+            {
+              "title": "8.5 The LangGraph router: a three-way scope split",
+              "node_id": "0125",
+              "start_index": 366,
+              "end_index": 374,
+              "summary": "Every question enters the graph at exactly one place: the router node. A single LLM call, temperature 0, classifies the question into exactly one of three CLASSES — COMPUTABLE (one of the six Tier-1/Tier-2/Tier-3 tools), REASONED (a conceptual question no tool computes or simply quotes, but that a grounded, cited reasoning pass can responsibly address), or REFUSE (everything else) — and, for COMPUTABLE, also emits that tool's arguments. decide_route ( agent/graph.py ) then pydantic-validates whatever the router claimed: an unparseable response, an unknown route, or an argument-validation ...",
+              "nodes": [
+                {
+                  "title": "Interactive — router-decision explorer",
+                  "node_id": "0126",
+                  "start_index": 370,
+                  "end_index": 374,
+                  "summary": "(illustrative decision tree, NOT the real LLM) The real router is a single temperature-0 LLM call reading the full natural-language system prompt above and returning one JSON classification — it is not literally a decision tree. The tree below is a teaching approximation of the SAME disambiguation rules, restructured as clickable yes/no questions; click a node to expand the rule it encodes, quoted or paraphrased from ROUTER_SYSTEM_PROMPT . Does the question have ANY connection to this model, IFRS 9, or credit risk generally?"
+                }
+              ]
+            },
+            {
+              "title": "8.6 The guard stack, derived as a pipeline",
+              "node_id": "0127",
+              "start_index": 375,
+              "end_index": 379,
+              "summary": "Every LLM-authored piece of prose in this system — Tier-1's narration, Tier-3's docs narration, REASONED's interpretation — is DISTRUSTED mechanically before it is ever shown. The guard stack was not designed in one pass; it was built up in the order the project actually needed each layer, and understanding that construction order is the clearest way to understand what each layer catches that the others don't. Layer 1 (built first, Day 4) — the VERBATIM-NUMBER check. _number_tokens(text) finds every digit-token substring ( -?\\d[\\d,]*(?:\\.\\d+)? ) in the LLM's narration. ...",
+              "nodes": [
+                {
+                  "title": "Interactive — guard-pipeline stepper",
+                  "node_id": "0128",
+                  "start_index": 378,
+                  "end_index": 379,
+                  "summary": "(the REAL regex/word-list logic from agent/graph.py , reimplemented in JS) Type or paste a candidate narration below; the two number guards run LIVE against a real recorded shock_macro result (§8.2's exchange) using the same digit-token regex and spelled-number word lists as _number_tokens / _spelled_number_violation ( agent/graph.py lines 658–719). The citation check (layer 3) is Tier-3/REASONED-only and is described qualitatively above rather than reimplemented here, since it needs a passages list this tool_result doesn't carry. load: PASS example load: invented digit load: \"two hundred ..."
+                }
+              ]
+            },
+            {
+              "title": "8.7 REASONED in full, refusal as a feature, and an honest limitation",
+              "node_id": "0129",
+              "start_index": 380,
+              "end_index": 386,
+              "summary": "",
+              "nodes": [
+                {
+                  "title": "REASONED — the route's own motivating example, worked in full",
+                  "node_id": "0130",
+                  "start_index": 380,
+                  "end_index": 386,
+                  "summary": "§8.5's router few-shot table lists the first of its two REASONED examples as \"does the satellite need a UER × HPI interaction, or do the main effects and momentum already account for the joint stress response?\" — not by coincidence: it is literally the ship gate's own \"motivating example\" for the whole route ( outputs/gate/reasoned_route_gate.md §5: \"Before this feature this question hit REFUSE; it no longer does\"). Here is that exact recorded exchange in full, not merely the routing decision. Recorded exchange — the REASONED route's own motivating example."
+                }
+              ]
+            },
+            {
+              "title": "8.8 The audit trail",
+              "node_id": "0131",
+              "start_index": 387,
+              "end_index": 389,
+              "summary": "Every Tier-1/Tier-2/Tier-3 call, and every full graph run, is logged — not as an afterthought, but as the mechanism that makes every number in this chapter independently verifiable rather than merely asserted. Two logs, two grains. outputs/agent_log/tool_calls.jsonl — one line per successful TOOL call (Tier-1, Tier-2, Tier-3, and REASONED's baseline lookup all share this file and its sequence counter): {\"seq\", \"ts\", \"tool\", \"args\", \"headline\"} . The returned tool_call_id ( \"tc-<seq>\" ) references this exact line. _last_logged_seq reads the last line's own seq field to resume numbering ..."
+            },
+            {
+              "title": "8.9 The MCP server surface",
+              "node_id": "0132",
+              "start_index": 390,
+              "end_index": 394,
+              "summary": "agent/mcp_server.py exposes the SAME four Tier-1 tools over the Model Context Protocol, so any MCP client (Claude Desktop, an IDE agent, a script using the fastmcp / mcp SDK) can call them directly — no HTTP layer, no copilot chat UI in between. It is deliberately a THIN ADAPTER: each tool is registered by wrapping the real tools_tier1 function in a wrapper whose sole parameter is typed with the REAL pydantic model from TIER1_ARG_MODELS , so fastmcp builds the wire schema straight from that model — bounds, extra=\"forbid\" , and every cross-field model_validator (shock bounds, weights summing ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch09_app_guide.html",
+      "node_id": "0133",
+      "start_index": 395,
+      "end_index": 395,
+      "summary": "Ch.9 — The App: A Guidebook | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 9 — The App: A Guidebook",
+      "node_id": "0134",
+      "start_index": 395,
+      "end_index": 496,
+      "summary": "A mechanically-exhaustive reference to every tab, every panel, every image the IFRS 9 ECL Copilot ships — derived from the code, not a tour IFRS9 ECL Study-Notes Compendium — Chapter 9 of 13. Compiled from app/ui/src/app.jsx , every file under app/ui/src/tabs/ and app/ui/src/components/ , docs/api_contract.md , app/api/main.py , Dockerfile , outputs/design/FINAL_SPEC.md and the three candidate rationale.md files, plus live calls against a local uv run --no-sync uvicorn app.api.main:app --port 7861 instance (engine warm, live LangGraph agent) captured 2026-07-19 — every quoted number is a real ...",
+      "nodes": [
+        {
+          "title": "9  The App: A Guidebook",
+          "node_id": "0135",
+          "start_index": 397,
+          "end_index": 496,
+          "summary": "Chapters 1–7 built and validated the frozen IFRS 9 ECL engine; Chapter 8 opened up the LangGraph agent that answers questions about it. This chapter is the third leg: the actual product a bank risk analyst opens in a browser. Per notes/plan/requirement_11_app_guide.md (binding, supersedes the lighter \"tour\" framing this chapter might otherwise have taken), the law here is mechanical completeness, not narrative — the coverage checklist below was derived FROM THE CODE this session (the TABS array in app/ui/src/app.jsx ; every Panel /heading/EXHIBIT kicker in the six app/ui/src/tabs/*.jsx files ...",
+          "nodes": [
+            {
+              "title": "9.1 The 60-second orientation",
+              "node_id": "0136",
+              "start_index": 398,
+              "end_index": 399,
+              "summary": "Before the exhaustive walk, the fast path — what a first-time visitor should actually do, in order, to understand what this app is: 60 seconds, six steps. Land on Executive Overview (the default tab, tabFromHash() falls back to 'executive' ). Read the four KPI tiles top-left to right: allowance, coverage, Jensen ratio, reporting date."
+            },
+            {
+              "title": "9.2 Architecture at a glance",
+              "node_id": "0137",
+              "start_index": 400,
+              "end_index": 403,
+              "summary": "One FastAPI process ( app/api/main.py ) serves both the JSON API and the built Preact/ECharts SPA from a single origin — docs/api_contract.md 's very first convention is \"no CORS anywhere\" because there is only ever one origin to begin with. Three route groups, registered in an order that matters (Starlette matches in registration order, so the more specific static mounts must win before the catch-all SPA mount): Route group Serves Guard /api/* (22 endpoints) JSON — engine reads, Tier-1 tool calls, agent ask/stream, The Model / Policy / Real Data / auto-interpret endpoints always registered ..."
+            },
+            {
+              "title": "9.3 Tab 1 — Executive Overview",
+              "node_id": "0138",
+              "start_index": 404,
+              "end_index": 414,
+              "summary": "app/ui/src/tabs/ExecutiveTab.jsx — \"the consultant's headline read of the book as reported.\" Six panels/panel-groups, all fed by a single GET /api/ecl/summary call except the two chart panels at the bottom which fetch their own endpoints. Exhibit 9.1 — Executive Overview, tab layout (header + 4 KPI tiles + Exhibit 1 stage mix + Exhibit 2 scenario table; Exhibit 3 Allowance bridge and Exhibit 4 Credit cycle render below this and get their own detailed figures, Exhibits 9.2/9.3) — rendered from a live GET /api/ecl/summary call, 2026-07-19.",
+              "nodes": [
+                {
+                  "title": "Panel group — 4 KPI tiles (",
+                  "node_id": "0139",
+                  "start_index": 404,
+                  "end_index": 405,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Scenario-weighted allowance / Coverage / Jensen ratio / Reporting date",
+                      "node_id": "0140",
+                      "start_index": 405,
+                      "end_index": 405,
+                      "summary": "unnumbered Shows Four headline stats read directly off GET /api/ecl/summary : weighted_allowance (raw USD, UI divides by 1e6), coverage (a ratio, UI multiplies by 100), jensen_ratio (a ratio, shown as \"×\"), and as_of.period / as_of.t . How to read it Live capture: allowance $34.0m across 7,849 loans, $1,673.7m balance; coverage 2.03% (allowance / balance); Jensen ratio 1.0353× (weighted allowance $34.0m vs $32.9m at the single weighted-average macro path — the scenario-weighted number runs above the single-path number, the convexity signature Chapter 6 derives); reporting date 2015Q1 (t=60 of ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Stage mix of allowance (",
+                  "node_id": "0141",
+                  "start_index": 406,
+                  "end_index": 407,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Stage mix of allowance",
+                      "node_id": "0142",
+                      "start_index": 407,
+                      "end_index": 407,
+                      "summary": "Exhibit 1 Shows A single stacked horizontal bar, part-to-whole share of the reported allowance by IFRS 9 stage. Endpoint: GET /api/ecl/summary , fields stage_mix.{stage1,stage2,stage3}.{n_loans,allowance,allowance_pct_of_total} — allowance_pct_of_total is already 0–100 scale, never re-multiplied. How to read it Live capture: Stage 1 (green, performing) 80.74% of allowance across 7,803 loans; Stage 2 (amber, SICR) 1.43% across just 3 loans; Stage 3 (red, impaired) 17.83% across 43 loans."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Consultant's read (unnumbered, template narrative)",
+                  "node_id": "0143",
+                  "start_index": 408,
+                  "end_index": 408,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Consultant's read",
+                      "node_id": "0144",
+                      "start_index": 408,
+                      "end_index": 408,
+                      "summary": "unnumbered Shows A full paragraph of prose, every number substituted from the same GET /api/ecl/summary payload as the tiles/bar above it. The component's own top comment is explicit: \"Template narrative — NOT an LLM call... this is consultant prose with blanks filled in, per the north-star spec ('template, not LLM').\" This is the one panel in the app that is guaranteed never to hallucinate anything, by construction — it cannot invent a number because it has no generative step at all. How to read it The narrative states the same headline figures as the tiles in sentence form, plus one derived ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Scenario table (",
+                  "node_id": "0145",
+                  "start_index": 409,
+                  "end_index": 410,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Scenario table",
+                      "node_id": "0146",
+                      "start_index": 410,
+                      "end_index": 410,
+                      "summary": "Exhibit 2 Shows One row per named scenario (up/base/down) from GET /api/ecl/summary 's scenarios[] array: weight, allowance ($m), coverage (%), UER peak (pp). A leading coloured dot per row (FINAL_SPEC §5.3/§1.3 convention) — up=good, base=neutral, down=critical — carries STATUS semantics, same discipline as the stage-mix bar. How to read it Live capture: up 25% weight, $27.7m allowance, 1.65% coverage, UER peak 6.4pp; base 50% weight, $30.5m allowance, 1.82% coverage, UER peak 6.4pp (up and base share the same UER peak by construction — the DFAST base and the project's \"upside\" macro path do ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Allowance bridge (",
+                  "node_id": "0147",
+                  "start_index": 411,
+                  "end_index": 413,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Allowance bridge",
+                      "node_id": "0148",
+                      "start_index": 411,
+                      "end_index": 413,
+                      "summary": "Exhibit 3 Shows An ECharts waterfall of the movement decomposition between two reporting snapshots. On the Executive tab specifically, WaterfallChart is invoked with fixed props t0={59} t1={60} action={null} — the LATEST single quarter, per the component's own comment (\"Default window = the latest single quarter (FINAL_SPEC §8.2) — long cumulative windows... are a Scenario Lab drill-down, never the executive default\"). Endpoint: GET /api/ecl/waterfall?t0=59&t1=60 , six components (opening/stage_migration/remeasurement/ derecognitions/new_loans/closing) that sum exactly ( identity_gap ≈ 0 )."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Credit cycle, PIT vs TTC (",
+                  "node_id": "0149",
+                  "start_index": 414,
+                  "end_index": 414,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Credit cycle — PIT vs TTC",
+                      "node_id": "0150",
+                      "start_index": 414,
+                      "end_index": 414,
+                      "summary": "Exhibit 4 Shows A three-line time series over all 60 panel quarters: observed default rate, TTC PD, PIT PD. Endpoint: GET /api/exhibits/credit_cycle , fields rho and points[].{calendar, z, observed_dr, ttc_pd, pit_pd} , all rate fields ratios (UI multiplies by 100). How to read it Live capture: ρ = 0.0227 (the project's own fitted asset correlation, well below the Basel illustrative 0.12 — Chapter 5's calibration)."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "9.4 Tab 2 — The Model",
+              "node_id": "0151",
+              "start_index": 415,
+              "end_index": 431,
+              "summary": "app/ui/src/tabs/ModelTab.jsx — \"Coefficients, fit statistics, and the variable dictionary — with the honest caveats.\" One intro panel plus six numbered exhibits, all Requirement 12 additions (interpretation fields, macro glossary, FRED badges) layered onto the original coefficient tables. Exhibit 9.4 — The Model tab, hazard-ratio coefficients (default hazard, n=418,418) — rendered from a live GET /api/model/coefficients call, 2026-07-19.",
+              "nodes": [
+                {
+                  "title": "Panel — How to read these coefficients (",
+                  "node_id": "0152",
+                  "start_index": 416,
+                  "end_index": 416,
+                  "summary": "HowToReadCoefficients.jsx , shared with Real Data)",
+                  "nodes": [
+                    {
+                      "title": "How to read these coefficients",
+                      "node_id": "0153",
+                      "start_index": 416,
+                      "end_index": 416,
+                      "summary": "unnumbered Shows A collapsed <details> intro panel (no engine numbers, no explain question needed beyond its own title) stating four rules once so neither this tab nor Real Data has to re-derive them: (1) every model here is a discrete-time CLOGLOG hazard, so exp(coef) is a genuine hazard ratio — Chapter 3's link derivation, referenced not repeated; (2) \"1 unit\" is not always \"1\" (FICO is /100, LTV is /10 — read the row's own Unit line); (3) the 0.01-vs-1pp gotcha for log-growth macro rows (table HR is scaled to a full 1.0 log-unit ≈ 100% quarterly growth, never observed — the Per-unit HR ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Hazard-ratio coefficients (",
+                  "node_id": "0154",
+                  "start_index": 417,
+                  "end_index": 419,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Hazard-ratio coefficients",
+                      "node_id": "0155",
+                      "start_index": 417,
+                      "end_index": 419,
+                      "summary": "Exhibit 1 Shows The full fitted coefficient table for whichever of the two hazard models is selected (default/prepay), grouped by family (baseline, borrower, collateral, macro, incentive) with a one-line family \"story\" row. Endpoint: GET /api/model/coefficients , fields models.{default,prepay}.coefficients[].{variable, family, hazard_ratio, ci, p, p_display, story} plus the Requirement 12 interpretation fields ( unit_meaning, transformation, lag, fred_series, economic_channel, hazard_ratio_per_unit, worked_example ). How to read it Live capture, default hazard (n=418,418, McFadden R²=0.0761): ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Fit statistics (",
+                  "node_id": "0156",
+                  "start_index": 420,
+                  "end_index": 420,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Fit statistics",
+                      "node_id": "0157",
+                      "start_index": 420,
+                      "end_index": 420,
+                      "summary": "Exhibit 2 Shows A 2-row table (default/prepay) of n, events, train/OOT AUC, McFadden R², plus three narrative caveat paragraphs read straight off fit_stats.{net_uer_effect_note, double_trigger_note, seasoning_peak} . How to read it Live capture: default hazard train AUC 0.7476 , OOT AUC 0.6609 , McFadden R² 0.0761; prepayment hazard train AUC 0.6839 , OOT AUC 0.5841 , McFadden R² 0.0503. The OOT-caveat box states plainly: OOT (t=41–60, 2010Q2–2015Q1) is the GFC stress AFTERMATH, not a random holdout — the AUC drop is expected, not evidence of overfitting by itself."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Seasoning & term-structure exhibits (image grid)",
+                  "node_id": "0158",
+                  "start_index": 421,
+                  "end_index": 423,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Seasoning & term-structure exhibits",
+                      "node_id": "0159",
+                      "start_index": 422,
+                      "end_index": 423,
+                      "summary": "Exhibit 3 Shows An exhibit-grid of every consultant-curated PNG whose id starts with hazard_ , filtered client-side from GET /api/exhibits/list 's 17-row payload: hazard_age_baseline (\"Fitted natural-cubic-spline age baseline of the default hazard\") and hazard_pd_term_structure (\"Lifetime PD term structure implied by the fitted hazards\"). How to read it These are regenerated PNGs served at /static/exhibits/hazard/age_baseline.png and /static/exhibits/hazard/ pd_term_structure.png — the same seasoning-hump curve Chapter 3's notes derive in full and the same PD term-structure Chapter 2's ECL ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Variable dictionary (",
+                  "node_id": "0160",
+                  "start_index": 424,
+                  "end_index": 426,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Variable dictionary",
+                      "node_id": "0161",
+                      "start_index": 425,
+                      "end_index": 426,
+                      "summary": "Exhibit 4 Shows Every one of 13 modelled variables, one row each: source/transformation, lag/window, economic rationale, expected sign, fitted/verified checkmark, consumed-by, and a FRED badge column. Endpoint: GET /api/model/variable_dictionary , a preamble string plus rows[] (raw markdown-lite source cells, rendered as-is — backtick-quoted variable names, ✓/⚡/↑/↓ glyphs included verbatim). How to read it Live capture, row 1: fico_s = FICO_orig_time / 100 , lag \"static (origination)\", rationale \"Ability/willingness to pay\", expected sign \"PD ↓\", fitted/verified \"✓ negative\", consumed by ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Macro data glossary (",
+                  "node_id": "0162",
+                  "start_index": 427,
+                  "end_index": 429,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Macro data glossary",
+                      "node_id": "0163",
+                      "start_index": 427,
+                      "end_index": 429,
+                      "summary": "Exhibit 5 Shows The Requirement 12 centrepiece: every macro series used ANYWHERE in the app — DCR (national), SFLLD (state, Real Data tab), and the satellite Z regression — one row per (series, model) pairing, endpoint GET /api/model/macro_glossary , 10 rows. How to read it Live capture — three representative rows: dcr_uer_level (\"National UER — level\"), FRED ID null , geography \"US national,\" lag \"1 quarter,\" lag rationale states plainly this is \"NOT a live FRED pull — a vendor-premerged national series on the DCR panel's own ANONYMIZED quarterly clock; only the clock's CALENDAR alignment... ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — LGD, two-stage workout model (",
+                  "node_id": "0164",
+                  "start_index": 430,
+                  "end_index": 431,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "LGD — two-stage workout model",
+                      "node_id": "0165",
+                      "start_index": 430,
+                      "end_index": 431,
+                      "summary": "Exhibit 6 Shows Three summary tiles (cure rate, cure AUC, excess-loss loading), an OOT-calibration table (8 metrics × train/OOT), two SearchableTable s (cure-stage logit coefficients, severity-stage OLS/HC1 coefficients, 5 rows each), and a 3-image exhibit grid. How to read it Live capture: cure rate 12.2% , cure AUC train/OOT 0.837 / 0.769 , excess-loss loading 2.55% . OOT calibration shows real drift: mean realised LGD train 59.95% vs OOT 61.13%, mean PREDICTED LGD train 59.90% vs OOT 65.83% — a +4.71pp OOT over-prediction gap ( gap_pred_minus_real.oot ), vs essentially zero gap in-sample ..."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "9.5 Tab 3 — Scenario Lab",
+              "node_id": "0166",
+              "start_index": 432,
+              "end_index": 439,
+              "summary": "app/ui/src/tabs/ScenarioLabTab.jsx — \"Parameterise the four Tier-1 engine tools — every number is computed by the frozen engine; the agent only routes, validates and narrates.\" Four control panels on the left, a result/interpretation card and a reactive waterfall on the right. Exhibit 9.5 — Scenario Lab, tab layout: (a) Result & interpretation card and (b) Allowance bridge in shock_macro mode, after running shock_macro(\"UER\", 2.0, \"parallel\") live — rendered from a live POST /api/tools/shock_macro call, 2026-07-19.",
+              "nodes": [
+                {
+                  "title": "Control panel — Reweight scenarios",
+                  "node_id": "0167",
+                  "start_index": 432,
+                  "end_index": 432,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Reweight scenarios",
+                      "node_id": "0168",
+                      "start_index": 432,
+                      "end_index": 432,
+                      "summary": "unnumbered (control) Shows Three sliders (up/base/down, 0–100 step 5) whose raw values are normalised client-side to sum to 1 before the call ( norm ), live-labeled with the normalised percentage next to each slider. How to use it Drag any slider, then click \"Run reweight\" — this calls POST /api/tools/reweight_scenarios with the three normalised weights (body must sum to 1 within 1e-6; the UI's own normalisation guarantees this). Nothing else on the page changes until you click Run — the sliders themselves are inert previews of what WILL be sent."
+                    }
+                  ]
+                },
+                {
+                  "title": "Control panel — Macro shock",
+                  "node_id": "0169",
+                  "start_index": 433,
+                  "end_index": 434,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Macro shock",
+                      "node_id": "0170",
+                      "start_index": 433,
+                      "end_index": 434,
+                      "summary": "unnumbered (control) Shows A variable select (UER/HPI growth/GDP growth), a shape select (parallel/peak_revert), and a shock-size slider whose bounds change per variable ( SHOCK_BOUNDS : UER ±10pp, HPI/GDP ±5pp/q — the same pydantic bounds Chapter 8's ShockMacroArgs enforces server-side, mirrored client-side so an invalid drag is never even possible). A caveat box states the coherent-shock convention inline, every time. How to use it Pick a variable, shape, and size; click \"Run shock\" → POST /api/tools/shock_macro ."
+                    }
+                  ]
+                },
+                {
+                  "title": "Control panel — Rerun by segment",
+                  "node_id": "0171",
+                  "start_index": 435,
+                  "end_index": 435,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Rerun by segment",
+                      "node_id": "0172",
+                      "start_index": 435,
+                      "end_index": 435,
+                      "summary": "unnumbered (control) Shows A single select over the 6 valid segments: all, stage1, stage2, stage3, investor, high_ltv (current updated LTV > 80). How to use it Pick a segment, click \"Run segment\" → POST /api/tools/rerun_ecl . This is a pure FILTER-AND-SUM over already-computed per-loan scenario ECL — no re-run of the hazard/LGD/EAD models, despite the tool's name."
+                    }
+                  ]
+                },
+                {
+                  "title": "Control panel — Decompose waterfall",
+                  "node_id": "0173",
+                  "start_index": 436,
+                  "end_index": 436,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Decompose waterfall",
+                      "node_id": "0174",
+                      "start_index": 436,
+                      "end_index": 436,
+                      "summary": "unnumbered (control) Shows Two number inputs, t0 and t1 (bounds 1–59 / 2–60 respectively in the HTML, server-side bound 1≤t0<t1≤60), defaulting to 20/40 — the exact worked example docs/api_contract.md itself publishes. How to use it Set t0/t1, click \"Run decomposition\" (disabled while t0≥t1) → POST /api/tools/decompose_waterfall . This reruns the movement-decomposition identity between ANY two panel snapshots, not just the default t=59→60 the Executive tab shows."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Result & interpretation (",
+                  "node_id": "0175",
+                  "start_index": 437,
+                  "end_index": 438,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Result & interpretation",
+                      "node_id": "0176",
+                      "start_index": 437,
+                      "end_index": 438,
+                      "summary": "Exhibit 1 Shows Before any control has run: an empty-state note (\"Run a control on the left...\"). After a run: the tool's own headline string, a metrics strip (allowance, coverage, Jensen ratio, delta-vs-baseline — whichever fields the specific tool's result carries), and an auto-interpretation card fed by POST /api/agent/interpret . How to read it Live capture after running the UER +2pp shock: headline \"UER +2pp (parallel) coherent shock of the base scenario: reported allowance $30.5m -> $31.7m (delta +1.2m, +4.1%), shocked coverage 1.89%\"; metrics strip shows $31.7m allowance, 1.89% ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Allowance bridge, action-aware (",
+                  "node_id": "0177",
+                  "start_index": 439,
+                  "end_index": 439,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Allowance bridge (Scenario Lab instance)",
+                      "node_id": "0178",
+                      "start_index": 439,
+                      "end_index": 439,
+                      "summary": "Exhibit 2 Shows The SAME shared component as the Executive tab's Exhibit 3, but here action is live — the chart resolves one of THREE modes: shock_macro mode ( result.waterfall_vs_baseline , baseline vs shocked), decompose_waterfall mode ( result.components , the custom t0/t1 window just run), or — for reweight_scenarios , rerun_ecl , or before any control has run — falls back to the SAME fixed historical t0/t1 window (props default 20/40 on this tab) as any other instance of this component. How to read it See Exhibit 9.5b above (the shock_macro-mode reading: opening $30.5m, remeasurement ..."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "9.6 Tab 4 — Policy",
+              "node_id": "0179",
+              "start_index": 440,
+              "end_index": 446,
+              "summary": "app/ui/src/tabs/PolicyTab.jsx — \"Every exhibit below is paired with the governance decision it informs — the dials a credit-risk committee actually turns.\" Four panels, each opening with a DecisionHeader stating the governance question before the numbers. Exhibit 9.6 — Policy tab: (a) Stage-2 share vs SICR threshold and (b) Scenario-weight sensitivity — rendered from live GET /api/policy/staging_sensitivity and GET /api/policy/weights_table calls, 2026-07-19.",
+              "nodes": [
+                {
+                  "title": "Panel — Stage-2 share vs SICR threshold",
+                  "node_id": "0180",
+                  "start_index": 441,
+                  "end_index": 442,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Stage-2 share vs SICR threshold",
+                      "node_id": "0181",
+                      "start_index": 441,
+                      "end_index": 442,
+                      "summary": "Exhibit 1 Shows A DecisionHeader naming the governance question (\"Where would you set the SICR ratio threshold that triggers Stage 2?\"), a static exhibit image, and a table of Stage-2 allowance share at two reporting dates across four candidate thresholds. Endpoint: GET /api/policy/staging_sensitivity . How to read it Live capture — add-on held at 0.5pp across every threshold shown."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Scenario-weight sensitivity",
+                  "node_id": "0182",
+                  "start_index": 443,
+                  "end_index": 443,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Scenario-weight sensitivity",
+                      "node_id": "0183",
+                      "start_index": 443,
+                      "end_index": 443,
+                      "summary": "Exhibit 2 Shows A DecisionHeader (\"which probability weighting... best reflects 'reasonable and supportable' information?\"), a bar chart, and a table of 3 canned weight sets with a Δ-vs-adopted pill per row. Endpoint: GET /api/policy/weights_table — calling this endpoint appends THREE lines to the audit trail (one per weight set), a deliberate governance choice so every reweighting this app has ever shown a user is logged, even from this read-only convenience view. How to read it Live capture: Adopted (25/50/25) — $34.0m, coverage 2.034%, Jensen ratio 1.0353×, Δ 0% (the reported basis, tagged ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Stage → ECL horizon guide (",
+                  "node_id": "0184",
+                  "start_index": 444,
+                  "end_index": 445,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Stage → ECL horizon guide",
+                      "node_id": "0185",
+                      "start_index": 444,
+                      "end_index": 445,
+                      "summary": "unnumbered Shows A collapsed <details> explainer (shared verbatim with the waterfall panel's own footer, wherever WaterfallChart renders): Stage 1 = 12-month ECL (Σ over t≤4 quarters), Stage 2 = the SAME sum over the FULL remaining contractual life (up to 40 quarters), Stage 3 = LGD × current exposure (scenario-invariant by construction). How to read it The engine always computes BOTH 12-month and lifetime ECL for every loan and reports the one the stage prescribes — this calm-quarter book (2015Q1) is 7,803 Stage 1 loans, 3 Stage 2, 43 Stage 3, so the reported allowance is dominated by ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — When judgment overrides the model, the overlay question",
+                  "node_id": "0186",
+                  "start_index": 446,
+                  "end_index": 446,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "When judgment overrides the model — the overlay question",
+                      "node_id": "0187",
+                      "start_index": 446,
+                      "end_index": 446,
+                      "summary": "unnumbered Shows Pure governance prose (no engine numbers) laying out the post-model-adjustment (overlay) concept: the 2020 COVID-19 shock as the textbook case (default-rate models trained pre-pandemic could not see furlough schemes or payment holidays), citing that roughly a quarter of performing-book coverage is still held as overlay at some institutions per recent supervisory reviews (ECB 2024 thematic review, PRA Dear-CFO letters), with an explicit warning that overlays applied at the total-ECL level (bypassing PD/staging) are contrary to IFRS 9 principles. How to read it A defensible ..."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "9.7 Tab 5 — Real Data (Freddie SFLLD)",
+              "node_id": "0188",
+              "start_index": 447,
+              "end_index": 460,
+              "summary": "app/ui/src/tabs/FreddieTab.jsx — the largest tab by panel count. \"The DCR engine above runs on a synthetic panel. This tab surfaces a second, real pipeline built on the actual Freddie Mac Single-Family Loan-Level Dataset (SFLLD)... read-only, for comparison against the reported engine.\" One shared how-to-read panel, six hero tiles, and eight numbered exhibits, none of which touch or mutate engine state (every number here is parsed straight from outputs/freddie/** 's already-written reports/CSVs/JSON — Chapter 11/12's territory, re-surfaced here as an app tab).",
+              "nodes": [
+                {
+                  "title": "Panel group — 6 hero tiles",
+                  "node_id": "0189",
+                  "start_index": 447,
+                  "end_index": 448,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "SFLLD panel scale / Hazard OOT AUC / COVID regime / Backtest miss ratio / LSTM AUC / LGD loading",
+                      "node_id": "0190",
+                      "start_index": 447,
+                      "end_index": 448,
+                      "summary": "unnumbered Shows Six StatTile s, all from GET /api/freddie/summary : panel scale, hazard OOT AUC (SFLLD vs DCR side by side), COVID regime treatment verdict, backtest worst miss ratio, LSTM challenger OOT AUC vs champion, LGD excess-loss loading (SFLLD vs DCR). How to read it Live capture: 837,500 loans , 39,522,565 loan-months, 17 vintages (overall D90 rate 5.32%, overall prepay rate 58.93%) — vs the DCR synthetic panel's 621,736 rows (Chapter 11), a scale contrast the tile's own hint text states directly. Hazard OOT AUC 0.6847 / 0.6609 (SFLLD / DCR) — the real-data champion modestly ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Vintage curves",
+                  "node_id": "0191",
+                  "start_index": 449,
+                  "end_index": 449,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Vintage curves — the pre-crisis-vintage hump",
+                      "node_id": "0192",
+                      "start_index": 449,
+                      "end_index": 449,
+                      "summary": "Exhibit 1 Shows A single tall ExhibitImage , id freddie_vintage_curves , endpoint GET /api/freddie/exhibits , served at /static/freddie/eda/exhibit1_vintage_curves.png . How to read it Caption verbatim: \"2007 vintage reaches 16.26% cumulative D90 by month 225 vs 14.11% (2006) and 9.14% (2008) — the pre-crisis-vintage hump; every 2018-2025 modern vintage tops out below 5.48%.\" The 2007 vintage is the worst-performing origination cohort in the whole panel by a wide margin. AI affordances Standard explain icon; recap is the exhibit's own caption verbatim."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — The COVID roll-rate anomaly",
+                  "node_id": "0193",
+                  "start_index": 450,
+                  "end_index": 450,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "The COVID roll-rate anomaly",
+                      "node_id": "0194",
+                      "start_index": 450,
+                      "end_index": 450,
+                      "summary": "Exhibit 2 Shows Two side-by-side ExhibitImage s: freddie_roll_rate_matrices (\"Roll-rate matrices -- GFC vs calm vs COVID\") and freddie_calendar_time_series (\"Calendar-time D90-entry rate\"), plus a net-read paragraph. How to read it The subtitle states the anomaly directly: \"A naive D90-entry read makes COVID look like the worse credit event; the roll-rate breakdown shows the opposite.\" The net-read paragraph resolves it: COVID's 60→90+ roll / D90-entry rate looks worse than the GFC by a naive count, but the 90+→liquidation transition collapses over 10× in the same window — a ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — The backtest honesty panel (centrepiece)",
+                  "node_id": "0195",
+                  "start_index": 451,
+                  "end_index": 453,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "The backtest honesty panel — model risk, historicised",
+                      "node_id": "0196",
+                      "start_index": 451,
+                      "end_index": 453,
+                      "summary": "Exhibit 3 Shows A callout stat, an 8-column table (5 rows, one per pseudo-reporting date), and two narrative paragraphs. Styled with a distinct freddie-centerpiece CSS class — the tab's own visual signal that this is the single most important exhibit on the page. How to read it Live capture, full 5-row table: 2007-12 (n=86,188 fit / 610 events, 124,235 active loans) realized cum."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Realized severity cycle",
+                  "node_id": "0197",
+                  "start_index": 454,
+                  "end_index": 454,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Realized severity — a lagging, not coincident, indicator",
+                      "node_id": "0198",
+                      "start_index": 454,
+                      "end_index": 454,
+                      "summary": "Exhibit 4 Shows A single tall ExhibitImage , id freddie_severity_cycle . How to read it The title states the finding directly: realized severity LAGS the credit cycle rather than moving coincidentally with it — liquidation timing and forced-sale dynamics take time to catch up to a default event. AI affordances Standard explain icon; recap is the exhibit's own caption."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — SFLLD hazard coefficients",
+                  "node_id": "0199",
+                  "start_index": 454,
+                  "end_index": 456,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "SFLLD hazard coefficients",
+                      "node_id": "0200",
+                      "start_index": 455,
+                      "end_index": 456,
+                      "summary": "Exhibit 5 Shows The full fitted coefficient table — 19 terms (vs the DCR tab's 13), same click-to-expand InterpretationRow pattern as Exhibit 9.4. How to read it Live capture, selected rows: Intercept HR 0.0272 (reference-row baseline, not a marginal effect); fico_s HR 0.3963 ; ltv10 HR 1.3806 ; uer_lag1 HR 1.0996 — carries a live FRED badge ( {POSTAL}UR ), the genuinely FRED-pulled state series Exhibit 9.4's national rows never carry; delta_uer_lag1 HR 1.9485 ; hpi_growth_lag1 table HR 0.0353 but Per-unit HR 0.9671 (the SAME 0.01-vs-1pp correction, computed here from the RAW coef column ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Champion hazard vs DCR priors, and the COVID verdict",
+                  "node_id": "0201",
+                  "start_index": 457,
+                  "end_index": 458,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Champion hazard vs the DCR priors, and the COVID regime verdict",
+                      "node_id": "0202",
+                      "start_index": 457,
+                      "end_index": 458,
+                      "summary": "Exhibit 6 Shows A 7-row sign-comparison table (SFLLD term vs its DCR counterpart vs the DCR-expected sign), a COVID caveat paragraph, and a 4-image exhibit grid (calibration-by-year, seasoning curve, state-UER effect, COVID-calibration comparison). How to read it Live capture, sign comparison: fico_s ↔ DCR fico_s , expected \"−\" (matches); dti_s ↔ null DCR variable, \"n/a (DCR has no DTI field at this rung)\" — an honest scope gap, not a missing-data bug; uer_lag1 ↔ DCR uer_lag1 , expected \"+ (net, level+momentum)\" — the SAME net-effect caveat as Exhibit 9.4's fit-stats panel applies here too; ..."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — State heterogeneity",
+                  "node_id": "0203",
+                  "start_index": 459,
+                  "end_index": 459,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "State heterogeneity — the collateral channel, in real geography",
+                      "node_id": "0204",
+                      "start_index": 459,
+                      "end_index": 459,
+                      "summary": "Exhibit 7 Shows A single tall ExhibitImage , id freddie_state_heterogeneity , title states its content: \"2006-07 vintage default vs HPI drawdown\" by state. How to read it The real-geography counterpart to the collateral/negative-equity channel documented in the variable dictionary (§9.4) — the SAME ltv10 mechanism, shown here as cross-state variation rather than a single pooled coefficient. AI affordances Standard explain icon; recap is the exhibit's own caption."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — LSTM path-dependence challenger, lift decomposition",
+                  "node_id": "0205",
+                  "start_index": 460,
+                  "end_index": 460,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "LSTM path-dependence challenger — lift decomposition",
+                      "node_id": "0206",
+                      "start_index": 460,
+                      "end_index": 460,
+                      "summary": "Exhibit 8 Shows A 3-row table (Overall OOT / Clean history / Prior delinquency spell, champion vs LSTM AUC and the delta), a caveat paragraph, and a 2-image grid (lift-split, calibration-by-year). Endpoint: GET /api/freddie/summary (the lstm object, reused — not a separate endpoint). How to read it Live capture: Overall OOT champion 0.6847 → LSTM 0.9925 (Δ +0.3078); Clean history champion 0.5386 → LSTM 0.5287 (Δ −0.0098 , essentially zero, slightly negative); Prior delinquency spell champion 0.5698 → LSTM 0.9570 (Δ +0.3872 )."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "9.8 Tab 6 — Copilot",
+              "node_id": "0207",
+              "start_index": 461,
+              "end_index": 467,
+              "summary": "app/ui/src/tabs/CopilotTab.jsx — the one tab where the agent IS the interface, not an annotation layer on top of one. Three panels: the full chat panel, a live SSE trace feed, and a session-only audit log. This is the only tab where MiniChatDock is deliberately absent (per §9.2 — it has its own full-page chat instead).",
+              "nodes": [
+                {
+                  "title": "Panel — Ask the copilot (",
+                  "node_id": "0208",
+                  "start_index": 462,
+                  "end_index": 463,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Ask the copilot",
+                      "node_id": "0209",
+                      "start_index": 462,
+                      "end_index": 463,
+                      "summary": "unnumbered Shows A free-text chat log + input form + (when empty) three suggestion chips. Endpoint: POST /api/agent/ask , body {\"question\": \"...\"} (1–2000 chars), response {answer, route, mode, trace} . How to read it Full worked GROUNDED example, live: question \"What is the reported allowance under the downside scenario?\" → route reweight_scenarios , mode grounded , answer: \"The weighted allowance is $47.6m, representing a +39.8% increase versus the adopted 25/50/25 weight of $34.0m."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Agent trace (",
+                  "node_id": "0210",
+                  "start_index": 464,
+                  "end_index": 466,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Agent trace",
+                      "node_id": "0211",
+                      "start_index": 465,
+                      "end_index": 466,
+                      "summary": "unnumbered Shows A live-scrolling event log over Server-Sent Events. Endpoint: GET /api/agent/stream ( text/event-stream ), replays the most recent /ask trace on connect then streams new events as they happen; a connection-status badge (connecting/live/reconnecting) sits in the panel's action slot. How to read it Each event is a dict keyed by node — router (chosen route + validated args), a tool-name node ( shock_macro , query_model_docs , analyze_data , ...; execution outcome + headline), narrator (grounding-check outcome, number_check_passed ), REASONED , or refusal ."
+                    }
+                  ]
+                },
+                {
+                  "title": "Panel — Session audit log (",
+                  "node_id": "0212",
+                  "start_index": 467,
+                  "end_index": 467,
+                  "summary": "",
+                  "nodes": [
+                    {
+                      "title": "Session audit log",
+                      "node_id": "0213",
+                      "start_index": 467,
+                      "end_index": 467,
+                      "summary": "unnumbered Shows A client-side-only log of every question asked THIS BROWSER SESSION, most recent first — built entirely from ChatPanel 's own onResult callback, not a server-side history endpoint. Each row is collapsed by default; clicking expands the full answer text plus the raw trace JSON. How to read it A route badge per row (error-red for refusal, purple for reasoned, the standard tool badge otherwise) lets a reader scan the session's route mix at a glance without expanding every row."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "9.9 AI affordances, in full",
+              "node_id": "0214",
+              "start_index": 468,
+              "end_index": 476,
+              "summary": "Every panel doc block above says \"standard explain icon\" or similar — this section is where \"standard\" is actually defined once, in full, so it is never re-derived per panel. Three affordances, all layered on top of the SAME single endpoint, POST /api/agent/ask — requirement 11's own framing: \"zero new endpoints... every explanation... passes through the same tool-routing/Tier-2/Tier-3/refusal governance.\"",
+              "nodes": [
+                {
+                  "title": "1. The ✦ explain icon (",
+                  "node_id": "0215",
+                  "start_index": 469,
+                  "end_index": 470,
+                  "summary": "ExplainButton.jsx , useExplain hook) Mechanics. Every Panel heading and every StatTile carries a small circular spark-icon button in its action cluster. Clicking it toggles an inline \"answer strip\" that renders UNDER the panel body (never a modal, never squeezed into the header row — FINAL_SPEC §7.4)."
+                },
+                {
+                  "title": "2. The selection-explain chip (",
+                  "node_id": "0216",
+                  "start_index": 471,
+                  "end_index": 471,
+                  "summary": "Highlighting ANY text anywhere inside .app-main (i.e. any of the six tab bodies, but explicitly NOT inside an input/textarea/select/contenteditable, NOT inside either chat surface, and NOT inside an already-open explain popover — inExcludedZone 's exact exclusion list) shows a small floating \"Explain with AI\" chip near the selection, after a 220ms debounce. Clicking it composes: Explain, in the context of the <tab label> tab: \"<selected text, trimmed, <=300 chars>\" <tab label> is one of the six tab display names; the selected text is quoted VERBATIM (truncated at 300 chars, never paraphrased) ..."
+                },
+                {
+                  "title": "3. The chat-dock status states — GROUNDED / REASONED / THINKING / OUT OF SCOPE",
+                  "node_id": "0217",
+                  "start_index": 472,
+                  "end_index": 476,
+                  "summary": "Both MiniChatDock (present on 5 of 6 tabs, collapsed-first, per §9.2) and the Copilot tab's own ChatPanel render every agent reply through the SAME 4-state vocabulary — the \"grounding vocabulary\" graft the shipped design spec pulled from the losing terminal direction (§9.12): State When What it implies about trustworthiness THINKING request in flight ( status === 'thinking' / 'loading' ) no answer yet — nothing to trust or distrust GROUNDED response mode === \"grounded\" — a numeric tool ran, or the cited docs retriever ( query_model_docs ) answered highest trust : every number traces to a ..."
+                }
+              ]
+            },
+            {
+              "title": "9.10 The endpoint → panel wiring table",
+              "node_id": "0218",
+              "start_index": 477,
+              "end_index": 482,
+              "summary": "Every one of the 22 JSON endpoints docs/api_contract.md 's own summary table lists, cross-walked to which panel(s) in this chapter call it — built from the actual app/ui/src/api.js function list, cross-checked against every tab file's own import statements. Exhibit 9.9 — Tab → endpoint wiring, all 22 endpoints across 6 tabs plus the 3 static mounts and the app-boot health check — a structural diagram from app/ui/src/app.jsx 's TABS array and every tab's own api.js calls, cross-checked against docs/api_contract.md 's own summary table. Endpoint Method Tab(s) / component Key contract fields ..."
+            },
+            {
+              "title": "9.11 Docker & deployment linkage",
+              "node_id": "0219",
+              "start_index": 483,
+              "end_index": 487,
+              "summary": "A single-image deploy (HF Spaces Docker SDK, port 7860) — the full stage-by-stage Dockerfile read is Chapter 10's job; this section is the narrower bridge every panel above actually depends on: which build stage puts which static asset where, so a panel that renders fine locally does not silently 404 in the deployed Space. Exhibit 9.10 — Docker build stages → the static assets this chapter's panels consume ( Dockerfile , both stages; app/api/main.py 's static-mount block). Stage 1 ( node:22-alpine ) runs npm ci && npm run build over app/ui/src , producing app/ui/dist — the SPA every tab in ..."
+            },
+            {
+              "title": "9.12 Three design directions → the shipped spec",
+              "node_id": "0220",
+              "start_index": 488,
+              "end_index": 492,
+              "summary": "Before any of the panels above existed in their current visual form, three FULL candidate design directions were built and judged in parallel ( outputs/design/{editorial,fintech,terminal}/ , each with its own design_spec.md + preview.html + rationale.md ), then scored against each other and merged into one binding spec, outputs/design/FINAL_SPEC.md — the document every component in this chapter is actually built from. Exhibit 9.11 — Three design directions, judge scoring ( outputs/design/ FINAL_SPEC.md §0; totals 37/42/39 — fintech wins with 5 grafts adopted from the other two). Direction ..."
+            },
+            {
+              "title": "9.13 Closing quiz bank — \"where would you look to answer X\"",
+              "node_id": "0221",
+              "start_index": 493,
+              "end_index": 496,
+              "summary": "One block per tab, cross-referenced to its documentation section above — the practical test of whether this chapter's coverage actually works as a reference, not just a read-through. Executive Overview (§9.3) & Scenario Lab (§9.5). A client asks \"how much of our allowance sits in loans that are already in default?\" Which panel, and what's the number?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch10_docker_deployment.html",
+      "node_id": "0222",
+      "start_index": 497,
+      "end_index": 497,
+      "summary": "Ch.10 — Docker & Deployment Guidebook | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 10 — Docker & Deployment Guidebook",
+      "node_id": "0223",
+      "start_index": 498,
+      "end_index": 571,
+      "summary": "Reading the multi-stage Dockerfile and the HF Spaces ship pipeline as they were actually built — including the failures IFRS9 ECL Study-Notes Compendium — Chapter 10 of 13. Compiled from Dockerfile , .dockerignore , requirements.docker.txt , agent/tools_tier1.py , app/api/main.py , app/ui/vite.config.js , README.md , outputs/gate/{day4,appv2,stretch,uiv3,mdd_freddie,macro_interp}_gate_report.md , wiki/memory/log.md , wiki/pages/agent-layer.md , and git log entries 4647e5d / 8c1f039 , all read live on 2026-07-19. Contents. 10.1 One container, one platform 10.2 The multi-stage Dockerfile, stage ...",
+      "nodes": [
+        {
+          "title": "10  Docker & Deployment Guidebook",
+          "node_id": "0224",
+          "start_index": 500,
+          "end_index": 571,
+          "summary": "Chapters 1–7 built and validated a frozen ECL engine; Chapter 8 wrapped it in an agent; Chapter 9 documents the app that puts both in front of a user. None of that reaches anyone until it is packaged into a single container and shipped to a place the public internet can reach — this chapter is that packaging and shipping, read at the same level of operational detail as the rest of the compendium, not glossed over as \"and then we deployed it.\" The project's deployment target throughout has been a single Hugging Face Space, Docker SDK, public: ...",
+          "nodes": [
+            {
+              "title": "10.1 One container, one platform",
+              "node_id": "0225",
+              "start_index": 500,
+              "end_index": 504,
+              "summary": "One Dockerfile at the repo root builds one image containing both the API (FastAPI, serving the agent and every engine-backed endpoint) and the built single-page app (the Preact/ECharts SPA, mounted as static files at / ). There is no separate frontend host, no reverse proxy, no second container — Hugging Face Spaces' Docker SDK runs exactly one container per Space, listening on a single port, and that constraint is what shapes almost every decision in this chapter: the Dockerfile has to build the SPA itself (there is no CI step outside the container to hand it a pre-built dist/ ), and the ..."
+            },
+            {
+              "title": "10.2 The multi-stage Dockerfile, stage by stage",
+              "node_id": "0226",
+              "start_index": 505,
+              "end_index": 513,
+              "summary": "What follows is every instruction that actually runs, grouped into the two FROM stages, expandable in place — collapse what you already know, expand what you don't. Every line is quoted verbatim from the current Dockerfile . Stage 1 — FROM node:22-alpine AS ui (lines 33–40) build only WORKDIR /build COPY app/ui/package.json app/ui/package-lock.json ./ RUN npm ci --no-audit --no-fund COPY app/ui/index.html app/ui/vite.config.js ./ COPY app/ui/src ./src COPY app/ui/scripts ./scripts RUN npm run build The package.json / package-lock.json COPY happens before the source-code COPY s, deliberately — ..."
+            },
+            {
+              "title": "10.3",
+              "node_id": "0227",
+              "start_index": 514,
+              "end_index": 519,
+              "summary": "requirements.docker.txt and the torch-pruning decision requirements.docker.txt is not hand-maintained — its own header records exactly how it is produced: uv export --no-dev --no-hashes --no-emit-project --prune torch \\ -o requirements.docker.txt Run against uv.lock , this resolves the project's exact locked dependency graph — 73 pinned packages (verified live this session: grep -c \"^[a-zA-Z0-9_.-]\\+==\" requirements.docker.txt → 73), each with its own pip version pin and a comment trail recording which other package pulled it in (e.g. fastapi==0.139.0 # via ifrs9-ecl-copilot ). no-dev drops ..."
+            },
+            {
+              "title": "10.4 The",
+              "node_id": "0228",
+              "start_index": 520,
+              "end_index": 529,
+              "summary": ".dockerignore whitelist and the 9-failure lesson .dockerignore uses a deny-most, allow-some pattern for outputs/ specifically (everything else in the file is a simpler flat exclude list — secrets, VCS metadata, node_modules, raw data, dev-only directories): outputs/* !outputs/models !outputs/variable_dictionary.md !outputs/hazard !outputs/lgd !outputs/staging !outputs/eda !outputs/vasicek !outputs/scenario_ecl !outputs/challenger !outputs/freddie !outputs/mdd outputs/* excludes everything under outputs/ from the Docker build context by default (a directory has dozens of subdirectories — ...",
+              "nodes": [
+                {
+                  "title": "The 9-failure incident, reconstructed",
+                  "node_id": "0229",
+                  "start_index": 523,
+                  "end_index": 529,
+                  "summary": "Commit 4647e5d (\"MDD + Freddie 'Real Data' tab: final build items\") added two new COPY lines to the Dockerfile — COPY outputs/freddie ./outputs/freddie and COPY outputs/mdd ./outputs/mdd — to serve the newly-built Freddie (\"Real Data\") tab and the compiled Model Development Document. outputs/gate/mdd_freddie_gate.md records what happened when that Dockerfile was pushed to the Space: 9 consecutive build attempts, 0 successes , over roughly 29 minutes, every single one failing with the identical Docker error failed to calculate checksum ... \"/outputs/freddie\": not found (or the equivalent for ..."
+                }
+              ]
+            },
+            {
+              "title": "10.5 HF Spaces deployment: port 7860, secrets, the README metadata block",
+              "node_id": "0230",
+              "start_index": 530,
+              "end_index": 537,
+              "summary": "Hugging Face Spaces' Docker SDK convention: the container must EXPOSE and listen on port 7860 (the Dockerfile's final line: EXPOSE 7860 + CMD [..., \"--port\", \"7860\", ...] ) — the platform routes public traffic to that port specifically; a container listening anywhere else simply never receives a request. The same port convention is baked into app/ui/vite.config.js 's dev-server proxy target (§10.8) and into every local docker run -p 7860:7860 invocation in the README's quickstart. Secrets: never in the image, injected at container runtime.",
+              "nodes": [
+                {
+                  "title": "The README metadata block — and the two-README trap",
+                  "node_id": "0231",
+                  "start_index": 533,
+                  "end_index": 537,
+                  "summary": "Hugging Face Spaces read their configuration (SDK type, the app's listening port, title, colour theme, short description) from a YAML frontmatter block at the very top of the Space's own README.md — the convention looks like: --- title: IFRS 9 ECL Copilot sdk: docker app_port: 7860 pinned: false --- This file is not the project's own root README.md — it is a separately, independently maintained file that lives only in the Space's own git repo, with no corresponding source file tracked in the project repository (confirmed by diffing the two before editing, per outputs/gate/mdd_freddie_gate.md ..."
+                }
+              ]
+            },
+            {
+              "title": "10.6 The ship pipeline as practiced: the state machine",
+              "node_id": "0232",
+              "start_index": 538,
+              "end_index": 542,
+              "summary": "Every ship session polls the same underlying signal — HfApi.space_info(..., expand=[\"runtime\"]) 's runtime.stage field — from the moment a commit lands on the Space until the app answers real traffic. The literal stage values recorded across five ship sessions (quoted verbatim from the gate reports, not paraphrased) are shown in Exhibit 10.2. Exhibit 10.2 — The HF Space deploy pipeline as practiced: runtime.stage values recorded across five ship sessions ( outputs/gate/{stretch,uiv3,appv2,mdd_freddie,macro_interp}_gate_report.md ). [08:17:47] stage=RUNNING_BUILDING sha=6675237... [08:18:03] ...",
+              "nodes": [
+                {
+                  "title": "Byte-identical verification, not just \"it says RUNNING\"",
+                  "node_id": "0233",
+                  "start_index": 539,
+                  "end_index": 542,
+                  "summary": "Reaching RUNNING confirms the container started; it does not by itself confirm the right code is running. Every recorded ship session adds an explicit content check on top of the stage signal: SPA bundle-hash match. The Day-4 and MDD/Freddie gates both fetch the live Space's served JS bundle filename (e.g. /assets/index-DP9C4-QY.js ) and confirm it matches the hash npm run build produced locally in the same session — a mismatched hash would mean the live Space is still serving an older build even though its stage reads RUNNING ."
+                }
+              ]
+            },
+            {
+              "title": "10.7 The queue-stall playbook:",
+              "node_id": "0234",
+              "start_index": 543,
+              "end_index": 549,
+              "summary": "factory_reboot vs bump-commit Two genuinely different failure classes have both, at different times, left a Space stuck short of RUNNING for an extended period — and the fix that works for one does not work for the other. Distinguishing them is the entire playbook. Case Stuck stage Duration Remedy tried Outcome Stretch gate APP_STARTING, hardware: null ~25 min restart_space(factory_reboot=True) cleared App v2 gate APP_STARTING (recurrence) ~8 min restart_space(factory_reboot=True) cleared, RUNNING within ~3 more min UI v3 gate, attempt 1 RUNNING_BUILDING ~55 min none yet (queue log pinned at ..."
+            },
+            {
+              "title": "10.8 Local dev flow: uvicorn + vite",
+              "node_id": "0235",
+              "start_index": 550,
+              "end_index": 554,
+              "summary": "Two distinct local flows exist, for two different purposes — a production-shaped single-process flow (what the Docker image itself does), and a fast iterative dev-loop flow (what a UI change is actually developed against).",
+              "nodes": [
+                {
+                  "title": "Production-shaped: build once, one process serves everything",
+                  "node_id": "0236",
+                  "start_index": 550,
+                  "end_index": 550,
+                  "summary": "uv sync cp .env.example .env # add OPENROUTER_API_KEY (optional) cd app/ui && npm install && npm run build && cd ../.. uv run --no-sync uvicorn app.api.main:app --port 7860 # open http://localhost:7860 ( README.md , \"Local (uv, Python 3.13)\".) This mirrors exactly what the Dockerfile does: build the SPA once into app/ui/dist , then let the one FastAPI process serve both the API and the static bundle via the same StaticFiles(directory=UI_DIST, html=True) mount at / used in the container. The port is conventionally 7860 to match the Docker/HF Spaces target, but any free local port works equally ..."
+                },
+                {
+                  "title": "Dev-loop: two processes, hot-reloading UI, API held constant",
+                  "node_id": "0237",
+                  "start_index": 551,
+                  "end_index": 554,
+                  "summary": "terminal 1 — backend, unchanged between UI edits uv run --no-sync uvicorn app.api.main:app --port 7860 # terminal 2 — frontend dev server with hot module reload cd app/ui && npm run dev # vite, default port 5173 app/ui/vite.config.js 's dev server proxies both /api and /static to http://localhost:7860 ( target , changeOrigin: true ) — so a browser pointed at the vite dev server's own port sees a live, hot-reloading UI while every data call transparently reaches the real FastAPI backend running unchanged in the other terminal. The config also sets watch: { usePolling: true } with an inline ..."
+                }
+              ]
+            },
+            {
+              "title": "10.9 Image contents inventory: what ships, what doesn't, and why",
+              "node_id": "0238",
+              "start_index": 555,
+              "end_index": 560,
+              "summary": "Exhibit 10.3 — What is (and is not) in the runtime image ( Dockerfile , .dockerignore ; last full size measurement 1.45 GB, day-4 gate). Why python:3.13-slim + 73 pinned deps yes runtime dependency closure per requirements.docker.txt , torch pruned (§10.3) engine/ agent/ app/api analysis/ yes the code that actually runs a request wiki/ + knowledge/{corpus,index} yes Tier-3 query_model_docs retrieval sources (Chapter 8), read-only, no LLM/network at retrieval time 2 skill scripts ( wiki_query.py +sibling, pageindex_query.py ) yes loaded by file path via importlib from agent/tier3_retrieval.py ..."
+            },
+            {
+              "title": "10.10 Cold vs warm start: the joblib cache-slimming story",
+              "node_id": "0239",
+              "start_index": 561,
+              "end_index": 571,
+              "summary": "Chapter 8 introduced the Tier-1 tools' heavy engine state (fitted hazard and LGD models, recovered systematic factor Z , the fitted satellite, the scenario set) as built once, lazily, on first use. This section is the deployment-facing half of that same mechanism: what actually happens to a request the first time a fresh container serves it, and why the on-disk cache is 88.7 MB rather than the ~750 MB the raw fitted models would otherwise weigh. The staleness-keyed cache ( agent/tools_tier1.py ). warm_up() is called once from the FastAPI lifespan startup hook ( await ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch11_freddie_panel_eda.html",
+      "node_id": "0240",
+      "start_index": 572,
+      "end_index": 572,
+      "summary": "Ch.11 — Freddie Mac Panel & EDA | IFRS9 ECL Study Notes ☼"
+    },
+    {
+      "title": "Chapter 11 — Freddie Mac Panel & EDA",
+      "node_id": "0241",
+      "start_index": 572,
+      "end_index": 649,
+      "summary": "Real dates, real states, real losses: the SFLLD rung-3 build, the D90 absorbing default derived precisely, and two orphaned derivations — net credit loss discounting and the roll-rate bridge — finally get their fixture walkthroughs IFRS9 ECL Study-Notes Compendium — Chapter 11 of 13. Compiled from outputs/freddie/ingest/dq_report.md , outputs/freddie/eda/eda_report.md , outputs/panel/waterfall.md , freddie/ingest.py , freddie/build_panel.py , freddie/macro.py , tests/fixtures/compute_ncl.py , tests/fixtures/compute_rollrate.py , and data/processed/freddie/*.parquet (read live this session) on ...",
+      "nodes": [
+        {
+          "title": "11  Freddie Mac Panel & EDA",
+          "node_id": "0242",
+          "start_index": 574,
+          "end_index": 649,
+          "summary": "Chapters 1–10 built and read an entire IFRS 9 ECL engine — staging, hazard, LGD/EAD, Vasicek, scenarios, challengers, the agent, the app — on the DCR panel: a synthetic, anonymized-clock, national-macro-only dataset (49,974 loans, 621,736 rows, Chapter 3's own build waterfall). This chapter turns to the project's rung-3 build: the real Freddie Mac Single-Family Loan-Level Dataset (SFLLD) sample, ingested, absorbing-D90-flagged, and merged against genuinely state-level FRED macro series by freddie/ingest.py , freddie/build_panel.py and freddie/macro.py . Two derivations flagged in ...",
+          "nodes": [
+            {
+              "title": "11.1 Why real GSE data: the three upgrades",
+              "node_id": "0243",
+              "start_index": 576,
+              "end_index": 578,
+              "summary": "The DCR engine (Chapters 1–9) is a complete, internally-consistent ECL machine — but every date on its clock is an anonymized quarter index, every macro series is national-only, and every loss is a modeled LGD assumption, not an audited outcome. The SFLLD rung-3 build closes exactly those three gaps, and nothing else: it does not replace the DCR engine (Chapter 12 fits its own hazard/LGD models on this panel, a separate, parallel build) — it demonstrates what changes when the underlying data stops being synthetic. Upgrade DCR panel (Ch.1–9) SFLLD panel (this chapter) What it unlocks Real ..."
+            },
+            {
+              "title": "11.2 Sample design: 17 vintages, the coverage gap, and the 32-field layout verification story",
+              "node_id": "0244",
+              "start_index": 579,
+              "end_index": 584,
+              "summary": "freddie/ingest.py reads Freddie Mac's own public SFLLD sample dataset — not the full loan-level population — 17 origination-vintage zip files, each holding two pipe-delimited, header-less text files: sample_orig_{YYYY}.txt (one row per loan) and sample_svcg_{YYYY}.txt (one row per loan-month). Full-year vintages sample exactly 50,000 origination loans (Freddie's own documented sample methodology); 2025 is a partial year through the Q3 origination cutoff and samples a proportionately smaller 37,500 — validate_orig() only enforces the 50k floor for non-2025 vintages, so this is not treated as a ..."
+            },
+            {
+              "title": "11.3 The D90 absorbing default definition, derived precisely",
+              "node_id": "0245",
+              "start_index": 585,
+              "end_index": 591,
+              "summary": "The primary default event modeled in this panel is D90 : the FIRST loan-month where current_delinquency_status corresponds to 90+ days delinquent — formally, $$ \\text{severe}_t = (\\text{dlq\\_num}_t \\ge 3)\\ \\text{OR}\\ \\text{is\\_reo\\_acquisition}_t, $$ where dlq_num is the parsed numeric delinquency-status ladder and is_reo_acquisition flags the literal string \"RA\" (REO Acquisition — the field's own escape hatch for \"days-delinquent no longer means anything, the property has already been acquired\"). D90 is modeled as an absorbing event: once a loan's cumulative first-D90 indicator fires, every ..."
+            },
+            {
+              "title": "11.4 Panel construction: the waterfall, the tie-break, and the flowchart",
+              "node_id": "0246",
+              "start_index": 592,
+              "end_index": 598,
+              "summary": "Per-vintage row counts and D90 rates, read directly off outputs/freddie/ingest/dq_report.md (recomputed, not retyped, and cross-checked against a live re-read of panel_monthly.parquet + loan_orig.parquet this session — §11.7's vintage-curve data below reproduces every one of these per-vintage final D90 rates to the displayed decimal from the raw panel independently): Vintage n_loans n_loan_months (modeled) D90 rate Prepay rate Censored rate 2005 50,000 3,588,153 10.75% 87.21% 1.89% 2006 50,000 2,833,990 14.11% 83.95% 1.61% 2007 50,000 2,592,669 16.26% 81.58% 1.82% 2008 50,000 2,224,103 9.14% ..."
+            },
+            {
+              "title": "11.5 State-level macro merge (Requirement 12): genuine FRED series and coverage",
+              "node_id": "0247",
+              "start_index": 599,
+              "end_index": 609,
+              "summary": "Because the SFLLD orig table carries a real property_state field, freddie/macro.py merges STATE-level unemployment and house-price series instead of the DCR panel's national-only macros (§11.1's second upgrade). Per the campaign's Requirement 12 (every macro variable, in every model, gets the full honesty card), both series below are curated the same way Chapter 6's DCR/satellite macro cards are, and share the same source-of-truth discipline the app's own /api/model/macro_glossary endpoint serves. Variable card — uer_lag1 (state civilian unemployment rate, SA, monthly, 1-month lag)."
+            },
+            {
+              "title": "11.6 Updated LTV: the NV worked examples",
+              "node_id": "0248",
+              "start_index": 610,
+              "end_index": 615,
+              "summary": "freddie/macro.py adapts the DCR-verified updated-LTV formula ( data/panel/build_panel.py 's \"UPDATED LTV\" section, which the vendor's own LTV_time column there reproduces to $\\sim10^{-9}$) to state-level HPI: Updated LTV, derived from the collateral-indexation idea (no skipped steps). 1. Start from the definition of LTV. $LTV= \\text{balance}/\\text{property value}$. At origination, $LTV_{\\text{orig}}=\\text{orig\\_upb}/\\text{orig\\_value}$, so $\\text{orig\\_value}=\\text{orig\\_upb}/LTV_{\\text{orig}}$. 2."
+            },
+            {
+              "title": "11.7 Interactive: vintage-curve explorer",
+              "node_id": "0249",
+              "start_index": 616,
+              "end_index": 617,
+              "summary": "The widget below reproduces freddie/eda.py 's compute_vintage_curves exactly — cumulative D90 rate by months-on-book, per vintage — recomputed live this session directly from panel_monthly.parquet / loan_orig.parquet (every value below matches outputs/freddie/ingest/dq_report.md 's final per-vintage D90 rate to the displayed decimal, e.g. 2007's curve ends at 16.26%, exactly §11.4's table entry). Toggle vintages on/off to compare eras directly.",
+              "nodes": [
+                {
+                  "title": "Live widget — toggle vintages, real cumulative-D90 curves",
+                  "node_id": "0250",
+                  "start_index": 616,
+                  "end_index": 617,
+                  "summary": "Exhibit 11.5 — Vintage curves: real-dated SFLLD 2005–2025 sample. Embedded from outputs/freddie/eda/exhibit1_vintage_curves.png , generated by freddie/eda.py from the same underlying computation the widget above reproduces live. Exhibit 11.5's right panel shows something the widget's D90-only view cannot: the 2020–21 refi wave shows up as a shared ACCELERATION across the 2014–2019 vintages' cumulative-prepay curves, all hitting their inflection at the calendar point each vintage's own clock happened to reach 2020Q1 — not as a feature of the 2020/2021 vintages' own (freshly-originated, ..."
+                }
+              ]
+            },
+            {
+              "title": "11.8 The roll-rate transition-matrix estimator (Derivation Backlog D-8)",
+              "node_id": "0251",
+              "start_index": 618,
+              "end_index": 621,
+              "summary": "freddie/eda.py 's Exhibit 2 (§11.10) reports monthly roll-rate matrices: the probability a loan in delinquency bucket $i$ this month is in bucket $j$ next month. This section derives the estimator those matrices use from first principles, then (§11.9) walks the generic textbook version of the same idea ( tests/fixtures/compute_rollrate.py , the orphaned Derivation Backlog item D-8) step by step. The row-normalized transition-count estimator, derived as a multinomial MLE (no skipped steps)."
+            },
+            {
+              "title": "11.9",
+              "node_id": "0252",
+              "start_index": 622,
+              "end_index": 627,
+              "summary": "compute_rollrate.py — fixture walkthrough, every step The generic textbook worked example this chapter absorbs from Chapter 4's open backlog (D-8, knowledge/sources/ifrs9_credit_risk_notes.md §11.4, \"Converting a 180-DPD definition to 90 DPD\"): a simplified 3-bucket roll ladder (90/120/150 DPD) with monthly roll-forward/cure PAIRS at each bucket, used to bridge a D180-calibrated PD/LGD down to a D90 definition. Recomputed live this session, uv run --no-sync python tests/fixtures/compute_rollrate.py — every RESULTS value below matches its TARGET (the notes' own printed value) to the displayed ..."
+            },
+            {
+              "title": "11.10 The real SFLLD roll-rate matrices: GFC vs calm vs COVID",
+              "node_id": "0253",
+              "start_index": 628,
+              "end_index": 631,
+              "summary": "Applying §11.8's row-normalized estimator to the FULL, un-truncated raw monthly servicing history (not panel_monthly.parquet 's absorbing-D90-truncated panel, which deliberately hides cures, §11.3) over three calendar windows, aggregated across all 17 vintages: Exhibit 11.6 — Monthly roll-rate matrices, three windows, real calendar dates. Embedded from outputs/freddie/eda/exhibit2_roll_rate_matrices.png , generated by freddie/eda.py 's plot_roll_rate_matrices from the SAME row-normalized estimator §11.8 derives. Window current→30 60→90+ 90+→cure (back to <90) 90+→liquidation GFC 2007–2009 ..."
+            },
+            {
+              "title": "11.11 Interactive: transition-matrix explorer",
+              "node_id": "0254",
+              "start_index": 632,
+              "end_index": 632,
+              "summary": "The widget below reproduces §11.10's three real matrices as a live, heat-colored table — toggle between eras with the buttons to see the same forbearance signature the static Exhibit 11.6 shows, cell by cell.",
+              "nodes": [
+                {
+                  "title": "Live widget — toggle the era, real transition matrices",
+                  "node_id": "0255",
+                  "start_index": 632,
+                  "end_index": 632,
+                  "summary": "Cell shading scales with probability (white = 0%, dark red = 100%), matching Exhibit 11.6's own colormap. Toggle from \"Calm 2015-2018\" to \"COVID 2020-2021\" and watch two cells specifically: the 60→90+ cell darkens sharply (28.76%→58.25%) while the 90+→default_terminal cell fades to nearly white (2.50%→0.21%) — the SAME forbearance signature §11.10 describes in words, made visually immediate by the heat coloring moving in opposite directions on two cells that a naive single-number summary would never separate. Which row has the darkest 90+ cell overall, and does that match the row-normalized ..."
+                }
+              ]
+            },
+            {
+              "title": "11.12 Net credit loss: discounting a realised loss (Derivation Backlog D-7)",
+              "node_id": "0256",
+              "start_index": 633,
+              "end_index": 635,
+              "summary": "The generic textbook worked example this chapter absorbs from Chapter 4's open backlog (D-7, knowledge/sources/ifrs9_credit_risk_notes.md §11.3, \"Discounting future values\"): every post-default cash flow — recoveries AND workout expenses — must be discounted to the default date at the loan's original effective interest rate (EIR) before netting, because IFRS 9 defines expected credit loss in present-value terms, not face-value terms. Net credit loss, derived cash-flow by cash-flow (no skipped steps). 1. At the default event ($t=0$), the loan carries exposure-at-default $\\text{EAD}_0$."
+            },
+            {
+              "title": "11.13",
+              "node_id": "0257",
+              "start_index": 636,
+              "end_index": 642,
+              "summary": "compute_ncl.py — fixture walkthrough, and the tie to realized LGD Recomputed live this session, uv run --no-sync python tests/fixtures/compute_ncl.py — every RESULTS value below matches its TARGET to the displayed decimal (20/20 OK). Stated inputs: default UPB $=\\text{EUR}\\,200{,}000$ at the credit event ($t=0$), $\\text{EIR}=5.5\\%$; recoveries: REO sale proceeds EUR 170,000 at month 20, mortgage-insurance recoveries EUR 12,000 at month 22, non-MI recoveries EUR 2,000 at month 23; expenses: taxes/insurance/maintenance EUR 5,000 at month 10, legal/foreclosure EUR 4,000 at month 16. Step 1 — ..."
+            },
+            {
+              "title": "11.14 State heterogeneity: the collateral channel",
+              "node_id": "0258",
+              "start_index": 643,
+              "end_index": 644,
+              "summary": "Restricting to the 2006–2007 vintages (the peak of the pre-crisis bubble, §11.4) and states with 200+ sampled loans, the worst-performing states are exactly the \"sand states\" of the 2006–2008 housing bust: Rank State 2006–07 vintage cumulative D90 rate Worst NV 38.0% FL 32.6% AZ 27.9% … … … VT 4.8% AK 5.3% Best WY 6.2% Source: outputs/freddie/eda/eda_report.md Exhibit 4. Exhibit 11.8 — State heterogeneity, 2006–2007 vintages. Embedded from outputs/freddie/eda/exhibit4_state_heterogeneity.png ."
+            },
+            {
+              "title": "11.15 The calendar-time credit cycle: COVID vs GFC, read correctly",
+              "node_id": "0259",
+              "start_index": 645,
+              "end_index": 649,
+              "summary": "The combined-vintage monthly D90-entry rate's GLOBAL peak, across the entire 2005–2025 panel, is not the GFC — it is the COVID spike: 1.775% in 2020-06, roughly 4.5× the GFC's own peak of 0.396% in 2009-10. Exhibit 11.9 — Monthly D90-entry rate, all vintages combined, 2005–2025, vs national UER. Embedded from outputs/freddie/eda/exhibit3_calendar_time_series.png ."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ch12_freddie_models_backtest.html",
+      "node_id": "0260",
+      "start_index": 650,
+      "end_index": 714,
+      "summary": "Ch.12 — Freddie Models, Backtest & LSTM | IFRS9 ECL Study Notes ☼ # Chapter 12 — Freddie Models, Backtest & LSTM Corporate PD's structural cousin derived to close a two-chapter-old scope note; why the champion hazard subsamples 5% of its own controls; the COVID additive dummy's own coefficient table overturning the case for using it; the 9.42× honesty exhibit walked arithmetic-by-arithmetic; and a challenger whose 0.9925 headline turns out to ride on 4.7% of the book IFRS9 ECL Study-Notes Compendium — Chapter 12 of 13. Compiled from outputs/freddie/hazard/hazard_report.md , ..."
+    },
+    {
+      "title": "ch13_governance_mdd.html",
+      "node_id": "0261",
+      "start_index": 715,
+      "end_index": 791,
+      "summary": "Ch.13 — Governance, MDD & Closing Synthesis | IFRS9 ECL Study Notes ☼ # Chapter 13 — Governance, MDD & Closing Synthesis How this project proves its own numbers: the frozen-engine gate, the wiki-as-MDD process, the brutal limitations register, and the reviews that changed the shipped answer — plus two orphaned derivations (WOE/IV, structural LGD) and the closing interview drill IFRS9 ECL Study-Notes Compendium — Chapter 13 of 13 (closing chapter). Compiled from outputs/gate/*.md , outputs/freddie/gate_phase{A,B}.md , outputs/mdd/MDD.md , wiki/memory/log.md , wiki/memory/decisions.md , ..."
+    }
+  ]
+}

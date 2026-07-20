@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.1 — IFRS 9 Foundations &amp; Staging</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 1: IFRS 9 FOUNDATIONS & STAGING
+  ============================================================================
+  Built from notes/assets/template.html per notes/plan/conventions.md.
+  widgets.js load choice: RELATIVE ("../assets/js/widgets.js") — this file
+  lives at notes/chapters/, one level below notes/assets/js/, and is served
+  from inside the repo alongside the other chapters, so the shared script is
+  linked rather than inlined (conventions.md §6, "Inlined vs relative").
+  Source anchors: knowledge/corpus/ifrs9_credit_risk_notes.md §§1-2 (A1,A2);
+  outputs/staging/staging_report.md; outputs/ecl/ecl_report.md;
+  engine/staging.py (read-only, methodology citation only).
+  ============================================================================
+  MathJax SVG renderer — the only external dependency (CDN, accepted project
+  exception; everything else in this file is self-contained/inline).
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 1 &nbsp;&mdash;&nbsp; IFRS 9 Foundations &amp; Staging</h1>
+<div class="subtitle">From incurred loss to expected credit loss: classification, the three-stage model, default, and the relative SICR test</div>
+<div class="meta-line">IFRS 9 ECL study-notes compendium, Chapter 1 of 13. Compiled from <code>knowledge/corpus/ifrs9_credit_risk_notes.md</code> §§1&ndash;2, <code>outputs/staging/staging_report.md</code>, <code>outputs/ecl/ecl_report.md</code>, <code>engine/staging.py</code>.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s1">1&nbsp; IFRS 9 Foundations &amp; Staging</a>
+  <ol>
+    <li><a href="#s1-1">1.1 Why ECL replaced incurred loss</a></li>
+    <li><a href="#s1-2">1.2 Classification: business model + SPPI, and the special regimes</a></li>
+    <li><a href="#s1-3">1.3 IFRS 9 vs Basel IRB vs CECL</a></li>
+    <li><a href="#s1-4">1.4 The three-stage impairment model and the definition of default</a></li>
+    <li><a href="#s1-5">1.5 SICR &mdash; the relative lifetime-PD test (with a worked toy example)</a></li>
+    <li><a href="#s1-6">1.6 The project's SICR implementation: thresholds, probation, the inert 30-DPD backstop</a></li>
+    <li><a href="#s1-7">1.7 Finding: Stage 2 is empty in calm markets, dominant in stress</a></li>
+    <li><a href="#s1-8">1.8 Staging's ECL consequence: the coverage gradient</a></li>
+  </ol>
+</li>
+</ol>
+</div>
+</div>
+
+<h2 id="s1">1 &nbsp; IFRS 9 Foundations &amp; Staging</h2>
+
+<p>This chapter covers the front matter of IFRS 9 impairment: why the standard exists in its current
+forward-looking form, how an asset is classified into the population ECL even applies to, and the
+mechanics of the three-stage model that decides <em>how much</em> ECL a given exposure carries. The
+chapter closes by walking the project's own staging engine end to end &mdash; the exact rule implemented,
+the calm-vs-stress finding it produces on the synthetic Data Consortium (DCR) panel, and the ECL
+consequence of getting the stage wrong. Later chapters build on this: Chapter 2 derives the ECL formula
+itself in full; Chapter 5 returns to PIT/TTC, the philosophy staging's SICR test is built on.</p>
+
+<h3 id="s1-1">1.1 Why ECL replaced incurred loss</h3>
+
+<p>IFRS 9 <em>Financial Instruments</em> (IASB) replaced IAS 39 with effect from annual periods beginning
+on or after <strong>1 January 2018</strong>. The decisive reform is impairment. IAS 39's <em>incurred-loss</em>
+model recognised a credit loss only after a loss event had already occurred &mdash; judged &ldquo;too
+little, too late&rdquo; in the post-2008 review, and structurally procyclical: because no loss could be
+booked before a triggering event, provisions arrived in a cliff at exactly the point in the cycle when a
+bank could least afford it. IFRS 9 replaces that with a forward-looking
+<strong>expected credit loss (ECL)</strong> model that provisions from initial recognition &mdash; before
+any default has happened, using probability-weighted, forward-looking information (knowledge/corpus/ifrs9_credit_risk_notes.md
+&sect;1).</p>
+
+<div class="defn">
+<b>Definition.</b> <strong>The three pillars of IFRS 9.</strong> (i) Classification &amp; measurement
+(&sect;1.2 below); (ii) impairment &mdash; the ECL model this compendium is mostly about; (iii) hedge
+accounting (with an optional IAS 39 carve-out retained for macro fair-value hedging, out of scope here).
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> The single sentence that explains most of what follows: <em>incurred loss asks
+&ldquo;has something bad already happened?&rdquo;; expected loss asks &ldquo;given everything we know
+today, what is the probability-weighted loss we expect over the relevant horizon?&rdquo;</em> Every
+mechanism introduced in the rest of this chapter &mdash; staging, the SICR test, the 12-month/lifetime
+split &mdash; exists to operationalise that second question without either (a) recognising the full
+lifetime loss on every performing loan on day one (too conservative, and not risk-sensitive) or
+(b) waiting for default (back to the incurred-loss cliff). Staging is the compromise: almost everything
+starts at a cheap 12-month proxy for lifetime loss, and only migrates to the full lifetime measure once
+credit risk has genuinely deteriorated.
+</div>
+
+<h3 id="s1-2">1.2 Classification: business model + SPPI, and the special regimes</h3>
+
+<p>Before ECL can be computed at all, an asset must be routed into the population ECL applies to. ECL
+applies to financial assets at <strong>amortised cost</strong> and debt instruments at
+<strong>FVOCI</strong>; lease receivables (IFRS 16); contract assets (IFRS 15); and loan commitments and
+financial guarantee contracts not measured at FVTPL. Equity instruments and anything at FVTPL sit outside
+ECL scope entirely &mdash; their fair-value movements already absorb credit deterioration
+(knowledge/corpus/ifrs9_credit_risk_notes.md &sect;1.1).</p>
+
+<div class="defn">
+<b>Definition.</b> <strong>Business model test.</strong> How the asset is actually managed: <em>hold to
+collect</em> contractual cash flows &rarr; amortised cost; <em>hold to collect and sell</em> &rarr; FVOCI;
+anything else (trading, fair-value management) &rarr; FVTPL. Unlike IAS 39's held-to-maturity rules there
+is no &ldquo;tainting&rdquo;: occasional sales &mdash; e.g. in response to credit deterioration &mdash;
+do not by themselves break a hold-to-collect model.
+</div>
+
+<div class="defn">
+<b>Definition.</b> <strong>SPPI test.</strong> Contractual cash flows must be <em>solely payments of
+principal and interest</em>, where interest compensates only for time value of money, credit risk,
+liquidity, other basic lending costs and a profit margin &mdash; a &ldquo;basic lending arrangement&rdquo;.
+Leverage (e.g. cash flows at 2&times; a benchmark rate), equity or commodity linkage, or non-genuine
+prepayment features fail SPPI &rarr; mandatory FVTPL. For financial <em>assets</em>, embedded derivatives
+are not separated out; the whole instrument is assessed as one.
+</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Business model \ SPPI</th><th>Passes SPPI</th><th>Fails SPPI</th></tr>
+<tr><td>Hold to collect</td><td><strong>Amortised cost</strong></td><td>FVTPL</td></tr>
+<tr><td>Hold to collect &amp; sell</td><td><strong>FVOCI</strong> (debt, with recycling)</td><td>FVTPL</td></tr>
+<tr><td>Other (e.g. trading)</td><td>FVTPL</td><td>FVTPL</td></tr>
+</table>
+</div>
+
+<img class="fig" src="../assets/img/ch01/01_classification_flowchart.png" alt="Classification flowchart: financial asset through the business model test and SPPI test to amortised cost, FVOCI, or FVTPL">
+<div class="figcap"><b>Exhibit 1.1</b> &mdash; The classification triage: business-model test &rarr; SPPI test &rarr; measurement category, with the two elections and the two special regimes noted (knowledge/corpus/ifrs9_credit_risk_notes.md &sect;1.2&ndash;1.3).</div>
+
+<p>Two elections complete the picture, and two special regimes sit alongside the general model:</p>
+
+<div class="defn">
+<b>Definition.</b> <strong>Elections.</strong> Non-trading <strong>equity</strong> may be irrevocably
+designated FVOCI <em>without</em> recycling (a presentation election, not a measurement one &mdash; equity
+is outside ECL scope regardless). The <strong>fair-value option</strong> may be used to remove an
+accounting mismatch. For FVOCI debt: interest (EIR), impairment and FX go to P&amp;L; the residual
+fair-value change goes to OCI and recycles on derecognition &mdash; so <em>ECL measurement is identical
+for amortised-cost and FVOCI debt</em>; only presentation differs (FVOCI carries the asset at fair value,
+with the loss allowance recognised in OCI rather than netted off the carrying amount).
+</div>
+
+<div class="defn">
+<b>Definition.</b> <strong>Simplified approach.</strong> For trade receivables, contract assets and lease
+receivables, lifetime ECL is recognised <em>at all times</em> &mdash; no SICR tracking, no Stage 1. It is
+mandatory for trade receivables/contract assets without a significant financing component, an
+accounting-policy choice for the rest. Implemented in practice as a <strong>provision matrix</strong>:
+historical loss rates by ageing bucket, adjusted for forward-looking information. Not available for
+ordinary loans &mdash; every worked example in this compendium's staging and ECL chapters uses the
+<em>general</em> (three-stage) model.
+</div>
+
+<div class="defn">
+<b>Definition.</b> <strong>POCI</strong> (purchased or originated credit-impaired) assets are
+credit-impaired at initial recognition. They never sit in Stages 1&ndash;3: the entity uses a
+<strong>credit-adjusted EIR</strong> (which builds initial lifetime ECL into the yield) and subsequently
+recognises only the <em>cumulative change</em> in lifetime ECL since initial recognition &mdash; which
+can be a gain if the loan performs better than expected.
+</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> The business-model test is about the <em>portfolio-level intent</em>, not a promise about
+any one loan's fate &mdash; a bank that occasionally sells loans to manage concentration risk is still
+&ldquo;hold to collect&rdquo; provided sales are infrequent/insignificant or explained by credit risk
+increases; do not confuse this with the old IAS 39 held-to-maturity tainting rule, which IFRS 9
+deliberately abolished. Separately: SPPI failure routes an asset to FVTPL and takes it <em>outside</em> ECL
+scope entirely &mdash; a common interview trap is to ask &ldquo;what is the 12-month ECL on this FVTPL
+bond?&rdquo; The answer is that the question is malformed; FVTPL assets have no ECL allowance at all.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A bank holds a portfolio of retail mortgages, servicing them to maturity, but occasionally sells a
+handful of loans each year to manage regulatory capital. Does this alone break the hold-to-collect
+business model?
+<details><summary>Answer</summary>
+<div class="answer">No. IFRS 9 deliberately removed IAS 39's tainting rule; infrequent or insignificant
+sales &mdash; even ones motivated by risk or capital management &mdash; do not by themselves disqualify a
+hold-to-collect classification. The test looks at the stated objective and pattern of the business model,
+not a zero-tolerance sales rule.</div>
+</details>
+</li>
+<li>A loan's coupon is contractually 2&times; a floating benchmark rate. Does it pass SPPI?
+<details><summary>Answer</summary>
+<div class="answer">No. Leverage embedded in the cash-flow formula (here, a 2&times; multiplier on the
+benchmark) means the cash flows are not solely payments of principal and interest &mdash; the instrument
+fails SPPI and is measured at FVTPL, which also removes it from ECL scope.</div>
+</details>
+</li>
+<li>Why does POCI accounting never place a loan in Stage 1, 2 or 3?
+<details><summary>Answer</summary>
+<div class="answer">Because the loan was already credit-impaired when acquired or originated, so there is
+no &ldquo;initial recognition, not yet deteriorated&rdquo; state for it to start in. Instead of tracking
+SICR from a clean starting point, the credit-adjusted EIR bakes the initial expected loss into the
+effective yield, and subsequent P&amp;L only reflects the <em>change</em> in lifetime ECL &mdash; which
+can even be a gain if performance improves.</div>
+</details>
+</li>
+</ol>
+</div>
+
+<h3 id="s1-3">1.3 IFRS 9 vs Basel IRB vs CECL</h3>
+
+<p>The most common interview discriminator, and the most common implementation error, is re-using Basel
+IRB parameters in an ECL engine without stripping their built-in conservatism. The three regimes answer
+different questions on purpose (knowledge/corpus/ifrs9_credit_risk_notes.md &sect;4):</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Dimension</th><th>IFRS 9 ECL</th><th>Basel IRB</th><th>US CECL (ASC 326)</th></tr>
+<tr><td>Objective</td><td>accounting provision (expected loss)</td><td>capital for <em>unexpected</em> loss</td><td>accounting provision</td></tr>
+<tr><td>PD horizon</td><td>12-month (Stage 1) / lifetime (Stages 2&ndash;3)</td><td>always 12-month</td><td>lifetime for all assets, day 1</td></tr>
+<tr><td>PD philosophy</td><td><strong>point-in-time</strong>, forward-looking</td><td>often through-the-cycle / hybrid</td><td>PIT + reversion to history beyond forecast horizon</td></tr>
+<tr><td>LGD</td><td>unbiased, PIT, EIR-discounted</td><td><strong>downturn</strong>, conservative, floors</td><td>unbiased lifetime</td></tr>
+<tr><td>EAD</td><td>unbiased; behavioural life for revolvers (&para;5.5.20)</td><td>downturn CCFs, regulatory floors</td><td>contractual life incl. prepayment; unconditionally cancellable undrawn excluded</td></tr>
+<tr><td>Conservatism</td><td>neutral, probability-weighted</td><td>prudential margins + floors</td><td>neutral</td></tr>
+<tr><td>Staging</td><td>3 stages via SICR</td><td>&mdash;</td><td>none (single lifetime bucket)</td></tr>
+</table>
+</div>
+
+<div class="note">
+<b>Note.</b> <strong>Subtleties worth quoting in a review meeting.</strong> Basel workout LGD accumulates
+cash flows over the <em>full workout period</em> against exposure at default, while IFRS 9 references the
+exposure at the start of the reference period &mdash; one reason Basel LGD generally exceeds IFRS 9 LGD
+even before any downturn add-on. In downturns the ordering can flip for PD: PIT IFRS 9 PDs spike above
+TTC regulatory PDs exactly when the cycle turns (Chapter 5 makes this precise via the Vasicek framework).
+Empirically (Behn &amp; Couaillier, ECB WP 2841, 2023), IFRS 9 provisions are higher pre-default and more
+shock-responsive than under IAS 39 &mdash; yet most provisioning still occurs at default, so the standard
+softened, but did not remove, cliff effects.
+</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> &ldquo;We already have IRB models, just plug them in&rdquo; fails on <em>four</em> axes at
+once, not one: horizon (12m &rarr; lifetime term structure needed), philosophy (TTC &rarr; PIT
+transformation needed &mdash; Chapter 5), bias (downturn LGD/EAD &rarr; unbiased), and floors (regulatory
+floors must be stripped out). Each adjustment needs its own documentation and its own validation; treating
+this as a single relabelling exercise is the single most common implementation failure mode cited in
+supervisory reviews.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A bank's IFRS 9 LGD model on defaulted retail mortgages consistently comes out <em>lower</em> than the
+same book's Basel IRB downturn LGD. Is that necessarily a red flag?
+<details><summary>Answer</summary>
+<div class="answer">Not necessarily &mdash; it is often exactly what should happen. Basel downturn LGD is
+deliberately conservative (capital for unexpected loss, stressed by regulatory floors); IFRS 9 LGD is
+meant to be an unbiased, PIT estimate. If the two coincided exactly, that would itself be suspicious
+evidence that the Basel conservatism was never removed.</div>
+</details>
+</li>
+<li>Under CECL, does a newly originated, fully performing loan get any ECL allowance on day one? Under
+IFRS 9?
+<details><summary>Answer</summary>
+<div class="answer">Yes to both, but at different magnitudes. CECL requires a full <em>lifetime</em> ECL
+allowance from day one for every asset (no staging). IFRS 9 also requires a day-one allowance, but only
+the <em>12-month</em> ECL (Stage 1) unless the asset is already credit-impaired or was SICR-affected at
+origination &mdash; so the day-one IFRS 9 allowance is typically much smaller than the day-one CECL
+allowance on the same loan.</div>
+</details>
+</li>
+</ol>
+</div>
+
+<h3 id="s1-4">1.4 The three-stage impairment model and the definition of default</h3>
+
+<img class="fig" src="../assets/img/ch01/02_three_stage_statemachine.png" alt="Three-stage IFRS 9 state machine: Stage 1 performing 12-month ECL, Stage 2 SICR lifetime ECL, Stage 3 default lifetime ECL on net carrying amount, with SICR/default forward triggers and cure/probation reverse arrows">
+<div class="figcap"><b>Exhibit 1.2</b> &mdash; The general (three-stage) model, redrawn in this compendium's palette from the source concept (knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig001.png; knowledge/corpus/ifrs9_credit_risk_notes.md &sect;2).</div>
+
+<p><strong>Stage 1</strong> (no significant increase in credit risk since origination): <strong>12-month
+ECL</strong> &mdash; the portion of lifetime ECL arising from default events <em>possible within 12
+months</em>. This is <em>not</em> a 12-month-truncated lifetime loss, and not the loss restricted to loans
+certain to default within the year &mdash; it is the full expected-loss calculation, applied to a shorter
+horizon. <strong>Stage 2</strong> (SICR, not credit-impaired): <strong>lifetime ECL</strong>, with interest
+still recognised on the <em>gross</em> carrying amount. <strong>Stage 3</strong> (credit-impaired /
+defaulted): lifetime ECL, with interest unwound on the <em>net</em> carrying amount (gross minus
+allowance) &mdash; the practical effect of &ldquo;interest income can no longer accrue on a portion the
+entity does not expect to collect&rdquo;.</p>
+
+<div class="defn">
+<b>Definition.</b> <strong>Default</strong> (best practice &mdash; CRR Art. 178 / EBA/GL/2016/07
+alignment, assumed throughout this compendium). An obligor is in default when either (i) it is
+<strong>more than 90 days past due</strong> on a material credit obligation, or (ii)
+<strong>unlikeliness-to-pay (UTP)</strong> indicators apply: distressed restructuring with a diminished
+obligation (&gt;1% NPV loss), bankruptcy, sale of the obligation at a material credit-related loss,
+non-accrual, or a specific credit-risk adjustment. Materiality is a <em>dual</em> threshold: absolute
+(&le;&euro;100 retail, &le;&euro;500 non-retail) <em>and</em> relative (1% of on-balance exposure, capped
+at 2.5%). Return from default requires a <strong>probation</strong> period: at least 3 months without UTP
+indicators, and at least 1 year after a distressed restructuring.
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> Aligning the IFRS 9 default definition with the prudential one is a deliberate,
+BCBS-d350-endorsed choice, not a coincidence: it keeps the same PD/LGD reference data usable across
+accounting, capital, and internal risk management, rather than maintaining two parallel default ladders.
+This project's engine inherits that alignment directly &mdash; Stage 3 in <code>engine/staging.py</code>
+is defined as exactly the panel's <code>default_event</code> flag, with no separate accounting-only
+default logic.
+</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> Stage 2 is <em>not</em> default and must never be reported as such under the CRR &mdash;
+a Stage-2 loan is merely one whose <em>relative</em> risk has increased since origination; it may still
+be fully performing (no missed payments at all). Conflating &ldquo;Stage 2&rdquo; with &ldquo;in
+trouble&rdquo; in a governance conversation is a real, recurring communication failure &mdash; see the
+pitfall box in &sect;1.5.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A loan is 45 days past due but no UTP indicator applies. Is it in default under this definition?
+<details><summary>Answer</summary>
+<div class="answer">No. The hard default backstop is &gt;90 DPD; 45 DPD alone does not meet either default
+limb (past-due or UTP). It could, however, be relevant to the SICR test's 30-DPD <em>rebuttable
+presumption</em> (&sect;1.5) &mdash; that is a Stage-2 signal, not a default one.</div>
+</details>
+</li>
+<li>Why is 12-month ECL described as &ldquo;the 12-month <em>portion</em> of lifetime ECL&rdquo; rather
+than &ldquo;ECL truncated to 12 months&rdquo;?
+<details><summary>Answer</summary>
+<div class="answer">Because it is defined as the loss arising from default events that are <em>possible
+within</em> the next 12 months, weighted by their probability and computed over the full expected-loss
+formula (probability &times; LGD &times; EAD, discounted) &mdash; it is a genuine expected-loss quantity
+over a short window, not merely the first 12 months' worth of a longer cash-flow projection artificially
+cut off.</div>
+</details>
+</li>
+<li>A loan completes a distressed restructuring on 1 March 2025. Under the probation rule above, what is
+the earliest date it can exit default (assuming no further UTP indicators arise)?
+<details><summary>Answer</summary>
+<div class="answer">1 March 2026 &mdash; the rule requires at least 1 year after a distressed restructuring
+(the longer of the two probation clocks; the "3 months without UTP" clock is the general rule, but a
+distressed restructuring specifically requires the 1-year clock).</div>
+</details>
+</li>
+</ol>
+</div>
+
+<h3 id="s1-5">1.5 SICR &mdash; the relative lifetime-PD test (with a worked toy example)</h3>
+
+<p>SICR is a <em>relative deterioration</em> test, not an absolute credit-quality test: compare the
+<strong>lifetime PD over the remaining life at the reporting date</strong> with the lifetime PD
+<strong>expected for that same period at initial recognition</strong>. A loan originated risky and still
+equally risky has <em>not</em> suffered SICR &mdash; it was priced and provisioned for that risk level
+from day one (knowledge/corpus/ifrs9_credit_risk_notes.md &sect;2.2). Typical implementations combine:</p>
+
+<ul>
+<li><strong>Quantitative:</strong> a relative threshold on (annualised) lifetime PD &mdash; a doubling
+(200% relative increase) is the most common convention, used in the EBA 2018 stress-test methodology and
+echoed in ECB backstop proposals (a threefold 12-month PD increase, applied only above a PD of 0.3%, plus
+an absolute 12-month PD &gt; 20% trigger) &mdash; usually paired with an <strong>absolute</strong> add-on
+so tiny PDs cannot flip stages on noise;</li>
+<li><strong>Qualitative:</strong> watchlist status, forbearance flags, internal downgrade beyond a set
+number of notches;</li>
+<li><strong>Backstop:</strong> a rebuttable presumption of SICR at <strong>30 days past due</strong>;</li>
+<li><strong>Low-credit-risk exemption:</strong> investment-grade-equivalent exposures may be left in Stage
+1 without a full SICR assessment (widely used for bond books);</li>
+<li><strong>Cure:</strong> transfer back to Stage 1 requires the SICR to have reversed, usually with a
+probation period to prevent oscillation.</li>
+</ul>
+
+<div class="thm">
+<b>Pitfall (stated in the source notes).</b> Two traps. (1) Stage 2 is <em>not</em> default and must not
+be reported as such under the CRR. (2) Staging is the single most consequential modelling choice in
+IFRS 9: crossing into Stage 2 switches the horizon from 12-month to lifetime, often multiplying the
+allowance several-fold with <em>no change in the loss expectation, only in the measurement window</em>.
+Thresholds should be risk-grade-sensitive (a 0.05%&rarr;0.12% move matters less in absolute-loss terms
+than 5%&rarr;12%, yet both are &ldquo;more than doubling&rdquo;), and Stage-2 population size must balance
+early recognition against provision volatility.
+</div>
+
+<p>The source notes state the &ldquo;same remaining life&rdquo; rule but never work a number through it.
+The reason the phrase <em>same remaining life</em> is load-bearing &mdash; not just careful wording &mdash;
+is the subject of the derivation below.</p>
+
+<div class="derivation">
+<b>Derivation.</b> <strong>Why the comparison window must be held fixed &mdash; a synthetic toy example.</strong>
+<div class="step"><span class="stepno">1.</span> <strong>Setup.</strong> Consider a small 8-quarter
+(2-year) instalment loan with an age-dependent baseline hazard $\lambda_0(a)$ exhibiting the classic
+retail &ldquo;seasoning hump&rdquo; (rises then falls):
+$$\lambda_0(a):\quad a{=}1{:}\,1.0\%,\ 2{:}\,1.8\%,\ 3{:}\,2.4\%,\ 4{:}\,2.8\%,\ 5{:}\,2.6\%,\ 6{:}\,2.2\%,\ 7{:}\,1.8\%,\ 8{:}\,1.4\%.$$
+A covariate offset $c$ (LTV, macro, refinancing moneyness, &hellip;) shifts the hazard multiplicatively
+via the cloglog form (Chapter 3 derives this in full from continuous-time proportional hazards;
+here it is simply borrowed):
+$$\lambda(a\mid c)=1-\big(1-\lambda_0(a)\big)^{\exp(c)}.$$
+The reporting date is $t=4$: the loan has aged to $4$, leaving a <strong>remaining life</strong> of
+$R=8-4=4$ quarters &mdash; ages $5,6,7,8$.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Case A &mdash; no real deterioration</strong>
+($c_{\text{now}}=c_{\text{orig}}=0$ for both legs). The cumulative PD over the <em>full original life</em>
+(ages 1&ndash;8, offset 0), via the survival product $S(t)=\prod_{k\le t}(1-\lambda_k)$:
+$$\text{PD}_{\text{full life}}=1-\prod_{a=1}^{8}\big(1-\lambda_0(a)\big)=0.149354\ \ (14.9354\%).$$
+The cumulative PD over just the <em>remaining life</em> (ages 5&ndash;8, offset 0):
+$$\text{PD}_{\text{remaining, now}}=1-\prod_{a=5}^{8}\big(1-\lambda_0(a)\big)=0.077670\ \ (7.7670\%).$$</div>
+<div class="step"><span class="stepno">3.</span> <strong>The WRONG test</strong> (mismatched windows):
+naively divide the current remaining-life PD by the originally-declared full-life PD:
+$$\frac{\text{PD}_{\text{remaining, now}}}{\text{PD}_{\text{full life}}}=\frac{0.077670}{0.149354}=0.5200.$$
+This <em>looks</em> like credit risk has fallen to 52.0% of its origination level &mdash; purely because
+4 remaining periods were divided by an 8-period figure, with <strong>zero</strong> actual change in the
+borrower's risk. Nothing about the loan changed; the artifact is entirely a horizon mismatch.</div>
+<div class="step"><span class="stepno">4.</span> <strong>The CORRECT test</strong> (same window, ages
+5&ndash;8, on both legs): project the ORIGINATION-covariate leg over the identical remaining-life window
+that the CURRENT-covariate leg uses &mdash; i.e. &ldquo;the lifetime PD expected for that same period at
+initial recognition&rdquo;, computed literally:
+$$\text{PD}_{\text{orig}}(5\text{-}8)=1-\prod_{a=5}^{8}\big(1-\lambda_0(a)\big)=0.077670=\text{PD}_{\text{remaining, now}}$$
+$$\Rightarrow\ \text{ratio}=\frac{0.077670}{0.077670}=1.0000\ \Rightarrow\ \text{correctly NO SICR}.$$
+Same-window, same-offset legs are identical by construction &mdash; the correct test is silent, exactly as
+it should be, since nothing has actually changed.</div>
+<div class="step"><span class="stepno">5.</span> <strong>Case B &mdash; real deterioration.</strong> Now
+let the reporting-date covariates carry a genuine deterioration, $c_{\text{now}}=\ln(2)$ (a 2&times;
+hazard multiplier &mdash; e.g. an LTV/macro shift), while $c_{\text{orig}}=0$ is unchanged. Per-age
+hazards on the remaining window:
+$$\lambda(a\mid \ln 2):\quad a{=}5{:}\,5.1324\%,\ 6{:}\,4.3516\%,\ 7{:}\,3.5676\%,\ 8{:}\,2.7804\%$$
+(each roughly, but not exactly, 2&times; the offset-0 hazard &mdash; the cloglog transform is nonlinear).
+Cumulative PD over ages 5&ndash;8 at this offset:
+$$\text{PD}_{\text{remaining, now}}^{(B)}=1-\prod_{a=5}^{8}\big(1-\lambda(a\mid \ln 2)\big)=0.149308\ \ (14.9308\%).$$</div>
+<div class="step"><span class="stepno">6.</span> <strong>The WRONG test still masks it.</strong> Compare
+against the (unchanged) origination-declared full-life figure from Step 2:
+$$\frac{0.149308}{0.149354}=0.9997.$$
+A genuine <strong>2&times;</strong> hazard-level deterioration reads as essentially <strong>no
+change at all</strong> under the mismatched-window comparison &mdash; the shrinking-horizon artifact from
+Step 3 (which pushed the ratio down) very nearly cancels the real deterioration (which pushes the ratio
+up), for a false reading of &ldquo;nothing happened&rdquo;. This is the classic bug: it is not merely
+imprecise, it can flip the SICR decision in either direction depending on how the two effects happen to
+net out.</div>
+<div class="step"><span class="stepno">7.</span> <strong>The CORRECT test recovers the true signal.</strong>
+Same window (ages 5&ndash;8) on both legs:
+$$\frac{\text{PD}_{\text{remaining, now}}^{(B)}}{\text{PD}_{\text{orig}}(5\text{-}8)}=\frac{0.149308}{0.077670}=1.9223.$$
+This correctly isolates the covariate-driven deterioration, landing close to (but not exactly) the
+underlying 2.0&times; hazard multiplier &mdash; the small gap from 2.0000 is <em>not</em> an error; it is
+the expected nonlinearity of cumulative PD as a sub-additive function of a multiplicative per-period
+hazard shift (visible in the marginal-PD table: survival depletion means later periods contribute
+progressively less to both legs, compressing the ratio slightly below the raw hazard multiplier).</div>
+</div>
+
+<div class="ex">
+<b>Worked example.</b> Marginal-PD table for the correct (same-window) comparison, Case B (see
+<code>marg_orig</code>/<code>marg_now</code> in the scratch derivation script):
+<div class="table-wrap">
+<table>
+<tr><th>age $a$</th><th>$S_{\text{orig}}(a{-}1)$</th><th>$\lambda_{\text{orig}}(a)$</th><th>marginal PD (orig)</th><th>$S_{\text{now}}(a{-}1)$</th><th>$\lambda_{\text{now}}(a)$</th><th>marginal PD (now)</th></tr>
+<tr><td>5</td><td class="num">1.000000</td><td class="num">2.6000%</td><td class="num">0.026000</td><td class="num">1.000000</td><td class="num">5.1324%</td><td class="num">0.051324</td></tr>
+<tr><td>6</td><td class="num">0.974000</td><td class="num">2.2000%</td><td class="num">0.021428</td><td class="num">0.948676</td><td class="num">4.3516%</td><td class="num">0.041283</td></tr>
+<tr><td>7</td><td class="num">0.952572</td><td class="num">1.8000%</td><td class="num">0.017146</td><td class="num">0.907393</td><td class="num">3.5676%</td><td class="num">0.032372</td></tr>
+<tr><td>8</td><td class="num">0.935426</td><td class="num">1.4000%</td><td class="num">0.013096</td><td class="num">0.875021</td><td class="num">2.7804%</td><td class="num">0.024329</td></tr>
+<tr><td colspan="3"><strong>$S(8)$ / cumulative PD</strong></td><td class="num"><strong>0.922330 &rarr; 7.7670%</strong></td><td colspan="2"></td><td class="num"><strong>0.850692 &rarr; 14.9308%</strong></td></tr>
+</table>
+</div>
+<p>Applying the project's own annualisation and add-on convention (&sect;1.6 below; here $R=4$ quarters, so
+$4/R=1$, i.e. no rescaling is needed for this particular toy window) to the CORRECT comparison:</p>
+$$\text{ann_pd}_{\text{orig}} = 1-(1-0.077670)^{4/4}=0.077670\ (7.7670\%\text{ p.a.}),\quad
+\text{ann_pd}_{\text{now}} = 1-(1-0.149308)^{4/4}=0.149308\ (14.9308\%\text{ p.a.})$$
+$$\text{addon}=14.9308\%-7.7670\%=7.1638\text{pp} > 0.5\text{pp}\ \Rightarrow\ \text{passes the add-on test},$$
+$$\text{but ratio}=1.9223 \le 2.0\ \Rightarrow\ \textbf{Stage 1}\ \text{(fails the ratio test &mdash; a genuine borderline case)}.$$
+<p class="src">Recomputed in full: scratch derivation script (not a project fixture &mdash;
+<code>tests/</code> is read-only source for this campaign; this toy example is original to this chapter,
+built to the campaign brief's spec).</p>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> Two lessons in one example. First, the mismatched-window comparison is not
+merely &ldquo;a bit off&rdquo; &mdash; in Case B it very nearly hid a genuine 2&times; hazard-level
+deterioration entirely (ratio 0.9997 &asymp; 1), which is exactly the failure mode &ldquo;same remaining
+life&rdquo; is written to prevent. Second, the correctly-computed ratio of 1.9223 in Case B sits just
+<em>below</em> a 2.0&times; threshold &mdash; a real, material deterioration that a doubling convention
+would still classify as Stage 1. This is not a flaw in the toy example; it is the point of &sect;1.7's
+threshold-sensitivity exhibit below: the ratio threshold is a governance dial, and cases sitting just
+below it are exactly where that dial's setting matters most.
+</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> A practitioner who computes &ldquo;lifetime PD at origination&rdquo; once, at $t=0$, and
+then simply compares it to &ldquo;lifetime PD now&rdquo; at every later reporting date has built the WRONG
+test from Step 3/6 above &mdash; and the direction of the resulting bias is not predictable in general
+(it depends on the shape of the age-hazard curve and how far into the loan's life the comparison is made).
+The only robust fix is to always re-derive <em>both</em> legs over the identical remaining-life window at
+each reporting date, which is exactly what &sect;1.6's <code>lifetime_pd_now</code> /
+<code>lifetime_pd_orig</code> pair does in this project's engine.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In Case A of the toy derivation, the WRONG test's ratio was 0.52 even though nothing changed about the
+loan. Why is 0.52 not itself evidence of credit <em>improvement</em>?
+<details><summary>Answer</summary>
+<div class="answer">Because the 0.52 arises purely from comparing a 4-period cumulative PD against an
+8-period cumulative PD &mdash; fewer periods almost mechanically means a smaller cumulative default
+probability, regardless of the per-period hazard level. It is an artifact of the horizon mismatch, not a
+signal about the borrower.</div>
+</details>
+</li>
+<li>Why is the correct-test ratio in Case B (1.9223) not exactly 2.0, given the hazard was scaled by
+exactly $\exp(\ln 2)=2$ at every age in the window?
+<details><summary>Answer</summary>
+<div class="answer">Because cumulative PD is a nonlinear (sub-additive) function of the per-period hazard:
+survival depletes faster on the "now" leg (higher hazards), so later ages in the window contribute
+progressively less incremental probability on that leg than a naive linear scaling would suggest. The
+marginal-PD table shows this directly &mdash; by age 8 the "now" leg's survival $S(7)=0.875$ is already
+well below the "orig" leg's $S(7)=0.935$, compressing the ratio below the raw 2.0&times; hazard multiplier.</div>
+</details>
+</li>
+<li>Suppose the project's SICR threshold were lowered from 2.0x to 1.5x. Using the toy example's Case B
+ratio of 1.9223, would this loan now be flagged Stage 2?
+<details><summary>Answer</summary>
+<div class="answer">Yes &mdash; 1.9223 &gt; 1.5, so at a 1.5x threshold (and given the add-on test already
+passes at 7.16pp &gt; 0.5pp) this loan would move to Stage 2. This is exactly the governance-dial effect
+quantified at portfolio scale in &sect;1.7's threshold-sensitivity exhibit.</div>
+</details>
+</li>
+</ol>
+</div>
+
+<h3 id="s1-6">1.6 The project's SICR implementation: thresholds, probation, the inert 30-DPD backstop</h3>
+
+<p>The DCR engine (<code>engine/staging.py</code>) implements the &sect;1.5 rule exactly, at portfolio
+scale: for every loan at reporting quarter $t$ with remaining contractual life $R=\text{mat_time}-t$
+(floored at 1 quarter), it computes <code>lifetime_pd_now</code> and <code>lifetime_pd_orig</code> over
+the <em>identical</em> age window $t{+}1,\dots,t{+}R$ &mdash; the same age baseline $\lambda_0(a)$ enters
+both legs, so only the frozen covariate offset differs between them, exactly matching the derivation in
+&sect;1.5. Origination covariates are reconstructed per loan from panel columns (contractual origination
+LTV, FICO/occupancy at origination, prepayment incentive relative to the origination-quarter median market
+rate, and lagged macro at origination time), with two documented approximation flags
+(<code>orig_macro_approx</code>, <code>orig_rate_proxy</code>) for edge cases.</p>
+
+<div class="thm">
+<b>Result.</b> <strong>The project's Stage-2 rule (StagingConfig defaults).</strong>
+$$\text{Stage 2 iff}\quad \underbrace{\text{lifetime_pd_now} > 2.0\times\text{lifetime_pd_orig}}_{\text{ratio_threshold}=2.0}\ \ \textbf{AND}\ \ \underbrace{\text{ann_pd_now}-\text{ann_pd_orig} > 0.5\text{pp}}_{\text{abs_addon}=0.005}$$
+$$\text{where}\quad \text{ann_pd} = 1-(1-\text{lifetime_pd})^{4/R}\quad\text{(quarters}\to\text{per-annum equivalent)}$$
+$$\textbf{OR}\quad \text{the 30-DPD backstop (STRUCTURALLY INERT &mdash; see below)}.$$
+Probation (<code>cure_quarters</code>=2): a Stage-2 loan returns to Stage 1 only after the trigger has
+been off for 2 consecutive quarters; because the quantitative trigger is a pure (memoryless) function of
+each quarter's covariates, the sticky state machine is exactly equivalent to the stateless window rule
+&ldquo;Stage 2 iff the trigger fired at any of $t,t{-}1$&rdquo;.
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> The AND condition matters as much as the ratio: a loan whose lifetime PD moves
+from 0.05% to 0.12% at origination has technically &ldquo;more than doubled&rdquo;, but the 0.5pp
+annualised add-on floor stops that kind of noise-level move from flipping stage &mdash; exactly the
+&sect;1.5 pitfall box's point that thresholds must be risk-grade-sensitive. The annualisation
+$\text{ann_pd}=1-(1-\text{PD}_{\text{life}})^{4/R}$ exists purely so the same 0.5pp add-on threshold is
+comparable across loans with different remaining lives $R$ &mdash; without it, a loan with 40 quarters
+remaining would need a much larger cumulative-PD move to clear the same add-on than a loan with 4 quarters
+remaining, for the same underlying annual risk change.</div>
+
+<div class="warn">
+<b>Warning.</b> <strong>The 30-DPD backstop is structurally inert on this dataset.</strong> IFRS 9's
+rebuttable presumption of SICR at 30 days past due requires a delinquency ladder to exist in the data. The
+DCR panel's loan status is only <em>performing / default / payoff</em> &mdash; there is no 30/60/90-DPD
+staging ladder &mdash; so the implemented hook (<code>config.backstop_30dpd=True</code>,
+<code>config.dpd_col='dpd_time'</code>) can never fire: the column does not exist in the panel. This is a
+<strong>documented simplification</strong>, not an implementation gap: the hook is written and would work
+the day a DPD column exists, but every Stage-2 population reported in this chapter is
+<strong>quantitative-trigger-only</strong> and would be strictly <em>larger</em> with a live 30-DPD
+backstop, since the backstop can only ever add loans to Stage 2, never remove them
+(<code>outputs/staging/staging_report.md</code>).
+</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> Do not read &ldquo;30-DPD backstop inert&rdquo; as &ldquo;this staging model ignores
+delinquency&rdquo; &mdash; the quantitative SICR trigger already responds to macro/collateral deterioration
+that typically <em>precedes</em> delinquency (that is the entire point of a forward-looking PIT hazard
+model). The missing backstop is specifically the IFRS 9 <em>rebuttable presumption</em> device, a
+regulatory floor on top of the model-driven trigger &mdash; its absence understates Stage 2 at the margin,
+it does not make the whole staging exercise blind to risk.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is the annualisation exponent $4/R$ rather than a fixed constant?
+<details><summary>Answer</summary>
+<div class="answer">Because $R$ (remaining life in quarters) varies loan by loan, and the add-on threshold
+needs to be compared on a common per-annum basis across all of them. $4/R$ converts an $R$-quarter
+cumulative PD into its equivalent constant-hazard per-annum rate (4 quarters per year divided by the
+number of quarters the cumulative figure spans) so a 40-quarter loan and a 4-quarter loan are held to the
+same annualised 0.5pp standard, not the same raw cumulative-PD standard.</div>
+</details>
+</li>
+<li>A loan's quantitative trigger fires at $t=10$, is off at $t=11$, and fires again at $t=12$. Under
+<code>cure_quarters=2</code>, is this loan in Stage 1 or Stage 2 at $t=12$, and why?
+<details><summary>Answer</summary>
+<div class="answer">Stage 2. The stateless window rule checks whether the trigger fired at any of
+$t, t{-}1$ (2 quarters). At $t=12$ that window is $\{12, 11\}$; the trigger fired at 12, so the loan is
+Stage 2 regardless of the earlier off-quarter at $t=11$ &mdash; a single trigger-free quarter is not
+enough for the probation clock to complete (2 consecutive trigger-free quarters are required).</div>
+</details>
+</li>
+<li>If the DCR panel gained a genuine DPD ladder tomorrow and the 30-DPD backstop went live, would the
+reported Stage-2 shares in &sect;1.7 go up, down, or could they go either way?
+<details><summary>Answer</summary>
+<div class="answer">Up, unambiguously. The backstop is an OR condition alongside the quantitative trigger
+&mdash; it can only add loans that the quantitative test currently leaves in Stage 1 (any loan &ge;30 DPD
+but not yet quantitatively triggered), never remove a loan the quantitative test already flagged. So
+Stage-2 shares are a documented lower bound, not a point estimate with unknown sign of bias.</div>
+</details>
+</li>
+</ol>
+</div>
+
+<h3 id="s1-7">1.7 Finding: Stage 2 is empty in calm markets, dominant in stress</h3>
+
+<p>Running the rule above on two DCR snapshots &mdash; a calm quarter ($t=20$) and a stress quarter
+($t=40$) &mdash; produces a striking result (<code>outputs/staging/staging_report.md</code>):</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>snapshot</th><th>staged rows</th><th>Stage 1</th><th>Stage 2</th><th>Stage 3</th><th>default incidence</th></tr>
+<tr><td>t=20 (calm)</td><td class="num">8,662</td><td class="num">98.90%</td><td class="num">0.00%</td><td class="num">1.10%</td><td class="num">1.10%</td></tr>
+<tr><td>t=40 (stress)</td><td class="num">13,863</td><td class="num">20.98%</td><td class="num">75.78%</td><td class="num">3.25%</td><td class="num">3.25%</td></tr>
+</table>
+</div>
+
+<img class="fig" src="../assets/img/ch01/03_stage_distribution.png" alt="Bar chart: Stage 1, 2, 3 shares of staged book at t=20 calm (98.9/0.0/1.1) versus t=40 stress (21.0/75.8/3.2)">
+<div class="figcap"><b>Exhibit 1.3</b> &mdash; IFRS 9 stage distribution, calm vs stress snapshot, regenerated from <code>outputs/staging/staging_report.md</code> (2&times; + 0.5pp p.a. relative SICR test).</div>
+
+<p>At $t=20$, not a single loan in the staged book (0 of 8,662) clears the SICR trigger &mdash; deterioration
+since origination simply has not happened in a calm macro regime, so Stage 2 is genuinely empty, not just
+small. At $t=40$, Stage 2 holds 75.78% of the book (10,505 of 13,863 loans: 10,503 via the quantitative
+trigger, 2 via probation carry-over &mdash; a 0.0144pp difference from the pure-quantitative
+governance-sensitivity figure below, arising purely from those 2 probation loans). Stage 3 (true default)
+only rises from 1.10% to 3.25% over the same window &mdash; the SICR mechanism, not the default rate, is
+doing almost all of the work of re-rating the book under stress.</p>
+
+<p>How sensitive is that 75.78% (or, on the pure-quantitative-trigger convention used for the sensitivity
+sweep, 75.76%) to the choice of ratio threshold? The report answers this directly by re-running the
+quantitative trigger at four thresholds with the add-on held fixed at 0.5pp p.a.:</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>snapshot</th><th>1.5x</th><th>2.0x</th><th>3.0x</th><th>4.0x</th></tr>
+<tr><td>t=20 (calm)</td><td class="num">0.00%</td><td class="num">0.00%</td><td class="num">0.00%</td><td class="num">0.00%</td></tr>
+<tr><td>t=40 (stress)</td><td class="num">85.10%</td><td class="num">75.76%</td><td class="num">30.25%</td><td class="num">3.32%</td></tr>
+</table>
+</div>
+
+<img class="fig" src="../assets/img/ch01/04_threshold_sensitivity.png" alt="Line chart: Stage-2 share versus SICR ratio threshold from 1.5x to 4.0x, t=20 flat at 0%, t=40 falling from 85.1% to 3.32%">
+<div class="figcap"><b>Exhibit 1.4</b> &mdash; Stage-2 population vs SICR ratio threshold &mdash; the governance dial, regenerated from <code>outputs/staging/staging_report.md</code> "Governance sensitivity" table.</div>
+
+<div class="widget">
+<h4>Live widget &mdash; drag the SICR threshold slider</h4>
+<p class="small">Drives directly off the same four (threshold, Stage-2 share) pairs plotted in Exhibit 1.4
+&mdash; these are the only four points the project actually evaluated, so the slider snaps to them rather
+than interpolating a fifth number that was never computed.</p>
+<div class="widget-controls" id="s1-7-controls"></div>
+<div id="s1-7-chart"></div>
+<div id="s1-7-table"></div>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> Reading the table left to right: loosening the threshold from the adopted 2.0x to
+1.5x would move Stage 2 from 75.76% to 85.10% of the stress-quarter book (+9.3pp) &mdash; tightening it to
+4.0x collapses Stage 2 to 3.32% (&minus;72.4pp). At <em>no</em> threshold in this sweep does the calm
+quarter produce a nonzero Stage-2 share: the finding is not an artifact of the 2.0x convention, it is
+robust across the entire tested range. This is precisely the &sect;1.5 pitfall box's warning made concrete
+at portfolio scale: the SICR ratio threshold is the single loudest governance dial in the impairment
+estimate, and its effect is not marginal &mdash; it swings tens of percentage points of the live book
+between 12-month and lifetime measurement.</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> It is tempting to read &ldquo;Stage 2 = 0% at t=20&rdquo; as a model failure (surely
+<em>some</em> loans should be borderline?). It is not: the toy derivation in &sect;1.5 showed a genuine,
+material 2&times; hazard-level deterioration can still fail a 2.0x ratio test (landing at 1.9223x) &mdash;
+so a calm-regime finding of exactly 0% is consistent with the sensitivity sweep's own numbers, not evidence
+of a bug. The correct diagnostic question is not &ldquo;why is Stage 2 empty?&rdquo; but &ldquo;does the
+sensitivity sweep (Exhibit 1.4) confirm the finding is threshold-robust, not threshold-dependent?&rdquo;
+&mdash; and here it does (0.00% at every one of the four tested thresholds).</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>At $t=40$, why does the headline Stage-2 share (75.78%) differ slightly from the governance-sensitivity
+table's 2.0x-threshold figure (75.76%)?
+<details><summary>Answer</summary>
+<div class="answer">The headline figure includes 2 loans held in Stage 2 by probation carry-over (they no
+longer trigger the quantitative test this quarter, but have not yet completed the 2-consecutive-quarter
+cure window). The governance-sensitivity table is explicitly computed on the "pure quantitative trigger
+(no probation lookback)" convention, so those 2 loans fall out: 10,503/13,863 = 75.76% vs
+10,505/13,863 = 75.78% &mdash; a 0.0144 percentage-point difference from exactly 2 loans out of 13,863.</div>
+</details>
+</li>
+<li>Using Exhibit 1.4, roughly how many percentage points of Stage-2 share are lost moving from a 3.0x to a
+4.0x threshold, versus moving from 1.5x to 2.0x?
+<details><summary>Answer</summary>
+<div class="answer">3.0x&rarr;4.0x loses 30.25%&minus;3.32% = 26.93pp; 1.5x&rarr;2.0x loses
+85.10%&minus;75.76% = 9.34pp. The curve is convex-looking in this direction &mdash; the marginal effect of
+tightening the threshold is much larger once the threshold is already high, because progressively fewer
+loans have ratios that large, but among the borderline-large-ratio loans, moves through that region shed a
+big share of the book at once.</div>
+</details>
+</li>
+<li>Suppose a different institution used the ECB backstop convention (threefold 12-month PD increase,
+applied only above PD 0.3%, plus an absolute 12-month PD &gt; 20% trigger) instead of the 2.0x lifetime-PD
+doubling convention. Would Exhibit 1.4 directly tell you that institution's Stage-2 share?
+<details><summary>Answer</summary>
+<div class="answer">No. Exhibit 1.4 sweeps only the ratio_threshold parameter of THIS project's rule (a
+lifetime-PD ratio with a fixed 0.5pp p.a. add-on) &mdash; the ECB convention is a structurally different
+rule (12-month PD, not lifetime PD; a different absolute floor; a PD-level eligibility cutoff at 0.3%).
+Comparing institutions on different SICR conventions requires re-running each institution's actual rule,
+not reading one institution's sensitivity sweep as a proxy for another's.</div>
+</details>
+</li>
+</ol>
+</div>
+
+<h3 id="s1-8">1.8 Staging's ECL consequence: the coverage gradient</h3>
+
+<p>Staging is not an academic label &mdash; it directly re-scales the allowance. Because Stage 1 books
+12-month ECL and Stages 2&ndash;3 book lifetime ECL, the same underlying loan can carry a very different
+allowance purely depending on which stage it lands in, holding its actual default risk fixed. The
+project's ECL engine (<code>outputs/ecl/ecl_report.md</code>) makes this concrete at the $t{=}40$ stress
+snapshot:</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>stage</th><th>loans</th><th>EAD (\$m)</th><th>allowance (\$m)</th><th>coverage</th><th>mean LGD</th><th>mean lifetime PD</th></tr>
+<tr><td>1</td><td class="num">2,908</td><td class="num">514.3</td><td class="num">18.26</td><td class="num">3.551%</td><td class="num">0.419</td><td class="num">0.541</td></tr>
+<tr><td>2</td><td class="num">10,505</td><td class="num">3,005.0</td><td class="num">939.59</td><td class="num">31.268%</td><td class="num">0.615</td><td class="num">0.766</td></tr>
+<tr><td>3</td><td class="num">450</td><td class="num">117.5</td><td class="num">74.76</td><td class="num">63.646%</td><td class="num">0.638</td><td class="num">0.810</td></tr>
+<tr><td><strong>total</strong></td><td class="num">13,863</td><td class="num">3,636.8</td><td class="num">1,032.61</td><td class="num">28.393%</td><td class="num">0.575</td><td class="num">0.720</td></tr>
+</table>
+</div>
+
+<img class="fig" src="../assets/img/ch01/05_coverage_by_stage.png" alt="Bar chart: ECL allowance-to-EAD coverage ratio by stage at t=40, rising from 3.551% Stage 1 to 31.268% Stage 2 to 63.646% Stage 3">
+<div class="figcap"><b>Exhibit 1.5</b> &mdash; ECL coverage gradient by stage, t=40 stress snapshot, regenerated from <code>outputs/ecl/ecl_report.md</code>.</div>
+
+<div class="ex">
+<b>Worked example.</b> The Stage-1&rarr;Stage-2 jump in coverage (3.551% &rarr; 31.268%, an 8.8&times;
+multiple) is <em>not</em> primarily a jump in mean lifetime PD (0.541 &rarr; 0.766, only a 1.4&times;
+multiple) or mean LGD (0.419 &rarr; 0.615, a 1.5&times; multiple) &mdash; those two combined only account
+for roughly $1.4\times1.5\approx2.1\times$ of the 8.8&times; coverage jump. <strong>The remaining
+&asymp;4.2&times; comes from the horizon switch itself</strong>: Stage 1 books 12-month ECL, Stage 2 books
+the FULL lifetime ECL over the remaining contractual life &mdash; the same underlying survival/hazard
+machinery integrated over a much longer horizon. This is the numerical face of the &sect;1.5 pitfall box's
+claim: crossing into Stage 2 multiplies the allowance several-fold "with no change in the loss
+expectation, only in the measurement window" &mdash; here the window change alone contributes roughly twice
+as much of the multiple as the PD and LGD re-marking combined.
+<p class="src">Recomputed cross-check: $514.3\times3.551\%=18.26$m (report: 18.26m);
+$3{,}005.0\times31.268\%\approx939.60$m (report: 939.59m); $117.5\times63.646\%\approx74.78$m
+(report: 74.76m) &mdash; all three reproduce the report's per-stage allowance to within one or two
+hundredths of a \$m, the residual gap being the report's own display rounding of EAD/allowance/coverage
+to independent precisions (1dp/2dp/3dp respectively) compounding when multiplied back together, not an
+error in this chapter's arithmetic; totals $514.3+3{,}005.0+117.5=3{,}636.8$m and
+$18.26+939.59+74.76=1{,}032.61$m (the report's own rounded per-stage figures) both match the report's
+totals row exactly; total coverage
+$1{,}032.61/3{,}636.8=28.393\%$ matches the report headline; $t{=}20\to t{=}40$ coverage multiplier
+$28.393\%/1.279\%=22.2\times$ matches the report's stated "22.2x" (<code>outputs/ecl/ecl_report.md</code>
+headline row; full arithmetic in the scratch cross-check script).</p>
+</div>
+
+<div class="interpretation">
+<b>What this means.</b> This is the closing link in the chapter's chain: &sect;1.1 explained
+<em>why</em> IFRS 9 wants a forward-looking, staged measure rather than an incurred-loss cliff;
+&sect;1.4&ndash;1.6 defined exactly <em>how</em> a loan gets assigned to a stage; and this section shows
+<em>what that assignment is worth</em> in allowance terms. Because the coverage gradient is dominated by
+the horizon switch rather than the PD/LGD re-mark, the SICR threshold decision from &sect;1.7 is not just a
+population-classification choice &mdash; via this coverage gradient it is very nearly a direct dial on the
+reported allowance. Chapter 2 derives the ECL formula itself (the survival-product decomposition this
+coverage gradient runs on) in full.</div>
+
+<div class="gotcha">
+<b>Gotcha.</b> Do not assume the coverage gradient S1 &lt; S2 &lt; S3 is a law of nature that must always
+hold loan-by-loan &mdash; it holds here as a <em>population average</em> because worse loans are more
+likely to be in later stages (PD and LGD both drift up down the table too), but the ECL report's own
+sanity gate flags that at $t{=}20$ (calm), Stage 2 has <em>zero</em> loans, so the "Stage-2 coverage &gt;
+Stage-1" check is explicitly reported as "not evaluable" rather than silently passing &mdash; a reminder
+that an empty Stage-2 population (the &sect;1.7 finding) also empties out several standard staging-QA
+checks, which is itself something a validation framework needs to handle explicitly (Chapter 7).</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Roughly how much of the Stage-1&rarr;Stage-2 coverage jump (8.8&times;) is attributable to the
+12-month&rarr;lifetime horizon switch, versus the mean PD and LGD re-marking?
+<details><summary>Answer</summary>
+<div class="answer">Mean PD rises 0.541&rarr;0.766 (1.4&times;) and mean LGD rises 0.419&rarr;0.615
+(1.5&times;), combining to roughly $1.4\times1.5\approx2.1\times$ of the 8.8&times; total jump. The
+remaining &asymp;4.2&times; ($8.8/2.1$) is attributable to the horizon switch itself &mdash; integrating
+the same survival/hazard machinery over the full remaining life instead of just 12 months &mdash; making
+the horizon switch roughly twice as large a contributor as the PD/LGD re-mark combined.</div>
+</details>
+</li>
+<li>Why can the ECL report not evaluate its "Stage-2 coverage &gt; Stage-1 coverage" sanity gate at t=20?
+<details><summary>Answer</summary>
+<div class="answer">Because Stage 2 has exactly 0 loans at t=20 (the &sect;1.7 finding) &mdash; there is no
+Stage-2 coverage ratio to compare against Stage 1's 1.047% at that snapshot, so the gate is explicitly
+reported as "not evaluable" rather than silently passing or failing. This is a direct, visible consequence
+of the empty-Stage-2 finding propagating into the validation layer.</div>
+</details>
+</li>
+<li>At t=40, Stage 3's mean lifetime PD (0.810) is not dramatically higher than Stage 2's (0.766), yet
+Stage 3's coverage (63.646%) is roughly double Stage 2's (31.268%). What best explains the remaining gap,
+given both stages already book lifetime ECL (so the horizon is the same for both)?
+<details><summary>Answer</summary>
+<div class="answer">With the horizon held fixed (lifetime for both stages), the gap must come from
+elsewhere in the ECL formula: Stage 3's mean LGD is higher (0.638 vs 0.615) and, per this project's
+engine convention, Stage-3 ECL is computed directly as LGD &times; current balance (loss already
+crystallised, undiscounted) rather than the full survival-weighted lifetime sum Stage 2 uses &mdash; a
+defaulted loan's whole exposure is already "at risk" with no further survival discounting to apply, which
+mechanically pushes its coverage ratio higher than a merely-SICR-flagged loan's probability-weighted
+figure for a similar PD level.</div>
+</details>
+</li>
+</ol>
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from knowledge/corpus/ifrs9_credit_risk_notes.md (&sect;&sect;1&ndash;2), outputs/staging/staging_report.md,
+outputs/ecl/ecl_report.md, engine/staging.py on 2026-07-19.
+</div>
+
+<script src="../assets/js/widgets.js"></script>
+<script>
+(function () {
+  var THRESHOLDS = [1.5, 2.0, 3.0, 4.0];
+  var T20 = [0.00, 0.00, 0.00, 0.00];
+  var T40 = [85.10, 75.76, 30.25, 3.32];
+  var idx = 1; // default: the project's adopted 2.0x threshold
+
+  var controls = document.getElementById('s1-7-controls');
+  var chartDiv = document.getElementById('s1-7-chart');
+  var tableDiv = document.getElementById('s1-7-table');
+
+  Widgets.makeSlider(controls, {
+    label: 'SICR ratio threshold', min: 0, max: 3, step: 1, value: idx,
+    format: function (v) { return THRESHOLDS[Math.round(v)].toFixed(1) + 'x'; },
+    onInput: function (v) { idx = Math.round(v); redraw(); }
+  });
+
+  var table = Widgets.makeLiveTable(tableDiv, {
+    columns: [
+      { key: 'thr', label: 'threshold', format: function (v) { return v.toFixed(1) + 'x'; } },
+      { key: 't20', label: 't=20 (calm) Stage-2 %', format: function (v) { return v.toFixed(2) + '%'; } },
+      { key: 't40', label: 't=40 (stress) Stage-2 %', format: function (v) { return v.toFixed(2) + '%'; } }
+    ],
+    rows: THRESHOLDS.map(function (t, i) { return { thr: t, t20: T20[i], t40: T40[i] }; })
+  });
+
+  function el(tag, attrs, text) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function drawBars() {
+    chartDiv.innerHTML = '';
+    var w = 460, h = 230, margin = { top: 26, right: 16, bottom: 34, left: 40 };
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('width', '100%');
+    var plotW = w - margin.left - margin.right, plotH = h - margin.top - margin.bottom;
+    var maxY = 90;
+    function sy(v) { return margin.top + plotH - (v / maxY) * plotH; }
+
+    [0, 20, 40, 60, 80].forEach(function (t) {
+      svg.appendChild(el('line', { x1: margin.left, x2: margin.left + plotW, y1: sy(t), y2: sy(t), stroke: '#888', 'stroke-opacity': 0.15 }));
+      svg.appendChild(el('text', { x: margin.left - 6, y: sy(t) + 3, 'text-anchor': 'end', 'font-size': 9.5, fill: '#777' }, String(t)));
+    });
+
+    var bw = 74;
+    var bars = [
+      { label: 't=20 (calm)', v: T20[idx], x: margin.left + plotW * 0.28 - bw / 2, color: '#1f3a5f' },
+      { label: 't=40 (stress)', v: T40[idx], x: margin.left + plotW * 0.72 - bw / 2, color: '#c0392b' }
+    ];
+    bars.forEach(function (b) {
+      var y = sy(b.v);
+      svg.appendChild(el('rect', { x: b.x, y: y, width: bw, height: (margin.top + plotH - y), fill: b.color }));
+      svg.appendChild(el('text', { x: b.x + bw / 2, y: y - 6, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 'bold', fill: b.color }, b.v.toFixed(2) + '%'));
+      svg.appendChild(el('text', { x: b.x + bw / 2, y: margin.top + plotH + 16, 'text-anchor': 'middle', 'font-size': 10, fill: '#555' }, b.label));
+    });
+    svg.appendChild(el('text', { x: w / 2, y: 15, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 'bold', fill: '#333' }, 'Stage-2 share at threshold ' + THRESHOLDS[idx].toFixed(1) + 'x'));
+    svg.appendChild(el('line', { x1: margin.left, x2: margin.left, y1: margin.top, y2: margin.top + plotH, stroke: '#555' }));
+    svg.appendChild(el('line', { x1: margin.left, x2: margin.left + plotW, y1: margin.top + plotH, y2: margin.top + plotH, stroke: '#555' }));
+    chartDiv.appendChild(svg);
+  }
+
+  function redraw() {
+    drawBars();
+    table.update(THRESHOLDS.map(function (t, i) { return { thr: t, t20: T20[i], t40: T40[i] }; }));
+  }
+  redraw();
+})();
+</script>
+
+<script src="../assets/js/toc.js" defer></script>
+</body>
+</html>

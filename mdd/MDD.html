@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Development Document — IFRS 9 ECL Engine &amp; Agentic Copilot</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --exBg: #ecf7ee;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 980px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0;
+      --muted: #b3aea3;
+      --rule: #45433e;
+      --accent: #8fb4e3;
+      --accent-soft: #a9c6ec;
+      --warn: #e08a72;
+      --good: #7fce97;
+      --page-bg: #17181a;
+      --shell-bg: #0d0d0d;
+      --boxbg: #23241f;
+      --noteBg: #1c2733;
+      --thmBg: #2b2415;
+      --warnBg: #2e1d1a;
+      --exBg: #16261a;
+      --th-bg: #1f2a38;
+      --td-border: #4a4842;
+      --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d; --boxbg: #23241f;
+    --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --exBg: #16261a; --th-bg: #1f2a38;
+    --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6; --boxbg: #f7f5ee;
+    --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --exBg: #ecf7ee; --th-bg: #e8eef7;
+    --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 90%; margin-left: auto; margin-right: auto; }
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  .defn, .note, .thm, .ex, .warn {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+  }
+  .thm { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex  { border-left-color: var(--good); background: var(--exBg); }
+  .warn{ border-left-color: var(--warn); background: var(--warnBg); }
+  .note{ border-left-color: #d39e00; background: var(--thmBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b { font-variant: small-caps; letter-spacing: 0.4px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .kicker { display:inline-block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 1px 7px; margin-bottom: 4px; }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+  .badge-clean { color: var(--good); font-weight: 600; }
+  .badge-fixed { color: #d39e00; font-weight: 600; }
+  .badge-frozen { color: var(--accent); font-weight: 600; }
+  section { margin-bottom: 8px; }
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Model Development Document</h1>
+<div class="subtitle">IFRS 9 Expected Credit Loss Engine &amp; Agentic Copilot</div>
+<div class="meta-line">Compiled 2026-07-19 from <code>wiki/</code> and <code>outputs/**</code> — every number quoted verbatim and source-cited; nothing recomputed.</div>
+
+<div class="summary">
+<b>Contents</b>
+<div class="toc">
+<ol>
+<li><a href="#s1">Executive Summary</a></li>
+<li><a href="#s2">Data</a></li>
+<li><a href="#s3">Methodology</a>
+  <ol>
+    <li><a href="#s31">Hazard (PD) models</a></li>
+    <li><a href="#s32">LGD models</a></li>
+    <li><a href="#s33">EAD</a></li>
+    <li><a href="#s34">Staging (SICR)</a></li>
+    <li><a href="#s35">ECL assembly</a></li>
+    <li><a href="#s36">Vasicek/Z, satellite, scenarios</a></li>
+    <li><a href="#s37">Challengers (MLP, LSTM)</a></li>
+  </ol>
+</li>
+<li><a href="#s4">Validation &amp; Backtesting</a></li>
+<li><a href="#s5">Limitations &amp; Known Issues</a></li>
+<li><a href="#s6">Governance &amp; Controls</a></li>
+<li><a href="#s7">Appendix: Artifact Inventory &amp; Exhibits</a></li>
+</ol>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s1">1 &nbsp; Executive Summary</h2>
+
+<h3>1.1 What this model is</h3>
+<p>A full IFRS 9 expected-credit-loss (ECL) stack, built in two generations sharing one frozen
+computational core:</p>
+<ul>
+<li><b>Engine (production, frozen 2026-07-05):</b> <code>engine/{hazard,lgd,ead,staging,ecl}.py</code>
+— a loan-quarter panel → discrete-time cloglog PD hazards (default + prepayment, competing risk) →
+two-stage cure×severity LGD → contractual EAD amortisation → relative-SICR staging → the ECL sum.
+Fit on the <b>DCR</b> panel (a CoreLogic-style national mortgage panel, anonymised calendar).</li>
+<li><b>Scenario layer:</b> a Vasicek/Belkin single-factor systematic-risk model conditions the frozen
+PD hazard on a DFAST-shaped macro path via a satellite regression, producing probability-weighted
+scenario ECL.</li>
+<li><b>Rung-3 stretch (Freddie Mac SFLLD, Phase A+B, 2026-07-17/18):</b> an independent, isolated
+refit of the hazard and LGD models on <b>real</b> Freddie Mac loan-level data (real dates, real
+states, real realised losses) — 837,500 loans / 39,522,565 loan-months across 17 sampled vintages —
+plus an ALFRED-vintage honest backtest and an LSTM path-dependence challenger. The frozen production
+engine is <b>never</b> touched by this stretch (isolation contract, §6.1).</li>
+<li><b>Agentic layer:</b> a LangGraph three-tier copilot (compute / sandbox-analyze / cited-retrieval)
+fronting the frozen engine, deployed publicly on HF Spaces, with a refusal path and a labeled
+"REASONED" interpretation route for conceptual questions the engine cannot itself answer.</li>
+</ul>
+
+<h3>1.2 Headline results (verbatim, source-cited)</h3>
+<div class="table-wrap"><table>
+<tr><th>Metric</th><th>Value</th><th>Source</th></tr>
+<tr><td>DCR loan-quarter panel</td><td>621,736 eligible rows / 49,974 loans, train t≤40 / OOT t=41–60</td><td class="src"><code>outputs/panel/waterfall.md</code></td></tr>
+<tr><td>DCR default hazard AUC</td><td>train 0.748 / OOT 0.661</td><td class="src">Hazard Model wiki page; <code>outputs/hazard/fit_stats.md</code></td></tr>
+<tr><td>DCR ECL gate</td><td>187/187 tests; t=20 calm coverage 1.28% → t=40 stress coverage <b>28.4%</b> (22×)</td><td class="src">ECL Engine wiki page</td></tr>
+<tr><td>Vasicek ρ (calibrated)</td><td><b>0.0227</b> (orig-LTV variant 0.0633), Z trough 2008Q1 (−2.74)</td><td class="src"><code>outputs/vasicek/vasicek_report.md</code></td></tr>
+<tr><td>Scenario ECL / Jensen gap</td><td>weighted <b>$34.0m</b> vs $32.9m at the averaged path = <b>1.035×</b></td><td class="src"><code>outputs/scenario_ecl/scenario_ecl_report.md</code></td></tr>
+<tr><td>SFLLD panel</td><td><b>837,500 loans / 39,522,565 loan-months</b>, 17 vintages</td><td class="src"><code>wiki/pages/sflld-panel.md</code></td></tr>
+<tr><td>SFLLD champion hazard AUC</td><td>train <b>0.8536</b> / OOT <b>0.6847</b> (DCR: 0.748/0.661)</td><td class="src"><code>outputs/freddie/hazard/hazard_report.md</code></td></tr>
+<tr><td>COVID regime verdict</td><td><b>EXCLUDE</b> window 2020-04..2021-09 (review overturned the author's additive-dummy recommendation)</td><td class="src"><code>outputs/freddie/hazard/hazard_report.md</code> §3</td></tr>
+<tr><td>SFLLD realised-loss LGD</td><td>mean realised LGD (train) <b>0.2715</b>; excess-loss loading <b>0.0148</b> vs DCR's <b>0.0255</b></td><td class="src"><code>outputs/freddie/lgd/lgd_report.md</code></td></tr>
+<tr><td>SFLLD cure AUC</td><td>train 0.6991 / <b>OOT 0.4769</b> (honest-weak, below random — explained, not hidden)</td><td class="src"><code>outputs/freddie/lgd/lgd_report.md</code> §4</td></tr>
+<tr><td>ALFRED-vintage backtest, 2007-12</td><td>frozen-macro model <b>underpredicted</b> realised 36mo cum-D90 by <b>9.42×</b> (0.928% vs 8.750%); hindsight ceiling still <b>1.90×</b> under</td><td class="src"><code>outputs/freddie/backtest/backtest_report.md</code></td></tr>
+<tr><td>ALFRED-vintage backtest, 2019-12</td><td>hindsight-macro projection <b>saturates</b>: 71.519% predicted vs 4.601% realised = <b>0.06×</b></td><td class="src"><code>outputs/freddie/backtest/backtest_report.md</code></td></tr>
+<tr><td>LSTM challenger</td><td>OOT AUC <b>0.9925</b> vs champion 0.6847; lift concentrated on prior-delinquency-spell loans (<b>0.957</b> vs 0.570) — near-random on clean history (0.529 vs 0.539)</td><td class="src"><code>outputs/freddie/lstm/lstm_report.md</code></td></tr>
+<tr><td>Test-suite gate history</td><td>187 → 381 → 509 → 553 → 582 → <b>659/659</b> (current), zero regressions</td><td class="src"><code>wiki/memory/log.md</code>; <code>outputs/freddie/gate_phaseB.md</code></td></tr>
+</table></div>
+
+<h3>1.3 Governance verdicts, at a glance</h3>
+<div class="table-wrap"><table>
+<tr><th>Component</th><th>Review verdict</th><th>Source</th></tr>
+<tr><td>ECL engine (<code>engine/ecl.py</code>)</td><td class="badge-clean">Clean</td><td class="src"><code>wiki/pages/ecl-engine.md</code></td></tr>
+<tr><td>EAD (<code>engine/ead.py</code>)</td><td class="badge-fixed">Fixed (edge-case guard only)</td><td class="src"><code>wiki/pages/ead-model.md</code></td></tr>
+<tr><td>Staging (<code>engine/staging.py</code>)</td><td class="badge-fixed">Fixed (config plumbing bug + docstring overclaim)</td><td class="src"><code>wiki/pages/staging-model.md</code></td></tr>
+<tr><td>LGD (<code>engine/lgd.py</code>)</td><td class="badge-fixed">Fixed (documentation only)</td><td class="src"><code>wiki/pages/lgd-model.md</code></td></tr>
+<tr><td>Vasicek / scenarios / satellite / challenger</td><td>Clean / Clean / <span class="badge-fixed">Fixed</span> (report-integrity) / Clean</td><td class="src"><code>wiki/pages/scenario-layer.md</code></td></tr>
+<tr><td>Agent layer</td><td class="badge-fixed">Fixed (SSE deadlock test + NaN-422 edge)</td><td class="src"><code>wiki/pages/agent-layer.md</code></td></tr>
+<tr><td>SFLLD hazard COVID recommendation</td><td><b>Overturned on review</b> (additive dummy → exclude)</td><td class="src"><code>outputs/freddie/hazard/hazard_report.md</code> §3</td></tr>
+<tr><td>SFLLD backtest realised-outcome timing</td><td><b>Critical bug found &amp; fixed</b> (disposition month → first-D90 month)</td><td class="src"><code>wiki/memory/decisions.md</code>, 2026-07-18</td></tr>
+<tr><td>Phase-B gate</td><td class="badge-frozen">PASS, 659/659, frozen five NONE</td><td class="src"><code>outputs/freddie/gate_phaseB.md</code></td></tr>
+</table></div>
+
+<div class="note"><b>North star (binding on every design decision).</b> The product is a
+<b>consultant's deliverable + client's lab</b>: the consultant (this build) pre-generates the full
+analysis; the client browses it, runs scenario experiments, and an LLM agent gives grounded
+interpretation — never hallucinated numbers (Tier-1/2 compute deterministically, Tier-3 cites
+sources, the narrator is verbatim-number-checked, refusal/REASONED governance stays intact).
+<span class="src">(<code>wiki/memory/decisions.md</code>, 2026-07-08 entry.)</span></div>
+
+<!-- ============================================================ -->
+<h2 id="s2">2 &nbsp; Data</h2>
+
+<h3>2.1 DCR panel — calendar anchoring 2000Q2–2015Q1</h3>
+<p><code>data/panel/build_panel.py</code> builds <code>data/processed/panel.parquet</code> from
+622,489 raw DCR loan-quarter rows (50,000 loans). The eligibility waterfall
+(<code>outputs/panel/waterfall.md</code>) is fully itemised over 7 steps — every dropped row is
+accounted for, every lost default/payoff event is counted:</p>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Step</th><th>Rows dropped</th><th>Reason (abridged)</th></tr>
+<tr><td>1</td><td>exact_duplicate_rows</td><td>305</td><td>verbatim duplicate rows (incl. doubled terminal rows on 3 loan ids)</td></tr>
+<tr><td>2</td><td>id_collision_loans</td><td>108</td><td>5 ids each contain two interleaved distinct loans</td></tr>
+<tr><td>3</td><td>same_quarter_status_conflict</td><td>7</td><td>status-0 row shadowing a terminal row, same (id,time)</td></tr>
+<tr><td>4</td><td>post_terminal_truncation</td><td>0</td><td>generic guard, recorded to prove it ran</td></tr>
+<tr><td>5</td><td>nonpositive_origination_balance_loans</td><td>270</td><td>18 loans, <code>balance_orig_time</code> missing-coded 0</td></tr>
+<tr><td>6</td><td>zero_balance_live_rows</td><td>38</td><td>non-terminal rows with balance ≤ 0 (missing-coded)</td></tr>
+<tr><td>7</td><td>nonpositive_current_note_rate_rows</td><td>25</td><td>note rate missing-coded 0 → prepay incentive incomputable</td></tr>
+</table></div>
+<p><b>Final panel:</b> 621,736 rows / 49,974 loans / 15,147 defaults / 26,580 payoffs (8,247 loans
+right-censored); <b>train</b> = t≤40 (421,761 rows, 11,420 defaults); <b>OOT</b> = t=41–60 (199,975
+rows, 3,727 defaults) — OOT is the stress window by construction
+(<span class="src"><code>wiki/pages/loan-panel.md</code></span>).</p>
+
+<div class="note"><b>Calendar anchoring</b> (<code>wiki/memory/log.md</code>, 2026-07-05 17:26 entry):
+the panel's <code>uer_time</code> column matches FRED UNRATE quarterly at correlation 0.9963 / RMSE
+0.15pp at exactly one offset ⇒ <b>t=1 ≈ 2000Q2, t=60 ≈ 2015Q1</b>. Cross-checks: UER peak t=39 ≈ 2009Q4
+(US peak 10.0%), HPI peak t=25 ≈ 2006Q2, trough t=48 ≈ 2012Q1 (−35.3% drawdown). Macro columns are
+genuine US <b>national</b> series on an anonymised loan clock; there is no true 2026 snapshot — the
+panel ends ~2015Q1, so Day-3 scenarios are applied as deltas from the 2015Q1 jump-off (documented
+framing).</div>
+
+<p>Flags kept, not dropped: <code>orig_rate_missing</code> (89,730 rows across 10,713 loans, 21.4% of
+loans), 2,829 missing-state rows (<code>state_orig_time_missing</code> — state unused at this rung; the
+rung-3 upgrade closes exactly this gap), 3,343 lag warm-up rows (time≤5). Updated LTV =
+<code>LTV_orig × (bal_t/bal_orig) × (hpi_orig/hpi_t)</code>, independently derived and verified equal
+to the vendor's <code>LTV_time</code> field to 5e-9. Macro lags (<code>uer_lag1/2</code>,
+<code>uer_chg4_lag1</code>, <code>gdp_lag1</code>, <code>hpi_growth_lag1</code>) built with a
+groupby-shift, agreement asserted to 1e-9, zero lookahead. <code>lgd_time</code> populated iff a
+default row (15,147); 9.8% of realised LGDs exceed 1 (max 8.52) — kept raw for the LGD model to
+handle explicitly, never clipped upstream.</p>
+
+<h3>2.2 SFLLD panel (rung 3) — real dates, states, losses</h3>
+<p>Source: Freddie Mac Single-Family Loan-Level Dataset, <b>17 sample vintages</b> (2005–2010,
+2014–2016, 2018–2025; <b>2011–2013 and 2017 were never downloaded — a documented coverage gap</b>),
+ingested by <code>freddie/ingest.py</code> + <code>freddie/build_panel.py</code>, macro merged by
+<code>freddie/macro.py</code> (<span class="src"><code>wiki/pages/sflld-panel.md</code>;
+<code>outputs/freddie/eda/eda_report.md</code></span>).</p>
+<ul>
+<li><b>837,500 loans; 39,522,565 modelled loan-months.</b></li>
+<li><b>Default = D90 absorbing</b>: first 90+DPD or straight-to-RA; the panel truncates after the
+event month even if the raw servicing tape later shows a cure (unit-tested on a real curing loan).
+Same-row D90/terminal-code tie-break: disposition code wins (~0.1–0.2% of loans).</li>
+<li>Liquidation codes + realised-loss fields are kept on <code>loan_orig.parquet</code> from the
+<b>un-truncated</b> tape, for competing-risk / LGD use. Sentinels (9999/999/99/<code>'9'</code>) →
+NaN, each documented.</li>
+<li>Loan-level rates: D90 5.32%, prepay 58.93%.</li>
+<li><b>State macro:</b> FRED per state — <code>{POSTAL}UR</code> monthly + <code>{POSTAL}STHPI</code>
+quarterly (all-transactions), 54 states/territories; national fallback for GU/VI (UR) and GU/PR/VI
+(HPI), documented. 108 cached CSVs enable offline reruns. No-lookahead quarterly→monthly HPI fill;
+lag-1 columns mirror the DCR timing convention.</li>
+<li><b>Isolation:</b> the entire rung-3 build lives in the <code>freddie/</code> namespace, writes
+only to <code>outputs/freddie/</code> / <code>data/processed/freddie/</code>, and the Phase-A gate
+verified the frozen engine files and <code>data/processed/panel.parquet</code> (DCR) untouched,
+sha-recorded.</li>
+</ul>
+
+<p><b>Real geography, real cycle — what SFLLD buys over DCR</b>
+(<span class="src"><code>outputs/freddie/eda/eda_report.md</code></span>): 2007-vintage cumulative D90
+reaches <b>16.26%</b> by month 225 on book (vs 14.11% for 2006, 9.14% for 2008; every recovery/modern
+vintage tops out below 5.48%). State heterogeneity on 2006–07 vintages: NV 38.0% / FL 32.6% / AZ 27.9%
+vs VT 4.8% — a collateral-channel scatter (peak-to-trough HPI drawdown vs default rate) fitting slope
+0.491, r=0.89, p=2e-17 across 49 states, invisible to a national-only panel.</p>
+
+<img class="fig" src="assets/exhibit_03_vintage_curves.png" alt="SFLLD vintage curves">
+<div class="figcap">Exhibit 3 — SFLLD vintage curves: cumulative D90 by vintage, 2007 dominates at
+16.26% by month 225. <span class="src">outputs/freddie/eda/exhibit1_vintage_curves.png</span></div>
+
+<div class="warn"><b>The COVID data anomaly (central EDA finding, quantified in roll rates).</b>
+During 2020–2021, the 60→90+ DPD roll rate is <b>58.25%</b>, worse than the GFC's 47.43%, because the
+delinquency-status ladder kept advancing contractually for loans in forbearance — while
+90+→liquidation <b>collapses to 0.21%</b>, versus 2.02% in the GFC and 2.50% in the calm 2015–2018
+window (a &gt;10× drop — the CARES Act foreclosure-moratorium signature). 75.9% of COVID 60/90+ loans
+carry an active <code>borrower_assistance_status_code</code>, versus 15.6% in the calm window. The
+combined-vintage D90-entry rate's global peak is the <b>COVID spike</b> (1.775% in 2020-06, ~4.5× the
+GFC's own peak of 0.396% in 2009-10) — a naive delinquency-based read would call COVID the bigger
+credit event; it was not a loss event. This single finding drives the Phase-B COVID-regime decision
+(§3.1.3).</div>
+
+<img class="fig" src="assets/exhibit_04_covid_roll_rates.png" alt="COVID roll-rate matrices">
+<div class="figcap">Exhibit 4 — Roll-rate matrices, GFC vs calm vs COVID: the 60→90+ escalation
+(58.25% COVID vs 47.43% GFC) against the 90+→liquidation collapse (0.21% COVID vs 2.02% GFC).
+<span class="src">outputs/freddie/eda/exhibit2_roll_rate_matrices.png</span></div>
+
+<h3>2.3 Macro sources</h3>
+<ul>
+<li><b>DCR national macro:</b> embedded in the vendor panel (<code>uer_time</code>,
+<code>gdp_time</code>, <code>hpi_time</code>), anonymised-clock but calendar-anchored as above.</li>
+<li><b>DFAST 2026 scenario paths:</b> Fed Final Historic / Baseline / Severely-Adverse Domestic CSVs,
+auto-downloaded (<code>data/scenarios/</code>); severe path preserves +5.5pp UER exactly, rebased as
+deltas onto the 2015Q1 jump-off, reversion to long-run means by quarter 21, 40-quarter horizon.</li>
+<li><b>SFLLD state macro:</b> FRED (see §2.2); <b>ALFRED</b> vintages are used for the honest backtest
+(§4.3) — but FHFA STHPI (state <i>and</i> national) has <b>no ALFRED vintage archive on FRED at
+all</b> (empirically verified: HTTP 400 "does not exist in ALFRED" for every <code>realtime_start</code>
+tried), so HPI-as-known-at-T is a publication-lag truncation
+(<code>HPI_PUBLICATION_LAG_MONTHS=5</code>) of the single current-vintage series, not a genuine
+historical revision — declared, not hidden
+(<span class="src"><code>outputs/freddie/backtest/backtest_report.md</code> §4–5</span>).</li>
+<li><b>State-level upgrade path:</b> the DCR engine's macro is national-only by scope
+(<code>state_orig_time</code> unused at that rung); rung-3's state-level FRED merge is exactly the
+closing of that gap.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s3">3 &nbsp; Methodology</h2>
+
+<h3 id="s31">3.1 &nbsp; Hazard (PD) models</h3>
+
+<h4>3.1.1 DCR champion hazard (<code>engine/hazard.py</code>)</h4>
+<p>Discrete-time <b>complementary log-log (cloglog)</b> hazard — the grouped-duration analogue of a
+continuous-time Cox model — fit as cause-specific competing risks (default, prepayment):</p>
+<div class="formula-block">$$\lambda_t = 1 - \exp\!\big(-\exp(x_t^\top \beta)\big)$$</div>
+<p>with cumulative/marginal survival built from the per-quarter hazards: conditional hazard
+$\lambda_t$, competing-risk survival $S(t)$, marginal event probability $S(t-1)\lambda_t$, cumulative
+PD via <code>pd_term_structure</code>. API: <code>fit_default_hazard(panel)</code>,
+<code>fit_prepay_hazard(panel)</code>, <code>predict_hazard(model, df)</code>,
+<code>pd_term_structure(models, profiles, horizon)</code>.</p>
+
+<p><b>Fit</b> (train t≤40; <span class="src"><code>outputs/hazard/fit_stats.md</code>,
+<code>outputs/hazard/hazard_ratios.md</code></span>):</p>
+<div class="table-wrap"><table>
+<tr><th>Model</th><th>n (fit)</th><th>events</th><th>train AUC</th><th>OOT AUC</th><th>McFadden R²</th></tr>
+<tr><td>default</td><td>418,418</td><td>11,354</td><td>0.7476</td><td>0.6609</td><td>0.0761</td></tr>
+<tr><td>prepay</td><td>418,418</td><td>22,734</td><td>0.6839</td><td>0.5841</td><td>0.0503</td></tr>
+</table></div>
+<p class="small">(Wiki summary quotes the rounded 0.748/0.661 and 0.684/0.584 — same fit, display rounding.)</p>
+
+<p><b>Coefficient table</b> (default hazard, hazard ratios, <code>outputs/hazard/hazard_ratios.md</code>):</p>
+<div class="table-wrap"><table>
+<tr><th>Covariate</th><th>family</th><th>HR</th><th>95% CI</th><th>p</th></tr>
+<tr><td>Intercept</td><td>baseline</td><td>0.2658</td><td>[0.1534, 0.4608]</td><td>2.35e-06</td></tr>
+<tr><td>FICO at orig. (per 100 pts)</td><td>borrower</td><td>0.6314</td><td>[0.6130, 0.6505]</td><td>&lt;1e-16</td></tr>
+<tr><td>Updated LTV (per 10pp, at mean UER)</td><td>collateral</td><td>1.2250</td><td>[1.2100, 1.2402]</td><td>&lt;1e-16</td></tr>
+<tr><td>Rate incentive (pp)</td><td>incentive</td><td>1.1424</td><td>[1.1317, 1.1532]</td><td>&lt;1e-16</td></tr>
+<tr><td>Investor loan</td><td>borrower</td><td>1.2091</td><td>[1.1425, 1.2796]</td><td>5.05e-11</td></tr>
+<tr><td>Condo</td><td>borrower</td><td>1.0649</td><td>[0.9793, 1.1580]</td><td>1.41e-01</td></tr>
+<tr><td>Planned urban dev.</td><td>borrower</td><td>1.0852</td><td>[1.0129, 1.1626]</td><td>2.01e-02</td></tr>
+<tr><td>Single family</td><td>borrower</td><td>0.9909</td><td>[0.9433, 1.0408]</td><td>7.15e-01</td></tr>
+<tr><td>Unemployment level (lag 1)</td><td>macro</td><td>0.6930</td><td>[0.6544, 0.7338]</td><td>&lt;1e-16</td></tr>
+<tr><td>Unemployment 4q change (lag 1)</td><td>macro</td><td>1.8468</td><td>[1.6989, 2.0077]</td><td>&lt;1e-16</td></tr>
+<tr><td>HPI growth (lag 1)</td><td>macro</td><td>0.0318</td><td>[0.0148, 0.0683]</td><td>&lt;1e-16</td></tr>
+<tr><td>GDP growth (lag 1)</td><td>macro</td><td>1.0895</td><td>[1.0645, 1.1151]</td><td>4.47e-13</td></tr>
+<tr><td>LTV(10pp) × UER (double trigger, centered)</td><td>collateral</td><td>0.9940</td><td>[0.9885, 0.9997]</td><td>3.75e-02</td></tr>
+</table></div>
+
+<p><b>Per-variable rationale</b> (<code>outputs/variable_dictionary.md</code>):</p>
+<div class="table-wrap"><table>
+<tr><th>Variable</th><th>Transform</th><th>Timing</th><th>Rationale</th><th>Expected</th><th>Fitted</th></tr>
+<tr><td><code>fico_s</code></td><td>FICO_orig/100</td><td>static</td><td>ability/willingness to pay</td><td>PD ↓</td><td>✓ negative</td></tr>
+<tr><td><code>ltv10</code> ⚡</td><td>updated_ltv/10, winsor 300</td><td>current-quarter state</td><td>equity cushion / strategic-default trigger</td><td>PD ↑</td><td>✓ +0.2029/10pp</td></tr>
+<tr><td><code>loan_age</code></td><td>natural cubic spline df=5</td><td>per-quarter</td><td>seasoning burn-in → peak risk → survivor selection</td><td>hump</td><td>✓ peak 12q vs empirical 10q</td></tr>
+<tr><td><code>prepay_incentive</code> ⚡</td><td>note rate − market rate</td><td>current-quarter state</td><td>refinancing incentive</td><td>prepay ↑</td><td>✓ Spearman +0.95</td></tr>
+<tr><td><code>investor_orig_time</code></td><td>raw flag</td><td>static</td><td>strategic-default propensity</td><td>PD ↑</td><td>✓</td></tr>
+<tr><td><code>uer_lag1</code></td><td>national UER level</td><td>lag 1q</td><td>cash-flow shock channel</td><td>net ↑</td><td>✓ net effect (see below)</td></tr>
+<tr><td><code>uer_chg4_lag1</code></td><td>4q UER change</td><td>lag 1q</td><td>labour-market momentum</td><td>↑</td><td>✓</td></tr>
+<tr><td><code>hpi_growth_lag1</code></td><td>Δlog national HPI</td><td>lag 1q</td><td>collateral macro channel</td><td>PD ↓</td><td>✓</td></tr>
+<tr><td><code>gdp_lag1</code></td><td>GDP growth</td><td>lag 1q</td><td>activity channel</td><td>PD ↓</td><td>✓</td></tr>
+<tr><td><code>dt_ltv_uer</code></td><td>centered LTV × centered UER</td><td>mixed</td><td>double trigger</td><td>↑</td><td>−0.006 (p=.04), disclosed §5</td></tr>
+</table></div>
+
+<div class="note"><b>TIMING CONVENTION (review-enforced).</b> Every macro <i>regressor</i> is lagged.
+Two deliberate current-quarter state variables are flagged exceptions: <code>updated_ltv</code>
+(collateral indexation by current HPI) and <code>prepay_incentive</code> (real-time market rate —
+lagging it would misprice the option). Any future covariate must follow the same rule.</div>
+
+<div class="ex"><b>The net-effect convention.</b> A 1pp labour-market shock moves the level AND its
+4-quarter change together (correlate 0.94 in-sample), so the correct hazard effect at mean LTV is the
+<b>sum</b>: $\beta(\text{uer\_lag1}) + \beta(\text{uer\_chg4\_lag1}) = -0.3668 + 0.6135 = +0.2467$
+(hazard ratio <b>1.280</b> per pp) — PD <i>rises</i> in unemployment. Reading the level coefficient
+alone (negative) as "PD falls in unemployment" is a documented misread this MDD explicitly guards
+against; always quote the net effect. <span class="src">outputs/hazard/fit_stats.md</span></div>
+
+<p><b>Double trigger:</b> LTV×UER interaction coefficient is <b>−0.006</b> (p=.04) — a slight
+in-sample substitution effect (the LTV slope flattens marginally at high unemployment; main effects +
+momentum already carry the joint stress response). Reported honestly, not asserted as the
+textbook-positive sign.</p>
+
+<p><b>EDA verification</b> (<code>outputs/eda/</code>, 5 PASS / 0 FAIL / 1 INFO): seasoning hump peak
+age 10 (empirical); worst vintages = HPI-peak cohorts (48.8% = 2.4× median default rate); prepay
+monotone in incentive; LGD bimodal (20.6% exact cures). A roll-rate/cure chart is impossible at the
+DCR rung — no delinquency ladder — deferred to Freddie rung 3.</p>
+
+<h4>3.1.2 SFLLD champion hazard — the rung-3 refit</h4>
+<p><code>freddie/fit_hazard.py</code>: a fresh monthly discrete-time cloglog D90 hazard on the SFLLD
+loan-month panel, state-level macro, <b>no left truncation</b> (sampled from origination — an upgrade
+over DCR). Only the DEFAULT (D90) cause-specific hazard is fit — <b>no competing-risk prepayment
+hazard</b> in this refit (declared simplification).</p>
+
+<p><b>Sample &amp; split</b> (<code>outputs/freddie/hazard/hazard_report.md</code> §1): champion train
+= performance month ≤ 2016-12 (17,703,723 loan-months, 26,284 D90 events, 0.1485% monthly hazard);
+OOT = performance month ≥ 2017-01 (21,818,842 loan-months, 18,309 events); COVID
+(2020-04..2021-09) lands entirely inside OOT. Fit sample uses <b>WESML</b> (weighted exogenous
+sampling maximum likelihood, Manski-Lerman): every train event row enters (26,284), plus a 5% random
+subsample of non-event rows, 83,680 NaN-covariate rows dropped → 826,476 fit rows / 24,611 events;
+controls reweighted <code>freq_weight = 1/rate</code>, events <code>freq_weight = 1</code>.</p>
+
+<p><b>Coefficients vs the DCR champion</b> (<code>outputs/freddie/hazard/coefficients.csv</code>,
+<code>dcr_sign_comparison.csv</code>):</p>
+<div class="table-wrap"><table>
+<tr><th>term</th><th>coef</th><th>HR</th><th>p</th><th>sign</th><th>DCR expected</th></tr>
+<tr><td>Intercept</td><td>−3.6043</td><td>0.027</td><td>0</td><td>−</td><td></td></tr>
+<tr><td>occupancy[T.I] (investor)</td><td>0.0943</td><td>1.099</td><td>4.69e-04</td><td>+</td><td></td></tr>
+<tr><td>occupancy[T.S] (second home)</td><td>−0.1926</td><td>0.825</td><td>8.18e-09</td><td>−</td><td>prior + (miss, explained)</td></tr>
+<tr><td>loan_purpose[T.C] (cash-out)</td><td>0.4379</td><td>1.550</td><td>4.02e-184</td><td>+</td><td>+</td></tr>
+<tr><td>loan_purpose[T.N] (no-cash refi)</td><td>0.2704</td><td>1.310</td><td>1.69e-50</td><td>+</td><td>prior − (miss, explained)</td></tr>
+<tr><td>channel[T.B] (broker)</td><td>0.1986</td><td>1.220</td><td>6.34e-09</td><td>+</td><td>+</td></tr>
+<tr><td>channel[T.C] (correspondent)</td><td>−0.2341</td><td>0.791</td><td>4.96e-14</td><td>−</td><td>prior + (miss, explained)</td></tr>
+<tr><td>channel[T.T] (TPO)</td><td>0.3072</td><td>1.360</td><td>8.06e-109</td><td>+</td><td>+</td></tr>
+<tr><td>cr(loan_age,df=5) — 5 basis terms</td><td>−1.92 / −0.34 / −0.59 / +0.04 / −0.80</td><td>—</td><td>—</td><td>hump</td><td>hump, ~36mo peak</td></tr>
+<tr><td><code>fico_s</code></td><td>−0.9257</td><td>0.396</td><td>0</td><td>−</td><td>−</td></tr>
+<tr><td><code>dti_s</code></td><td>0.2313</td><td>1.260</td><td>0</td><td>+</td><td>n/a (no DTI at DCR rung)</td></tr>
+<tr><td><code>ltv10</code></td><td>0.3225</td><td>1.381</td><td>0</td><td>+</td><td>+</td></tr>
+<tr><td><code>uer_lag1</code></td><td>0.0950</td><td>1.100</td><td>1.42e-208</td><td>+</td><td>+ (net)</td></tr>
+<tr><td><code>delta_uer_lag1</code></td><td>0.6671</td><td>1.949</td><td>2.97e-194</td><td>+</td><td>+</td></tr>
+<tr><td><code>hpi_growth_lag1</code></td><td>−3.3442</td><td>0.035</td><td>2.1e-12</td><td>−</td><td>−</td></tr>
+</table></div>
+
+<div class="ex"><b>Fitted signs vs priors — misses stated, not hidden.</b> <code>occupancy[T.S]</code>
+fitted −0.193 against a prior of +; <code>loan_purpose[T.N]</code> fitted +0.270 against a prior of −;
+<code>channel[T.C]</code> fitted −0.234 against a prior of +. All three are <b>conditional</b> effects
+(given FICO/DTI/updated-LTV/macro), so a flipped categorical sign reads as composition within this
+sample, not a causal claim — e.g. second-home borrowers clearing the same FICO/LTV bar as
+owner-occupants default less here, and correspondent loans in this Freddie sample are not the
+pre-crisis wholesale book the prior describes. The core risk drivers (FICO −, DTI +, updated LTV +,
+UER +, ΔUER +, HPI growth −) all match their priors.</div>
+
+<p><b>Discrimination &amp; seasoning:</b> champion train AUC <b>0.8536</b>, OOT AUC <b>0.6847</b>,
+McFadden pseudo-R² (fit sample) <b>0.1197</b>. Empirical train-window hazard-by-age profile: single
+hump peaking in the 42–48-month bin (0.256% monthly), corroborating the DCR champion's ~12-quarter
+(~36-month) peak. The <i>fitted</i> reference-row curve shows an additional, higher peak near 108
+months that the raw profile does not — train rows with age ≥ 96 months come exclusively from the
+2005–2008 crisis vintages (later vintages too young by 2016-12), so the late-age rise is unobserved
+<b>cohort quality</b>, not a seasoning effect; extrapolation beyond ~143 months has no train support.</p>
+
+<h4>3.1.3 COVID regime handling — the review overturn</h4>
+<p>The champion fit (train ≤2016-12) never sees COVID rows by construction. To test regime treatments,
+the estimation window is extended to ≤2021-09 and three variants are fit, all scored on the
+<i>identical, genuinely unseen</i> OOT2 window (&gt;2021-09):</p>
+<div class="table-wrap"><table>
+<tr><th>variant</th><th>OOT2 AUC</th><th><code>delta_uer_lag1</code></th><th><code>hpi_growth_lag1</code></th></tr>
+<tr><td>naive (no dummy)</td><td>0.7553</td><td><b>−0.204</b> (sign-flipped vs +0.667)</td><td>+0.013 (collapsed)</td></tr>
+<tr><td>additive (regime dummy)</td><td>0.7547</td><td><b>−0.130</b> (still sign-flipped)</td><td>−6.584 (overshoots)</td></tr>
+<tr><td><b>exclude</b> (COVID rows removed)</td><td>0.7509</td><td><b>+0.774</b> (matches champion +0.667)</td><td>−3.307 (matches champion −3.344)</td></tr>
+</table></div>
+
+<img class="fig" src="assets/exhibit_07_covid_calibration.png" alt="COVID calibration variant comparison">
+<div class="figcap">Exhibit 7 — Naive / additive / exclude calibration side-by-side, the numeric basis
+for the review-overturned COVID verdict. <span class="src">outputs/freddie/hazard/covid_calibration_comparison.png</span></div>
+
+<p>The additive dummy itself fits <b>+1.482</b> (hazard ratio 4.40) — it absorbs the 2020 D90 spike,
+but it <b>does not repair the structural macro block</b>: <code>delta_uer_lag1</code> stays
+sign-flipped. A calendar-level dummy cannot undo a joint covariate-outcome distortion when the UER
+spike and the forbearance-shielded delinquency ladder co-move inside the same window.</p>
+
+<div class="warn"><b>Decision, per the record</b> (<code>wiki/memory/decisions.md</code>, 2026-07-18
+20:47 entry): the author's initial recommendation was the additive dummy; the <b>Fable adversarial
+review overturned it</b>, showing the report's own numbers contradicted the recommendation, and
+rewrote the verdict number-first: <b>EXCLUDE</b> the window 2020-04..2021-09 for any structural or
+scenario-conditional use — it is the only variant whose macro block survives economically signed.
+Forbearance is to be handled as a scoring overlay, not an in-likelihood dummy. The OOT2 AUC spread
+(0.7509–0.7553) is too small to override the structural argument.</div>
+
+<p><b>Residual caveat, all variants:</b> 2022–2025 observed hazard runs ~1.62–1.79× the
+exclude-variant predictions — a post-COVID level shift for a backtest/ECL-overlay stage, not fixed by
+the regime treatment itself.</p>
+
+<h4>3.1.4 WESML inference caveat</h4>
+<p>Refit on an independent control-sample seed (1234 vs 42): <b>0 sign flips</b>; max relative
+coefficient difference 0.486 on a near-zero spline term. Macro-term absolute swings between seeds:
+<code>delta_uer_lag1</code> 0.128 vs nominal SE 0.0224 (<b>~5.7× nominal SE</b>);
+<code>hpi_growth_lag1</code> 0.830 vs nominal SE 0.4759 (~1.7×). This is the expected WESML caveat:
+<code>freq_weights</code> scales the 5% control subsample back to population size, so the reported
+SEs/p-values approximate a full-population fit and exclude the Monte-Carlo noise of which controls
+were sampled. <b><code>seed_stability.csv</code> — not the nominal p-values — is the operative
+uncertainty statement for macro terms.</b></p>
+
+<h3 id="s32">3.2 &nbsp; LGD models</h3>
+
+<h4>3.2.1 DCR champion LGD (<code>engine/lgd.py</code>)</h4>
+<p>Two-stage workout LGD (notes §10): <b>cure logit × fractional-logit severity</b>
+(Papke–Wooldridge), fit on <b>9,496 resolved train defaults</b> (11,420 train defaults − 1,921
+unresolved workouts − 3 NaN rows):</p>
+<div class="formula-block">$$E[\text{LGD}] = (1 - P(\text{cure})) \times (\text{capped severity} + \text{excess loading})$$</div>
+<ul>
+<li><b>Resolved workouts only</b> — unresolved <code>lgd_time</code> is not a realised outcome (58%
+coded 0); selection bias documented (cures resolve faster, biasing fitted cure up near the window end).</li>
+<li><b>Excess-loss loading:</b> 14.2% of train non-cure LGDs exceed 1 (max 3.17, real workout costs);
+capped at 1 inside the link, truncated-mean mass <b>+0.0255</b> added back explicitly — <b>never
+clipped</b>. OOT realised excess 0.0236 validates the loading.</li>
+<li>Cure = LGD ≤ 0.05 (labelling convention; the cure/severity decomposition is near-invariant at
+0.0/0.05/0.10).</li>
+<li><b>Honest anomaly:</b> cure-stage <code>uer_lag1</code> is <b>positive</b> (+0.277) — conditional
+on updated LTV, stress-cohort defaulters cure <i>more</i>; robust in a fixed-runway subsample;
+disclosed, not asserted.</li>
+</ul>
+<p><b>Fit quality:</b> cure AUC 0.837 train / 0.769 OOT. Calibration: train gap −0.0005; OOT +0.047
+(conservative, within the 0.05 tolerance). Fitted signs: cure ↓LTV (−0.764), severity ↑LTV (+0.107) —
+the collateral channel.</p>
+
+<h4>3.2.2 SFLLD realised-loss LGD — the rung-3 refit</h4>
+<p><code>freddie/lgd.py</code> reconstructs realised loss from Freddie's own cash-component fields
+(<code>net_sale_proceeds</code>, <code>mi_recoveries</code>, <code>non_mi_recoveries</code>,
+<code>total_expenses</code>, <code>delinquent_accrued_interest</code>,
+<code>zero_balance_removal_upb</code>) — <b>not</b> an opaque vendor column like DCR's
+<code>lgd_time</code> — and locks the sign convention with a fixture loan traced from the raw
+servicing tape. Sign convention: <code>realized_loss = -actual_loss_calculation</code>, verified
+reconciling to sub-dollar rounding.</p>
+
+<p><b>Sample &amp; outcome partition</b> (44,593 <code>had_d90_event</code> loans, exhaustive/disjoint
+partition):</p>
+<div class="table-wrap"><table>
+<tr><th>lgd_outcome</th><th>OOT</th><th>train</th><th>total</th></tr>
+<tr><td>cure</td><td>14,141</td><td>12,429</td><td>26,570</td></tr>
+<tr><td>liquidation</td><td>430</td><td>14,480</td><td>14,910</td></tr>
+<tr><td>unresolved</td><td>1,885</td><td>1,228</td><td>3,113</td></tr>
+</table></div>
+<p>Zero-balance code 15 (whole-loan sale) is <b>split, not lumped whole into unresolved</b>: 853 of 922
+code-15 D90 rows carry a populated <code>actual_loss_calculation</code> (92.5%) and are counted as
+liquidation (Freddie's NPL-sale program); only the remaining 69 no-loss-field rows stay unresolved.</p>
+
+<p><b>Severity denominator:</b> <code>upb_at_default</code> (not
+<code>zero_balance_removal_upb</code>) — the theoretically correct EAD base, observable <i>at</i>
+default rather than years later at resolution. Reconciliation on 13,840 liquidation rows: correlation
+0.9948, mean ratio 1.0018.</p>
+
+<p><b>Stage 1 — cure logit</b> (<code>cure ~ ltv10 + fico_s + loan_age_at_default + C(era) +
+C(property_state)</code>, train resolved n=26,896):</p>
+<div class="table-wrap"><table>
+<tr><th>term</th><th>coef</th><th>std_err</th><th>p_value</th></tr>
+<tr><td>Intercept</td><td>4.2819</td><td>0.4589</td><td>0.0000</td></tr>
+<tr><td>era[recovery 2009-10,14-16]</td><td>0.8034</td><td>0.0406</td><td>0.0000</td></tr>
+<tr><td>era[modern 2018-2025]</td><td>0.1498</td><td>0.7062</td><td>0.8320 (unidentified — see §5)</td></tr>
+<tr><td><code>ltv10</code></td><td>−0.2475</td><td>0.0075</td><td>0.0000</td></tr>
+<tr><td><code>fico_s</code></td><td>−0.3643</td><td>0.0243</td><td>0.0000</td></tr>
+<tr><td><code>loan_age_at_default</code></td><td>0.0066</td><td>0.0005</td><td>0.0000</td></tr>
+<tr><td>(53 <code>property_state</code> fixed effects)</td><td colspan="3">full table in <code>outputs/freddie/lgd/cure_coefficients.csv</code></td></tr>
+</table></div>
+<p>Cure AUC: train <b>0.6991</b>, OOT <b>0.4769</b>.</p>
+
+<p><b>Stage 2 — severity | liquidation</b> (fractional logit, HC1 robust SEs;
+<code>sev_capped ~ ltv10 + C(liq_year_bucket) + is_judicial + C(disposition_type)</code>, train
+liquidations n=13,444):</p>
+<div class="table-wrap"><table>
+<tr><th>term</th><th>coef</th><th>std_err</th><th>p_value</th></tr>
+<tr><td>Intercept</td><td>−1.8372</td><td>0.1809</td><td>0.0000</td></tr>
+<tr><td>liq_year_bucket[2008-09 crash]</td><td>1.3517</td><td>0.1803</td><td>0.0000</td></tr>
+<tr><td>liq_year_bucket[2010-12 peak workout]</td><td>1.7275</td><td>0.1775</td><td>0.0000</td></tr>
+<tr><td>liq_year_bucket[2013-16 recovery]</td><td>1.6983</td><td>0.1778</td><td>0.0000</td></tr>
+<tr><td>liq_year_bucket[2017-19 calm]</td><td>1.3792</td><td>0.1816</td><td>0.0000</td></tr>
+<tr><td>liq_year_bucket[2020+ covid-modern]</td><td>0.8751</td><td>0.1927</td><td>0.0000</td></tr>
+<tr><td>is_judicial[True]</td><td>0.5199</td><td>0.0207</td><td>0.0000</td></tr>
+<tr><td>disposition_type[short_sale_or_charge_off]</td><td>−0.7200</td><td>0.0236</td><td>0.0000</td></tr>
+<tr><td>disposition_type[third_party_sale]</td><td>−0.3982</td><td>0.0290</td><td>0.0000</td></tr>
+<tr><td>disposition_type[whole_loan_sale]</td><td>−0.3477</td><td>0.0471</td><td>0.0000</td></tr>
+<tr><td><code>ltv10</code></td><td>0.0307</td><td>0.0049</td><td>0.0000</td></tr>
+</table></div>
+
+<p><b>Per-variable rationale (both stages):</b></p>
+<div class="table-wrap"><table>
+<tr><th>variable</th><th>economic rationale</th><th>expected direction</th></tr>
+<tr><td><code>ltv10</code> (cure)</td><td>equity cushion lets a distressed borrower sell/refi out of default</td><td>−</td></tr>
+<tr><td><code>ltv10</code> (severity)</td><td>less equity → bigger foreclosure shortfall</td><td>+</td></tr>
+<tr><td><code>fico_s</code></td><td>ability/willingness to work a resolution</td><td>+ (weak)</td></tr>
+<tr><td><code>loan_age_at_default</code></td><td>seasoned defaulters cure less (burnout)</td><td>−</td></tr>
+<tr><td><code>era</code></td><td>underwriting-quality + macro-regime cohort effect</td><td>era-dependent</td></tr>
+<tr><td><code>property_state</code></td><td>regional foreclosure-process / servicing heterogeneity</td><td>state-dependent</td></tr>
+<tr><td><code>liq_year_bucket</code></td><td>workout costs + distressed-sale discounts track the disposition-year cycle</td><td>hump, peak 2010–12</td></tr>
+<tr><td><code>is_judicial</code></td><td>judicial process is slower/costlier</td><td>+</td></tr>
+<tr><td><code>disposition_type</code></td><td>different cost structures by liquidation channel</td><td>disposition-dependent</td></tr>
+</table></div>
+
+<p><b>Excess-loss loading — the DCR vs SFLLD comparison:</b> overall constant loading <b>0.0148</b>
+(vs DCR's 0.0255). Per-liquidation-year-bucket loading
+(<code>outputs/freddie/lgd/excess_loading_by_bucket.csv</code>):</p>
+<div class="table-wrap"><table>
+<tr><th>liq_year_bucket</th><th>n</th><th>excess_loading</th><th>mean_severity</th></tr>
+<tr><td>pre-2008</td><td>70</td><td>0.0020</td><td>0.1667</td></tr>
+<tr><td>2008-09 crash</td><td>962</td><td>0.0037</td><td>0.4348</td></tr>
+<tr><td>2010-12 peak workout</td><td>6,100</td><td>0.0064</td><td>0.5253</td></tr>
+<tr><td>2013-16 recovery</td><td>4,931</td><td>0.0243</td><td>0.5617</td></tr>
+<tr><td>2017-19 calm</td><td>1,001</td><td>0.0245</td><td>0.4808</td></tr>
+<tr><td>2020+ covid-modern</td><td>776</td><td>0.0417</td><td>0.3175</td></tr>
+</table></div>
+<div class="ex">The per-bucket loading ranges over <b>0.0397</b> across cycle phases — wide enough
+that a single constant materially misstates stress-period severity once <code>liq_year_bucket</code>
+is already a regression covariate. <b>Verdict:</b> a downstream ECL assembly under active
+stress-period liquidation volume should prefer the bucket-specific loading over the pooled constant.</div>
+
+<img class="fig" src="assets/exhibit_06_severity_cycle.png" alt="Severity by liquidation year">
+<div class="figcap">Exhibit 6 — Severity by liquidation year, 2006–2025: climbs from the 2008 crisis
+onset, plateaus 2011–2016 (≥50% every year), peaks in 2016 (mean 61.3%) — a lagging, not coincident,
+indicator of the origination-era credit event. <span class="src">outputs/freddie/lgd/severity_by_liq_year.png</span></div>
+
+<p><b>Portfolio-level summary:</b></p>
+<div class="table-wrap"><table>
+<tr><th>split</th><th>n_resolved</th><th>mean_realized_lgd</th><th>mean_predicted_lgd_aggregate</th></tr>
+<tr><td>train</td><td>26,896</td><td><b>0.2715</b></td><td>0.2819</td></tr>
+<tr><td>OOT</td><td>14,566</td><td>0.0074</td><td>0.1170</td></tr>
+</table></div>
+<p class="small">(OOT mean realised LGD is dominated by COVID cures, not a like-for-like regime test — see §5.)</p>
+
+<div class="warn"><b>Why OOT cure AUC (0.4769) is below random, not just weak.</b> The
+<code>era[modern 2018-2025]</code> fixed effect is fit on only <b>9 train rows</b> — a mechanical
+consequence of the calendar train/OOT split (cutoff 2019-01): a modern-vintage loan can only default
+<i>before</i> 2019 if it reaches D90 within months of origination, so almost the entire modern-era D90
+population falls in OOT by construction. Combined with the post-2019 COVID-forbearance base-rate shift
+(observed cure rate jumps to 97–98% OOT vs 43–66% train across eras), the model's LTV/FICO/state-driven
+discrimination — learned on a very different pre-2019 base rate — does not transfer. A genuine
+small-sample-plus-regime-shift limitation, not a coding defect.</div>
+
+<h3 id="s33">3.3 &nbsp; EAD</h3>
+<p><code>engine/ead.py</code>: <b>contractual</b> level-payment amortisation profiles (quarterly
+compounding from the note rate; straight-line fallback for <code>orig_rate_missing</code> loans and
+degenerate tiny rates, guarded at $1+r_q &gt; 1$). <code>ead_matrix(snapshot, horizon)</code> produces
+per-loan paths; <code>ccf_ead(drawn, limit, ccf)</code> reproduces the €14.0m revolver-CCF fixture
+through the engine path.</p>
+<div class="warn"><b>The double-counting rule (binding, stated in every consumer).</b> ECL survival
+$S(t)$ already includes prepayment survival (competing risk), so EAD must be the <b>contractual</b>
+balance path — never prepay-scaled. Scaling EAD by prepayment survival <i>as well</i> would
+double-count the same prepayment effect.</div>
+<p>Review verdict: fixed (edge-case guard only); 16 tests green.</p>
+
+<h3 id="s34">3.4 &nbsp; Staging (SICR)</h3>
+<p><code>engine/staging.py</code>: genuinely <b>relative</b> SICR — lifetime PD <i>now</i> vs lifetime
+PD <i>at origination</i> over the <b>same remaining life</b> (review-confirmed both legs to 1e-10
+against independent term-structure runs; the classic "lifetime-from-origination" bug is explicitly
+refuted). <code>StagingConfig</code>: ratio threshold (default <b>2×</b>), absolute add-on
+(<b>0.5pp annualised</b>), probation <b>2 quarters</b>, 30-DPD backstop hook (<b>structurally inert on
+DCR</b> — no delinquency ladder; documented).</p>
+<div class="formula-block">$$\text{Stage 2 if } \frac{\text{PD}_{\text{life, now}}}{\text{PD}_{\text{life, orig}}} > 2\times \;\; \text{AND annualised add-on} > 0.5\text{pp p.a.}$$</div>
+<div class="table-wrap"><table>
+<tr><th>snapshot</th><th>staged rows</th><th>Stage 1</th><th>Stage 2</th><th>Stage 3</th><th>default incidence</th></tr>
+<tr><td>t=20 (calm)</td><td>8,662</td><td>98.90%</td><td><b>0.00%</b></td><td>1.10%</td><td>1.10%</td></tr>
+<tr><td>t=40 (stress)</td><td>13,863</td><td>20.98%</td><td><b>75.78%</b></td><td>3.25%</td><td>3.25%</td></tr>
+</table></div>
+<p>Stage 2 is empty at t=20 under the 2×+0.5pp config in calm conditions — a threshold-sensitivity
+insight, not a bug; the sensitivity exhibit (1.5×/2×/3×/4×) is the governance dial. At t=40 the
+relative test fires book-wide as lifetime PDs re-mark against origination. Book size grows toward
+mid-panel (8,662 loans at t=20 vs 13,863 at t=40) — vintage concentration near the HPI peak. Review
+verdict: fixed (custom <code>dpd_col</code> config plumbing bug + a docstring overclaim); 16 tests
+green.</p>
+
+<h3 id="s35">3.5 &nbsp; ECL assembly</h3>
+<p><code>engine/ecl.py</code>:</p>
+<div class="formula-block">$$\text{ECL} = \sum_t S(t-1)\cdot\lambda_t\cdot\text{LGD}_t\cdot\text{EAD}_t\cdot(1+\text{EIR}_q)^{-t}$$</div>
+<p>through <b>one shared survival/marginal kernel</b> used by both the fixture-facing
+<code>ecl_schedule</code> and the vectorised snapshot path — so the golden-fixture test pins the
+production algebra directly (12m €4,952.83 / lifetime €16,571.39, matched to relative 1e-12 through
+engine functions). Both 12-month and lifetime ECL are always computed; the <b>reported allowance</b> =
+12m (Stage 1) / lifetime (Stage 2/3). EIR proxy: current note rate / 400 per quarter. Review verdict:
+<b>clean</b>.</p>
+<div class="table-wrap"><table>
+<tr><th>snapshot</th><th>loans</th><th>EAD ($m)</th><th>reported allowance ($m)</th><th>coverage</th></tr>
+<tr><td>t=20 (calm)</td><td>8,662</td><td>1,917.8</td><td>24.5</td><td>1.279%</td></tr>
+<tr><td>t=40 (stress)</td><td>13,863</td><td>3,636.8</td><td><b>1,032.6</b></td><td><b>28.393%</b></td></tr>
+</table></div>
+<p>Stress multiplies book-level coverage by <b>22.2×</b>. Coverage gradient by stage (t=40): Stage 1
+3.551% &lt; Stage 2 31.268% &lt; Stage 3 63.646% — sanity gates pass.</p>
+<p><b>Movement waterfall</b> (t=20→t=40, $m): opening 24.5 → stage migration +3.9 → remeasurement
++26.0 → derecognitions −21.2 → new loans +999.4 → closing 1,032.6; <b>identity residual &lt;
+$0.01</b>. Decomposition is sequential and order-dependent: stage migration on surviving loans at
+frozen t=20 marks → remeasurement at the migrated stage → derecognitions at opening marks → new loans
+at closing marks.</p>
+<p><b>Cross-check gates:</b> ECL marginal-PD grid == staging lifetime PD on every loan (4e-16); LGD
+grid == <code>predict_components</code> (2e-16). Full book runs in under a second per snapshot.</p>
+
+<h3 id="s36">3.6 &nbsp; Vasicek/Z, satellite, scenarios</h3>
+
+<h4>3.6.1 Vasicek/Belkin conditioning (<code>engine/vasicek.py</code>)</h4>
+<p>One-factor systematic-risk model:</p>
+<div class="formula-block">$$\text{PD}_{\text{PIT}}(Z) = \Phi\!\left(\frac{\Phi^{-1}(\text{PD}_{\text{TTC}}) - \sqrt{\rho}\,Z}{\sqrt{1-\rho}}\right)$$</div>
+<p>Per-quarter Z is recovered by inversion, <code>Z_t = invert_z(observed_t, expected_t, rho)</code>,
+against a <b>composition-adjusted</b> TTC anchor: the book grows toward mid-panel, so raw default
+counts mix vintage composition with the cycle, so the anchor is recomputed every quarter as the frozen
+hazard scored on that quarter's actual at-risk rows under <b>cycle-neutral macros</b> (means:
+<code>uer_lag1=6.4000</code>, <code>uer_chg4_lag1=0.1600</code>, <code>hpi_growth_lag1=0.0096</code>,
+<code>gdp_lag1=1.8281</code>), loan-state covariates kept actual. ρ is calibrated so
+$\text{Var}(Z_t)=1$ (Belkin), sample variance over 60 panel quarters.</p>
+<div class="table-wrap"><table>
+<tr><th>quantity</th><th>main</th><th>orig-LTV variant</th></tr>
+<tr><td>calibrated ρ</td><td><b>0.0227</b></td><td>0.0633</td></tr>
+<tr><td>mean(Z_t)</td><td>−1.145</td><td>−0.861</td></tr>
+<tr><td>Z trough</td><td><b>2008Q1 (Z=−2.74)</b></td><td>2009Q2 (Z=−2.64)</td></tr>
+</table></div>
+<p>Both ρ estimates sit far below the notes' worked-example convention (0.12) and the Basel IRB
+residential-mortgage supervisory value (0.15, CRE31.10) — <b>regulatory ρ is conservatism, not
+time-series fit</b>. Anchor sanity: Gauss-Hermite $E_Z[\text{PD}_{\text{PIT}}] = \text{PD}_{\text{TTC}}$
+proven to <b>1.91e-17</b>; PIT↔Z round trip max error <b>6.00e-15</b>.</p>
+
+<img class="fig" src="assets/exhibit_01_credit_cycle.png" alt="Credit cycle — Vasicek Z path">
+<div class="figcap">Exhibit 1 — Credit cycle: Z-implied portfolio PIT PD path against the flat TTC
+anchor, GFC (NBER 2007Q4–2009Q2) shaded, calendar axis anchored t=1≈2000Q2.
+<span class="src">outputs/vasicek/credit_cycle.png</span></div>
+
+<div class="note"><b>mean(Z) = −1.145 is not forced to zero</b> (Belkin calibrates variance only): a
+level gap — observed rates average 2.12% vs 1.35% for the frozen-macro anchor — with three identified
+causes: (i) Jensen/convexity of the cloglog inverse link biases the anchor low; (ii) a small structural
+inversion offset; (iii) OOT calibration drift + adverse survivor selection. The cycle <i>shape</i>
+(trough in the GFC, monotone climb post-2010) is the deliverable; the satellite intercept absorbs the
+level piece.</div>
+
+<h4>3.6.2 DFAST scenario paths (<code>engine/scenarios.py</code>, <code>data/ingest/dfast.py</code>)</h4>
+<p>DFAST 2026 paths applied as <b>deltas rebased onto the 2015Q1 jump-off</b> (severe path's +5.5pp
+UER preserved exactly); upside = damped mirror ×−0.35; reversion to long-run means by quarter 21,
+40-quarter horizon; weights <b>50/25/25</b> (base/severe/upside), SPF-percentile anchoring documented
+as a named enhancement, not built.</p>
+
+<h4>3.6.3 Satellite model + scenario-conditional ECL (<code>engine/satellite.py</code>)</h4>
+<div class="formula-block">$$Z_t = -1.694 + 13.642\cdot\text{hpi\_growth\_lag1}_t + 0.730\cdot\text{gdp\_growth\_lag2}_t \qquad (n=57)$$</div>
+<p>Pipeline: scenario macro path → satellite → Z path per scenario → PIT-conditioning of the frozen
+default hazard per loan-quarter at the quarterly-hazard level (standard practical approximation), TTC
+baseline scored at panel-mean macros → the frozen ECL sum over the remaining contractual life.</p>
+<p><b>Scenario ECL, t=60 (2015Q1) live book, 7,849 exposures:</b></p>
+<div class="table-wrap"><table>
+<tr><th>scenario</th><th>weight</th><th>12m ECL ($m)</th><th>lifetime ECL ($m)</th><th>reported allowance ($m)</th><th>coverage</th></tr>
+<tr><td>upside</td><td>0.25</td><td>27.4</td><td>289.6</td><td>27.7</td><td>1.654%</td></tr>
+<tr><td>base</td><td>0.50</td><td>30.2</td><td>282.9</td><td>30.5</td><td>1.820%</td></tr>
+<tr><td>severe</td><td>0.25</td><td>47.4</td><td>296.2</td><td>47.6</td><td>2.843%</td></tr>
+<tr><td><b>probability-weighted</b></td><td>1.00</td><td>33.8</td><td>287.9</td><td><b>34.0</b></td><td>2.034%</td></tr>
+<tr><td>at the averaged macro path</td><td>—</td><td>32.6</td><td>286.2</td><td>32.9</td><td>1.965%</td></tr>
+</table></div>
+
+<img class="fig" src="assets/exhibit_02_jensen_gap.png" alt="Jensen gap exhibit">
+<div class="figcap">Exhibit 2 — The Jensen gap: probability-weighted scenario ECL ($34.0m) vs ECL at
+the averaged macro path ($32.9m), ratio 1.035×.
+<span class="src">outputs/scenario_ecl/jensen_gap.png</span></div>
+
+<div class="thm"><b>The Jensen gap</b> (notes §9.2, on our own numbers). Probability-weighted reported
+allowance $34.0m vs $32.9m at the averaged macro path — ratio <b>1.035×</b>. On summed lifetime ECL
+the ratio is 1.006×. Both exceed 1: measuring ECL on a single averaged path <i>understates</i> expected
+loss — Jensen's inequality on a convex loss function, and the analytical reason IFRS 9 para 5.5.17
+demands a probability-weighted range of outcomes.
+
+<p><b>Why our ratio is far below the notes' ~1.9× toy example — honest decomposition:</b></p>
+<ol>
+<li>calibrated ρ = 0.0227 vs the toy's 0.12 — ~5× smaller empirical asset correlation, so the PIT
+transform bends PDs far less per unit of Z;</li>
+<li>scenario Z dispersion over the 13q window ECL actually integrates is only ~0.7 Z apart (vs the
+toy's sustained 4-Z spread) — DFAST-shaped quarterly paths are gentler than a stylised one-shot
+downside;</li>
+<li>only the default-PD leg is conditioned (LGD and EAD stay at frozen rung-1 projections), removing
+the PD×LGD convexity the toy implicitly bundles;</li>
+<li>lifetime aggregation dilutes: all three scenarios share the long-run reversion tail from h=21, and
+discounting/amortisation shrink the differentiated window's weight.</li>
+</ol>
+</div>
+
+<p><b>Weights sensitivity (governance exhibit):</b> 50/25/25 (adopted) → $34.0m; 40/30/30 → $34.8m
+(+2.1%); 60/20/20 → $33.3m (−2.1%). Scenario probabilities are not statistically identified; the ~2%
+swing across reasonable weightings is small next to the severe-vs-base scenario gap (1.56× on the
+allowance).</p>
+
+<p><b>Sanity gates, all PASS:</b> anchor round-trip 4.2e-17/1.9e-17; unconditioned wrapper == frozen
+ECL engine, max abs diff 0.00e+00; allowance ordering severe &gt; base &gt; upside (47.6 &gt; 30.5
+&gt; 27.7); Jensen: weighted &gt; averaged-path on both reported (1.0353×) and lifetime (1.0058×)
+measures.</p>
+
+<h3 id="s37">3.7 &nbsp; Challengers (MLP, LSTM)</h3>
+
+<h4>3.7.1 MLP challenger (<code>challenger/mlp.py</code>) — DCR rung</h4>
+<p>torch 2.12.1+cu130 on RTX 4060; like-for-like covariates (12/12 programmatic match with the
+champion GLM), no age spline, no hand-built LTV×UER interaction.</p>
+<div class="table-wrap"><table>
+<tr><th></th><th>champion</th><th>challenger</th></tr>
+<tr><td>form</td><td>cloglog GLM, cr(age,df=5), centered LTV×UER</td><td>MLP (64, 32), ReLU, dropout 0.2</td></tr>
+<tr><td>train AUC</td><td>0.7476</td><td>0.7632</td></tr>
+<tr><td><b>OOT AUC</b></td><td><b>0.6609</b></td><td>0.6417</td></tr>
+</table></div>
+<p><b>Champion wins OOT</b> (0.6609 vs 0.6417) though the challenger wins in-sample (0.7632 vs
+0.7476) — the empirical justification for challenger-never-champion. PSI train→OOT: champion 3.711,
+challenger 0.763 — both "large shift" (the cycle moving through the scores, expected for a PIT model).
+Review verdict: clean.</p>
+
+<h4>3.7.2 LSTM path-dependence challenger (<code>freddie/lstm.py</code>) — SFLLD rung</h4>
+<p>Answers one question: does delinquency-<b>path</b> memory (trailing 24-month dlq/UPB history) add
+discrimination beyond the champion hazard's current-state-only view? Scored on the identical champion
+train/OOT split.</p>
+<div class="table-wrap"><table>
+<tr><th>split</th><th>n</th><th>events</th><th>champion AUC</th><th>LSTM AUC</th><th>Δ</th></tr>
+<tr><td>TRAIN</td><td>16,059,126</td><td>24,611</td><td>0.8536</td><td>0.9964</td><td>+0.1429</td></tr>
+<tr><td><b>OOT</b></td><td>20,621,912</td><td>16,832</td><td><b>0.6847</b></td><td><b>0.9925</b></td><td><b>+0.3078</b></td></tr>
+</table></div>
+
+<div class="thm"><b>The honest lift decomposition — the actual finding.</b>
+<div class="table-wrap"><table>
+<tr><th>group</th><th>n</th><th>events</th><th>champion AUC</th><th>LSTM AUC</th><th>Δ</th></tr>
+<tr><td>Clean history (no prior 24mo delinquency)</td><td>19,643,934</td><td>40</td><td>0.5386</td><td>0.5287</td><td><b>−0.0098</b></td></tr>
+<tr><td>Prior delinquency spell</td><td>977,978</td><td>16,792</td><td>0.5698</td><td><b>0.9570</b></td><td><b>+0.3872</b></td></tr>
+</table></div>
+<p>The champion cannot distinguish these two groups by construction (<code>dlq_num</code> is not one
+of its covariates at all). The LSTM's edge is <b>entirely</b> concentrated on loans with a prior
+delinquency spell (+0.387 AUC); on clean-history loans <b>both models are near-random</b> (0.529 vs
+0.539, 40 events). Path memory is delinquency-<i>state</i> memory — it does not see farther ahead on
+clean books.</p>
+</div>
+
+<img class="fig" src="assets/exhibit_08_lstm_lift.png" alt="LSTM lift split by delinquency history">
+<div class="figcap">Exhibit 8 — LSTM lift over the champion concentrates almost entirely on
+prior-delinquency-spell loans (+0.387 AUC); near-zero on clean-history loans (−0.010).
+<span class="src">outputs/freddie/lstm/lift_split.png</span></div>
+
+<p>This is the direct evidence for the path-dependence hypothesis, with the report's own caveat that
+the forbearance-era delinquency-ladder distortion may inflate part of the lift concentrated in the
+2020–21 window — flagged, not resolved. Best epoch 3/9 (time-based validation split, cutoff
+2015-12-01, best val AUC 0.9963). 19/19 tests; GPU (RTX 4060); review: no correctness bugs.</p>
+
+<!-- ============================================================ -->
+<h2 id="s4">4 &nbsp; Validation &amp; Backtesting</h2>
+
+<h3>4.1 Golden fixtures (133/133)</h3>
+<p>The eight <code>compute_*.py</code> verification scripts the underlying IFRS-9 study notes cite but
+never shipped, recreated 2026-07-05 from the notes' worked examples (8 author + 8 adversarial-review
+agents; all verdicts clean, no hardcoding). Interface: each module derives
+<code>RESULTS: dict[str, float]</code> and holds the notes' printed values in <code>TARGETS</code>;
+<code>tests/test_fixtures.py</code> asserts agreement within one unit of the last displayed digit.</p>
+<div class="table-wrap"><table>
+<tr><th>script</th><th>worked example</th><th>headline value</th></tr>
+<tr><td>compute_ecl</td><td>§3 12m-vs-lifetime; §10 workout LGD; §12 revolver EAD</td><td>12m €4,952.83 / lifetime €16,571.39 (ratio 3.35); 31.0% discounted LGD; €14.0m EAD</td></tr>
+<tr><td>compute_pd</td><td>§6 WOE/IV; §7 Merton</td><td>IV=0.4403; DD=1.2116 → PD 11.28%</td></tr>
+<tr><td>compute_vasicek</td><td>§8 PIT conditioning</td><td>7.34% @ Z=−2, 1.43% @ Z=0, 0.17% @ Z=+2</td></tr>
+<tr><td>compute_scenarios</td><td>§9 probability-weighted ECL</td><td>€1.74m ≈ 1.9× the €0.90m average-scenario ECL</td></tr>
+<tr><td>compute_grossup</td><td>§9 lifetime gross-up</td><td>×1.29 (60m PD 9.4% → lifetime 12.1%)</td></tr>
+<tr><td>compute_ncl</td><td>§11 discounted realised loss</td><td>face 12.5% UPB → 20.2% EIR-discounted</td></tr>
+<tr><td>compute_rollrate</td><td>§11 D180→D90 bridge</td><td>R=0.60</td></tr>
+<tr><td>compute_validation</td><td>§13 binomial/Jeffreys + PSI</td><td>five-band grade backtest</td></tr>
+</table></div>
+<p><b>Gate rule:</b> the engine is frozen only when <code>pytest tests/</code> is green; any engine
+change after the freeze re-runs the full suite.</p>
+
+<h3>4.2 Gate timeline (zero regressions across every gate)</h3>
+<div class="table-wrap"><table>
+<tr><th>Gate</th><th>Tests</th><th>Date</th><th>What shipped</th></tr>
+<tr><td>Engine freeze</td><td><b>187/187</b></td><td>2026-07-05</td><td>133 fixtures + 16 EAD + 8 LGD + 16 staging + 14 ECL; <code>engine/</code> frozen</td></tr>
+<tr><td>Day 4 (agent, HF Space public)</td><td><b>381/381</b></td><td>2026-07-07</td><td>LangGraph Tier-1 router + refusal, FastAPI+Preact, Docker deploy</td></tr>
+<tr><td>App v2 + Tier-2 sandbox</td><td><b>509/509</b></td><td>2026-07-08</td><td>5-tab north-star app, Tier-2 <code>analyze_data</code> sandbox</td></tr>
+<tr><td>SFLLD Phase A</td><td><b>553/553</b></td><td>2026-07-17</td><td>513 baseline + 40 freddie tests (panel/EDA)</td></tr>
+<tr><td>REASONED route</td><td><b>582/582</b></td><td>2026-07-17</td><td>3-way router split (computable/reasoned/refuse)</td></tr>
+<tr><td>SFLLD Phase B</td><td><b>659/659</b></td><td>2026-07-18</td><td>582 + 77 freddie (hazard/LGD/backtest/LSTM refit)</td></tr>
+</table></div>
+<p class="small">Intermediate gates not listed above (day-3 scenarios 278/278, stretch Tier-3+MCP
+422/422, UI v3 513/513) are recorded in <code>wiki/memory/log.md</code> and the corresponding
+<code>outputs/gate/*.md</code> reports; every gate is zero-regression on the one before it.</p>
+
+<h3>4.3 Champion-challenger</h3>
+<p>DCR: MLP challenger wins in-sample (0.7632 vs 0.7476) but <b>loses OOT</b> (0.6417 vs champion
+0.6609) — champion retained. SFLLD: LSTM wins OOT AUC overall (0.9925 vs 0.6847) but the honest lift
+decomposition shows the advantage is entirely delinquency-state memory on loans with a prior
+delinquency spell, not genuine path-dependence on clean books — <b>both challengers stay
+challenger-never-champion</b> by explicit project policy.</p>
+
+<h3>4.4 ALFRED-vintage honest backtest — the model-risk centerpiece</h3>
+<p><code>freddie/backtest.py</code>: the champion hazard spec is <b>refit-in-time</b> at 5 historical
+pseudo-reporting dates on only the data and macro vintages that actually existed then, projected
+forward 36 months, and compared to what actually happened. Two macro scenarios: <b>(a) frozen</b>
+(naive PIT extrapolation — the scenario IFRS-9 para 5.5.17 exists to prevent) and <b>(b)
+actual/hindsight</b> (the ceiling a perfect overlay could achieve).</p>
+<div class="table-wrap"><table>
+<tr><th>T (reporting date)</th><th>realised D90 (36mo)</th><th>predicted (frozen)</th><th>miss (frozen)</th><th>predicted (hindsight)</th><th>miss (hindsight)</th></tr>
+<tr><td>2007-12-01</td><td>8.750%</td><td>0.928%</td><td><b>9.42×</b></td><td>4.613%</td><td><b>1.90×</b></td></tr>
+<tr><td>2009-12-01</td><td>6.569%</td><td>5.554%</td><td>1.18×</td><td>4.658%</td><td>1.41×</td></tr>
+<tr><td>2015-12-01</td><td>1.397%</td><td>1.857%</td><td>0.75×</td><td>1.855%</td><td>0.75×</td></tr>
+<tr><td>2019-12-01</td><td>4.601%</td><td>0.920%</td><td>5.00×</td><td>71.519%</td><td><b>0.06×</b></td></tr>
+<tr><td>2021-12-01</td><td>1.161%</td><td>1.734%</td><td>0.67×</td><td>1.229%</td><td>0.94×</td></tr>
+</table></div>
+
+<img class="fig" src="assets/exhibit_05_backtest_200712.png" alt="ALFRED backtest 2007-12 honesty panel">
+<div class="figcap">Exhibit 5 — ALFRED-vintage backtest, 2007-12: frozen-macro model underpredicts the
+realised 36-month GFC default wave by 9.42×; the hindsight-macro ceiling remains 1.90× under.
+<span class="src">outputs/freddie/backtest/predicted_vs_realized_200712.png</span></div>
+
+<div class="warn"><b>2007-12 (the exhibit's central honesty result).</b> A model fit on pre-2008 data
+with macro frozen at 2007-12 levels <i>cannot see the crisis coming</i> — it underpredicts the
+realised 36-month cumulative D90 rate by <b>9.42×</b>. Even the hindsight-macro run (perfect knowledge
+of what UER/HPI actually did) still underpredicts by <b>1.90×</b> — the model-risk floor no macro
+overlay closes (spec/parameter risk plus the frozen-LTV projection simplification). This gap between
+frozen and realised is precisely what a forward-looking scenario overlay (§3.6) is built to close; the
+gap that <i>remains</i> between hindsight and realised is the argument for holding model risk beyond
+any overlay.</div>
+
+<div class="warn"><b>2019-12 (the saturation caveat, twin to the COVID-exclude verdict).</b> The
+hindsight-macro prediction of 71.519% (vs 4.601% realised, 0.06×) is <b>faithful linear
+extrapolation</b>, not a bug: the champion spec is linear in <code>delta_uer_lag1</code>, fitted on a
+history where month-on-month UER moves are a few tenths of a point; fed the actual April-2020 print
+(+10.6pp in one month), the cloglog linear predictor implies a hazard multiplier in the tens of
+thousands, saturating the monthly hazard toward 1 for much of the book — faithful extrapolation ~20
+standard deviations outside training support, the purest form of the parameter/spec model risk this
+backtest exists to expose. <b>Connective finding:</b> the <i>delinquency-count</i> miss shown here is
+the roll-rate half of the story; the <i>loss</i> half did not spike commensurately — the LGD module's
+modern-era OOT cure rate is 97.9% (§3.2.2), because forbearance resolved the 2020 D90 spike as cures,
+not liquidations. A bank reading only the D90-hazard miss ratio would overstate the COVID ECL shock.</div>
+
+<p><b>ALFRED coverage:</b> as of 2007-12-01, 3 of 54 states' UER series fell back to the national
+UNRATE vintage. FHFA STHPI has <b>no ALFRED vintage archive at all</b> — every "as known at T" HPI
+value is a publication-lag truncation (§2.3).</p>
+
+<div class="note"><b>Critical review fix</b> (<code>wiki/memory/decisions.md</code>, 2026-07-18):
+realised outcomes are timed by the <b>first-D90 month</b> from the truncated panel, <b>not the
+disposition month</b> — an earlier draft used disposition-month timing, which the review caught and
+fixed as a critical bug before this exhibit was finalised.</div>
+
+<h3>4.5 Calibration exhibits</h3>
+<ul>
+<li><b>Hazard by calendar year</b> (<code>outputs/freddie/hazard/calibration_by_year.png/.csv</code>):
+champion scored on the full panel across calendar years; the 2020 row alone shows observed 0.357% vs
+predicted 4.162% monthly — the champion scoring straight through the forbearance window with pre-COVID
+coefficients (macro extrapolation, not a defect — see §3.1.3).</li>
+<li><b>State-macro effect</b> (<code>state_uer_effect.png/.csv</code>): predicted vs observed hazard
+by state <code>uer_lag1</code> quartile, scored on OOT rows.</li>
+<li><b>COVID variant comparison</b> (<code>covid_calibration_comparison.png</code>, Exhibit 7 above):
+naive/additive/exclude calibration side-by-side across the extended window.</li>
+<li><b>LSTM vs champion calibration</b>
+(<code>outputs/freddie/lstm/calibration_comparison.png/.csv</code>): observed vs predicted monthly D90
+hazard by calendar year, forbearance window shaded, both models.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s5">5 &nbsp; Limitations &amp; Known Issues</h2>
+<p class="small">Pulled deliberately from the decision/question registers and every report's own
+caveat sections — the brief here is completeness, not flattery.</p>
+
+<h3>5.1 COVID regime &amp; the saturation twin</h3>
+<p>The champion hazard's structural macro block is only valid outside the 2020-04..2021-09 forbearance
+window; the <b>EXCLUDE</b> verdict (§3.1.3) is a review overturn of the author's own initial
+recommendation, and even the exclude variant shares a residual caveat with naive/additive: 2022–2025
+observed hazard runs ~1.62–1.79× the exclude-variant predictions — a post-COVID level shift not fixed
+by the regime treatment. The backtest's 2019-12 hindsight run (§4.4) shows the mirror-image failure
+mode: even a perfect macro overlay saturates the linear hazard functional form when fed an
+out-of-training-support UER shock. Both are declared as the honest, unresolved edges of the same
+underlying limitation — the champion's functional form was never identified in a forbearance-shielded
+or 20-sigma macro regime.</p>
+
+<h3>5.2 WESML inference</h3>
+<p>Nominal standard errors on the SFLLD champion hazard are shipped with a documented caveat: seed-pair
+coefficient swings up to <b>5.7× nominal SE</b> on macro terms (§3.1.4). <code>seed_stability.csv</code>
+is the honest uncertainty statement; nominal p-values should not be read as the operative significance
+test for macro coefficients.</p>
+
+<h3>5.3 Seasoning-curve cohort confound</h3>
+<p>The SFLLD champion's fitted age-baseline spline shows a second, higher hump near 108 months that
+the raw empirical hazard-by-age profile does not — an artifact of the 2005–2008 crisis vintages being
+the only cohorts old enough to populate that age bin by 2016-12 train cutoff, not a genuine second
+seasoning peak. Extrapolation beyond ~143 months of age has zero train support.</p>
+
+<h3>5.4 Cure-stage OOT weakness</h3>
+<p>SFLLD's cure-logit OOT AUC (0.4769) is <b>below random</b> — a mechanical consequence of the
+<code>era[modern 2018-2025]</code> fixed effect being fit on only 9 train rows under the calendar
+train/OOT split, compounded by the COVID-era base-rate shift. This is disclosed as a genuine
+small-sample-plus-regime-shift limitation, explicitly not a coding defect, but it means the SFLLD cure
+model's OOT discrimination should <b>not</b> be relied on for forward scoring without further work.</p>
+
+<h3>5.5 Resolved-only selection bias (both LGD models)</h3>
+<p>DCR and SFLLD both fit severity/cure on <b>resolved workouts only</b> — unresolved
+<code>lgd_time</code>/<code>had_d90_event</code> rows are not a realised outcome. Cures resolve faster
+than liquidations, so the fitted cure rate is biased upward (and severity downward) for cohorts near
+the panel's own window end. For SFLLD this is quantified by default year: the true exposure is
+<b>recency</b>, not specifically the COVID cohort — default year 2025 is 54.2% unresolved simply
+because those D90s have not had time to reach a terminal disposition, not because they are inherently
+different in kind.</p>
+
+<h3>5.6 No competing-risk prepayment in the SFLLD hazard refit</h3>
+<p>Unlike the DCR champion's dual cause-specific hazard, the SFLLD hazard refit fits <b>only</b> the
+D90 default cause — no competing-risk prepayment hazard (declared simplification). This also means the
+SFLLD refit cannot itself decompose prepayment-driven survival the way the DCR engine's $S(t)$ does.</p>
+
+<h3>5.7 D90-vs-liquidation default definition</h3>
+<p>SFLLD's default label (D90 absorbing) is a <b>delinquency-status</b> event, not a loss event — and
+the COVID EDA finding (§2.2) is precisely that these two can diverge sharply: the 90+→liquidation roll
+rate collapsed &gt;10× during forbearance while the D90-entry rate spiked to 4.5× the GFC peak. Any
+consumer of the SFLLD hazard's PD must pair it with the LGD module's realised-loss view to avoid
+overstating a delinquency-status shock as an economic loss shock — the backtest's connective finding
+(§4.4) states this explicitly.</p>
+
+<h3>5.8 Single-factor Vasicek</h3>
+<p>The systematic-risk model is single-factor (one Z per period, common to the whole book); no sector,
+geography, or product-segment factor structure. The main-anchor Z is only <i>approximately</i> TTC
+because <code>updated_ltv</code> is HPI-indexed and so still carries part of the collateral cycle into
+the "loan-state" covariates — the orig-LTV variant (ρ=0.0633) brackets this from the other side but
+ignores genuine amortisation/equity build; truth lies between, both are reported.</p>
+
+<h3>5.9 Other declared simplifications, by module</h3>
+<ul>
+<li><b>Vasicek/scenario:</b> only the default-PD leg is scenario-conditioned; LGD and EAD stay at
+frozen rung-1 projections (no collateral-path LGD link yet); staging is frozen across scenarios (the
+IASB two-step probability-weighted staging is a named enhancement); Z beyond the 40q horizon holds its
+final value; static-OLS satellite (not a full ARDL/ECM); upside = a damped mirror convention, not
+SPF-percentile anchored; scenario weights 50/25/25 are judgmental, not statistically identified.</li>
+<li><b>ALFRED backtest:</b> <code>updated_ltv</code> held frozen for the full 36-month projection in
+both scenarios (no re-derived amortisation/prepayment path); projection is expected-value hazard
+roll-forward, not a stochastic simulation; loans with a missing static covariate are excluded from
+both sides of the comparison (~2.5%–14% of the book by date, and the excluded subpopulation runs
+riskier than the scoreable book — the exhibit's cohort therefore understates the whole-book realised
+rate).</li>
+<li><b>LSTM:</b> sequence lag is by same-loan position, not calendar offset; <code>dlq_num</code>
+capped at 6; "prior delinquency spell" defined over the same 24-month window the model sees, not full
+lifetime history; single architecture/seed, no hyperparameter search or ensembling (unlike the
+champion's <code>seed_stability.csv</code>); no competing-risk prepayment head or LGD/EAD integration.</li>
+<li><b>SFLLD LGD:</b> <code>JUDICIAL_STATES</code> is a single static classification (no
+within-sample regime changes); no downturn add-on (point-in-time LGD, matching DCR);
+<code>predict_components</code>/<code>predict_lgd</code> are diagnostic tools scored on already-resolved
+history only — <b>not</b> a forward-scoring API for a still-performing loan (unlike DCR's severity
+stage, whose covariates are all forward-available via a macro-scenario path); wiring this into a live
+scenario-conditional ECL assembly needs a projected liquidation-year substituted for the realised
+one — documented future work, not built.</li>
+<li><b>DCR panel:</b> macro is US <b>national</b> only (state-level upgrade = the rung-3 stretch); the
+double-trigger interaction shows in-sample substitution (−0.006, p=.04) rather than the
+textbook-expected reinforcement.</li>
+</ul>
+
+<h3>5.10 Coverage gaps</h3>
+<p>SFLLD vintages 2011–2013 and 2017 were never downloaded — a documented gap, not filled by
+interpolation or assumption. GU/VI have no state HPI/UER series at all; PR has UER but no HPI — any
+state-level feature carries the national-fallback flag through rather than silently blending it in.</p>
+
+<h3>5.11 Agent-layer known caveats</h3>
+<p>Narrations may quote unrounded floats (the verbatim-number check is strict); single-worker SSE demo
+limitation documented; the REASONED-route guard checks a number's <i>magnitude</i> exists in a legal
+source, not its <i>semantic attribution</i> — an inherent limitation across all three router outcomes,
+recorded after an adversarial review confirmed a live spelled-out-number bypass ("tens of millions")
+that was subsequently fixed for the digit case but not for the underlying attribution gap.</p>
+
+<!-- ============================================================ -->
+<h2 id="s6">6 &nbsp; Governance &amp; Controls</h2>
+
+<h3>6.1 Frozen-engine gate + fingerprint tripwire</h3>
+<p><code>engine/{hazard,lgd,ead,staging,ecl}.py</code> were frozen 2026-07-05 once the 187/187 gate
+passed. Any post-gate <b>structural</b> change to <code>engine/</code> requires the full test suite
+re-run plus a decision-register entry. Enforcement is a code fingerprint scan
+(<code>scan_code.py --fingerprints knowledge/code_fp.json</code>) that classifies every frozen file
+NONE / COSMETIC / STRUCTURAL on each gate; the Phase-B gate confirms all five frozen files
+<b>NONE</b>, cross-checked with a git-blob sha256 belt-and-braces comparison against <code>HEAD</code>.
+<code>data/processed/panel.parquet</code> (the DCR panel) is sha-pinned at every gate and confirmed
+byte-identical.</p>
+<div class="note"><b>Isolation contract</b> for the Freddie rung-3 stretch (<code>wiki/memory/
+decisions.md</code>, 2026-07-07 13:23 entry, binding for any future dataset): (1) one canonical schema
+per dataset panel, asserted by a schema test; the engine consumes only the contract; (2) the engine
+stays frozen and stateless — no cross-dataset coefficient inheritance is even possible; (3) all
+dataset-tuned calibrations (SICR thresholds, cure definition, satellite lags, ρ) are dataset-scoped and
+re-estimated, never inherited; (4) outputs and wiki pages are dataset-namespaced; (5) one
+<code>uv.lock</code> across analyses for attribution.</div>
+
+<h3>6.2 Contract-first UI/API seam</h3>
+<p><code>docs/api_contract.md</code> is the single source of truth for the UI/API boundary, exercised
+field-by-field by <code>tests/test_contract.py</code>; the UI's <code>api.js</code> <b>never invents
+fields</b> — a lesson from a Day-4 production incident where the UI was built in parallel against
+invented draft shapes and the <code>extra=forbid</code> pydantic contract rejected them live. Every
+subsequent UI addition (v2 tabs, v3 AI-explain prefixes, the REASONED route's UI wiring) is
+contract-tested before ship.</p>
+
+<h3>6.3 Agent guardrails</h3>
+<ul>
+<li><b>The LLM never does arithmetic</b> — router (Gemma 4 31B via OpenRouter, temp 0, DeepSeek V4
+Flash fallback) selects one of four pydantic-validated Tier-1 tools; the narrator quotes tool-result
+numbers <b>verbatim</b>, with a post-check and deterministic template fallback; review-verified with a
+poisoned-narration test.</li>
+<li><b>Refusal path:</b> validation failure or out-of-scope questions route to a refusal node naming
+the supported families; refusal class is regression-tested against prompt injection.</li>
+<li><b>REASONED route:</b> relevant-but-uncomputable questions (model-design rationale, interaction
+terms, economic intuition) get a labeled reasoned interpretation, grounded via Tier-3 retrieval + the
+<code>rerun_ecl</code> baseline whitelist, prefixed <code>[REASONED — interpretation, not engine
+output]</code>. An adversarial review <b>confirmed</b> a live spelled-out-number bypass (the router
+LLM did its own subtraction and verbalised it as "tens of millions" to dodge the digit regex) and it
+was fixed with <code>_spelled_number_violation()</code> wired into all three guards
+(reasoned/narration/docs), with regression tests.</li>
+<li><b>Coherent-shock convention (load-bearing):</b> the satellite has no unemployment term, so a
+univariate UER-only shock cannot reach Z; <code>shock_macro</code> therefore applies every shock as a
+co-moving move along the DFAST severe-minus-base direction (loadings normalised to the named
+variable), with per-concept deltas returned transparently — without this, the flagship demo question
+would return delta=0.</li>
+<li><b>Every agent run appends to <code>outputs/agent_log/*.jsonl</code></b> — a replayable audit
+trail.</li>
+</ul>
+
+<h3>6.4 Audit trail</h3>
+<ul>
+<li><b>Decision register</b> (<code>wiki/memory/decisions.md</code>) — append-only, one entry per
+material decision with context, options, the call, and rationale; every scope cut is recorded here.</li>
+<li><b>Session log</b> (<code>wiki/memory/log.md</code>) — append-only, one entry per working session,
+what was read, what changed, what's next; the resume ritual for a fresh session.</li>
+<li><b>Open questions register</b> (<code>wiki/memory/questions.md</code>) — append-only, struck
+through with a pointer to the resolving page when answered.</li>
+<li><b>Gate reports</b> (<code>outputs/gate/*.md</code>, <code>outputs/freddie/gate_phaseA.md</code>,
+<code>gate_phaseB.md</code>) — one report per gate, each with the test count, isolation check,
+fingerprint scan, and headline-number cross-reference against the underlying module reports.</li>
+</ul>
+
+<h3>6.5 Wiki-as-MDD process</h3>
+<p>The wiki (<code>wiki/index.md</code> + 20 pages under <code>wiki/pages/</code>, 21 pages total per
+<code>wiki/.wiki/audit.json</code> + the three memory
+registers) is the compiled, interlinked knowledge base this MDD is generated from — never re-derived
+from raw sources, always citing the underlying <code>outputs/**/*.md</code> report as the number's
+system of record. This document is the <code>pageindex-plus</code> HTML-notes export of that wiki, per
+the Day-3 documentation decision (<code>wiki/memory/decisions.md</code>, 2026-07-07 12:55 entry):
+"formal MDD = pageindex-plus HTML export of the wiki."</p>
+
+<!-- ============================================================ -->
+<h2 id="s7">7 &nbsp; Appendix: Artifact Inventory &amp; Exhibits</h2>
+
+<h3>7.1 Repository map</h3>
+<div class="table-wrap"><table>
+<tr><th>Area</th><th>Path</th><th>Status</th></tr>
+<tr><td>Frozen engine</td><td><code>engine/{hazard,lgd,ead,staging,ecl}.py</code></td><td class="badge-frozen">FROZEN, gate 187/187</td></tr>
+<tr><td>DCR panel builder</td><td><code>data/panel/build_panel.py</code> → <code>data/processed/panel.parquet</code></td><td>frozen artifact</td></tr>
+<tr><td>Scenario layer</td><td><code>engine/{vasicek,scenarios,satellite}.py</code>, <code>data/ingest/dfast.py</code></td><td>reviewed clean/fixed</td></tr>
+<tr><td>MLP challenger</td><td><code>challenger/mlp.py</code></td><td>reviewed clean</td></tr>
+<tr><td>Freddie ingest/panel/macro</td><td><code>freddie/{ingest,build_panel,macro,eda}.py</code></td><td>Phase-A gate PASS</td></tr>
+<tr><td>Freddie hazard/LGD/backtest/LSTM</td><td><code>freddie/{fit_hazard,lgd,fit_lgd,backtest,lstm,fit_lstm}.py</code></td><td>Phase-B gate PASS</td></tr>
+<tr><td>Agent layer</td><td><code>agent/{tools_tier1,tools_tier2,graph,tier3_retrieval,mcp_server}.py</code>, <code>app/api/main.py</code></td><td>reviewed fixed, live</td></tr>
+<tr><td>UI</td><td><code>app/ui/src/*</code></td><td>UI v3 live on HF Space</td></tr>
+<tr><td>Golden fixtures</td><td><code>tests/fixtures/compute_*.py</code>, <code>tests/test_fixtures.py</code></td><td>133/133, immutable</td></tr>
+<tr><td>Wiki</td><td><code>wiki/index.md</code>, <code>wiki/pages/*.md</code>, <code>wiki/memory/*.md</code></td><td>source of this MDD</td></tr>
+</table></div>
+
+<h3>7.2 Output report inventory (by module)</h3>
+<div class="table-wrap"><table>
+<tr><th>Module</th><th>Reports &amp; data</th></tr>
+<tr><td>DCR hazard</td><td><code>outputs/hazard/{fit_stats.md,hazard_ratios.md,pd_term_structure.csv}</code></td></tr>
+<tr><td>DCR LGD</td><td><code>outputs/lgd/lgd_report.md</code></td></tr>
+<tr><td>DCR EAD</td><td><code>outputs/ead/*</code></td></tr>
+<tr><td>DCR staging</td><td><code>outputs/staging/staging_report.md</code></td></tr>
+<tr><td>DCR ECL</td><td><code>outputs/ecl/ecl_report.md</code>, <code>waterfall.json</code></td></tr>
+<tr><td>DCR panel</td><td><code>outputs/panel/{waterfall.md,waterfall.json}</code></td></tr>
+<tr><td>DCR EDA</td><td><code>outputs/eda/*</code></td></tr>
+<tr><td>Vasicek</td><td><code>outputs/vasicek/{vasicek_report.md,z_path.csv,credit_cycle.png}</code></td></tr>
+<tr><td>Scenario ECL</td><td><code>outputs/scenario_ecl/{scenario_ecl_report.md,scenario_ecl_summary.csv,jensen_gap.png}</code></td></tr>
+<tr><td>Challenger (MLP)</td><td><code>outputs/challenger/{scorecard.md,reliability.png,psi_scores.png,perm_importance.png}</code></td></tr>
+<tr><td>Gates</td><td><code>outputs/gate/*.md</code> (day3/day4/appv2/stretch/uiv3/reasoned_route)</td></tr>
+<tr><td>Freddie EDA</td><td><code>outputs/freddie/eda/{eda_report.md,exhibit1-5*.png}</code></td></tr>
+<tr><td>Freddie hazard</td><td><code>outputs/freddie/hazard/{hazard_report.md,coefficients.csv,dcr_sign_comparison.csv,seed_stability.csv,covid_*.csv,*.png}</code></td></tr>
+<tr><td>Freddie LGD</td><td><code>outputs/freddie/lgd/{lgd_report.md,cure_coefficients.csv,severity_coefficients.csv,excess_loading_by_bucket.csv,*.png}</code></td></tr>
+<tr><td>Freddie backtest</td><td><code>outputs/freddie/backtest/{backtest_report.md,predicted_vs_realized_*.csv/.png,metrics_*.json}</code></td></tr>
+<tr><td>Freddie LSTM</td><td><code>outputs/freddie/lstm/{lstm_report.md,calibration_comparison.*,lift_split.png,metrics.json}</code></td></tr>
+<tr><td>Freddie gates</td><td><code>outputs/freddie/{gate_phaseA.md,gate_phaseB.md}</code></td></tr>
+<tr><td>Variable dictionary</td><td><code>outputs/variable_dictionary.md</code></td></tr>
+</table></div>
+
+<h3>7.3 Selected exhibits — index</h3>
+<p>All 8 exhibits are embedded inline at their point of use in §§2–4 above; this is the consolidated
+index with source paths.</p>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Exhibit</th><th>Source</th><th>Section</th></tr>
+<tr><td>1</td><td>Credit cycle (Vasicek Z, calendar axis)</td><td><code>outputs/vasicek/credit_cycle.png</code></td><td>§3.6.1</td></tr>
+<tr><td>2</td><td>The Jensen gap</td><td><code>outputs/scenario_ecl/jensen_gap.png</code></td><td>§3.6.3</td></tr>
+<tr><td>3</td><td>SFLLD vintage curves</td><td><code>outputs/freddie/eda/exhibit1_vintage_curves.png</code></td><td>§2.2</td></tr>
+<tr><td>4</td><td>COVID roll-rate matrices</td><td><code>outputs/freddie/eda/exhibit2_roll_rate_matrices.png</code></td><td>§2.2</td></tr>
+<tr><td>5</td><td>ALFRED-vintage backtest honesty panel, 2007-12</td><td><code>outputs/freddie/backtest/predicted_vs_realized_200712.png</code></td><td>§4.4</td></tr>
+<tr><td>6</td><td>Severity by liquidation year, 2006–2025</td><td><code>outputs/freddie/lgd/severity_by_liq_year.png</code></td><td>§3.2.2</td></tr>
+<tr><td>7</td><td>COVID regime-variant calibration comparison</td><td><code>outputs/freddie/hazard/covid_calibration_comparison.png</code></td><td>§3.1.3</td></tr>
+<tr><td>8</td><td>LSTM lift-split, honest path-dependence decomposition</td><td><code>outputs/freddie/lstm/lift_split.png</code></td><td>§3.7.2</td></tr>
+</table></div>
+
+<h3>7.4 Test coverage snapshot (at this MDD's compilation date)</h3>
+<p><b>659/659</b> tests passing (<code>uv run --no-sync pytest tests/ -q</code>), zero
+failures/errors/skips, frozen five all <b>NONE</b> on the fingerprint scan, DCR
+<code>panel.parquet</code> byte-identical to its Phase-A-recorded sha256
+(<code>outputs/freddie/gate_phaseB.md</code>).</p>
+
+<hr>
+<p class="small" style="text-align:center;">Model Development Document — IFRS 9 ECL Engine &amp;
+Agentic Copilot · compiled from <code>wiki/</code> + <code>outputs/**</code>, 2026-07-19 · every
+number verbatim and source-cited, nothing recomputed.</p>
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES CHAPTER SHELL  —  see notes/plan/conventions.md
+  ============================================================================
+  MathJax SVG renderer — the only external dependency (CDN, accepted project
+  exception; everything else in this file is self-contained/inline).
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  /* ---------------------------------------------------------------------
+     THEME: light palette in :root, dark override via prefers-color-scheme
+     AND via [data-theme] (the toggle button below stamps this attribute on
+     <html> and wins over the OS preference either direction).
+     --------------------------------------------------------------------- */
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  /* Figures — EXHIBIT-style numbering: caption text itself carries
+     "Exhibit <chapter>.<n> — description (source anchor)." Chapter authors
+     write the label; this file only styles the container. See conventions.md
+     "Figure numbering" for the counting rule. */
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------------------------------------------------------------------
+     TEXTBOOK BOXES — pick deliberately, see conventions.md "Box vocabulary".
+     .defn         blue    — a term is defined here, first use.
+     .thm          purple  — a stated result/proposition.
+     .derivation   violet  — step-by-step algebra, NO skipped steps; each
+                              step in its own <div class="step">.
+     .ex           green   — a fully worked numerical example.
+     .interpretation teal  — "what this means" reasoning, required after
+                              every derivation/result.
+     .gotcha       amber   — common misreading / pitfall, required once per
+                              topic (see quiz below).
+     .warn         red     — a correctness-critical caution (validity
+                              conditions, sign conventions, do-not-do-this).
+     .note         yellow  — a general aside / intuition pump.
+     .quiz         dashed  — "Check yourself", 2-4 questions with answers
+                              inside <details><summary>Answer</summary>…</details>.
+     --------------------------------------------------------------------- */
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  /* Widget host — a bordered panel a chapter drops interactive demos into.
+     widgets.js targets elements inside a .widget container by convention;
+     see notes/assets/widget_demo.html and conventions.md "Widgets". */
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+
+  /* Theme-toggle button — fixed, tiny, unobtrusive; hidden on print. */
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>{{TITLE}}</h1>
+<div class="subtitle">{{SUBTITLE}}</div>
+<div class="meta-line">{{META}}</div>
+
+<!-- ============================================================== -->
+<!-- TABLE OF CONTENTS                                                -->
+<!-- ============================================================== -->
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s1">Section title</a></li>
+<!-- add one <li> per top-level section; nest <ol> for sub-sections -->
+</ol>
+</div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTIONS GO HERE — one <h2 id="sN"> per top-level section.       -->
+<!--                                                                  -->
+<!--   <h2 id="sN">N &nbsp; Section Title</h2>                        -->
+<!--   <p>Intro paragraph, cite the source anchor inline, e.g.        -->
+<!--      "(knowledge/corpus/ifrs9_credit_risk_notes.md §8)".         -->
+<!--                                                                  -->
+<!--   <h3>N.1 Sub-section</h3>                                       -->
+<!--                                                                  -->
+<!--   <div class="defn"><b>Definition.</b> …</div>                   -->
+<!--   <div class="thm">  <b>Result.</b>     …</div>                  -->
+<!--                                                                  -->
+<!--   <div class="derivation"><b>Derivation.</b>                     -->
+<!--     <div class="step"><span class="stepno">1.</span> …</div>     -->
+<!--     <div class="step"><span class="stepno">2.</span> …</div>     -->
+<!--     …every algebraic step shown, nothing skipped…                -->
+<!--   </div>                                                         -->
+<!--                                                                  -->
+<!--   <div class="ex"><b>Worked example.</b> numbers pasted FROM the -->
+<!--     matching tests/fixtures/compute_*.py RESULTS, never hand-    -->
+<!--     typed — see conventions.md "Recompute every number".         -->
+<!--   </div>                                                         -->
+<!--                                                                  -->
+<!--   <div class="interpretation"><b>What this means.</b> reasoning  -->
+<!--     after every result — required, not optional.                -->
+<!--   </div>                                                         -->
+<!--                                                                  -->
+<!--   <img class="fig" src="data:image/png;base64,{{IMG:01_key}}"    -->
+<!--        alt="short description">                                  -->
+<!--   <div class="figcap"><b>Exhibit N.M.</b> — caption text          -->
+<!--        (source anchor).</div>                                    -->
+<!--                                                                  -->
+<!--   <div class="gotcha"><b>Gotcha.</b> one per topic, required.</div> -->
+<!--                                                                  -->
+<!--   <div class="quiz"><b>Check yourself.</b>                       -->
+<!--     <ol>                                                         -->
+<!--       <li>Question 1?                                            -->
+<!--         <details><summary>Answer</summary>                       -->
+<!--         <div class="answer">…</div></details></li>                -->
+<!--       <!-- 2-4 questions total, EVERY one needs an <details> -->  -->
+<!--     </ol>                                                        -->
+<!--   </div>                                                         -->
+<!--                                                                  -->
+<!--   Display math:  $$ y = mx + b $$                                -->
+<!--   Inline  math:  $f(x) = e^{-x^2}$                                -->
+<!--   For HTML, use &lt; and &gt; instead of < and > inside math      -->
+<!--                                                                  -->
+<!--   Widget: <div class="widget"> … see widget_demo.html and        -->
+<!--     conventions.md "Widgets" for the makeSlider/plot pattern.     -->
+<!-- ============================================================== -->
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from {{SOURCE}} on {{DATE}}.
+</div>
+
+<!-- widgets.js is loaded per-chapter only if the chapter uses interactive
+     widgets — inline it (copy the file's contents into a <script> block) or
+     reference it with <script src="assets/js/widgets.js"></script> if the
+     chapter HTML lives under notes/ and can resolve the relative path. See
+     conventions.md "Inlined vs relative widgets.js" for which to pick. -->
+
+</body>
+</html>

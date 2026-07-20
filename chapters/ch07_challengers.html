@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.7 — Challengers: The Champion-Challenger Governance Pattern | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 7: CHALLENGERS
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md), CSS
+  block copied verbatim from ch05_vasicek.html for visual consistency.
+  widgets.js loaded RELATIVE ("../assets/js/widgets.js") -- this chapter lives
+  in notes/chapters/, widgets.js lives in notes/assets/js/. Standalone
+  deliverable for this build phase (notes/chapters/ holds independent chapter
+  files, not yet spliced into one compendium) -- own <h1>/TOC/closing <hr>;
+  <h2 id="s7"> is written so a later merge into the single-file compendium is
+  a straight splice.
+
+  METHODOLOGY NOTE (read before trusting any number below): every AUC,
+  reliability bin, PSI band and PDP value in this chapter is reproduced by
+  notes/assets/img/ch07/recompute_challenger_scoring.py -- it refits the
+  champion (deterministic IRLS, engine/hazard.py, read-only) and re-SCORES
+  (no retraining) the challenger from its saved checkpoint
+  (outputs/challenger/mlp_challenger.pt), on the real 621,736-row DCR panel.
+  Every recomputed AUC matches outputs/challenger/scorecard.md to the
+  4th decimal (champion train 0.7476/OOT 0.6609, challenger train 0.7632/
+  OOT 0.6417) -- printed proof in the script's own stdout. This is the
+  "recompute every number" law (notes/plan/conventions.md sec.5) applied to
+  a fitted-model scorecard rather than a closed-form fixture: no compute_*.py
+  golden fixture exists for this chapter (challenger work is architecture +
+  reports, not a numeric worked example with a single TARGETS dict), so this
+  chapter's own recompute script IS that fixture. Six figures regenerated in
+  matplotlib (Exhibits 7.1-7.6) by notes/assets/img/ch07/build_diagrams.py
+  from that recompute's JSON outputs (reliability_bins.json, psi_bands.json,
+  age_pdp.json, all alongside the script) -- none of outputs/challenger/'s
+  own PNGs are embedded verbatim; every figure here is chapter-native and
+  image-QA'd. Derivation D-10 (PSI band-by-band) expanded per
+  notes/plan/derivation_backlog.md, first on the backlog's own toy example,
+  then applied to this chapter's real recomputed numbers.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control input[type="checkbox"] { vertical-align: middle; margin-right: 4px; }
+  .widget-control select { font-size: 12.5px; padding: 2px 4px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+  .readout { flex: 1 1 260px; background: var(--page-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 12px; font-size: 12.8px; margin-top: 8px; }
+  .readout b { color: var(--accent-soft); }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 7 — Challengers: The Champion-Challenger Governance Pattern</h1>
+<div class="subtitle">Why a model that loses still earns its keep — the DCR MLP challenger, the like-for-like law, and reading a scorecard honestly</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 7 of 13. Compiled from <code>outputs/challenger/scorecard.md</code>, <code>analysis/fit_challenger.py</code>, <code>challenger/mlp.py</code>, <code>engine/hazard.py</code>, <code>tests/fixtures/compute_validation.py</code>, <code>wiki/memory/log.md</code>, and this chapter's own recompute (<code>notes/assets/img/ch07/recompute_challenger_scoring.py</code>) on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s7-1">7.1 The champion-challenger governance pattern</a></li>
+<li><a href="#s7-2">7.2 What evidence would promote a challenger — the promotion bar</a></li>
+<li><a href="#s7-3">7.3 The DCR MLP challenger: architecture &amp; the like-for-like law</a></li>
+<li><a href="#s7-4">7.4 Scorecard read: discrimination (AUC)</a></li>
+<li><a href="#s7-5">7.5 Calibration: reliability — interactive comparator</a></li>
+<li><a href="#s7-6">7.6 Stability: PSI, train&rarr;OOT</a></li>
+<li><a href="#s7-7">7.7 Interpretability for nonlinear models: permutation importance, PDP, and the SHAP-dropped decision</a></li>
+<li><a href="#s7-8">7.8 The seasoning-hump-rediscovery check</a></li>
+<li><a href="#s7-9">7.9 Interactive: AUC intuition — score separation &rarr; live ROC</a></li>
+<li><a href="#s7-10">7.10 Forward pointer: Chapter 12's SFLLD LSTM challenger</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s7">7&nbsp; Challengers: The Champion-Challenger Governance Pattern</h2>
+<p>Chapter&nbsp;3 built and trusted a cloglog hazard model with a hand-engineered age spline and a
+hand-built LTV&times;unemployment interaction. Every one of those design choices was a human decision — an
+analyst deciding that default hazard is non-monotone in loan age, and that collateral risk and macro stress
+compound rather than add. This chapter asks the obvious follow-up question a model-risk function is
+supposed to ask: <em>if a flexible learner is given the same raw information and no hints, does it find the
+same structure on its own?</em> The answer, worked out end to end from a real 621,736-row panel and a real
+saved model checkpoint, is genuinely instructive — not because the challenger wins (it does not), but
+because of exactly <em>how</em> and <em>why</em> it loses. Source anchor: <code>outputs/challenger/
+scorecard.md</code> (all sections); project evidence from <code>analysis/fit_challenger.py</code>,
+<code>challenger/mlp.py</code>, and this chapter's own recompute
+(&sect;<a href="#s7-4">7.4</a>&ndash;<a href="#s7-8">7.8</a>).</p>
+
+<!-- ============================================================== -->
+<h3 id="s7-1">7.1 The champion-challenger governance pattern</h3>
+<!-- ============================================================== -->
+<p>Model-risk practice (the discipline behind supervisory guidance such as the Federal Reserve's SR&nbsp;11-7,
+and echoed in IFRS&nbsp;9's own governance expectations picked up again in Chapter&nbsp;13) asks for
+<strong>effective challenge</strong>: every production model needs a critical, technically competent,
+empowered counter-voice — not a rubber stamp, and not merely a one-off validation memo filed away and
+forgotten. A champion-challenger programme operationalises effective challenge as a recurring cycle rather
+than a single event.</p>
+
+<div class="defn">
+<b>Definitions.</b>
+<ul>
+<li><strong>Champion</strong> — the model whose output actually drives the ledger: in this project, the
+frozen cloglog hazard from Chapter&nbsp;3 (<code>engine/hazard.py</code>) is the <em>sole</em> source of
+production PDs feeding staging (Chapter&nbsp;1) and ECL (Chapter&nbsp;2).</li>
+<li><strong>Challenger</strong> — an alternative model fit on the <em>identical</em> prediction problem
+purely to stress-test the champion's functional-form choices. A challenger's job is to generate evidence,
+not to run in production.</li>
+<li><strong>Promotion</strong> — the (here, hypothetical) governance act of retiring the champion and
+replacing it with a challenger that has cleared an explicit evidence bar (&sect;<a href="#s7-2">7.2</a>).
+Promotion is a deliberate, documented decision — never an automatic consequence of one scorecard.</li>
+</ul>
+</div>
+
+<img class="fig" src="../assets/img/ch07/01_lifecycle_loop.png" alt="Loop diagram: production champion feeds a periodic challenger build (same panel, same target, same split, same features) and a like-for-like scorecard covering discrimination, calibration, stability and interpretability; both feed a model-risk governance review; the review either returns 'no promotion evidence, champion unchanged' or 'challenger promoted, becomes new champion', with the loop restarting either way">
+<div class="figcap"><b>Exhibit 7.1</b> — The champion-challenger governance loop: a recurring cycle, not a
+one-off bake-off. Regenerated in matplotlib (<code>notes/assets/img/ch07/build_diagrams.py</code>,
+conceptual diagram, no underlying data table).</div>
+
+<p><strong>CHALLENGER, NEVER CHAMPION</strong> is the load-bearing phrase in <code>scorecard.md</code>'s own
+opening line, and it means something specific and deliberate: even a challenger that <em>wins</em> a metric
+does not change production mid-cycle. The swap, if it ever happens, only happens through the governance box
+in Exhibit&nbsp;7.1 — explicitly, documented, and only after clearing the promotion bar
+(&sect;<a href="#s7-2">7.2</a>). This project's own challenger, as this chapter shows in detail, does not
+come close to clearing it — but the exercise was never really a bake-off to begin with. Its value is in
+what it reveals about the champion.</p>
+
+<div class="interpretation">
+<b>Interpretation — why run the exercise at all if the outcome is "champion unchanged"?</b> A champion built
+entirely from hand-engineered structure (a spline here, an interaction there) is only as trustworthy as the
+analyst's judgement that put those terms in. A challenger with no hints, fit on the exact same raw
+information, is the cheapest available test of that judgement: if the flexible learner independently
+rediscovers the spline's hump (&sect;<a href="#s7-8">7.8</a>) or the interaction's sign, that is real,
+external corroboration of the champion's functional form — evidence the champion's own in-sample fit
+statistics cannot provide, because they can never distinguish "this structure is real" from "this structure
+is what I told the model to look for".
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a challenger existing is not itself evidence of anything.</b> Standing up a second model and
+running one scorecard proves only that the exercise was performed, not that anything was learned. The
+value is entirely in what the comparison SHOWS: does the flexible model beat the champion, tie it, or lose
+to it — and, whichever way it goes, does the way it wins or loses make economic sense
+(&sect;<a href="#s7-4">7.4</a>)? A challenger that loses cleanly and explicably is a MORE useful governance
+artefact than a challenger that wins for reasons nobody can explain.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does "challenger never champion" apply even in a cycle where the challenger's headline metric
+beats the champion's?
+  <details><summary>Answer</summary>
+  <div class="answer">Because promotion is a deliberate governance act (Exhibit&nbsp;7.1's review box), not
+  an automatic consequence of one number moving the right way — a single scorecard is one piece of evidence,
+  and &sect;7.2's promotion bar requires several kinds of evidence (repeated OOT windows, bin-level
+  calibration, operational determinism) that one metric on one cycle cannot supply by itself.</div>
+  </details>
+</li>
+<li>What is the actual point of running a challenger that the project already expects, on priors, might
+lose?
+  <details><summary>Answer</summary>
+  <div class="answer">To stress-test the champion's hand-engineered functional-form choices (the age spline,
+  the LTV&times;UER interaction) against a model with no hints — a flexible learner independently finding
+  (or failing to find) the same structure is external corroboration (or a useful negative result) that the
+  champion's own in-sample fit statistics could never provide.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-2">7.2 What evidence would promote a challenger — the promotion bar</h3>
+<!-- ============================================================== -->
+<p>"The challenger scored lower this cycle" is not, by itself, the reason production stays with the
+champion — the reason is that <em>nothing on this list was cleared</em>. Listing the bar explicitly is what
+turns "challenger never champion" from a slogan into an auditable governance rule.</p>
+
+<div class="thm">
+<b>The promotion bar — what would have to be true.</b>
+<ol>
+<li><strong>Repeated, not single-cycle, OOT superiority.</strong> An AUC edge that holds across multiple
+independent out-of-time windows / vintages, not one scorecard's snapshot — a single OOT AUC delta is
+consistent with sampling noise or a lucky regime match, not a structural improvement.</li>
+<li><strong>Bin-level calibration, not just a headline mean.</strong> Reliability that tracks the diagonal
+across the FULL score range, not merely a portfolio-average ratio near 1 — &sect;<a href="#s7-5">7.5</a>
+shows exactly why a near-1 average can hide a "rotated" curve that is wrong in both directions.</li>
+<li><strong>Operational determinism on deployment hardware.</strong> The MLP's own documented caveat:
+bitwise-reproducible on the SAME device/build, but results differ across CPU vs GPU and torch/CUDA versions
+(<code>scorecard.md</code>, "Documented simplifications"). A regulatory PD that silently drifts with a
+driver upgrade is a governance liability the champion's deterministic IRLS solver does not carry.</li>
+<li><strong>A disciplined tail.</strong> The champion's natural cubic spline extrapolates LINEARLY past its
+boundary knots — a known, bounded behaviour. The MLP has no equivalent discipline; it is clamped at the
+training-support maximum age purely as an accepted default, not a principled tail
+(&sect;<a href="#s7-8">7.8</a>'s bonus finding makes the champion's own tail risk concrete too).</li>
+<li><strong>Interpretability sufficient for supervisory explainability</strong> — cleared here only in the
+weaker sense of permutation importance + PDP (&sect;<a href="#s7-7">7.7</a>); the originally planned SHAP
+per-prediction attribution was dropped for an engineering reason, not a validation pass.</li>
+</ol>
+</div>
+
+<p>None of these five are cleared this cycle. Item&nbsp;1 fails outright: OOT AUC is LOWER, not higher
+(&sect;<a href="#s7-4">7.4</a>). Item&nbsp;2 is actively concerning once the bin-level detail is examined
+(&sect;<a href="#s7-5">7.5</a>). Items 3&ndash;4 are open engineering and modelling gaps, not close calls.
+Item&nbsp;5 is a downgrade in tooling, accepted for a documented reason (&sect;<a href="#s7-7">7.7</a>), not
+evidence in the challenger's favour.</p>
+
+<div class="warn">
+<b>The absence of promotion evidence is itself informative.</b> It does NOT mean the exercise found nothing
+— it validates that the champion's hand-built terms are doing real, defensible work rather than being an
+arbitrary modelling choice a flexible learner would trivially outperform given the same information. A
+governance process that only ever reports "no promotion evidence" cycle after cycle, with a consistent and
+explicable reason each time, is a HEALTHY champion-challenger programme, not a wasted one.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why is "the challenger's OOT AUC was higher this one time" insufficient to clear the promotion bar's
+first item?
+  <details><summary>Answer</summary>
+  <div class="answer">A single out-of-time window is one sample from many possible train/OOT splits; an
+  edge that shows up once could be sampling noise, or a lucky match between the challenger's fitted
+  structure and that particular window's regime, rather than a genuine, repeatable improvement — the bar
+  requires the edge to hold across multiple independent OOT windows before it counts as evidence.</div>
+  </details>
+</li>
+<li>Why does hardware-dependent determinism matter for a REGULATORY probability of default specifically,
+more than it might for, say, a marketing recommendation model?
+  <details><summary>Answer</summary>
+  <div class="answer">A regulatory PD feeds directly into staging and the ECL allowance figure that appears
+  in financial statements — if the same model, on different deployment hardware or a different torch/CUDA
+  build, produces a materially different PD for the same loan, the allowance itself becomes
+  non-reproducible in a way that a recommendation ranking's minor instability would not be, which is a
+  direct audit and governance liability, not just an engineering nuisance.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-3">7.3 The DCR MLP challenger: architecture &amp; the like-for-like law</h3>
+<!-- ============================================================== -->
+<p>The challenger is a small feed-forward network (an MLP, multi-layer perceptron) fit on the exact same
+loan-quarter panel Chapter&nbsp;3's champion uses, with the exact same one-quarter-ahead
+<code>default_event</code> target.</p>
+
+<div class="table-wrap">
+<table>
+<tr><th></th><th>champion</th><th>challenger</th></tr>
+<tr><td>form</td><td>cloglog GLM, natural cubic spline in age (df=5), centered LTV&times;UER interaction</td>
+<td>MLP (64, 32) hidden units, ReLU, dropout 0.2, AdamW weight decay 0.0001</td></tr>
+<tr><td>class imbalance</td><td>none needed (GLM likelihood)</td>
+<td>pos_weight-weighted BCE + prior correction (pos_weight = 35.9)</td></tr>
+<tr><td>early stopping</td><td>n/a (IRLS convergence)</td>
+<td>by TIME: fit t&le;32, validate t=33..40 (2008Q2&ndash;2010Q1); best epoch 8 (val AUC 0.6458); refit on
+full training window for 8 epochs</td></tr>
+<tr><td>standardisation</td><td>n/a</td><td>z-score of continuous features, fitted on TRAIN ONLY</td></tr>
+<tr><td>backend</td><td>statsmodels IRLS (deterministic)</td>
+<td>torch, seed 0, deterministic algorithms = true</td></tr>
+</table>
+</div>
+<div class="src">Source: <code>outputs/challenger/scorecard.md</code> "Model" table;
+<code>challenger/mlp.py</code> module docstring.</div>
+
+<p>The 12 raw inputs are identical to the champion's own information set (<code>engine/hazard.REQUIRED_COLS
+</code>): <code>loan_age</code>, <code>FICO_orig_time</code> (as <code>fico_s</code>, /100), the
+HPI-indexed <code>updated_ltv</code> (as <code>ltv10</code>, winsorised at the champion's own
+<code>LTV_CAP</code>, /10), <code>prepay_incentive</code>, three property-type flags plus an investor flag,
+and four LAGGED macro terms (<code>uer_lag1</code>, <code>uer_chg4_lag1</code>, <code>hpi_growth_lag1</code>,
+<code>gdp_lag1</code>). What the MLP does <em>not</em> receive is the champion's two hand-engineered
+derived terms: the age spline basis and the centered LTV&times;UER interaction. Whether it finds the age
+shape unaided is exactly what &sect;<a href="#s7-8">7.8</a> tests in full, band by band, on this chapter's
+own recompute; the analogous rediscovery check for the interaction — <code>scorecard.md</code>'s own
+"double trigger" PDP finding (LTV-slope steepening under 10% vs 5% unemployment, challenger 0.76&times; vs
+the champion's own in-sample-fitted 0.15&times;) — is reported in the source scorecard but is NOT
+independently re-derived by this chapter's own recompute script, so it is left out of scope here rather
+than cited without that verification; see &sect;<a href="#s7-6">7.6</a>'s cross-reference note for the
+other items this build scopes out.</p>
+
+<img class="fig" src="../assets/img/ch07/02_like_for_like_checklist.png" alt="Checklist box diagram: six green boxes listing what must be identical between champion and challenger for an AUC gap to mean anything -- same at-risk rows, same target, same split boundary, same covariate information set, same timing convention, same evaluation window -- with a red box below explaining that violating any one voids rather than merely weakens the comparison">
+<div class="figcap"><b>Exhibit 7.2</b> — The like-for-like law: what must be identical for a
+champion-challenger AUC gap to be meaningful. Regenerated in matplotlib
+(<code>notes/assets/img/ch07/build_diagrams.py</code>).</div>
+
+<div class="interpretation">
+<b>Interpretation — the like-for-like law is about the INFORMATION SET, not the functional form.</b> Every
+box in Exhibit&nbsp;7.2 is satisfied: same loan-quarter rows, same target, same train/OOT boundary
+(t&le;40 vs t=41..60), same 12 raw covariates, same lag/timing convention, same evaluation metric on the
+same OOT rows. The champion's spline and interaction are NOT part of the "same features" requirement,
+because forcing them onto the MLP would defeat the entire point of the exercise — a linear model handed the
+champion's own spline-expanded basis is already most of the way to being the champion; the interesting
+question is whether the MLP's hidden layers can construct equivalent nonlinear structure FROM THE RAW
+COLUMNS on their own, with no hints. Handing over the engineered terms would answer a different (and much
+less useful) question.
+</div>
+
+<div class="note">
+<b>The prior-correction detail.</b> Class-weighted BCE (<code>pos_weight</code> = 35.9, correcting the
+~2.7% event rate) shifts the fitted logit upward by exactly $\ln(\text{pos_weight})$ relative to the true,
+unweighted-population logit — a standard case-control bias-correction result. Predictions therefore apply
+$\text{sigmoid}(z-\ln(\text{pos_weight}))$ before use, undoing that shift so the challenger's output is a
+properly calibrated hazard, not merely a correctly RANKED score. Every AUC in this chapter is rank-invariant
+to this correction (AUC only depends on ordering), but every reliability and PSI number in
+&sect;<a href="#s7-5">7.5</a>&ndash;<a href="#s7-6">7.6</a> depends on getting the correction right.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "same feature list" is not "same feature space".</b> It is tempting to read the like-for-like
+law as requiring the champion and challenger to see literally identical DESIGN matrices. They do not: the
+champion's design matrix includes a 5-df spline basis and an interaction term the MLP never sees. The law
+requires identical <em>information</em> (the same 12 raw loan-quarter facts, no side channel of extra data),
+not identical <em>preprocessing</em> — preprocessing choices that encode domain knowledge (the spline, the
+interaction) are precisely the thing being tested, and giving them to both sides would erase the test.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Would handing the MLP the champion's own spline-expanded age basis (instead of raw <code>loan_age</code>)
+still satisfy the like-for-like law?
+  <details><summary>Answer</summary>
+  <div class="answer">Formally yes (no new DATA is added, just a different transform of the same raw
+  <code>loan_age</code> column) — but it would make the comparison uninteresting, because the MLP would no
+  longer need to discover the hump's shape, only to weight a basis it was handed. The chapter's actual
+  challenger deliberately withholds the spline for exactly this reason: rediscovering the hump unaided is
+  the informative test (&sect;7.8), not weighting a pre-built one.</div>
+  </details>
+</li>
+<li>Why does the pos_weight prior correction not affect any of the AUC numbers in &sect;7.4?
+  <details><summary>Answer</summary>
+  <div class="answer">AUC is a purely RANK-based statistic (it only asks whether event rows score higher
+  than non-event rows) — subtracting a constant, $\ln(\text{pos_weight})$, from every logit before the
+  sigmoid preserves the ordering of scores exactly, so it can shift where reliability curves and PSI bands
+  sit (&sect;7.5&ndash;7.6) but cannot change any AUC.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-4">7.4 Scorecard read: discrimination (AUC)</h3>
+<!-- ============================================================== -->
+<p>One-quarter-ahead default AUC, train (t&le;40) and out-of-time (t=41..60), for both models. This
+chapter's own recompute (<code>notes/assets/img/ch07/recompute_challenger_scoring.py</code> — champion
+refit via <code>engine.hazard.fit_default_hazard</code>, challenger re-scored, not retrained, from
+<code>outputs/challenger/mlp_challenger.pt</code>) reproduces every value in <code>scorecard.md</code> to
+the 4th decimal.</p>
+
+<div class="ex">
+<b>Worked numbers — recomputed, not retyped.</b>
+<div class="table-wrap">
+<table>
+<tr><th>model</th><th>train AUC (t&le;40)</th><th>OOT AUC (t=41..60)</th><th>train&minus;OOT gap</th></tr>
+<tr><td>champion</td><td class="num">0.7476</td><td class="num">0.6609</td><td class="num">0.0867</td></tr>
+<tr><td>challenger</td><td class="num">0.7632</td><td class="num">0.6417</td><td class="num">0.1214</td></tr>
+<tr><td>delta (challenger &minus; champion)</td><td class="num">+0.0156</td><td class="num">&minus;0.0191</td>
+<td class="num">+0.0347</td></tr>
+</table>
+</div>
+Rounded to the task's own headline framing: champion OOT AUC <b>0.661</b> vs challenger OOT AUC
+<b>0.642</b> — the champion wins, and by a margin (1.91 AUC points) larger than the challenger's train-side
+edge (1.56 points) is in the other direction.
+</div>
+
+<div class="interpretation">
+<b>Interpretation — three reasons the champion wins OOT despite winning nothing on train.</b>
+<ul>
+<li><strong>Sample size.</strong> 418,418 training rows is not a large sample for an unconstrained
+64+32-unit network with dropout and weight decay to fully exploit — a parsimonious parametric model (a
+handful of coefficients plus a 5-knot spline) reaches its asymptotic efficiency on far less data than a
+network with thousands of free weights needs to reliably separate signal from noise.</li>
+<li><strong>Tabular data.</strong> This is a well-documented pattern in applied ML: on small-to-medium
+tabular panels with a modest number of engineered features, flexible deep networks frequently fail to beat
+— and can meaningfully underperform — parametric or tree-based models that already encode domain structure,
+particularly out of sample. Nothing about this project's result is anomalous against that broader pattern.</li>
+<li><strong>Feature saturation.</strong> The 12 raw covariates were ALREADY hand-selected and engineered by
+a domain expert to be maximally informative (the HPI-indexed LTV, the lagged macro terms, the prepayment
+incentive). Little residual nonlinear structure is left for a flexible learner to find BEYOND what the
+spline and interaction already capture — so the MLP's extra flexibility mostly overfits the training
+regime rather than discovering new signal.</li>
+</ul>
+The train&minus;OOT generalisation-gap column above is the direct evidence for the third point: the
+challenger's gap (0.1214) is 40% larger than the champion's (0.0867) — exactly what "the extra flexibility
+is spent on overfitting, not new signal" predicts.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the OOT window is a genuinely different macro regime for BOTH models, not just the
+challenger.</b> Training runs through the 2008&ndash;2010Q1 stress; OOT is the 2010&ndash;2015 recovery. Part
+of BOTH models' AUC drop from train to OOT reflects that regime shift itself, not model quality — a
+champion trained only on calm years would likely also show some OOT degradation. What isolates the model
+comparison from the shared regime-shift effect is the DELTA between the two models' drops (the two
+generalisation-gap numbers above), not either model's absolute OOT AUC read in isolation.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>The challenger's train AUC (0.7632) beats the champion's (0.7476). Why is this NOT evidence the
+challenger is the better model?
+  <details><summary>Answer</summary>
+  <div class="answer">Train-set AUC only measures fit to the data the model was optimised on — a flexible
+  learner can always fit train data at least as well as a constrained parametric one, including by fitting
+  noise. The number that matters for a production decision is OUT-OF-TIME performance, where the champion
+  wins by a larger margin (&minus;0.0191) than the challenger's train-side edge (+0.0156), and the
+  generalisation-gap comparison shows directly that the challenger's extra train fit does not transfer.</div>
+  </details>
+</li>
+<li>Name two of the three reasons given for why the champion generalises better despite less raw
+flexibility.
+  <details><summary>Answer</summary>
+  <div class="answer">Any two of: sample size (a network with many free weights needs more data than a
+  parsimonious parametric model to reach reliable OOT generalisation); the general tabular-data pattern
+  (flexible deep nets often do not beat domain-structured models on modest tabular panels); feature
+  saturation (the 12 raw covariates are already hand-engineered to be maximally informative, leaving little
+  residual signal for extra flexibility to find).</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-5">7.5 Calibration: reliability — champion vs challenger</h3>
+<!-- ============================================================== -->
+<p>A reliability diagram bins scored rows into quantiles of predicted hazard and plots each bin's MEAN
+predicted hazard against its mean OBSERVED event rate. Perfect calibration sits on the 45-degree diagonal;
+points above the diagonal mean the model UNDER-predicts in that bin (observed exceeds predicted), points
+below mean it OVER-predicts.</p>
+
+<img class="fig" src="../assets/img/ch07/03_reliability_oot.png" alt="Two log-log reliability panels, train and out-of-time, plotting observed default rate against predicted hazard for champion and challenger with a grey diagonal reference line; train panel shows both models close to the diagonal; OOT panel shows the champion consistently well above the diagonal across all bins while the challenger sits closer to the diagonal at low scores and crosses it near the top bins">
+<div class="figcap"><b>Exhibit 7.3</b> — Reliability (20 score-quantile bins), champion vs challenger, train
+and out-of-time. Regenerated from this chapter's own recompute
+(<code>notes/assets/img/ch07/reliability_bins.json</code>).</div>
+
+<div class="ex">
+<b>Worked numbers — three representative OOT bins (of 20), recomputed.</b>
+<div class="table-wrap">
+<table>
+<tr><th>bin</th><th>champion pred (%)</th><th>champion obs (%)</th><th>ratio obs/pred</th>
+<th>challenger pred (%)</th><th>challenger obs (%)</th><th>ratio obs/pred</th></tr>
+<tr><td>1 (lowest scores)</td><td class="num">0.044</td><td class="num">0.350</td><td class="num">7.9&times;</td>
+<td class="num">0.091</td><td class="num">0.360</td><td class="num">4.0&times;</td></tr>
+<tr><td>10 (middle)</td><td class="num">0.223</td><td class="num">1.450</td><td class="num">6.5&times;</td>
+<td class="num">1.932</td><td class="num">1.870</td><td class="num">1.0&times;</td></tr>
+<tr><td>20 (highest scores)</td><td class="num">2.085</td><td class="num">4.190</td><td class="num">2.0&times;</td>
+<td class="num">5.203</td><td class="num">3.710</td><td class="num">0.7&times;</td></tr>
+</table>
+</div>
+Every ratio is <code>obs/pred</code> computed directly from <code>reliability_bins.json</code> — the champion
+under-predicts in EVERY one of its 20 OOT bins (ratios stay above 1 throughout, echoing
+<code>scorecard.md</code>'s reported bottom/top-quintile read of 8.02&times;/3.07&times;); the challenger's
+ratio crosses below 1 by the middle bins and stays there through the top bin (echoing the scorecard's
+2.04&times;/0.70&times; quintile read) — a genuinely different, ROTATED shape, not just a smaller version of
+the champion's error.
+</div>
+
+<div class="interpretation">
+<b>Interpretation — a book-level mean ratio near 1 is NOT bin-level calibration.</b>
+<code>scorecard.md</code>'s headline numbers (champion under-predicts 4.71&times; on average; challenger
+over-predicts only 1.19&times; on average) make the challenger sound like the better-calibrated model. The
+bin-level table above shows why that headline is misleading taken alone: the challenger's near-1 portfolio
+average NETS OFF two opposite-signed errors (under-predicting the low/mid-score book, over-predicting the
+top) rather than tracking the diagonal loan-by-loan. On this OOT window, NEITHER model is well calibrated at
+the bin level — "the challenger levels better" is true only for the portfolio-mean hazard, and either
+model's PD scale would need recalibration before any absolute (non-ranking) use.
+</div>
+
+<div class="note">
+<b>Why the champion under-predicts everywhere (a level shift, not a shape problem).</b> Both models were
+trained through the 2008&ndash;2010Q1 stress and score the 2010&ndash;2015 recovery — the OOT window's true
+event rate reflects a DIFFERENT macro regime than either model was fit on. A shared level gap across every
+bin, as the champion shows, is the macro regime shift showing up uniformly; the challenger's ROTATED curve
+(under in some bins, over in others) is the more diagnostic finding, because a pure regime shift alone would
+not explain a sign FLIP across the score range.
+</div>
+
+<h4>Interactive: reliability-curve comparator</h4>
+<p>Toggle each model on/off and switch between the train and out-of-time splits — every point plotted below
+is the SAME 20-bin recomputed data tabulated above and charted in Exhibit&nbsp;7.3 (linear axes here, rather
+than the exhibit's log-log, for direct visual comparison against the diagonal at typical portfolio scale).</p>
+
+<div class="widget">
+<h4>Live widget — reliability-curve comparator (real 20-bin data, this chapter's own recompute)</h4>
+<div class="widget-controls" id="reli-controls"></div>
+<div id="reli-plot"></div>
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "well calibrated on average" and "well calibrated" are different claims.</b> A model whose
+book-level predicted total equals its book-level observed total can still be badly mis-calibrated at the
+loan level, systematically over-pricing some segment of the book and under-pricing another by an equal and
+offsetting amount. Any absolute (not just rank-ordering) use of a PD — ECL itself, most obviously — is
+exposed to this even when a single summary ratio looks reassuring; the fix is always to check calibration
+bin-by-bin (or segment-by-segment), never by the portfolio mean alone.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Toggle only the challenger on, OOT split. At the top bin, is the challenger over- or under-predicting?
+  <details><summary>Answer</summary>
+  <div class="answer">Over-predicting — the top OOT bin has predicted hazard 5.20% against observed 3.71%
+  (ratio 0.7&times;, below 1), consistent with the "rotated" shape: the challenger under-predicts the
+  low/mid-score book and over-predicts the highest-score decile.</div>
+  </details>
+</li>
+<li>Why does the champion's curve sit almost exactly on the diagonal in the TRAIN panel but well above it
+in the OOT panel?
+  <details><summary>Answer</summary>
+  <div class="answer">Train-panel calibration is nearly automatic for a maximum-likelihood GLM fit on that
+  same data (the IRLS fitting procedure directly targets in-sample calibration as part of the likelihood) —
+  it says little about out-of-sample behaviour. The OOT gap appears because the fitted coefficients (and the
+  macro regime they were tuned to) no longer match the out-of-time population's true event rate, which
+  reflects the 2010-2015 recovery rather than the 2008-2010Q1 stress the model was fit on.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-6">7.6 Stability: PSI, train&rarr;OOT</h3>
+<!-- ============================================================== -->
+<p>The Population Stability Index (PSI) measures how much a score DISTRIBUTION has shifted between two
+populations — here, the training-time score distribution vs the out-of-time score distribution, for each
+model separately.</p>
+
+<div class="derivation">
+<b>Derivation — PSI's band-by-band formula, from its KL-divergence motivation.</b>
+<div class="step"><span class="stepno">1.</span> <strong>Motivation.</strong> For two discrete distributions
+$P$ (a baseline/expected population) and $Q$ (a current/actual population) split into the same $n$ bands with
+shares $p_i,q_i$, the Kullback&ndash;Leibler divergence $D_{KL}(Q\Vert P)=\sum_i q_i\ln(q_i/p_i)$ measures how
+surprised you'd be seeing $Q$'s data if you expected $P$. PSI SYMMETRISES this into
+$PSI=D_{KL}(Q\Vert P)+D_{KL}(P\Vert Q)=\sum_i(q_i-p_i)\ln(q_i/p_i)$, so a band's contribution is unchanged
+under swapping which population is "expected" and which is "actual" — a deliberate, practically-motivated
+departure from KL's asymmetry.</div>
+<div class="step"><span class="stepno">2.</span> <strong>The band formula.</strong> Writing Expected$_i$ for
+the baseline (development/train) share and Actual$_i$ for the current (out-of-time) share in band $i$:
+$$ PSI = \sum_{i=1}^n \big(\text{Actual}_i-\text{Expected}_i\big)\,\ln\!\left(\frac{\text{Actual}_i}{\text{Expected}_i}\right). $$
+Each term is non-negative (a real number times its own log-ratio against a positive baseline has the same
+sign as the log-ratio itself when the two shares agree in direction of deviation — formally, $(a-b)\ln(a/b)
+\ge 0$ for any $a,b>0$, with equality iff $a=b$), so PSI is itself always $\ge 0$, zero only when the two
+distributions match exactly band-for-band.</div>
+</div>
+
+<p class="small"><em>Cross-reference.</em> <code>notes/plan/derivation_backlog.md</code> formally assigns this
+band-by-band PSI derivation (D-10) to this chapter, but Chapter&nbsp;3 &sect;3.9 expanded it first (the same
+KL-divergence motivation, the same toy fixture below) — see that section's own "Scope note" for why, and its
+explicit instruction that a later Chapter&nbsp;7 build should apply the machinery to a live scorecard rather
+than re-derive the toy example from nothing. It is reproduced here, band-by-band, only because this chapter
+is currently built as a standalone file (not yet spliced into the one-file compendium where a reader could
+simply follow the cross-link) — Worked&nbsp;example&nbsp;2 below is this chapter's actual net-new
+contribution: the identical formula applied to this chapter's own real, recomputed champion/challenger
+scores. (Chapter&nbsp;3 &sect;3.10 similarly already covers D-9, the binomial-exact/Jeffreys backtest
+derivation, applied there to the champion's PD grades; this chapter does not re-apply it to the challenger's
+grades or add a swap-set staging comparison — both are scoped out of this build and remain open items against
+the campaign's original Ch.7 learning goals.)</p>
+
+<div class="ex">
+<b>Worked example 1 — the backlog's toy fixture, every band shown (<code>tests/fixtures/
+compute_validation.py</code>).</b> Five bands, development shares $[0.10,0.25,0.30,0.25,0.10]$ vs current
+$[0.06,0.20,0.30,0.28,0.16]$:
+<div class="table-wrap">
+<table>
+<tr><th>band</th><th>Expected</th><th>Actual</th><th>Actual&minus;Expected</th>
+<th>ln(Actual/Expected)</th><th>term</th></tr>
+<tr><td>1</td><td class="num">0.10</td><td class="num">0.06</td><td class="num">&minus;0.04</td>
+<td class="num">ln(0.6)=&minus;0.5108</td><td class="num">0.0204</td></tr>
+<tr><td>2</td><td class="num">0.25</td><td class="num">0.20</td><td class="num">&minus;0.05</td>
+<td class="num">ln(0.8)=&minus;0.2231</td><td class="num">0.0112</td></tr>
+<tr><td>3</td><td class="num">0.30</td><td class="num">0.30</td><td class="num">0.00</td>
+<td class="num">ln(1.0)=0</td><td class="num">0.0000</td></tr>
+<tr><td>4</td><td class="num">0.25</td><td class="num">0.28</td><td class="num">+0.03</td>
+<td class="num">ln(1.12)=0.1133</td><td class="num">0.0034</td></tr>
+<tr><td>5</td><td class="num">0.10</td><td class="num">0.16</td><td class="num">+0.06</td>
+<td class="num">ln(1.6)=0.4700</td><td class="num">0.0282</td></tr>
+</table>
+</div>
+$PSI=0.0204+0.0112+0.0000+0.0034+0.0282=\mathbf{0.0632}$ — under the conventional 0.10 threshold, so this toy
+population is formally stable. Every term above matches
+<code>tests/fixtures/compute_validation.py</code>'s <code>psi_term_band1..5</code> and <code>psi_total</code>
+to the source's displayed 4-decimal precision.
+</div>
+
+<div class="ex">
+<b>Worked example 2 — the SAME formula applied to the real champion/challenger scores.</b>
+This chapter's own recompute (<code>notes/assets/img/ch07/recompute_challenger_scoring.py</code>) bins each
+model's train (t&le;40) and OOT (t=41..60) scores into 10 train-score-defined deciles — the same
+<code>N_PSI_BINS=10</code> convention <code>analysis/fit_challenger.py</code> uses — and applies the boxed
+formula above band by band. Two representative bands, champion:
+$$ \text{band 1: } (0.84948-0.10000)\times\ln(0.84948/0.10000) = 0.74948\times 2.13945 = 1.6035 $$
+$$ \text{band 10: } (0.000575-0.100000)\times\ln(0.000575/0.100000) = -0.099425\times(-5.15855) = 0.5129 $$
+Summing all 10 bands: champion $PSI=\mathbf{3.7105}$; challenger (same procedure, its own scores)
+$PSI=\mathbf{0.7634}$ — both reproduced bitwise-matching <code>scorecard.md</code>'s reported 3.711 / 0.763.
+</div>
+
+<img class="fig" src="../assets/img/ch07/04_psi_bins.png" alt="Two bar-chart panels, champion and challenger, each showing train score-decile shares (all exactly 10 percent by construction) against out-of-time shares for the same deciles; champion panel shows nearly the entire OOT population collapsed into decile 1 (85 percent); challenger panel shows a much more even spread across deciles 3 through 8">
+<div class="figcap"><b>Exhibit 7.4</b> — Score-distribution shift, train &rarr; OOT, both models. Regenerated
+from this chapter's own recompute (<code>notes/assets/img/ch07/psi_bands.json</code>); matches
+<code>scorecard.md</code>'s PSI totals exactly.</div>
+
+<div class="interpretation">
+<b>Interpretation — this PSI is measuring the credit CYCLE moving through the scores, not model
+instability.</b> Training ends exactly at the unemployment peak (t=40, 2010Q1); OOT is the 2010&ndash;2015
+recovery. A large train&rarr;OOT PSI here is EXPECTED and, for a model with genuine macro sensitivity,
+arguably CORRECT behaviour — the whole reason Chapter&nbsp;5's Vasicek framework and this project's
+point-in-time PD philosophy exist is for scores to move with the cycle. The champion's much larger PSI
+(3.71 vs 0.76) reflects its STRONGER explicit macro response (the hand-built LTV&times;UER interaction
+responds sharply to the stress-to-recovery transition): its stress-quarter score mass — nearly 85% of the
+OOT population lands in the champion's LOWEST training decile — has nowhere else to go once the macro
+inputs recover, echoing the composition-vs-cycle caution this project's own wiki records for similar
+diagnostics elsewhere. A bigger PSI is not, by itself, evidence of a defect in either model.
+</div>
+
+<div class="warn">
+<b>The standard PSI thresholds (&lt;0.10 stable / 0.10&ndash;0.25 monitor / &gt;0.25 material shift) assume
+the underlying POPULATION is stationary.</b> Worked example&nbsp;1's toy fixture implicitly assumes that;
+worked example&nbsp;2's real population does not — the macro regime itself genuinely moved between train and
+OOT. Both real PSI values here (3.71 AND 0.76) sit far outside the "stable" band even though nothing is
+necessarily wrong with either model. Reading a PSI number mechanically against the standard thresholds
+without first checking WHETHER the underlying population actually should have stayed put is the single most
+common PSI misreading — the number always needs the "why" attached.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a SMALLER PSI is not automatically "better" here.</b> It would be a mistake to read the
+challenger's smaller PSI (0.76 vs 3.71) as "more stable, hence more trustworthy" in this context — a smaller
+train&rarr;OOT score shift for a model that is SUPPOSED to be macro-sensitive can equally mean it is
+under-responding to a real, large macro move, which is exactly what &sect;<a href="#s7-5">7.5</a>'s
+low/mid-score-book under-prediction pattern independently suggests. PSI answers "how much did the score
+distribution move", never "was that move the right amount" — that second question needs the reliability
+read, not PSI alone.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In worked example 1's band 3, why is the PSI term exactly zero?
+  <details><summary>Answer</summary>
+  <div class="answer">Expected and Actual are both 0.30 in that band — Actual&minus;Expected = 0 makes the
+  whole product zero regardless of the log-ratio term (which is $\ln(1)=0$ anyway), consistent with PSI
+  being zero exactly where the two distributions agree.</div>
+  </details>
+</li>
+<li>Why does the champion's much larger PSI NOT settle the question of which model is "more stable" in a
+useful sense?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the underlying population's macro state genuinely shifted between train and
+  OOT (stress to recovery) — a model with a strong, intended macro response is EXPECTED to show a large
+  score-distribution shift under that condition, so a large PSI here is at least partly a sign the model
+  behaves as designed. The champion's larger PSI needs to be read alongside &sect;7.5's calibration
+  evidence (does the shift move the RIGHT amount), not treated as a stand-alone stability failure.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-7">7.7 Interpretability for nonlinear models: permutation importance, PDP, and the SHAP-dropped decision</h3>
+<!-- ============================================================== -->
+<p>A GLM's coefficients are self-interpreting (Chapter&nbsp;3's hazard-ratio reading applies directly). An
+MLP's weights are not — interpretability has to be reconstructed from the model's INPUT-OUTPUT behaviour
+rather than read off its parameters.</p>
+
+<div class="defn">
+<b>Definitions.</b>
+<ul>
+<li><strong>Permutation importance</strong> — for a fitted model and a held-out set, randomly shuffle
+(permute) one feature (or a block of features) across rows, breaking its relationship with the target while
+leaving its marginal distribution untouched, and measure how much the evaluation metric (OOT AUC here)
+drops. A large drop means the model relied heavily on that feature's information.</li>
+<li><strong>Partial dependence (PDP)</strong> — for one feature, sweep it across a grid of values, holding
+every OTHER feature at each row's own observed value, and average the model's prediction over a background
+sample at each grid point. The resulting curve shows the model's average MARGINAL response to that one
+feature, integrating out the rest.</li>
+</ul>
+</div>
+
+<p>Two design choices in how permutation importance is applied here matter for reading the numbers
+correctly. First, features are permuted as JOINT FAMILY BLOCKS as well as individually:
+<code>uer_lag1</code> (the macro level) and <code>uer_chg4_lag1</code> (its 4-quarter momentum) correlate at
+0.94 — permuting either ALONE lets the model partially reconstruct the shuffled feature's signal from its
+near-duplicate, understating the pair's TRUE joint importance. Permuting both together removes that escape
+hatch. Second, every reported drop is the mean of 3 independent permutation repeats (base OOT AUC 0.6417).</p>
+
+<img class="fig" src="../assets/img/ch07/05_perm_importance.png" alt="Horizontal bar chart of OOT AUC drop when each family block is permuted: collateral +0.1279, borrower +0.0286, incentive +0.0208, macro -0.0015 (essentially zero), age -0.0120 (a small negative drop)">
+<div class="figcap"><b>Exhibit 7.5</b> — Challenger permutation importance, family blocks. Regenerated from
+<code>outputs/challenger/scorecard.md</code>'s published family-block table.</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>top single feature</th><th>family</th><th>OOT AUC drop</th></tr>
+<tr><td>ltv10</td><td>collateral</td><td class="num">+0.1283</td></tr>
+<tr><td>fico_s</td><td>borrower</td><td class="num">+0.0281</td></tr>
+<tr><td>prepay_incentive</td><td>incentive</td><td class="num">+0.0200</td></tr>
+<tr><td>uer_chg4_lag1</td><td>macro</td><td class="num">+0.0061</td></tr>
+<tr><td>hpi_growth_lag1</td><td>macro</td><td class="num">+0.0057</td></tr>
+</table>
+</div>
+<div class="src">Source: <code>outputs/challenger/scorecard.md</code> "What drives the challenger" table.</div>
+
+<div class="interpretation">
+<b>Interpretation — "collateral" is a macro channel in disguise.</b> The near-zero drop for the aggregate
+[macro] block (&minus;0.0015, i.e. permuting it barely moves OOT AUC at all) does NOT mean the challenger
+ignores the credit cycle. <code>ltv10</code> is built from <code>updated_ltv</code> — the borrower's LTV
+INDEXED to the current local HPI (Chapter&nbsp;4's structural-LGD framing) — so the house-price cycle
+already reaches the model through this loan-level state variable. The aggregate lagged macro regressors add
+little ON TOP of what indexed LTV already encodes; that is a statement about where the marginal
+information sits, not about whether the model responds to macro conditions at all.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — permutation importance without family blocking systematically UNDER-states correlated
+features.</b> If <code>uer_lag1</code> and <code>uer_chg4_lag1</code> had been permuted one at a time, each
+individually-measured drop would be smaller than either feature's TRUE contribution, because the model can
+partly recover the shuffled feature's signal from its 0.94-correlated partner that is still intact. This is
+a general property of naive (single-feature) permutation importance, not specific to this model — always
+check whether a feature has a near-duplicate before trusting its individual importance score.
+</div>
+
+<h4>The SHAP-dropped decision — an engineering-tradeoff lesson</h4>
+<p>The original project plan called for SHAP (Shapley-value attribution) alongside the MLP challenger and
+out-of-time scorecard. It was dropped during Day&nbsp;3 of the build, recorded verbatim in the project's own
+handoff memory:</p>
+<div class="note">
+<b>Recorded decision.</b> "<em>Torch from PyPI (cu126 index TLS-blocked; decision), shap dropped
+(numba/np2.5 conflict; permutation importance+PDP instead).</em>" — <code>wiki/memory/log.md</code>, Day&nbsp;3
+handoff entry.
+</div>
+<p>SHAP's exact-computation paths pull in <code>numba</code> as a transitive dependency for JIT-compiled
+kernels; <code>numba</code> pins compatible <code>numpy</code> versions tightly, and lagged behind this
+project's numpy&nbsp;2.5 pin at build time. The available options were: downgrade numpy PROJECT-WIDE (risking
+every other module that had already been built and gated against numpy&nbsp;2.5), pin an older
+SHAP/numba/numpy combination in an isolated environment (adding a second dependency universe to maintain),
+or substitute a dependency-light alternative that answers the chapter's actual question. The project chose
+the third option.</p>
+
+<div class="interpretation">
+<b>Interpretation — the engineering tradeoff, stated plainly.</b> Permutation importance + PDP are strictly
+WEAKER than SHAP along one real axis: no per-prediction (single-loan) attribution, and no interaction-aware
+decomposition of a Shapley value's kind. They are strictly STRONGER along another: pure numpy/sklearn/scipy,
+zero new dependency conflicts, fully inside the environment every other module already runs in. For this
+chapter's actual question — does the challenger recover the SAME aggregate structure the champion's
+hand-built terms encode, not "explain any one loan's individual score" — the weaker, dependency-light tool
+is sufficient. A different question (e.g. "why did THIS specific loan get flagged") would have justified
+paying SHAP's dependency cost; this one did not.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does permuting <code>uer_lag1</code> and <code>uer_chg4_lag1</code> together (rather than
+separately) give a more honest importance measurement?
+  <details><summary>Answer</summary>
+  <div class="answer">The two features correlate at 0.94 — permuting only one leaves its near-duplicate
+  intact, letting the model partially reconstruct the broken feature's signal from the surviving correlated
+  one, which understates the true joint importance. Permuting both simultaneously removes that escape route,
+  giving a measurement of the pair's combined contribution rather than an artificially small individual one.</div>
+  </details>
+</li>
+<li>Was dropping SHAP a validation failure or an engineering tradeoff? What is the concrete difference
+permutation importance + PDP cannot provide that SHAP could have?
+  <details><summary>Answer</summary>
+  <div class="answer">An engineering tradeoff, explicitly recorded (not a silent gap) — driven by a
+  numba/numpy version conflict, not by any finding that SHAP was inappropriate for the model. The concrete
+  capability lost is per-prediction (single-loan) attribution and Shapley-style interaction decomposition;
+  what remains (aggregate feature/family-level importance and average marginal response curves) is
+  sufficient for this chapter's aggregate-structure question but would not answer "why did this one loan's
+  score change".</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-8">7.8 The seasoning-hump-rediscovery check</h3>
+<!-- ============================================================== -->
+<p>The champion's age effect is a DELIBERATE, hand-built natural cubic spline (df=5) — encoding the analyst's
+prior that default hazard rises then falls with loan age (the "seasoning hump", first introduced in
+Chapter&nbsp;3's empirical hazard-by-age exhibit, peaking around 10&ndash;12 quarters on book). The
+challenger receives raw <code>loan_age</code> as a single unconstrained input, with no spline basis, no
+monotonicity constraint, no hint of any hump. If the hump is a real structural feature of the DATA rather than
+an artefact of the champion's chosen basis, a sufficiently flexible learner given the same raw information
+should, in principle, rediscover it unaided.</p>
+
+<img class="fig" src="../assets/img/ch07/06_seasoning_hump_pdp.png" alt="Line chart of partial-dependence hazard against loan age from 0 to 80 quarters for champion and challenger; champion curve rises from age 0 to a local peak around age 12 then declines to a minimum near age 36 before rising sharply again in the thin-support region past age 40, peaking near age 60; challenger curve is nearly flat throughout, highest at age 0 and gently declining then flat">
+<div class="figcap"><b>Exhibit 7.6</b> — Seasoning-hump-rediscovery check: <code>loan_age</code> partial
+dependence, champion vs challenger, on a fixed-seed 20,000-row training sample. Regenerated from this
+chapter's own recompute (<code>notes/assets/img/ch07/age_pdp.json</code>).</div>
+
+<div class="ex">
+<b>Result: it does not rediscover the hump.</b> The champion's PDP peaks at loan_age&nbsp;=&nbsp;12 quarters
+(hazard 2.90% at the peak vs 2.37% at age 0 — a genuine local hump, matching Chapter&nbsp;3's spline
+specification), then declines through age&nbsp;36. The challenger's PDP is HIGHEST at
+loan_age&nbsp;=&nbsp;0 (3.13%) and never rises above that value again in the well-supported range — no hump
+at all. This is directly consistent with &sect;<a href="#s7-7">7.7</a>'s permutation-importance finding:
+permuting the age family block actually IMPROVES OOT AUC very slightly (&minus;0.0120 drop, i.e. a small
+negative number — the model barely leans on age, and what little it does use does not help OOT).
+</div>
+
+<div class="interpretation">
+<b>Interpretation — a genuinely informative negative result, not evidence the hump is fake.</b> The
+champion's spline is fit with its OWN dedicated identification machinery: a 5-degree-of-freedom basis
+targeting the age&ndash;hazard relationship specifically, with the rest of the design held to its own
+(largely linear) terms. The MLP's cross-sectional architecture, given the same raw age column buried among
+11 other features and only ~418k training rows, does not reconstruct the same curvature on its own within
+this data regime. That says something real about what an UNCONSTRAINED, purely cross-sectional network needs
+— more data, an explicit inductive bias (e.g. a monotonic or spline layer), or a sequence-aware architecture
+that can use TEMPORAL order rather than treating <code>loan_age</code> as just another numeric column — not
+that the hump itself is an artefact of the champion's chosen basis. Chapter&nbsp;3's own empirical
+(non-parametric) hazard-by-age exhibit is the independent evidence that the hump is real; this section shows
+that a flexible-but-unconstrained cross-sectional learner does not find it for free.
+</div>
+
+<div class="warn">
+<b>Bonus finding from this chapter's own recompute: the champion's tail is not as disciplined as the
+promotion-bar item 4 (&sect;<a href="#s7-2">7.2</a>) implied at face value.</b> Extending the PDP grid to the
+full 0&ndash;80 quarter range (shaded region, Exhibit&nbsp;7.6) shows the champion's natural spline rising to
+a SECOND, much larger peak (10.6%) around age&nbsp;60 before falling away again — a training-support artefact,
+not a real seasoning effect: only 0.77% of training rows have loan_age&nbsp;&ge;&nbsp;40, and only 0.17% have
+loan_age&nbsp;&ge;&nbsp;60 (this chapter's own panel query). "Extrapolates linearly past the boundary knots"
+(the champion's documented tail behaviour) is a bounded, known failure mode — but it is still a failure mode,
+and this recompute makes its magnitude concrete rather than asserted. Neither model has a genuinely
+disciplined tail at very high loan ages; the champion's is merely a KNOWN and BOUNDED one.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>What would it have meant, for the champion's spline specification, if the MLP HAD independently
+reproduced a hump peaking near 10&ndash;12 quarters?
+  <details><summary>Answer</summary>
+  <div class="answer">It would have been strong external corroboration that the seasoning hump is a real
+  structural feature of the default-hazard-vs-age relationship in this data, discovered independently by a
+  model with no hint of the champion's chosen basis — exactly the kind of evidence Section 7.1 argues a
+  champion-challenger exercise exists to generate, distinct from and stronger than the champion's own
+  in-sample fit statistics.</div>
+  </details>
+</li>
+<li>Does the MLP's failure to find the hump mean Chapter 3's spline specification is wrong?
+  <details><summary>Answer</summary>
+  <div class="answer">No — it means an unconstrained, purely cross-sectional MLP with ~418k training rows
+  and no inductive bias toward the age dimension does not reconstruct the shape unaided in THIS data regime;
+  it says nothing directly about whether the hump itself is real (Chapter 3's own non-parametric empirical
+  hazard-by-age exhibit is the actual evidence for that, independent of this challenger exercise).</div>
+  </details>
+</li>
+<li>Why does the "thin training support past loan_age=40" finding matter for the champion, not just the
+challenger?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the champion's own natural spline is shown (Exhibit 7.6, shaded region) to
+  swing up to a much larger, training-support-driven second peak in that thin-data region — a concrete
+  demonstration that "the champion extrapolates linearly past its boundary knots" is a real, bounded risk in
+  this model too, not just an MLP weakness; it is bounded and documented for the champion, but it is not
+  absent.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-9">7.9 Interactive: AUC intuition — score separation &rarr; live ROC</h3>
+<!-- ============================================================== -->
+<p>Every AUC number in this chapter (0.6609, 0.6417, and the rest) is a single scalar summarising an entire
+ROC curve. This section builds the intuition for what that scalar actually MEANS in terms of how separated
+two score distributions are, using the simplest case with a clean closed form: two Gaussian score
+distributions of equal variance.</p>
+
+<div class="thm">
+<b>Proposition (Mann-Whitney / concordance interpretation of AUC).</b> For a binary classifier's scores,
+$AUC = P(S_1 > S_0)$ — the probability that a RANDOMLY drawn positive (event) row scores strictly higher
+than a randomly drawn negative (non-event) row, drawn independently. (Ties count as one-half; not derived
+here — a standard result connecting the ROC curve's area to the rank-sum/Mann-Whitney $U$ statistic.)
+</div>
+
+<div class="derivation">
+<b>Derivation — the closed form for two Gaussian score distributions.</b>
+<div class="step"><span class="stepno">1.</span> <strong>Setup.</strong> Let non-event scores
+$S_0\sim N(0,1)$ and event scores $S_1\sim N(d,1)$, independent of each other, where $d\ge 0$ is the
+standardised mean separation (Cohen's $d$, using a common unit variance) — the widget's slider.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Reduce to one normal.</strong> By the
+Proposition, $AUC=P(S_1>S_0)=P(S_1-S_0>0)$. Define $D:=S_1-S_0$. Since $S_1,S_0$ are independent normals,
+$D$ is normal with $\mathbb{E}[D]=\mathbb{E}[S_1]-\mathbb{E}[S_0]=d-0=d$ and (independence:
+$\mathrm{Cov}(S_1,S_0)=0$) $\mathrm{Var}(D)=\mathrm{Var}(S_1)+\mathrm{Var}(S_0)=1+1=2$. So
+$D\sim N(d,2)$.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Standardise and evaluate.</strong>
+$$ AUC = P(D>0) = P\!\left(\frac{D-d}{\sqrt2} > \frac{-d}{\sqrt2}\right) = 1-\Phi\!\left(\frac{-d}{\sqrt2}\right). $$
+Using the standard-normal symmetry $1-\Phi(-x)=\Phi(x)$:
+$$ \boxed{\,AUC = \Phi\!\left(\frac{d}{\sqrt2}\right)\,} $$
+— larger separation $d$ between the two score distributions maps monotonically to a larger AUC, with
+$d=0$ (identical distributions) giving $AUC=\Phi(0)=0.5$ exactly, as it must for a completely uninformative
+score.</div>
+</div>
+
+<div class="ex">
+<b>Worked example — inverting the formula for this chapter's own AUCs.</b> $d=\sqrt2\,\Phi^{-1}(AUC)$, computed
+in Python (<code>scipy.stats.norm.ppf</code>):
+<div class="table-wrap">
+<table>
+<tr><th>AUC</th><th>implied separation $d$</th></tr>
+<tr><td>champion OOT, 0.6609</td><td class="num">0.5868</td></tr>
+<tr><td>challenger OOT, 0.6417</td><td class="num">0.5134</td></tr>
+</table>
+</div>
+Both models' OOT scores separate defaulters from non-defaulters by well under one pooled standard deviation
+— consistent with one-quarter-ahead default being a genuinely hard prediction problem even for the WINNING
+model; the champion's edge (0.6609 vs 0.6417 AUC) corresponds to a separation only 0.073 standard deviations
+larger than the challenger's, a small but, per &sect;<a href="#s7-4">7.4</a>, consistent edge.
+</div>
+
+<div class="widget">
+<h4>Live widget — drag the separation slider</h4>
+<div class="widget-controls" id="auc-controls"></div>
+<div id="auc-plot"></div>
+<div class="readout" id="auc-readout"></div>
+</div>
+
+<div class="note">
+<b>Correctness check.</b> The widget computes AUC TWO independent ways at every slider position — the
+closed form $\Phi(d/\sqrt2)$, and trapezoidal integration of the numerically swept ROC curve itself — and
+displays both in the readout box below the plot; they agree to within numerical-integration error at every
+setting, the same style of dual cross-check Chapter&nbsp;5 uses for the Vasicek anchor property.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — real score distributions are never exactly Gaussian, and this widget does not claim they are.</b>
+The clean closed form $\Phi(d/\sqrt2)$ is a teaching device for building intuition about the RELATIONSHIP
+between separation and AUC, not a claim that the champion's or challenger's actual score distributions are
+Gaussian (Exhibit&nbsp;7.3's reliability curves and Exhibit&nbsp;7.4's PSI histograms show they plainly are
+not). The inverted $d$ values in the worked example above are a useful SUMMARY of "how much separation would
+a Gaussian model need to reach this AUC", not a literal description of either model's score shape.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>What AUC does $d=0$ give, and why does that have to be the answer for a completely uninformative
+classifier?
+  <details><summary>Answer</summary>
+  <div class="answer">$AUC=\Phi(0)=0.5$ — with zero separation, the two score distributions are identical,
+  so a randomly drawn event and non-event row are equally likely to score higher than each other by
+  symmetry, giving exactly a 50% chance the event scores higher, which is the definition of AUC=0.5 (pure
+  chance, no discrimination).</div>
+  </details>
+</li>
+<li>In the derivation's step 2, why is $\mathrm{Var}(D)=\mathrm{Var}(S_1)+\mathrm{Var}(S_0)$ rather than
+$\mathrm{Var}(S_1)-\mathrm{Var}(S_0)$, given $D$ is defined as a DIFFERENCE?
+  <details><summary>Answer</summary>
+  <div class="answer">Variance of a difference of INDEPENDENT random variables always adds the variances
+  (never subtracts): $\mathrm{Var}(S_1-S_0)=\mathrm{Var}(S_1)+\mathrm{Var}(-S_0)=\mathrm{Var}(S_1)+
+  \mathrm{Var}(S_0)$ since $\mathrm{Var}(-X)=\mathrm{Var}(X)$, and independence makes the covariance cross
+  term zero — subtracting variances would be wrong regardless of whether the random variables themselves
+  are being subtracted or added.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s7-10">7.10 Forward pointer: Chapter 12's SFLLD LSTM challenger</h3>
+<!-- ============================================================== -->
+<p>This chapter's MLP asked a narrow, rigorously like-for-like question: given the EXACT SAME 12 raw
+covariates the champion uses, does a flexible cross-sectional learner find the same structure? Chapter&nbsp;12
+runs a structurally different challenger experiment against the Freddie Mac SFLLD hazard baseline (AUC
+0.8536 train / 0.6847 OOT): an LSTM (sequence model) given each loan's trailing 24-month DELINQUENCY-PATH
+history — a feature the champion hazard does not use AT ALL, not merely uses less flexibly. The result there
+is dramatic (LSTM OOT AUC 0.9925, a +0.3078 delta) precisely BECAUSE it is not a like-for-like comparison in
+this chapter's sense: the champion is architecturally blind to delinquency-path memory, so the LSTM's edge
+measures "does path memory add signal beyond the champion's covariate set", not "can a flexible learner find
+the same structure from the same information" — a different question, with a correspondingly different
+kind of answer (concentrated almost entirely in loans with a prior delinquency spell: +0.3872 AUC there vs
+&minus;0.0098 on clean-history loans). See Chapter&nbsp;12 for the full lift-decomposition treatment and its
+own COVID/forbearance caveat; both challenger exercises share this chapter's governance pattern (Exhibit&nbsp;
+7.1's loop applies uniformly) even though their underlying scorecard questions differ.</p>
+
+<div class="src">Source: <code>outputs/freddie/lstm/lstm_report.md</code> sections 1 and 3 (headline AUC and
+lift-split tables) — cited here only for the forward pointer; not re-derived in this chapter.</div>
+
+<hr>
+<p class="small">End of Chapter 7. Next: Chapter 8 — The Agent (LangGraph Copilot).</p>
+
+<script src="../assets/js/widgets.js"></script>
+<script>
+(function () {
+  // --- Standard normal CDF and inverse CDF, independent JS re-implementation
+  //     (same pair as ch05_vasicek.html / notes/assets/widget_demo.html) ---
+  function erf(x) {
+    var sign = x < 0 ? -1 : 1;
+    x = Math.abs(x);
+    var a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741,
+        a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    var t = 1 / (1 + p * x);
+    var y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+  }
+  function normCdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+  function normPpf(p) {
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+              1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+              6.680131188771972e+01, -1.328068155288572e+01];
+    var c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+              -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    var d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+              3.754408661907416e+00];
+    var plow = 0.02425, phigh = 1 - plow, q, r;
+    if (p < plow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+             ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    } else if (p <= phigh) {
+      q = p - 0.5; r = q * q;
+      return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5]) * q /
+             (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+              ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    }
+  }
+
+  // ===========================================================================
+  // Widget 1 -- reliability-curve comparator (real 20-bin recomputed data)
+  // ===========================================================================
+  var RELI = {
+    oot: {
+      champion: [[0.04408,0.35004],[0.06956,0.50005],[0.08764,0.72007],[0.10439,0.88018],
+        [0.12127,0.9601],[0.13862,1.05011],[0.15695,0.9902],[0.17684,1.35014],
+        [0.19873,1.51015],[0.22303,1.45015],[0.25046,1.92038],[0.28257,1.82018],
+        [0.31991,2.0102],[0.3653,2.57051],[0.42217,2.82028],[0.49372,2.72027],
+        [0.59501,3.13063],[0.74629,3.30033],[1.02763,3.0303],[2.0845,4.19042]],
+      challenger: [[0.09073,0.36004],[0.22786,0.53005],[0.37086,0.76008],[0.52598,0.83017],
+        [0.70038,1.32013],[0.89694,1.16012],[1.11527,1.37027],[1.36097,1.22012],
+        [1.63309,1.52015],[1.93243,1.87019],[2.25713,1.5203],[2.59496,2.19022],
+        [2.90753,2.66027],[3.1783,2.40048],[3.4063,2.54025],[3.60662,2.77028],
+        [3.80952,2.65053],[4.04189,2.70027],[4.3612,3.19032],[5.20253,3.71037]]
+    },
+    train: {
+      champion: [[0.39503,0.20076],[0.58655,0.21509],[0.72556,0.28679],[0.8598,0.40151],
+        [0.99451,0.59749],[1.13376,0.75522],[1.2819,0.89866],[1.44196,1.27145],
+        [1.61746,1.6395],[1.80964,1.7112],[2.02484,2.03623],[2.2668,2.59548],
+        [2.54392,2.85837],[2.87109,3.26482],[3.26272,4.15372],[3.73521,4.60303],
+        [4.32902,5.34391],[5.14131,6.56756],[6.49862,7.18417],[10.56948,7.68606]],
+      challenger: [[0.05122,0.03346],[0.11491,0.06214],[0.18923,0.10516],[0.28858,0.23421],
+        [0.4208,0.47321],[0.59845,0.65484],[0.8276,0.85086],[1.11449,1.18063],
+        [1.47144,1.43397],[1.88474,1.64906],[2.33536,2.09837],[2.78513,2.57636],
+        [3.2526,2.99699],[3.76708,3.4847],[4.32271,3.96253],[4.899,4.61737],
+        [5.52398,5.7263],[6.24806,6.60102],[7.26244,7.17939],[9.56501,8.35046]]
+    }
+  };
+  var reliState = { split: 'oot', champion: true, challenger: true };
+  var reliControls = document.getElementById('reli-controls');
+
+  (function () {
+    var wrap = document.createElement('div');
+    wrap.className = 'widget-control';
+    var label = document.createElement('label');
+    label.textContent = 'Split';
+    var sel = document.createElement('select');
+    [['oot', 'out-of-time (t=41..60)'], ['train', 'train (t<=40)']].forEach(function (pair) {
+      var o = document.createElement('option');
+      o.value = pair[0]; o.textContent = pair[1];
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () { reliState.split = sel.value; reliRedraw(); });
+    label.appendChild(sel);
+    wrap.appendChild(label);
+    reliControls.appendChild(wrap);
+  })();
+
+  function makeReliCheckbox(text, key) {
+    var wrap = document.createElement('div');
+    wrap.className = 'widget-control';
+    var label = document.createElement('label');
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = reliState[key];
+    cb.addEventListener('change', function () { reliState[key] = cb.checked; reliRedraw(); });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(text));
+    wrap.appendChild(label);
+    reliControls.appendChild(wrap);
+  }
+  makeReliCheckbox('Show champion', 'champion');
+  makeReliCheckbox('Show challenger', 'challenger');
+
+  var reliPlot = Widgets.makeLinePlot(document.getElementById('reli-plot'), {
+    width: 640, height: 340, xDomain: [0, 6], yDomain: [0, 9],
+    xLabel: 'predicted hazard (%)', yLabel: 'observed default rate (%)',
+    title: 'Reliability: predicted vs observed (real 20-bin data)'
+  });
+
+  function reliRedraw() {
+    var d = RELI[reliState.split];
+    var series = [];
+    var maxV = 1;
+    if (reliState.champion) {
+      d.champion.forEach(function (p) { maxV = Math.max(maxV, p[0], p[1]); });
+      series.push({ name: 'champion', color: '#1f3a5f', points: d.champion });
+    }
+    if (reliState.challenger) {
+      d.challenger.forEach(function (p) { maxV = Math.max(maxV, p[0], p[1]); });
+      series.push({ name: 'challenger', color: '#c0392b', points: d.challenger });
+    }
+    var hi = maxV * 1.08;
+    series.push({ name: 'perfect calibration', color: '#999999', points: [[0, 0], [hi, hi]] });
+    reliPlot.update(series, [0, hi], [0, hi]);
+  }
+  reliRedraw();
+
+  // ===========================================================================
+  // Widget 2 -- AUC intuition: score separation -> live ROC + AUC readout
+  // ===========================================================================
+  var aucState = { d: 0.55 };
+  var aucControls = document.getElementById('auc-controls');
+
+  Widgets.makeSlider(aucControls, {
+    label: 'separation d (standard deviations)', min: 0, max: 4, step: 0.05, value: aucState.d,
+    format: function (v) { return v.toFixed(2); },
+    onInput: function (v) { aucState.d = v; aucRedraw(); }
+  });
+
+  var aucPlot = Widgets.makeLinePlot(document.getElementById('auc-plot'), {
+    width: 480, height: 340, xDomain: [0, 1], yDomain: [0, 1],
+    xLabel: 'false positive rate', yLabel: 'true positive rate',
+    title: 'ROC curve (S0 ~ N(0,1), S1 ~ N(d,1))'
+  });
+
+  function rocPoints(d) {
+    var pts = [];
+    for (var t = 5; t >= -5 - d; t -= 0.02) {
+      var fpr = 1 - normCdf(t);
+      var tpr = 1 - normCdf(t - d);
+      pts.push([fpr, tpr]);
+    }
+    return pts;
+  }
+
+  function aucTrapezoid(pts) {
+    var area = 0;
+    for (var i = 1; i < pts.length; i++) {
+      var x0 = pts[i - 1][0], y0 = pts[i - 1][1];
+      var x1 = pts[i][0], y1 = pts[i][1];
+      area += (x1 - x0) * (y0 + y1) / 2;
+    }
+    return area;
+  }
+
+  var readout = document.getElementById('auc-readout');
+  function aucRedraw() {
+    var d = aucState.d;
+    var pts = rocPoints(d);
+    aucPlot.update([
+      { name: 'ROC', color: '#1f3a5f', points: pts },
+      { name: 'chance', color: '#999999', points: [[0, 0], [1, 1]] }
+    ], [0, 1], [0, 1]);
+    var aucClosed = normCdf(d / Math.SQRT2);
+    var aucNumeric = aucTrapezoid(pts);
+    readout.innerHTML =
+      '<b>AUC (closed form &Phi;(d/&radic;2))</b> = ' + aucClosed.toFixed(4) + '<br>' +
+      '<b>AUC (trapezoidal integration of the swept ROC)</b> = ' + aucNumeric.toFixed(4) + '<br>' +
+      '<b>|difference|</b> = ' + Math.abs(aucClosed - aucNumeric).toExponential(2) + '<br>' +
+      '<span style="color:var(--muted); font-size:11.5px;">Champion OOT (AUC 0.6609) implies d &asymp; 0.587; '
+      + 'challenger OOT (AUC 0.6417) implies d &asymp; 0.513.</span>';
+  }
+  aucRedraw();
+})();
+</script>
+
+<script src="../assets/js/toc.js" defer></script>
+</body>
+</html>

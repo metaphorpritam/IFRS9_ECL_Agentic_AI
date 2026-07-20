@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.9 — The App: A Guidebook | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 9: THE APP, A GUIDEBOOK
+  ============================================================================
+  Built per notes/plan/requirement_11_app_guide.md (BINDING coverage law).
+  CSS block copied verbatim from ch08_the_agent.html for visual consistency
+  across the compendium. Standalone chapter file (house style: ch01-ch08 are
+  independent files under notes/chapters/, not one spliced compendium) --
+  own <h1>/TOC/closing <hr>; <h2 id="s9"> written so a later merge is a
+  straight splice. MathJax present for consistency though this chapter has
+  no display math (product-documentation chapter, no derivations per
+  notes/plan/chapters.md's Ch.9 scope).
+
+  NO widgets.js: this is a product-reference chapter (every tab/panel/image,
+  mechanically enumerated from the code), not a worked-formula chapter --
+  nothing here needs a live-recomputed slider. The one "live" element
+  (Exhibit 9.9's endpoint table) is documented as a table, not built as an
+  interactive widget, to keep this chapter dependency-free and consistent
+  with Ch.8's "inlined vs relative: neither" precedent for a non-formula
+  chapter.
+
+  COVERAGE LAW (requirement_11_app_guide.md): the checklist below was
+  DERIVED FROM THE CODE this session -- app/ui/src/app.jsx (TABS array),
+  every app/ui/src/tabs/*.jsx file read in full, every shared component
+  under app/ui/src/components/ read in full (Panel, StatTile, WaterfallChart,
+  CreditCycleChart, ChatPanel, MiniChatDock, SelectionExplain, ExplainButton,
+  AgentTrace, StageGuide, WeightsBarChart, SearchableTable, ExhibitImage,
+  CoefficientInterpretation, HowToReadCoefficients, DecisionHeader,
+  Interpretation, StageMixBar), docs/api_contract.md (the full v2 contract),
+  app/api/main.py's static-mount block, and the Dockerfile. Every endpoint
+  this chapter cites was called LIVE this session against a local
+  `uv run --no-sync uvicorn app.api.main:app --port 7861` instance (dist
+  already built; engine warm; agent="langgraph", i.e. the live LLM router,
+  not the offline fallback) -- every number quoted is a real captured
+  response, not retyped from docs/api_contract.md's own (also real, but
+  separately captured) examples. Captured 2026-07-19; JSON saved under this
+  session's scratchpad for the figure-generation script to re-read.
+
+  SCREENSHOT RULE (project facts, no browser tooling available): every panel
+  visual below is EITHER a matplotlib mockup rendered from the live JSON
+  just described (labeled "matplotlib mockup rendered from live API data --
+  not a browser screenshot" on the figure itself, per the FACTS honesty
+  rule) OR documented in prose only, with an explicit note that it shares
+  its shipped visual pattern with an already-illustrated Exhibit (the
+  documented simplification -- see the closing simplifications list).
+
+  Figures: notes/assets/img/ch09/build_diagrams.py (run via
+  `uv run --no-project --with matplotlib python notes/assets/img/ch09/build_diagrams.py`),
+  11 PNGs, every one viewed with the Read tool post-generation (image QA).
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  h5 { font-size: 12.6px; margin-top: 10px; margin-bottom: 3px; color: var(--ink); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  pre.trace { white-space: pre-wrap; font-size: 12.2px; background: var(--code-bg); padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+
+  /* per-panel documentation block -- the mechanical-completeness unit this
+     chapter repeats ~34 times, one per enumerated panel/control/image */
+  .pdoc { border: 1px solid var(--rule); border-radius: 5px; margin: 12px 0; background: var(--page-bg); page-break-inside: avoid; }
+  .pdoc-head { display:flex; align-items:baseline; gap:8px; background: var(--boxbg); padding: 6px 12px; border-bottom: 1px solid var(--rule); border-radius: 5px 5px 0 0; }
+  .pdoc-head h5 { margin: 0; font-size: 13.2px; }
+  .exh-tag { font-size: 10.6px; font-variant: small-caps; letter-spacing: 0.4px; color: white; background: var(--accent-soft); padding: 1px 8px; border-radius: 9px; }
+  .exh-tag.unnumbered { background: var(--muted); }
+  .pdoc dl { margin: 8px 12px 10px 12px; }
+  .pdoc dt { font-weight: 600; color: var(--accent-soft); font-size: 12px; font-variant: small-caps; letter-spacing: 0.3px; margin-top: 7px; }
+  .pdoc dt:first-child { margin-top: 0; }
+  .pdoc dd { margin: 1px 0 0 0; font-size: 13px; }
+  .pdoc dd.mono { font-family: monospace; font-size: 11.8px; background: var(--code-bg); padding: 4px 7px; border-radius: 3px; display: inline-block; }
+
+  .statebadge { font-size: 10.8px; font-weight: 700; font-variant: small-caps; letter-spacing: 0.4px; padding: 1px 8px; border-radius: 9px; color: white; }
+  .sb-grounded { background: var(--good); }
+  .sb-reasoned { background: #8e44ad; }
+  .sb-thinking { background: var(--gotcha); }
+  .sb-outofscope { background: var(--muted); }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget, .pdoc {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 9 — The App: A Guidebook</h1>
+<div class="subtitle">A mechanically-exhaustive reference to every tab, every panel, every image the IFRS 9 ECL Copilot ships — derived from the code, not a tour</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 9 of 13. Compiled from <code>app/ui/src/app.jsx</code>, every file under <code>app/ui/src/tabs/</code> and <code>app/ui/src/components/</code>, <code>docs/api_contract.md</code>, <code>app/api/main.py</code>, <code>Dockerfile</code>, <code>outputs/design/FINAL_SPEC.md</code> and the three candidate <code>rationale.md</code> files, plus live calls against a local <code>uv run --no-sync uvicorn app.api.main:app --port 7861</code> instance (engine warm, live LangGraph agent) captured 2026-07-19 — every quoted number is a real response from that session, not retyped from the contract doc's own examples.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s9-1">9.1 The 60-second orientation</a></li>
+<li><a href="#s9-2">9.2 Architecture at a glance</a></li>
+<li><a href="#s9-3">9.3 Tab 1 — Executive Overview</a></li>
+<li><a href="#s9-4">9.4 Tab 2 — The Model</a></li>
+<li><a href="#s9-5">9.5 Tab 3 — Scenario Lab</a></li>
+<li><a href="#s9-6">9.6 Tab 4 — Policy</a></li>
+<li><a href="#s9-7">9.7 Tab 5 — Real Data (Freddie SFLLD)</a></li>
+<li><a href="#s9-8">9.8 Tab 6 — Copilot</a></li>
+<li><a href="#s9-9">9.9 AI affordances, in full</a></li>
+<li><a href="#s9-10">9.10 The endpoint → panel wiring table</a></li>
+<li><a href="#s9-11">9.11 Docker &amp; deployment linkage</a></li>
+<li><a href="#s9-12">9.12 Three design directions → the shipped spec</a></li>
+<li><a href="#s9-13">9.13 Closing quiz bank — "where would you look to answer X"</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s9">9&nbsp; The App: A Guidebook</h2>
+<p>Chapters&nbsp;1&ndash;7 built and validated the frozen IFRS&nbsp;9 ECL engine; Chapter&nbsp;8 opened up the
+LangGraph agent that answers questions about it. This chapter is the third leg: the actual product a bank
+risk analyst opens in a browser. Per <code>notes/plan/requirement_11_app_guide.md</code> (binding, supersedes
+the lighter "tour" framing this chapter might otherwise have taken), the law here is
+<strong>mechanical completeness, not narrative</strong> — the coverage checklist below was derived FROM THE
+CODE this session (the <code>TABS</code> array in <code>app/ui/src/app.jsx</code>; every
+<code>Panel</code>/heading/EXHIBIT kicker in the six <code>app/ui/src/tabs/*.jsx</code> files and the shared
+components they compose; every image enumerated via <code>/api/exhibits/list</code>,
+<code>/api/freddie/exhibits</code>, the two consultant-curated exhibit lists, plus the MDD static mount) and a
+reviewer is expected to re-derive the same list independently and diff it against what follows. Every panel
+below gets the same six-part treatment requirement&nbsp;11 mandates: what it shows, how to read it, how to use
+it (including what does <em>not</em> change), its AI affordances, a rendered visual, and its gotchas.</p>
+
+<!-- ============================================================== -->
+<h3 id="s9-1">9.1 The 60-second orientation</h3>
+<!-- ============================================================== -->
+<p>Before the exhaustive walk, the fast path — what a first-time visitor should actually do, in order, to
+understand what this app is:</p>
+<div class="defn">
+<b>60 seconds, six steps.</b>
+<ol>
+<li><b>Land on Executive Overview</b> (the default tab, <code>tabFromHash()</code> falls back to
+<code>'executive'</code>). Read the four KPI tiles top-left to right: allowance, coverage, Jensen ratio,
+reporting date. This is the headline number a credit committee asks for first.</li>
+<li><b>Read the "Consultant's read" panel.</b> It is template prose (explicitly <em>not</em> an LLM call —
+the component's own top comment says so), every number filled in from the same
+<code>GET /api/ecl/summary</code> payload that drove the tiles above it — a sanity-checked narrative, not a
+second, independently-fallible source.</li>
+<li><b>Click the ✦ spark icon on any tile or panel heading.</b> This is the AI-explain affordance (full
+mechanics in §9.9) — it fires a real <code>POST /api/agent/ask</code> call with a code-generated recap of the
+exact numbers that panel is showing, and answers GROUNDED (cited to a tool) or REASONED (cited interpretation,
+no fresh number) inline, never a modal.</li>
+<li><b>Switch to Scenario Lab</b> (tab 3) and move a slider — reweight the up/base/down scenario mix or apply
+a macro shock. Watch the Result card and the Allowance bridge chart update live; nothing else on the page
+moves (the historical waterfall on the Executive tab is a <em>separate, fixed exhibit</em> — see the
+scenario-controls-vs-historical-waterfall gotcha in §9.3/§9.5, the single most consistently mis-read distinction
+in this app per the recorded user-confusion note requirement&nbsp;11 flags explicitly).</li>
+<li><b>Open Copilot</b> (tab 6) and ask a free-text question, or click one of the three suggestion chips.
+Watch the Agent trace panel stream the router's decision, the tool call, and the narration in real time over
+SSE — the same three-tier architecture Chapter&nbsp;8 documented, now visible as it happens.</li>
+<li><b>Open the MDD link</b> in the header (top-left, next to the brand mark) for the full Model Development
+Document — the governance artifact this whole app is a live demonstration of (bridges to Chapter&nbsp;13).</li>
+</ol>
+</div>
+<div class="interpretation">
+<b>Interpretation.</b> That ordering is deliberate, not arbitrary: it walks the same "pre-generated analysis
+is the headline, the lab is where you poke at it, the agent is the annotation layer, not the centerpiece"
+hierarchy the shipped design spec argues for (§9.12) — Executive Overview is the deliverable a client reads
+passively; Scenario Lab is where they touch it; Copilot is where they interrogate it in free text; the MDD
+link is the paper trail underneath all three.
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-2">9.2 Architecture at a glance</h3>
+<!-- ============================================================== -->
+<p>One FastAPI process (<code>app/api/main.py</code>) serves both the JSON API and the built Preact/ECharts SPA
+from a single origin — <code>docs/api_contract.md</code>'s very first convention is "no CORS anywhere" because
+there is only ever one origin to begin with. Three route groups, registered in an order that matters
+(Starlette matches in registration order, so the more specific static mounts must win before the catch-all
+SPA mount):</p>
+<div class="table-wrap">
+<table>
+<tr><th>Route group</th><th>Serves</th><th>Guard</th></tr>
+<tr><td><code>/api/*</code> (22 endpoints)</td><td>JSON — engine reads, Tier-1 tool calls, agent ask/stream,
+The Model / Policy / Real Data / auto-interpret endpoints</td><td>always registered first</td></tr>
+<tr><td><code>/static/exhibits/*</code>, <code>/static/freddie/*</code>, <code>/static/mdd/*</code></td>
+<td>read-only PNG/HTML mounts over <code>outputs/</code>, <code>outputs/freddie/</code>,
+<code>outputs/mdd/</code></td><td>each <code>if &lt;dir&gt;.exists()</code> guarded — a missing directory
+404s harmlessly rather than crashing app boot</td></tr>
+<tr><td><code>/</code> (catch-all)</td><td>the built SPA, <code>app/ui/dist</code>, mounted LAST with
+<code>html=True</code> so client-side hash routing works on refresh</td><td>falls back to a plain "not built
+yet" HTML response if <code>dist/index.html</code> is missing</td></tr>
+</table>
+</div>
+<p>The SPA itself is a hash router with no routing library (<code>app.jsx</code>'s own comment: "Simple hash
+router — no router library, per the north-star build spec"): <code>TABS</code> is a 6-element array
+(<code>executive</code>, <code>model</code>, <code>scenario</code>, <code>policy</code>, <code>freddie</code>,
+<code>copilot</code>), <code>location.hash</code> drives <code>tabId</code>, and Left/Right arrow keys cycle
+tabs when a tab button has focus (<code>onTabKeyDown</code>). Two floating elements sit OUTSIDE the six
+per-tab bodies and are shared app-wide: <code>SelectionExplain</code> (any tab, highlight text anywhere in
+<code>.app-main</code>) and <code>MiniChatDock</code> — rendered on every tab EXCEPT Copilot
+(<code>{tabId !== 'copilot' &amp;&amp; &lt;MiniChatDock /&gt;}</code>, i.e. Executive, Model, Scenario, Policy
+AND Real Data — five tabs, not "tabs 1-4" as the component's own top comment claims; a small
+code/self-documentation drift, harmless but worth knowing if you go looking for it, noted again as a
+component-level gotcha in §9.9).</p>
+<div class="gotcha">
+<b>Gotcha — the header's book stats and the tab content can be from two different calls.</b> The header's
+<code>meta</code> state (<code>{meta.as_of.period} · {n_loans} loans · {balance} book</code>) is fetched ONCE
+at app mount via its own <code>getSummary()</code> call in <code>App()</code>, independently of whatever the
+active tab fetches. In practice both calls hit the same frozen <code>GET /api/ecl/summary</code> endpoint and
+so always agree (the engine is frozen, not live-changing), but architecturally they are two separate HTTP
+round-trips, not one shared cache — worth knowing if you are ever debugging a stale-header report.
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-3">9.3 Tab 1 — Executive Overview</h3>
+<!-- ============================================================== -->
+<p><code>app/ui/src/tabs/ExecutiveTab.jsx</code> — "the consultant's headline read of the book as reported."
+Six panels/panel-groups, all fed by a single <code>GET /api/ecl/summary</code> call except the two chart
+panels at the bottom which fetch their own endpoints.</p>
+
+<img class="fig" src="../assets/img/ch09/01_executive_tab_layout.png" alt="Executive Overview tab layout mockup: header with brand, MDD link and book stats; four KPI tiles for allowance, coverage, Jensen ratio and reporting date; Exhibit 1 stage mix stacked bar; Exhibit 2 scenario table">
+<div class="figcap"><b>Exhibit 9.1</b> — Executive Overview, tab layout (header + 4 KPI tiles + Exhibit 1 stage
+mix + Exhibit 2 scenario table; Exhibit 3 Allowance bridge and Exhibit 4 Credit cycle render below this and get
+their own detailed figures, Exhibits 9.2/9.3) — rendered from a live <code>GET /api/ecl/summary</code>
+call, 2026-07-19.</div>
+
+<h4>Panel group — 4 KPI tiles (<code>StatTile.jsx</code>, unnumbered)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Scenario-weighted allowance / Coverage / Jensen ratio / Reporting date</h5>
+<span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>Four headline stats read directly off <code>GET /api/ecl/summary</code>:
+<code>weighted_allowance</code> (raw USD, UI divides by 1e6), <code>coverage</code> (a ratio, UI multiplies by
+100), <code>jensen_ratio</code> (a ratio, shown as "×"), and <code>as_of.period</code>/<code>as_of.t</code>.</dd>
+<dt>How to read it</dt><dd>Live capture: allowance <b>\$34.0m</b> across 7,849 loans, \$1,673.7m balance;
+coverage <b>2.03%</b> (allowance / balance); Jensen ratio <b>1.0353×</b> (weighted allowance \$34.0m vs \$32.9m
+at the single weighted-average macro path — the scenario-weighted number runs <em>above</em> the
+single-path number, the convexity signature Chapter&nbsp;6 derives); reporting date <b>2015Q1</b> (t=60 of
+60).</dd>
+<dt>Controls</dt><dd>None — these four tiles are read-only. They do NOT move when you later visit Scenario Lab
+and run a control there; Scenario Lab's controls act on its own separate result card and waterfall, never on
+this tab's tiles (see the scenario-controls-vs-historical-waterfall gotcha below).</dd>
+<dt>AI affordances</dt><dd>Each tile carries its own ✦ explain icon (top-right of the tile, per
+<code>StatTile.jsx</code>) with a panel-specific recap — e.g. the Jensen-ratio tile's question recaps
+"Jensen ratio is 1.0353× — scenario-weighted allowance \$34.0m vs allowance at the averaged macro path
+\$32.9m." Full mechanics in §9.9.</dd>
+<dt>Gotchas</dt><dd>The Jensen-ratio tile's hint text ("weighted ECL vs avg-path ECL") is easy to misread as
+"weighted ECL vs a SINGLE scenario's ECL" — it is specifically the ECL at the PROBABILITY-WEIGHTED AVERAGE
+macro path, not any one of the three named scenarios (Chapter&nbsp;6's Jensen's-inequality construction).</dd>
+</dl>
+</div>
+
+<h4>Panel — Stage mix of allowance (<code>StageMixBar.jsx</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Stage mix of allowance</h5><span class="exh-tag">Exhibit 1</span></div>
+<dl>
+<dt>Shows</dt><dd>A single stacked horizontal bar, part-to-whole share of the reported allowance by IFRS&nbsp;9
+stage. Endpoint: <code>GET /api/ecl/summary</code>, fields
+<code>stage_mix.{stage1,stage2,stage3}.{n_loans,allowance,allowance_pct_of_total}</code> —
+<code>allowance_pct_of_total</code> is already 0–100 scale, never re-multiplied.</dd>
+<dt>How to read it</dt><dd>Live capture: Stage&nbsp;1 (green, performing) <b>80.74%</b> of allowance across
+7,803 loans; Stage&nbsp;2 (amber, SICR) <b>1.43%</b> across just 3 loans; Stage&nbsp;3 (red, impaired)
+<b>17.83%</b> across 43 loans. Segments under 6% (Stage&nbsp;2 here) skip their inline percentage label to
+avoid collision — the legend below the bar still names every segment with its exact share and loan count.</dd>
+<dt>Controls</dt><dd>None — a static read of the current reporting date's stage mix. The colours are STATUS
+semantics (green=good/performing, amber=warning/SICR, red=critical/impaired), not arbitrary categorical
+identity, and are never reused for a different meaning elsewhere in the app.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon (§9.9); its recap states all three stages'
+percentage-of-total and loan counts in one sentence, so an "explain this" question always has the exact
+current numbers in front of the router even if the reader never looked at the legend.</dd>
+<dt>Gotchas</dt><dd>Stage&nbsp;2 at 3 loans / 1.43% of allowance looks negligible in a calm-quarter book — this
+is 2015Q1 specifically (a calm reporting date per Chapter&nbsp;1); the Policy tab's staging-sensitivity exhibit
+(§9.6, Exhibit&nbsp;1) shows the SAME threshold convention pushes Stage&nbsp;2 to 75.76% of the book in a
+STRESS quarter (t=40, 2010Q1) — this tile is a snapshot, not a claim that Stage&nbsp;2 is always small.</dd>
+</dl>
+</div>
+
+<h4>Panel — Consultant's read (unnumbered, template narrative)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Consultant's read</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>A full paragraph of prose, every number substituted from the same <code>GET
+/api/ecl/summary</code> payload as the tiles/bar above it. The component's own top comment is explicit:
+"Template narrative — NOT an LLM call... this is consultant prose with blanks filled in, per the north-star
+spec ('template, not LLM')." This is the one panel in the app that is guaranteed never to hallucinate anything,
+by construction — it cannot invent a number because it has no generative step at all.</dd>
+<dt>How to read it</dt><dd>The narrative states the same headline figures as the tiles in sentence form, plus
+one derived observation the tiles don't spell out directly: "the reported number is set almost entirely by
+12-month ECL" (because this calm-quarter book is 80.7% Stage&nbsp;1) — "and therefore is exactly where
+scenario weights and macro shocks act (see Scenario Lab)," an explicit pointer to where a reader should go
+next if they want to stress this number.</dd>
+<dt>Controls</dt><dd>None — read-only, regenerated fresh on every page load from the live summary payload
+(never a static/cached string), so it always agrees with the tiles above it.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; its recap is the entire narrative paragraph itself (the
+<code>buildExplainQuestion</code> passes <code>recap: narrative(summary)</code> verbatim) — clicking ✦ here
+effectively asks the agent "does this paragraph hold up," a genuine cross-check of the template prose against
+the agent's own independently-grounded read.</dd>
+<dt>Gotchas</dt><dd>Because this is template text, not an LLM call, it can never explain a number that ISN'T
+already in the summary payload — if a reader wants a number this paragraph doesn't cover (a segment cut, a
+specific loan), that is exactly the job Copilot's <code>analyze_data</code> (Tier-2, Chapter&nbsp;8) is for,
+not this panel.</dd>
+</dl>
+</div>
+
+<h4>Panel — Scenario table (<code>ScenarioTable</code>, inline component)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Scenario table</h5><span class="exh-tag">Exhibit 2</span></div>
+<dl>
+<dt>Shows</dt><dd>One row per named scenario (up/base/down) from <code>GET /api/ecl/summary</code>'s
+<code>scenarios[]</code> array: weight, allowance (\$m), coverage (%), UER peak (pp). A leading coloured dot
+per row (FINAL_SPEC §5.3/§1.3 convention) — up=good, base=neutral, down=critical — carries STATUS semantics,
+same discipline as the stage-mix bar.</dd>
+<dt>How to read it</dt><dd>Live capture: <b>up</b> 25% weight, \$27.7m allowance, 1.65% coverage, UER peak
+6.4pp; <b>base</b> 50% weight, \$30.5m allowance, 1.82% coverage, UER peak 6.4pp (up and base share the same
+UER peak by construction — the DFAST base and the project's "upside" macro path do not diverge on this one
+driver); <b>down</b> 25% weight, \$47.6m allowance, 2.84% coverage, UER peak 11.2pp — nearly 4pp higher
+unemployment stress than the other two scenarios, which is most of why its allowance nearly doubles the base
+case.</dd>
+<dt>Controls</dt><dd>None on THIS panel — it is the adopted 25/50/25 basis, read-only. The panel's own caveat
+box states the coherent-shock convention explicitly: the satellite behind these numbers has NO unemployment
+term (Z = f(hpi_growth_lag1, gdp_growth_lag2)), a fact worth knowing before assuming UER peak alone explains
+the allowance gap.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap lists all three rows' weight/allowance/coverage in one
+semicolon-joined sentence.</dd>
+<dt>Gotchas</dt><dd><b>This table is NOT interactive.</b> A reader who wants to see what a DIFFERENT weighting
+(say 15/35/50) does must go to Scenario Lab's "Reweight scenarios" control (§9.5) or the Policy tab's
+scenario-weight sensitivity table (§9.6, Exhibit&nbsp;2, which shows exactly that alternative pre-computed) —
+this Executive-tab table always shows the single adopted 25/50/25 basis.</dd>
+</dl>
+</div>
+
+<h4>Panel — Allowance bridge (<code>WaterfallChart.jsx</code>, shared component)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Allowance bridge</h5><span class="exh-tag">Exhibit 3</span></div>
+<dl>
+<dt>Shows</dt><dd>An ECharts waterfall of the movement decomposition between two reporting snapshots.
+On the Executive tab specifically, <code>WaterfallChart</code> is invoked with fixed props
+<code>t0={59} t1={60} action={null}</code> — the LATEST single quarter, per the component's own comment
+("Default window = the latest single quarter (FINAL_SPEC §8.2) — long cumulative windows... are a Scenario
+Lab drill-down, never the executive default"). Endpoint: <code>GET
+/api/ecl/waterfall?t0=59&amp;t1=60</code>, six components (opening/stage_migration/remeasurement/
+derecognitions/new_loans/closing) that sum exactly (<code>identity_gap ≈ 0</code>).</dd>
+<dt>How to read it</dt><dd>Live capture, t=59 (2014Q4) → t=60 (2015Q1): opening <b>\$18.8m</b>, stage migration
+<b>+\$0.9m</b> (43 loans), remeasurement <b>+\$4.7m</b> (7,804 loans — nearly the whole live book re-measured),
+derecognitions <b>−\$8.9m</b> (269 loans paid off/wrote off), new loans <b>+\$0.1m</b> (45 loans), closing
+<b>\$15.5m</b>. Identity gap: 5.6×10⁻⁹ (floating-point noise, not a reconciliation failure).</dd>
+<dt>How to use it</dt><dd>A <code>⊞</code> icon top-right toggles chart↔table view (same six rows, tabular).
+No sliders here — this is a FIXED historical exhibit.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states opening, every step delta, and closing in one
+sentence, built from the SAME adapted row data the chart renders (<code>recapFor(wf)</code>), never
+hand-typed.</dd>
+<dt>Gotchas — THE recorded user confusion, requirement&nbsp;11 flags this explicitly.</dt>
+<dd>This waterfall is fixed history — it answers "what happened to the allowance between two ACTUAL past
+reporting dates." It is easy to conflate with Scenario Lab's version of the SAME component (§9.5), which
+instead shows a HYPOTHETICAL shock/decomposition result on demand. Concretely: moving a Scenario Lab slider
+does <b>not</b> change this Executive-tab chart's six numbers — they are t=59→t=60 history, always. The
+subtitle text says so directly ("fixed exhibit — scenario controls act on the reported allowance above, not
+on this history") specifically because this confusion was observed and named in the design brief.</dd>
+</dl>
+</div>
+
+<img class="fig" src="../assets/img/ch09/02_waterfall_chart.png" alt="Allowance bridge waterfall chart from t=59 2014Q4 to t=60 2015Q1, showing opening allowance, stage migration, remeasurement, derecognitions, new loans and closing allowance bars with running totals">
+<div class="figcap"><b>Exhibit 9.2</b> — Allowance bridge, t=59 (2014Q4) → t=60 (2015Q1) — rendered from a
+live <code>GET /api/ecl/waterfall?t0=59&amp;t1=60</code> call, 2026-07-19.</div>
+
+<h4>Panel — Credit cycle, PIT vs TTC (<code>CreditCycleChart.jsx</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Credit cycle — PIT vs TTC</h5><span class="exh-tag">Exhibit 4</span></div>
+<dl>
+<dt>Shows</dt><dd>A three-line time series over all 60 panel quarters: observed default rate, TTC PD, PIT PD.
+Endpoint: <code>GET /api/exhibits/credit_cycle</code>, fields <code>rho</code> and <code>points[].{calendar,
+z, observed_dr, ttc_pd, pit_pd}</code>, all rate fields ratios (UI multiplies by 100).</dd>
+<dt>How to read it</dt><dd>Live capture: ρ = <b>0.0227</b> (the project's own fitted asset correlation, well
+below the Basel illustrative 0.12 — Chapter&nbsp;5's calibration). The PIT PD line hugs the observed default
+rate through the 2008–2009 GFC hump (both peak near 5% quarterly) while the TTC PD line stays comparatively
+flat (~1.7–2.3%) throughout — exactly the PIT-vs-TTC philosophical distinction Chapter&nbsp;5 derives: PIT
+conditions on the current point in the credit cycle, TTC averages over it.</dd>
+<dt>How to use it</dt><dd>Same <code>⊞</code> chart↔table toggle as the waterfall. No sliders — a static
+60-quarter exhibit (the LIVE version of this same curve, with adjustable Z and ρ sliders, is a widget in
+Chapter&nbsp;5's notes, not in this app).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states ρ and the latest quarter's three values.</dd>
+<dt>Gotchas</dt><dd>The subtitle names the recovery method explicitly ("Z recovered by Belkin inversion") —
+Z here is not a directly observed series, it is INFERRED from the observed default rate via the Vasicek
+model's inverse mapping (Chapter&nbsp;5); reading it as a raw macro input would be a category error.</dd>
+</dl>
+</div>
+
+<img class="fig" src="../assets/img/ch09/03_credit_cycle_chart.png" alt="Credit cycle line chart with observed default rate, TTC PD and PIT PD over 2000Q2 to 2015Q1, PIT PD tracking observed defaults closely through the 2008-2009 hump while TTC PD stays comparatively flat">
+<div class="figcap"><b>Exhibit 9.3</b> — Credit cycle, PIT vs TTC (ρ = 0.0227) — rendered from a live
+<code>GET /api/exhibits/credit_cycle</code> call, 2026-07-19.</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-4">9.4 Tab 2 — The Model</h3>
+<!-- ============================================================== -->
+<p><code>app/ui/src/tabs/ModelTab.jsx</code> — "Coefficients, fit statistics, and the variable dictionary —
+with the honest caveats." One intro panel plus six numbered exhibits, all Requirement&nbsp;12 additions
+(interpretation fields, macro glossary, FRED badges) layered onto the original coefficient tables.</p>
+
+<img class="fig" src="../assets/img/ch09/04_model_coefficients_table.png" alt="The Model tab hazard-ratio coefficients table mockup: 13 rows for the default hazard model, hazard ratio column color-coded green for risk-increasing and red for risk-reducing, per-unit HR and 95 percent CI and p columns, expand caret per row">
+<div class="figcap"><b>Exhibit 9.4</b> — The Model tab, hazard-ratio coefficients (default hazard, n=418,418) —
+rendered from a live <code>GET /api/model/coefficients</code> call, 2026-07-19.</div>
+
+<h4>Panel — How to read these coefficients (<code>HowToReadCoefficients.jsx</code>, shared with Real Data)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>How to read these coefficients</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>A collapsed <code>&lt;details&gt;</code> intro panel (no engine numbers, no explain
+question needed beyond its own title) stating four rules once so neither this tab nor Real Data has to
+re-derive them: (1) every model here is a discrete-time CLOGLOG hazard, so <code>exp(coef)</code> is a
+genuine hazard ratio — Chapter&nbsp;3's link derivation, referenced not repeated; (2) "1 unit" is not always
+"1" (FICO is /100, LTV is /10 — read the row's own <b>Unit</b> line); (3) the 0.01-vs-1pp gotcha for
+log-growth macro rows (table HR is scaled to a full 1.0 log-unit ≈ 100% quarterly growth, never observed —
+the <b>Per-unit HR</b> column fixes this, computed as <code>hazard_ratio ** 0.01</code>); (4) only
+GENUINELY FRED-pulled rows (state-level, Real Data tab) carry a FRED badge — the national DCR rows are a
+vendor-premerged series on the panel's own anonymized clock, calendar-verified against FRED UNRATE
+(corr 0.996) but not a live pull.</dd>
+<dt>Controls</dt><dd>Native <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code> expand/collapse, no JS.</dd>
+<dt>AI affordances</dt><dd>None — plain prose panel, no <code>buildExplainQuestion</code> prop passed (the
+one deliberate exception across this tab; the component's own comment states why: "no engine numbers -- so it
+needs no explain-question recap beyond the panel's own title").</dd>
+<dt>Gotchas</dt><dd>This panel is collapsed by default — a reader who skips it and goes straight to the
+coefficient table risks the exact 0.01-vs-1pp misread it exists to prevent on the two HPI-growth rows.</dd>
+</dl>
+</div>
+
+<h4>Panel — Hazard-ratio coefficients (<code>CoefficientsTable</code>, inline component)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Hazard-ratio coefficients</h5><span class="exh-tag">Exhibit 1</span></div>
+<dl>
+<dt>Shows</dt><dd>The full fitted coefficient table for whichever of the two hazard models is selected
+(default/prepay), grouped by family (baseline, borrower, collateral, macro, incentive) with a one-line family
+"story" row. Endpoint: <code>GET /api/model/coefficients</code>, fields
+<code>models.{default,prepay}.coefficients[].{variable, family, hazard_ratio, ci, p, p_display, story}</code>
+plus the Requirement&nbsp;12 interpretation fields (<code>unit_meaning, transformation, lag, fred_series,
+economic_channel, hazard_ratio_per_unit, worked_example</code>).</dd>
+<dt>How to read it</dt><dd>Live capture, default hazard (n=418,418, McFadden R²=0.0761): Intercept HR
+<b>0.2658</b>; FICO at orig. (per 100 pts) HR <b>0.6314</b> (p&lt;1e-16 — cleaner credit at origination lowers
+the hazard 36.9%); Updated LTV (per 10pp) HR <b>1.2250</b> (+22.5% per 10pp); Unemployment level (lag&nbsp;1)
+HR <b>0.6930</b> in isolation (the level-vs-momentum decomposition, see the fit-stats caveat below — the NET
+effect is risk-increasing); HPI growth (lag&nbsp;1) table HR <b>0.0318</b> but Per-unit HR <b>0.9661</b> (the
+0.01-vs-1pp correction in action — reading 0.0318 as "per 1% growth" would overstate the effect by orders of
+magnitude); the DOUBLE TRIGGER interaction term HR <b>0.9940</b> (p=0.0375, significant but small,
+Per-unit HR deliberately <code>null</code> — a product term has no single legible per-unit reading, see the
+worked example instead).</dd>
+<dt>How to use it</dt><dd>A segmented control ("Default hazard" / "Prepayment hazard") in the panel's
+<code>actions</code> slot swaps the whole table's data source — clicking a row's ▸ toggle expands an
+<code>InterpretationRow</code> beneath it (Unit, Transformation, Economic channel, Worked example, plus a FRED
+badge if genuinely FRED-sourced — none are, on this DCR tab). Each row's toggle state is independent
+(<code>useExpandableRows</code>, a per-table <code>Set</code>).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states n, coefficient count, McFadden R², and the
+single largest-magnitude hazard ratio (by absolute log), computed fresh from whichever model is currently
+selected.</dd>
+<dt>Gotchas</dt><dd>Cell shading is green for HR&gt;1 (risk-increasing), red/pink for HR&lt;1
+(risk-reducing) — this is a magnitude-blind binary split, NOT a statistical-significance indicator; the
+Condo row (HR 1.0649, p=0.141 — not significant at 5%) shades the same green as the FICO row (HR 0.6314,
+p&lt;1e-16 — overwhelmingly significant). Always check the <code>p</code> column separately.</dd>
+</dl>
+</div>
+
+<h4>Panel — Fit statistics (<code>FitStats</code>, inline component)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Fit statistics</h5><span class="exh-tag">Exhibit 2</span></div>
+<dl>
+<dt>Shows</dt><dd>A 2-row table (default/prepay) of n, events, train/OOT AUC, McFadden R², plus three
+narrative caveat paragraphs read straight off <code>fit_stats.{net_uer_effect_note, double_trigger_note,
+seasoning_peak}</code>.</dd>
+<dt>How to read it</dt><dd>Live capture: default hazard train AUC <b>0.7476</b>, OOT AUC <b>0.6609</b>,
+McFadden R² 0.0761; prepayment hazard train AUC <b>0.6839</b>, OOT AUC <b>0.5841</b>, McFadden R² 0.0503. The
+OOT-caveat box states plainly: OOT (t=41–60, 2010Q2–2015Q1) is the GFC stress AFTERMATH, not a random holdout
+— the AUC drop is expected, not evidence of overfitting by itself. The net-UER-effect note resolves the
+apparent sign puzzle from Exhibit&nbsp;1 above: β(uer_lag1) + β(uer_chg4_lag1) = −0.3668 + 0.6135 = <b>+0.2467</b>
+(hazard ratio 1.280 per pp) — PD genuinely RISES in unemployment once level and momentum are combined; the
+negative level coefficient alone is a collinearity artifact (0.94 collinearity between the two terms), not an
+economic sign reversal. Seasoning peak: fitted at quarter&nbsp;12, empirical at quarter&nbsp;10 (plausible
+window 4–18).</dd>
+<dt>Controls</dt><dd>None — read-only, same data source as Exhibit&nbsp;1 (<code>GET
+/api/model/coefficients</code>), no model-switch control of its own (it always shows both rows at once).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states both models' train/OOT AUC in one sentence.</dd>
+<dt>Gotchas</dt><dd>Reading Exhibit&nbsp;1's "Unemployment level" row (HR 0.693, apparently risk-REDUCING) in
+isolation without reading this panel's net-UER-effect caveat is the single most likely misreading on this
+whole tab — the two rows must be combined, per the note, to get the economically correct sign.</dd>
+</dl>
+</div>
+
+<h4>Panel — Seasoning &amp; term-structure exhibits (image grid)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Seasoning &amp; term-structure exhibits</h5><span class="exh-tag">Exhibit 3</span></div>
+<dl>
+<dt>Shows</dt><dd>An <code>exhibit-grid</code> of every consultant-curated PNG whose id starts with
+<code>hazard_</code>, filtered client-side from <code>GET /api/exhibits/list</code>'s 17-row payload:
+<code>hazard_age_baseline</code> ("Fitted natural-cubic-spline age baseline of the default hazard") and
+<code>hazard_pd_term_structure</code> ("Lifetime PD term structure implied by the fitted hazards").</dd>
+<dt>How to read it</dt><dd>These are regenerated PNGs served at
+<code>/static/exhibits/hazard/age_baseline.png</code> and <code>/static/exhibits/hazard/
+pd_term_structure.png</code> — the same seasoning-hump curve Chapter&nbsp;3's notes derive in full and the
+same PD term-structure Chapter&nbsp;2's ECL formula sums over.</dd>
+<dt>Controls</dt><dd>None — a static image grid; <code>ExhibitImage.jsx</code> lazy-loads each PNG and
+swaps to a "exhibit unavailable" placeholder on a 404 (never a broken-image icon).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap lists how many exhibits rendered and their titles.</dd>
+<dt>Gotchas</dt><dd>This is exactly 2 of the 17 total curated exhibits (filtered by id prefix). Tracing every
+caller of <code>GET /api/exhibits/list</code> in the codebase (it is called from exactly one file,
+<code>ModelTab.jsx</code>) shows only ONE other id-filtered grid is ever built from it — the 3
+<code>lgd_</code> rows, this tab's own Exhibit&nbsp;6. The <code>staging_stage2_sensitivity</code> row's PNG
+IS shown elsewhere (Policy's Exhibit&nbsp;1, §9.6) but reached via a wholly separate endpoint
+(<code>GET /api/policy/staging_sensitivity</code>'s own <code>image_url</code> field, which happens to point at
+the identical <code>staging/stage2_sensitivity.png</code>) — not via this catalog. That leaves 11 of the 17
+rows — <code>staging_stage_distribution</code> and all 3 <code>scenario_*</code>/1 <code>vasicek_*</code>/6
+<code>eda_*</code> rows — with <strong>no UI consumer anywhere in the shipped app</strong> (verified by
+grepping every id and PNG path across <code>app/ui/src/</code> and <code>app/api/main.py</code>: no other hit).
+They are real, servable catalog entries — <code>/api/exhibits/list</code> returns all 17 correctly and every
+PNG resolves under <code>/static/exhibits/</code> — but orphaned in the current product, not merely
+under-documented by this chapter.</dd>
+</dl>
+</div>
+
+<h4>Panel — Variable dictionary (<code>SearchableTable</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Variable dictionary</h5><span class="exh-tag">Exhibit 4</span></div>
+<dl>
+<dt>Shows</dt><dd>Every one of 13 modelled variables, one row each: source/transformation, lag/window, economic
+rationale, expected sign, fitted/verified checkmark, consumed-by, and a FRED badge column. Endpoint:
+<code>GET /api/model/variable_dictionary</code>, a preamble string plus <code>rows[]</code> (raw
+markdown-lite source cells, rendered as-is — backtick-quoted variable names, ✓/⚡/↑/↓ glyphs included
+verbatim).</dd>
+<dt>How to read it</dt><dd>Live capture, row 1: <code>fico_s</code> = <code>FICO_orig_time / 100</code>, lag
+"static (origination)", rationale "Ability/willingness to pay", expected sign "PD ↓", fitted/verified
+"✓ negative", consumed by "default hazard; LGD cure." Row 2: <code>ltv10</code> ⚡ (the lightning-bolt flags a
+documented CURRENT-quarter exception to the lag convention — collateral value is a real-time state, not a
+forecast), = <code>updated_ltv/10</code>, rationale "Equity cushion / strategic-default trigger," expected
+sign "PD ↑, severity ↑, cure ↓," fitted/verified "✓ all three." The preamble states the data window in full:
+t=1..60 ≙ 2000Q2–2015Q1 (calendar-anchoring verified vs FRED UNRATE, corr 0.996), train=t≤40, OOT=t=41–60.</dd>
+<dt>Controls</dt><dd>A free-text search box (<code>SearchableTable</code>) filters rows by substring match
+across every column — try "uer" or "ltv"; a live row-count readout ("N / 13 rows") confirms the filter took
+effect.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the row count and the five family names spanned.</dd>
+<dt>Gotchas</dt><dd>Five rows carry NO hazard ratio at all
+(<code>loan_age</code> — a spline basis, not individually interpretable; <code>gdp_lag1</code> /
+<code>gdp_growth_lag2</code> — a single dictionary row conflating two different lags feeding two different
+models (the DCR hazard's own GDP-growth row DOES carry a real per-unit HR, §9.4 Exhibit&nbsp;1 — it is this
+merged dictionary row specifically that declines to pick one); <code>lgd_time (target)</code> — an
+LGD target, not a regressor; <code>Z_t (recovered)</code> — the satellite's dependent variable;
+<code>Scenario paths</code> — a set of forward paths) — their <code>hazard_ratio_per_unit</code> and
+<code>worked_example</code> fields are both explicitly <code>null</code>, not a data-loading bug. (A sixth row,
+<code>dt_ltv_uer</code>, has a null <code>hazard_ratio_per_unit</code> too but — unlike these five — still
+carries a prose <code>worked_example</code> pointing at the fit-stats double-trigger decomposition instead.)</dd>
+</dl>
+</div>
+
+<h4>Panel — Macro data glossary (<code>details</code> + <code>SearchableTable</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Macro data glossary</h5><span class="exh-tag">Exhibit 5</span></div>
+<dl>
+<dt>Shows</dt><dd>The Requirement&nbsp;12 centrepiece: every macro series used ANYWHERE in the app — DCR
+(national), SFLLD (state, Real Data tab), and the satellite Z regression — one row per (series, model)
+pairing, endpoint <code>GET /api/model/macro_glossary</code>, 10 rows.</dd>
+<dt>How to read it</dt><dd>Live capture — three representative rows: <code>dcr_uer_level</code> ("National
+UER — level"), FRED ID <b>null</b>, geography "US national," lag "1 quarter," lag rationale states plainly
+this is "NOT a live FRED pull — a vendor-premerged national series on the DCR panel's own ANONYMIZED quarterly
+clock; only the clock's CALENDAR alignment... was verified, via correlation against FRED UNRATE (corr 0.996)
+— an anchoring check, not a sourcing claim." Contrast <code>sflld_uer_level</code> ("State UER — level"),
+FRED ID <b>{POSTAL}UR</b> (a literal template — one series per state postal code), lag "1 month" (the SFLLD
+panel's native monthly clock vs DCR's quarterly), which used_by "SFLLD champion hazard" only. The tenth row,
+<code>coherent_shock_convention</code>, carries no series-level facts at all (geography/frequency/lag all
+"n/a") — it documents the <code>shock_macro</code> tool's own co-moving-shock convention (Chapter&nbsp;8,
+§8.2) as a glossary entry in its own right, because the satellite has no unemployment term to shock directly.</dd>
+<dt>Controls</dt><dd>Collapsed <code>&lt;details&gt;</code> (default closed, "Macro data glossary (10
+series)" summary) + the same free-text search box pattern as the variable dictionary.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap lists all 10 series labels.</dd>
+<dt>Gotchas</dt><dd>THE central FRED-honesty distinction this whole endpoint exists to enforce: <b>every
+<code>dcr_*</code> row and <code>satellite_hpi_growth</code> carry <code>fred_series: null</code></b> — the
+DCR/national panel is NOT a live FRED pull, only calendar-anchored against one. Only the three SFLLD/state rows
+(<code>sflld_uer_level</code>, <code>sflld_uer_momentum</code>, <code>sflld_hpi_growth</code>) and their FRED
+IDs are genuinely live-pulled by <code>freddie/macro.py</code>. Reading a `null` FRED badge as "missing data"
+rather than "genuinely not a FRED
+pull" is exactly the misread this row-level honesty labeling exists to prevent.</dd>
+</dl>
+</div>
+
+<h4>Panel — LGD, two-stage workout model (<code>LgdSection</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>LGD — two-stage workout model</h5><span class="exh-tag">Exhibit 6</span></div>
+<dl>
+<dt>Shows</dt><dd>Three summary tiles (cure rate, cure AUC, excess-loss loading), an OOT-calibration table (8
+metrics × train/OOT), two <code>SearchableTable</code>s (cure-stage logit coefficients, severity-stage OLS/HC1
+coefficients, 5 rows each), and a 3-image exhibit grid. Endpoint: <code>GET /api/model/lgd</code>.</dd>
+<dt>How to read it</dt><dd>Live capture: cure rate <b>12.2%</b>, cure AUC train/OOT <b>0.837 / 0.769</b>,
+excess-loss loading <b>2.55%</b>. OOT calibration shows real drift: mean realised LGD train 59.95% vs OOT
+61.13%, mean PREDICTED LGD train 59.90% vs OOT 65.83% — a +4.71pp OOT over-prediction gap
+(<code>gap_pred_minus_real.oot</code>), vs essentially zero gap in-sample (−0.05pp) — the model over-states
+severity in the GFC-aftermath OOT window. Cure-stage coefficients: <code>ltv10</code> coef −0.764 (odds ratio
+0.4658, p≈0 — higher LTV sharply lowers the odds of curing, matching the equity-cushion story). Severity-stage:
+<code>ltv10</code> coef +0.1074 (p≈0 — higher LTV raises severity conditional on non-cure).</dd>
+<dt>Controls</dt><dd>Independent search boxes on each of the two coefficient tables; the image grid is
+static, filtered client-side to exhibit ids starting <code>lgd_</code>
+(<code>lgd_calibration_ltv</code>, <code>lgd_cure_by_ltv</code>, <code>lgd_distribution</code> — the bimodal
+realised-LGD histogram motivating the two-stage model in the first place).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states cure rate, cure AUC train/OOT, and excess-loss
+loading.</dd>
+<dt>Gotchas</dt><dd>The severity coefficient table's SE column is labeled "SE (HC1)" specifically —
+heteroskedasticity-consistent standard errors, not the ordinary OLS SEs the cure-stage table's own SE column
+uses; the two tables are NOT directly comparable on SE magnitude for that reason, only on sign/significance.</dd>
+</dl>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-5">9.5 Tab 3 — Scenario Lab</h3>
+<!-- ============================================================== -->
+<p><code>app/ui/src/tabs/ScenarioLabTab.jsx</code> — "Parameterise the four Tier-1 engine tools — every
+number is computed by the frozen engine; the agent only routes, validates and narrates." Four control panels
+on the left, a result/interpretation card and a reactive waterfall on the right.</p>
+
+<img class="fig" src="../assets/img/ch09/05_scenario_lab_layout.png" alt="Scenario Lab tab layout mockup: four left-column control panels for reweight scenarios, macro shock, rerun by segment, and decompose waterfall; right column shows the result and interpretation card and a mini allowance-bridge chart after running a UER plus 2 point shock">
+<div class="figcap"><b>Exhibit 9.5</b> — Scenario Lab, tab layout: (a) Result &amp; interpretation card and
+(b) Allowance bridge in shock_macro mode, after running <code>shock_macro("UER", 2.0, "parallel")</code> live
+— rendered from a live <code>POST /api/tools/shock_macro</code> call, 2026-07-19.</div>
+
+<h4>Control panel — Reweight scenarios</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Reweight scenarios</h5><span class="exh-tag unnumbered">unnumbered (control)</span></div>
+<dl>
+<dt>Shows</dt><dd>Three sliders (up/base/down, 0–100 step 5) whose raw values are normalised client-side to
+sum to 1 before the call (<code>norm</code>), live-labeled with the normalised percentage next to each
+slider.</dd>
+<dt>How to use it</dt><dd>Drag any slider, then click "Run reweight" — this calls <code>POST
+/api/tools/reweight_scenarios</code> with the three normalised weights (body must sum to 1 within 1e-6; the
+UI's own normalisation guarantees this). Nothing else on the page changes until you click Run — the sliders
+themselves are inert previews of what WILL be sent.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon on the control panel itself, recapping the CURRENT (not yet
+run) slider setting — e.g. "Control currently set to 30%/40%/30% up/base/down" — distinct from the
+Result-card explain question below, which recaps the LAST RUN result.</dd>
+<dt>Gotchas</dt><dd>If all three sliders are dragged to 0 the Run button disables (<code>sum === 0</code>
+guard) — there is no "0/0/0" degenerate call possible from the UI, though the underlying tool would reject it
+with 422 (weights must sum to 1) if it somehow reached the API.</dd>
+</dl>
+</div>
+
+<h4>Control panel — Macro shock</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Macro shock</h5><span class="exh-tag unnumbered">unnumbered (control)</span></div>
+<dl>
+<dt>Shows</dt><dd>A variable select (UER/HPI growth/GDP growth), a shape select (parallel/peak_revert), and a
+shock-size slider whose bounds change per variable (<code>SHOCK_BOUNDS</code>: UER ±10pp, HPI/GDP ±5pp/q — the
+same pydantic bounds Chapter&nbsp;8's <code>ShockMacroArgs</code> enforces server-side, mirrored client-side so
+an invalid drag is never even possible). A caveat box states the coherent-shock convention inline, every time.</dd>
+<dt>How to use it</dt><dd>Pick a variable, shape, and size; click "Run shock" → <code>POST
+/api/tools/shock_macro</code>. Live capture, UER +2.0pp parallel: baseline allowance \$30.5m → shocked \$31.7m
+(delta <b>+\$1.24m, +4.07%</b>), coverage 1.82% → 1.89%. The co-moving deltas applied alongside the named UER
+shock: HPI growth −0.826pp/q, GDP growth −0.109pp/q (both negative — a rising-unemployment shock coherently
+drags house-price and GDP growth down too, the DFAST severe scenario's own direction).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon on the control, recapping the CURRENT (unrun) selection
+AND restating the coherent-shock convention inline in the recap text itself, so an "explain" click before
+ever running the shock still surfaces the no-unemployment-term caveat.</dd>
+<dt>Gotchas — the always-100%-remeasurement gotcha (Chapter&nbsp;8, §8.2).</dt>
+<dd>Look at Exhibit&nbsp;9.5b: the stage_migration, derecognitions and new_loans bars are all exactly zero —
+staging is frozen at the t=60 reporting date and scenario-invariant, so a macro shock can only ever move the
+ECL AMOUNT, never which stage a loan sits in. The entire visible delta lands in remeasurement, by
+construction, not because the other three components happen to be small this time.</dd>
+</dl>
+</div>
+
+<h4>Control panel — Rerun by segment</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Rerun by segment</h5><span class="exh-tag unnumbered">unnumbered (control)</span></div>
+<dl>
+<dt>Shows</dt><dd>A single select over the 6 valid segments: <code>all, stage1, stage2, stage3, investor,
+high_ltv</code> (current updated LTV &gt; 80).</dd>
+<dt>How to use it</dt><dd>Pick a segment, click "Run segment" → <code>POST /api/tools/rerun_ecl</code>. This
+is a pure FILTER-AND-SUM over already-computed per-loan scenario ECL — no re-run of the hazard/LGD/EAD models,
+despite the tool's name.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the currently-selected segment string.</dd>
+<dt>Gotchas</dt><dd>"Rerun" in the tool's name is a slight misnomer worth flagging — nothing is refit; it is a
+decomposition of the CURRENT reporting date's already-computed book, same discipline as
+<code>decompose_waterfall</code> below.</dd>
+</dl>
+</div>
+
+<h4>Control panel — Decompose waterfall</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Decompose waterfall</h5><span class="exh-tag unnumbered">unnumbered (control)</span></div>
+<dl>
+<dt>Shows</dt><dd>Two number inputs, t0 and t1 (bounds 1–59 / 2–60 respectively in the HTML, server-side
+bound 1≤t0&lt;t1≤60), defaulting to 20/40 — the exact worked example
+<code>docs/api_contract.md</code> itself publishes.</dd>
+<dt>How to use it</dt><dd>Set t0/t1, click "Run decomposition" (disabled while t0≥t1) → <code>POST
+/api/tools/decompose_waterfall</code>. This reruns the movement-decomposition identity between ANY two panel
+snapshots, not just the default t=59→60 the Executive tab shows.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the current t0/t1 selection.</dd>
+<dt>Gotchas</dt><dd>An out-of-range or inverted t0/t1 pair (e.g. t1=90, beyond T_SNAP=60) fails pydantic
+validation server-side with a 422 BEFORE any engine code runs — Chapter&nbsp;8's <code>DecomposeWaterfallArgs</code>
+bound, reachable here too since this UI control posts to the same endpoint the agent's Tier-1 tool calls.</dd>
+</dl>
+</div>
+
+<h4>Panel — Result &amp; interpretation (<code>ResultCard</code> + <code>Interpretation.jsx</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Result &amp; interpretation</h5><span class="exh-tag">Exhibit 1</span></div>
+<dl>
+<dt>Shows</dt><dd>Before any control has run: an empty-state note ("Run a control on the left..."). After a
+run: the tool's own <code>headline</code> string, a metrics strip (allowance, coverage, Jensen ratio,
+delta-vs-baseline — whichever fields the specific tool's result carries), and an auto-interpretation card
+fed by <code>POST /api/agent/interpret</code>.</dd>
+<dt>How to read it</dt><dd>Live capture after running the UER +2pp shock: headline "UER +2pp (parallel)
+coherent shock of the base scenario: reported allowance \$30.5m -&gt; \$31.7m (delta +1.2m, +4.1%), shocked
+coverage 1.89%"; metrics strip shows <b>\$31.7m</b> allowance, <b>1.89%</b> coverage, <b>+4.1%</b> vs
+baseline. The auto-interpretation card, called live: <code>interpretation</code> = "UER +2pp (parallel)
+coherent shock of the base scenario: reported allowance \$30.5m -&gt; \$31.7m (delta +1.2m, +4.1%), shocked
+coverage 1.89%. The shocked allowance is 31694012.25." with <code>grounded: true, mode: "llm"</code> —
+badged "AI interpretation" (not the "Engine summary" fallback badge, since the LLM's own narration passed
+the number-verbatim check this time).</dd>
+<dt>Controls</dt><dd>None on this card itself — it is a pure reflection of whichever control panel was last
+run.</dd>
+<dt>AI affordances</dt><dd>The panel's OWN explain icon recaps the last headline (a second, independent way to
+ask about the same result); the auto-interpretation card below it is a SEPARATE, automatic call — it fires
+without any click, on every new <code>{tool, result}</code> pair, and shows a loading spinner ("interpreting
+the run…") while in flight. If the interpret call itself errors, the card falls back to the tool's own
+<code>headline</code> text rather than ever going blank or showing a raw error (<code>Interpretation.jsx</code>'s
+own catch block).</dd>
+<dt>Gotchas</dt><dd>The "AI interpretation" vs "Engine summary" badge is the honest signal for whether the
+LLM's own prose passed the verbatim-number/citation check — an "Engine summary" badge is a NORMAL, EXPECTED
+outcome under the project's anti-hallucination governance (the LLM's narration either erred or invented a
+number), not a bug to be alarmed by; docs/api_contract.md is explicit about this.</dd>
+</dl>
+</div>
+
+<h4>Panel — Allowance bridge, action-aware (<code>WaterfallChart.jsx</code>, 3 modes)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Allowance bridge (Scenario Lab instance)</h5><span class="exh-tag">Exhibit 2</span></div>
+<dl>
+<dt>Shows</dt><dd>The SAME shared component as the Executive tab's Exhibit&nbsp;3, but here <code>action</code>
+is live — the chart resolves one of THREE modes: <code>shock_macro</code> mode
+(<code>result.waterfall_vs_baseline</code>, baseline vs shocked), <code>decompose_waterfall</code> mode
+(<code>result.components</code>, the custom t0/t1 window just run), or — for <code>reweight_scenarios</code>,
+<code>rerun_ecl</code>, or before any control has run — falls back to the SAME fixed historical t0/t1 window
+(props default 20/40 on this tab) as any other instance of this component.</dd>
+<dt>How to read it</dt><dd>See Exhibit&nbsp;9.5b above (the shock_macro-mode reading: opening \$30.5m,
+remeasurement +\$1.2m only, closing \$31.7m — the always-100%-remeasurement pattern visualised directly).</dd>
+<dt>Controls</dt><dd>Same <code>⊞</code> chart↔table toggle; the chart's own subtitle text changes per mode
+so a reader always knows which of the three modes they are looking at ("Effect of ... vs the baseline
+scenario," "Movement decomposition ... — every bar is an engine number," or the fixed-history phrasing).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap is built via <code>recapFor(wf)</code> from whichever
+mode's adapted row data is currently showing — always the CURRENT chart, never stale.</dd>
+<dt>Gotchas</dt><dd>Running "reweight_scenarios" or "rerun_ecl" does NOT change this chart at all — those two
+tools have no waterfall shape of their own, so the chart silently falls back to the fixed historical window.
+A reader who reweights scenarios and expects the bridge below to visualise the reweight is the SAME confusion
+requirement&nbsp;11 names for the Executive tab, now inverted: here the historical default can look like it
+"didn't respond" to a control that was never wired to drive it in the first place.</dd>
+</dl>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-6">9.6 Tab 4 — Policy</h3>
+<!-- ============================================================== -->
+<p><code>app/ui/src/tabs/PolicyTab.jsx</code> — "Every exhibit below is paired with the governance decision it
+informs — the dials a credit-risk committee actually turns." Four panels, each opening with a
+<code>DecisionHeader</code> stating the governance question before the numbers.</p>
+
+<img class="fig" src="../assets/img/ch09/06_policy_panels.png" alt="Policy tab charts mockup: left panel bars showing Stage-2 share of allowance versus SICR threshold at t=20 calm and t=40 stress with the 2.0x adopted threshold marked; right panel bars showing weighted allowance under adopted, equal-thirds and downside-tilted scenario weight sets">
+<div class="figcap"><b>Exhibit 9.6</b> — Policy tab: (a) Stage-2 share vs SICR threshold and (b)
+Scenario-weight sensitivity — rendered from live <code>GET /api/policy/staging_sensitivity</code> and
+<code>GET /api/policy/weights_table</code> calls, 2026-07-19.</div>
+
+<h4>Panel — Stage-2 share vs SICR threshold</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Stage-2 share vs SICR threshold</h5><span class="exh-tag">Exhibit 1</span></div>
+<dl>
+<dt>Shows</dt><dd>A <code>DecisionHeader</code> naming the governance question ("Where would you set the SICR
+ratio threshold that triggers Stage 2?"), a static exhibit image, and a table of Stage-2 allowance share at
+two reporting dates across four candidate thresholds. Endpoint: <code>GET
+/api/policy/staging_sensitivity</code>.</dd>
+<dt>How to read it</dt><dd>Live capture — add-on held at 0.5pp across every threshold shown. At t=20
+(2005Q1, calm): Stage-2 share is <b>0.0%</b> at EVERY threshold (1.5×/2.0×/3.0×/4.0×) — deterioration since
+origination simply has not happened yet. At t=40 (2010Q1, stress): 1.5× → <b>85.10%</b>, 2.0× (the adopted
+convention) → <b>75.76%</b>, 3.0× → <b>30.25%</b>, 4.0× → <b>3.32%</b> — the choice between 2.0× and 4.0×
+alone swings Stage-2's share of the book by over 72 percentage points.</dd>
+<dt>Controls</dt><dd>None interactive — a fixed sensitivity table over 4 pre-computed thresholds, not a live
+slider (the threshold itself is a modelling/governance parameter baked into the frozen staging engine, not an
+app-level control).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states all four thresholds and the report's own
+"reading" sentence verbatim.</dd>
+<dt>Gotchas</dt><dd>The report's own reading line calls this out directly: "the threshold is the single
+loudest governance dial in the impairment estimate" — a reader who treats the 2.0× convention as an
+objectively "correct" number rather than a judgment call is missing this panel's entire point.</dd>
+</dl>
+</div>
+
+<h4>Panel — Scenario-weight sensitivity</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Scenario-weight sensitivity</h5><span class="exh-tag">Exhibit 2</span></div>
+<dl>
+<dt>Shows</dt><dd>A <code>DecisionHeader</code> ("which probability weighting... best reflects 'reasonable
+and supportable' information?"), a bar chart, and a table of 3 canned weight sets with a Δ-vs-adopted pill
+per row. Endpoint: <code>GET /api/policy/weights_table</code> — <b>calling this endpoint appends THREE lines
+to the audit trail</b> (one per weight set), a deliberate governance choice so every reweighting this app has
+ever shown a user is logged, even from this read-only convenience view.</dd>
+<dt>How to read it</dt><dd>Live capture: <b>Adopted (25/50/25)</b> — \$34.0m, coverage 2.034%, Jensen ratio
+1.0353×, Δ 0% (the reported basis, tagged "ADOPTED," accent-highlighted bar and a 2px accent-border row).
+<b>Equal-thirds (33/33/33)</b> — \$35.2m, coverage 2.106%, Jensen 1.0437×, <b>+3.52%</b> vs adopted.
+<b>Downside-tilted (15/35/50)</b> — \$38.6m, coverage 2.307%, Jensen 1.0426×, <b>+13.39%</b> vs adopted — over
+\$4.5m more provision than the adopted basis from weight alone, no macro assumption changed.</dd>
+<dt>Controls</dt><dd>None interactive from the UI's perspective — the three weight sets are fixed
+illustrative alternatives (not user-adjustable sliders; that live-adjustable version of the SAME question is
+Scenario Lab's "Reweight scenarios" control, §9.5).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap lists all three sets' weight/allowance/delta.</dd>
+<dt>Gotchas</dt><dd>The colour convention here (red/bad pill for allowance ABOVE the adopted basis, green/good
+for below) encodes a P&amp;L-volatility judgment, not a policy endorsement — the panel's own governance note
+and this book's prose both flag it: a policy reviewer could reasonably read "more provision" as prudent
+rather than bad, and the visual pill is describing dispersion around the adopted basis, not recommending a
+direction.</dd>
+</dl>
+</div>
+
+<h4>Panel — Stage → ECL horizon guide (<code>StageGuide.jsx</code>, shared)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Stage → ECL horizon guide</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>A collapsed <code>&lt;details&gt;</code> explainer (shared verbatim with the waterfall
+panel's own footer, wherever <code>WaterfallChart</code> renders): Stage&nbsp;1 = 12-month ECL (Σ over t≤4
+quarters), Stage&nbsp;2 = the SAME sum over the FULL remaining contractual life (up to 40 quarters), Stage&nbsp;3
+= LGD × current exposure (scenario-invariant by construction).</dd>
+<dt>How to read it</dt><dd>The engine always computes BOTH 12-month and lifetime ECL for every loan and
+reports the one the stage prescribes — this calm-quarter book (2015Q1) is 7,803 Stage&nbsp;1 loans, 3
+Stage&nbsp;2, 43 Stage&nbsp;3, so the reported allowance is dominated by 12-month ECL, "which is exactly where
+scenario weights and macro shocks act" — the same sentence the Executive tab's narrative panel uses,
+deliberately consistent across the app.</dd>
+<dt>Controls</dt><dd>Native expand/collapse only.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the three stage/horizon definitions in one
+sentence.</dd>
+<dt>Gotchas</dt><dd>None specific beyond what §9.3's waterfall gotcha already covers — this panel is the SAME
+component reused, not a new one.</dd>
+</dl>
+</div>
+
+<h4>Panel — When judgment overrides the model, the overlay question</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>When judgment overrides the model — the overlay question</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>Pure governance prose (no engine numbers) laying out the post-model-adjustment (overlay)
+concept: the 2020 COVID-19 shock as the textbook case (default-rate models trained pre-pandemic could not see
+furlough schemes or payment holidays), citing that roughly a quarter of performing-book coverage is still held
+as overlay at some institutions per recent supervisory reviews (ECB 2024 thematic review, PRA Dear-CFO
+letters), with an explicit warning that overlays applied at the total-ECL level (bypassing PD/staging) are
+contrary to IFRS&nbsp;9 principles.</dd>
+<dt>How to read it</dt><dd>A defensible overlay needs four parts, stated explicitly: a named TRIGGER (a
+genuine model blind spot, not "the number looked wrong"), a QUANTIFICATION BASIS tied to evidence, ALLOCATION
+to the specific stages/segments affected, and EXIT CRITERIA for retiring it. The panel's closing line points a
+reader toward the model-native way to explore this: "The Scenario Lab's shock and reweight tools are the
+model-native way to explore 'what would an overlay-sized stress look like' before reaching for a judgmental
+add-on" — a direct cross-reference to §9.5.</dd>
+<dt>Controls</dt><dd>None — static prose.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap is a one-sentence summary of the four-part overlay
+discipline.</dd>
+<dt>Gotchas</dt><dd>This app reports a model-driven allowance ONLY — there is no overlay-entry control
+anywhere in the product; this panel is a governance explainer, not a feature. A reader looking for "where do I
+add an overlay in this tool" will not find one — that is a deliberate scope boundary, not a missing feature.</dd>
+</dl>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-7">9.7 Tab 5 — Real Data (Freddie SFLLD)</h3>
+<!-- ============================================================== -->
+<p><code>app/ui/src/tabs/FreddieTab.jsx</code> — the largest tab by panel count. "The DCR engine above runs on
+a synthetic panel. This tab surfaces a second, real pipeline built on the actual Freddie Mac Single-Family
+Loan-Level Dataset (SFLLD)... read-only, for comparison against the reported engine." One shared
+how-to-read panel, six hero tiles, and eight numbered exhibits, none of which touch or mutate engine state
+(every number here is parsed straight from <code>outputs/freddie/**</code>'s already-written
+reports/CSVs/JSON — Chapter&nbsp;11/12's territory, re-surfaced here as an app tab).</p>
+
+<h4>Panel group — 6 hero tiles</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>SFLLD panel scale / Hazard OOT AUC / COVID regime / Backtest miss ratio / LSTM AUC / LGD loading</h5>
+<span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>Six <code>StatTile</code>s, all from <code>GET /api/freddie/summary</code>: panel scale,
+hazard OOT AUC (SFLLD vs DCR side by side), COVID regime treatment verdict, backtest worst miss ratio, LSTM
+challenger OOT AUC vs champion, LGD excess-loss loading (SFLLD vs DCR).</dd>
+<dt>How to read it</dt><dd>Live capture: <b>837,500 loans</b>, 39,522,565 loan-months, 17 vintages (overall
+D90 rate 5.32%, overall prepay rate 58.93%) — vs the DCR synthetic panel's 621,736 rows (Chapter&nbsp;11), a
+scale contrast the tile's own hint text states directly. <b>Hazard OOT AUC 0.6847 / 0.6609</b> (SFLLD /
+DCR) — the real-data champion modestly OUT-discriminates the synthetic-panel champion out-of-time, train AUC
+0.8536 vs 0.7476. <b>COVID regime: EXCLUDE</b> (window 2020-04..2021-09) — the reviewed verdict; the naive/
+additive/exclude OOT2 AUC spread (0.7553/0.7547/0.7509) is too small to override the structural argument for
+exclude (only exclude keeps every macro coefficient economically signed). <b>Backtest worst miss ratio
+9.42×</b> at 2007-12 — flagged "underpredicted the GFC" (bad direction badge, by design — an underprediction
+is the honest finding, not a good one). <b>LSTM OOT AUC 0.9925</b> vs champion 0.6847 — a striking headline
+number the panel's OWN detail exhibit (Exhibit&nbsp;8) immediately qualifies (see below — this tile alone
+would badly overstate the finding). <b>LGD excess-loss loading 1.48% (SFLLD) vs 2.55% (DCR)</b>, mean realised
+LGD train 27.15%.</dd>
+<dt>Controls</dt><dd>None — six read-only tiles, same as the Executive tab's four.</dd>
+<dt>AI affordances</dt><dd>Each tile carries its own explain icon with a tile-specific recap — e.g. the LSTM
+tile's recap states the FULL split (overall, prior-delinquency, clean-history AUCs) even though the tile
+itself only displays the headline number, so an "explain" click never under-informs the router relative to
+what Exhibit&nbsp;8 shows in full.</dd>
+<dt>Gotchas</dt><dd>The COVID-verdict tile's hint text says "window ... -- review overturn" — a terse pointer
+to a real modelling-governance event: an earlier "additive dummy" recommendation was OVERTURNED on review
+because its own coefficient table showed the dummy failing to repair the sign-flipped structural macro terms
+(<code>delta_uer_lag1</code>'s sign flip persisted) — "the dummy is doing its job" was contradicted by the
+fit itself. This is documented, not smoothed over.</dd>
+</dl>
+</div>
+
+<h4>Panel — Vintage curves</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Vintage curves — the pre-crisis-vintage hump</h5><span class="exh-tag">Exhibit 1</span></div>
+<dl>
+<dt>Shows</dt><dd>A single tall <code>ExhibitImage</code>, id <code>freddie_vintage_curves</code>, endpoint
+<code>GET /api/freddie/exhibits</code>, served at
+<code>/static/freddie/eda/exhibit1_vintage_curves.png</code>.</dd>
+<dt>How to read it</dt><dd>Caption verbatim: "2007 vintage reaches 16.26% cumulative D90 by month 225 vs
+14.11% (2006) and 9.14% (2008) — the pre-crisis-vintage hump; every 2018-2025 modern vintage tops out below
+5.48%." The 2007 vintage is the worst-performing origination cohort in the whole panel by a wide margin.</dd>
+<dt>Controls</dt><dd>None — a static image.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap is the exhibit's own caption verbatim.</dd>
+<dt>Gotchas</dt><dd>None specific — but see the shared gotcha below Exhibit&nbsp;7 on tall exhibits generally.</dd>
+</dl>
+</div>
+
+<h4>Panel — The COVID roll-rate anomaly</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>The COVID roll-rate anomaly</h5><span class="exh-tag">Exhibit 2</span></div>
+<dl>
+<dt>Shows</dt><dd>Two side-by-side <code>ExhibitImage</code>s: <code>freddie_roll_rate_matrices</code> ("Roll-rate
+matrices -- GFC vs calm vs COVID") and <code>freddie_calendar_time_series</code> ("Calendar-time D90-entry
+rate"), plus a net-read paragraph.</dd>
+<dt>How to read it</dt><dd>The subtitle states the anomaly directly: "A naive D90-entry read makes COVID look
+like the worse credit event; the roll-rate breakdown shows the opposite." The net-read paragraph resolves it:
+COVID's 60→90+ roll / D90-entry rate looks worse than the GFC by a naive count, but the 90+→liquidation
+transition collapses over 10× in the same window — a forbearance-ACCOUNTING artifact (loans parked in
+delinquency status rather than progressing to liquidation), not genuine credit deterioration.</dd>
+<dt>Controls</dt><dd>None — static image pair.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap concatenates both images' captions.</dd>
+<dt>Gotchas</dt><dd>THE central interpretive trap this exhibit exists to catch: reading the D90-entry rate
+alone during 2020-21 as "COVID was worse than the GFC for credit" is exactly backwards once the roll-rate
+breakdown is examined — this is precisely why the panel pairs the naive series with the matrix breakdown
+rather than showing either alone.</dd>
+</dl>
+</div>
+
+<h4>Panel — The backtest honesty panel (centrepiece)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>The backtest honesty panel — model risk, historicised</h5><span class="exh-tag">Exhibit 3</span></div>
+<dl>
+<dt>Shows</dt><dd>A callout stat, an 8-column table (5 rows, one per pseudo-reporting date), and two narrative
+paragraphs. Endpoint: <code>GET /api/freddie/backtest</code>. Styled with a distinct <code>freddie-centerpiece</code>
+CSS class — the tab's own visual signal that this is the single most important exhibit on the page.</dd>
+<dt>How to read it</dt><dd>Live capture, full 5-row table: <b>2007-12</b> (n=86,188 fit / 610 events, 124,235
+active loans) realized cum. D90 <b>8.75%</b> vs predicted-frozen <b>0.93%</b> → miss ratio (frozen)
+<b>9.42×</b>, predicted-hindsight 4.61% → miss ratio (hindsight) 1.90×. <b>2009-12</b>: miss (frozen)
+1.18×, (hindsight) 1.41×. <b>2015-12</b>: miss (frozen) 0.75×, (hindsight) 0.75× (near-perfect agreement — the
+"saturation" reference case). <b>2019-12</b>: miss (frozen) 5.00×, (hindsight) <b>0.06×</b> — the mirror
+failure: fed the real April-2020 unemployment print, the linear hazard extrapolates ~20 SDs outside its
+training support and OVER-predicts by 16×. <b>2021-12</b>: miss (frozen) 0.67×, (hindsight) 0.94×. The
+callout states the 2007-12 finding in one sentence: a model refit through that date with macro frozen predicted
+0.928% 36-month D90 against a realized 8.750% — <b>9.42× underprediction of the GFC, as expected.</b></dd>
+<dt>Controls</dt><dd>None — a fixed 5-date historical backtest, not a parameterised control.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the central honesty note plus the 2019-12
+hindsight miss ratio.</dd>
+<dt>Gotchas</dt><dd>"Miss ratio &gt;1" means underprediction, "&lt;1" means overprediction —
+<code>miss_ratio = realized / predicted</code>, easy to invert by mis-remembering. The 2007-12 finding is
+explicitly framed as "the model was never wrong about its own coefficients, it simply never saw the crisis
+coming because nothing in a frozen macro path could show it one" — this argues FOR scenario overlays
+(IFRS&nbsp;9 para 5.5.17), it is not a defect being confessed.</dd>
+</dl>
+</div>
+
+<img class="fig" src="../assets/img/ch09/07_freddie_backtest_honesty.png" alt="Bar chart of miss ratio realized over predicted at five backtest reporting dates, frozen macro versus hindsight macro, with the 2007-12 GFC date showing a 9.42x underprediction under frozen macro">
+<div class="figcap"><b>Exhibit 9.7</b> — Real Data tab, backtest honesty panel: miss ratio (frozen vs
+hindsight macro) across all 5 pseudo-reporting dates — rendered from a live <code>GET
+/api/freddie/backtest</code> call, 2026-07-19.</div>
+
+<h4>Panel — Realized severity cycle</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Realized severity — a lagging, not coincident, indicator</h5><span class="exh-tag">Exhibit 4</span></div>
+<dl>
+<dt>Shows</dt><dd>A single tall <code>ExhibitImage</code>, id <code>freddie_severity_cycle</code>.</dd>
+<dt>How to read it</dt><dd>The title states the finding directly: realized severity LAGS the credit cycle
+rather than moving coincidentally with it — liquidation timing and forced-sale dynamics take time to catch up
+to a default event.</dd>
+<dt>Controls</dt><dd>None — static image.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap is the exhibit's own caption.</dd>
+<dt>Gotchas</dt><dd>None specific.</dd>
+</dl>
+</div>
+
+<h4>Panel — SFLLD hazard coefficients</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>SFLLD hazard coefficients</h5><span class="exh-tag">Exhibit 5</span></div>
+<dl>
+<dt>Shows</dt><dd>The full fitted coefficient table — 19 terms (vs the DCR tab's 13), same
+click-to-expand <code>InterpretationRow</code> pattern as Exhibit&nbsp;9.4. Endpoint: <code>GET
+/api/freddie/hazard</code>.</dd>
+<dt>How to read it</dt><dd>Live capture, selected rows: Intercept HR <b>0.0272</b> (reference-row baseline,
+not a marginal effect); <code>fico_s</code> HR <b>0.3963</b>; <code>ltv10</code> HR <b>1.3806</b>;
+<code>uer_lag1</code> HR <b>1.0996</b> — carries a live FRED badge (<code>{POSTAL}UR</code>), the genuinely
+FRED-pulled state series Exhibit&nbsp;9.4's national rows never carry; <code>delta_uer_lag1</code> HR
+<b>1.9485</b>; <code>hpi_growth_lag1</code> table HR <b>0.0353</b> but Per-unit HR <b>0.9671</b> (the SAME
+0.01-vs-1pp correction, computed here from the RAW <code>coef</code> column since this endpoint publishes coef
+directly, unlike the DCR endpoint which only ever publishes <code>HR=exp(coef)</code>). Five loan-age spline
+terms, seven occupancy/purpose/channel categorical dummies, and <code>dti_s</code> (DTI, no DCR counterpart —
+see Exhibit&nbsp;6 below) round out the 19.</dd>
+<dt>Controls</dt><dd>Same per-row expand toggle as the Model tab's table; no model-switch segmented control
+here (SFLLD ships one champion hazard model, not a default/prepay pair).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states term count, train/OOT AUC, and the state
+UER-level and HPI-growth hazard ratios.</dd>
+<dt>Gotchas</dt><dd>Three categorical rows are EXPLICITLY STATED MISSES against the DCR sign prior
+(<code>occupancy_status[T.S]</code>, <code>loan_purpose[T.N]</code>, <code>channel[T.C]</code> — see their own
+<code>economic_channel</code> text, verbatim from the report's "Fitted signs vs the priors" paragraph) — these
+are documented honestly, not hidden by omitting the row.</dd>
+</dl>
+</div>
+
+<h4>Panel — Champion hazard vs DCR priors, and the COVID verdict</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Champion hazard vs the DCR priors, and the COVID regime verdict</h5><span class="exh-tag">Exhibit 6</span></div>
+<dl>
+<dt>Shows</dt><dd>A 7-row sign-comparison table (SFLLD term vs its DCR counterpart vs the DCR-expected sign),
+a COVID caveat paragraph, and a 4-image exhibit grid (calibration-by-year, seasoning curve, state-UER effect,
+COVID-calibration comparison).</dd>
+<dt>How to read it</dt><dd>Live capture, sign comparison: <code>fico_s</code> ↔ DCR <code>fico_s</code>,
+expected "−" (matches); <code>dti_s</code> ↔ <b>null</b> DCR variable, "n/a (DCR has no DTI field at this
+rung)" — an honest scope gap, not a missing-data bug; <code>uer_lag1</code> ↔ DCR <code>uer_lag1</code>,
+expected "+ (net, level+momentum)" — the SAME net-effect caveat as Exhibit&nbsp;9.4's fit-stats panel applies
+here too; <code>cr(loan_age, df=5)</code> ↔ DCR's spline, expected "hump (DCR peak ~12 quarters ~= 36
+months)." The COVID caveat restates the reviewed exclude verdict verbatim.</dd>
+<dt>Controls</dt><dd>None — a static comparison table plus static images.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the COVID verdict and its recommendation
+text.</dd>
+<dt>Gotchas</dt><dd>The sign-comparison table covers ONLY the 7 continuous/structural terms — the 7
+categorical occupancy/purpose/channel dummies have no DCR counterpart at all (DCR carries no such fields at
+this rung) and are correctly absent from this table, not an oversight.</dd>
+</dl>
+</div>
+
+<h4>Panel — State heterogeneity</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>State heterogeneity — the collateral channel, in real geography</h5><span class="exh-tag">Exhibit 7</span></div>
+<dl>
+<dt>Shows</dt><dd>A single tall <code>ExhibitImage</code>, id <code>freddie_state_heterogeneity</code>,
+title states its content: "2006-07 vintage default vs HPI drawdown" by state.</dd>
+<dt>How to read it</dt><dd>The real-geography counterpart to the collateral/negative-equity channel documented
+in the variable dictionary (§9.4) — the SAME <code>ltv10</code> mechanism, shown here as cross-state
+variation rather than a single pooled coefficient.</dd>
+<dt>Controls</dt><dd>None — static image.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap is the exhibit's own caption.</dd>
+<dt>Gotchas</dt><dd>The tall <code>ExhibitImage</code> variant (this exhibit, plus Exhibits&nbsp;1 and&nbsp;4) is
+a taller aspect-ratio CSS treatment for exhibits with more vertical detail (a state map, a long vintage-curve
+family) — a purely presentational difference from the standard <code>ExhibitImage</code>, not a different data
+source or contract.</dd>
+</dl>
+</div>
+
+<h4>Panel — LSTM path-dependence challenger, lift decomposition</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>LSTM path-dependence challenger — lift decomposition</h5><span class="exh-tag">Exhibit 8</span></div>
+<dl>
+<dt>Shows</dt><dd>A 3-row table (Overall OOT / Clean history / Prior delinquency spell, champion vs LSTM AUC
+and the delta), a caveat paragraph, and a 2-image grid (lift-split, calibration-by-year). Endpoint: <code>GET
+/api/freddie/summary</code> (the <code>lstm</code> object, reused — not a separate endpoint).</dd>
+<dt>How to read it</dt><dd>Live capture: <b>Overall OOT</b> champion 0.6847 → LSTM 0.9925 (Δ +0.3078);
+<b>Clean history</b> champion 0.5386 → LSTM 0.5287 (Δ <b>−0.0098</b>, essentially zero, slightly negative);
+<b>Prior delinquency spell</b> champion 0.5698 → LSTM 0.9570 (Δ <b>+0.3872</b>). The lift concentrates almost
+ENTIRELY on loans with a prior delinquency spell — direct evidence for the path-dependence hypothesis: a
+borrower's delinquency HISTORY (not just their current state) carries real predictive signal the
+current-state-only champion cannot see.</dd>
+<dt>Controls</dt><dd>None — a static comparison table.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states all three groups' champion→LSTM deltas.</dd>
+<dt>Gotchas</dt><dd>The subtitle states the governance boundary explicitly: "Challenger-never-champion: a
+discrimination-only scorecard... not integrated into the reported allowance." The overall 0.9925 AUC headline
+(also shown on the hero tile) is dramatically inflated by the clean-history/prior-delinquency SPLIT — reading
+the headline number alone, without this exhibit's breakdown, would badly overstate what the LSTM actually adds
+for a typical (clean-history) loan. The caveat also flags an UNRESOLVED caveat, not smoothed over: "A
+forbearance-era delinquency-ladder distortion may inflate part of the 2020-21 window's contribution —
+flagged, not resolved, in the calibration chart's shaded window."</dd>
+</dl>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-8">9.8 Tab 6 — Copilot</h3>
+<!-- ============================================================== -->
+<p><code>app/ui/src/tabs/CopilotTab.jsx</code> — the one tab where the agent IS the interface, not an
+annotation layer on top of one. Three panels: the full chat panel, a live SSE trace feed, and a session-only
+audit log. This is the only tab where <code>MiniChatDock</code> is deliberately absent (per §9.2 — it has its
+own full-page chat instead).</p>
+
+<img class="fig" src="../assets/img/ch09/08_copilot_chat_states.png" alt="Copilot chat status states mockup: three chat bubbles labeled GROUNDED, REASONED, and OUT OF SCOPE, each showing a real question and the live agent answer with its route">
+<div class="figcap"><b>Exhibit 9.8</b> — Copilot chat-dock status states, three LIVE recorded exchanges
+(<code>POST /api/agent/ask</code>, live LangGraph agent, 2026-07-19) — one per governed outcome this app
+surfaces to a user.</div>
+
+<h4>Panel — Ask the copilot (<code>ChatPanel.jsx</code>, mode="full")</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Ask the copilot</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>A free-text chat log + input form + (when empty) three suggestion chips. Endpoint:
+<code>POST /api/agent/ask</code>, body <code>{"question": "..."}</code> (1–2000 chars), response
+<code>{answer, route, mode, trace}</code>.</dd>
+<dt>How to read it</dt><dd>Full worked GROUNDED example, live: question "What is the reported allowance under
+the downside scenario?" → route <code>reweight_scenarios</code>, mode <code>grounded</code>, answer: "The
+weighted allowance is \$47.6m, representing a +39.8% increase versus the adopted 25/50/25 weight of \$34.0m. The
+Jensen ratio is 1.000x compared to \$47.6m at the averaged path. This result is based on weights up/base/down =
+0.00/0.00/1.00." — the router correctly interpreted "the downside scenario" as a 0/0/1 reweight, not a lookup
+of the existing scenario-table row. REASONED example: question "Why does the double-trigger LTV × UER
+coefficient come out negative?" → route <code>REASONED</code>, mode <code>reasoned</code>, answer prefixed
+"[REASONED — interpretation, not engine output]" then a cited, number-disciplined interpretation drawing on
+6 documentation passages plus the baseline engine snapshot — no new engine number is stated. REFUSAL example:
+question "What is the price of Bitcoin today?" → route <code>REFUSE</code>, mode <code>refusal</code>, a fixed
+refusal message enumerating all 6 validated tool families as the alternative.</dd>
+<dt>Controls</dt><dd>A text input + Ask button (disabled while a request is in flight — the API itself
+enforces single-flight with a 429 on overlap, a single-worker demo limit); 3 suggestion chips pre-fill and
+send a canned question on click. An optional <code>contextLabel</code> prop (unused on this full-page
+instance, used by <code>MiniChatDock</code>'s per-tab instances) would prefix the wire question with
+<code>[TabLabel]</code>.</dd>
+<dt>AI affordances</dt><dd>This panel carries its OWN explain icon too (operator request #3's "no heading is
+ever missed" rule applied even to the chat panel itself) — its recap states the session's own question count
+and most recent route, distinct from anything a user has typed into the chat log.</dd>
+<dt>Gotchas</dt><dd>The REASONED prefix marker is BOTH stripped for display (the UI's own reasoned-tag badge
+already communicates the same fact visually) AND present in the raw wire string as a redundant machine-readable
+signal — branch on <code>mode === 'reasoned'</code>, never string-match the prefix, is the documented
+convention (<code>docs/api_contract.md</code>).</dd>
+</dl>
+</div>
+
+<h4>Panel — Agent trace (<code>AgentTrace.jsx</code>)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Agent trace</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>A live-scrolling event log over Server-Sent Events. Endpoint: <code>GET
+/api/agent/stream</code> (<code>text/event-stream</code>), replays the most recent <code>/ask</code> trace on
+connect then streams new events as they happen; a connection-status badge (connecting/live/reconnecting) sits
+in the panel's action slot.</dd>
+<dt>How to read it</dt><dd>Each event is a dict keyed by <code>node</code> — <code>router</code> (chosen
+route + validated args), a tool-name node (<code>shock_macro</code>, <code>query_model_docs</code>,
+<code>analyze_data</code>, ...; execution outcome + headline), <code>narrator</code> (grounding-check outcome,
+<code>number_check_passed</code>), <code>REASONED</code>, or <code>refusal</code>. A badge per row
+(ROUTER/TOOL/NARRATION/REASONED/REFUSAL/ERROR) colour-codes the node type at a glance.</dd>
+<dt>Controls</dt><dd>None — a pure read-only firehose, capped at the last 200 events client-side
+(<code>MAX_EVENTS</code>), auto-scrolled to bottom on new events.</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the current event count and the most recent
+event's text.</dd>
+<dt>Gotchas</dt><dd>No event field is EVER parsed back into a number by the UI — every field rendered here is
+display-only text, the same discipline as every other agent-touched surface in the app. The per-event
+<code>mode</code>/<code>number_check_passed</code> on a <code>narrator</code> event is a DIFFERENT, per-event
+diagnostic from the top-level response's own <code>mode</code> field (§9.9) — easy to conflate since both are
+named <code>mode</code>.</dd>
+</dl>
+</div>
+
+<h4>Panel — Session audit log (<code>AuditLog</code>, inline component)</h4>
+<div class="pdoc">
+<div class="pdoc-head"><h5>Session audit log</h5><span class="exh-tag unnumbered">unnumbered</span></div>
+<dl>
+<dt>Shows</dt><dd>A client-side-only log of every question asked THIS BROWSER SESSION, most recent first —
+built entirely from <code>ChatPanel</code>'s own <code>onResult</code> callback, not a server-side history
+endpoint. Each row is collapsed by default; clicking expands the full answer text plus the raw trace JSON.</dd>
+<dt>How to read it</dt><dd>A route badge per row (error-red for refusal, purple for reasoned, the standard
+tool badge otherwise) lets a reader scan the session's route mix at a glance without expanding every row.</dd>
+<dt>Controls</dt><dd>Click any row to expand/collapse; no filtering or search (unlike the coefficient tables
+elsewhere in the app — this log is expected to stay short, one session's worth of questions).</dd>
+<dt>AI affordances</dt><dd>Standard explain icon; recap states the entry count and the most recent route.</dd>
+<dt>Gotchas</dt><dd><b>This log resets on page reload</b> — there is no server-side <code>GET</code> history
+endpoint for past <code>/ask</code> calls (the component's own comment states this explicitly); the PERSISTENT
+audit trail a governance reviewer would actually rely on is the server-side
+<code>outputs/agent_log/tool_calls.jsonl</code> file Chapter&nbsp;8 documents, not this UI panel — this panel
+is a convenience view of the current session only, not the system of record.</dd>
+</dl>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-9">9.9 AI affordances, in full</h3>
+<!-- ============================================================== -->
+<p>Every panel doc block above says "standard explain icon" or similar — this section is where "standard"
+is actually defined once, in full, so it is never re-derived per panel. Three affordances, all layered on top
+of the SAME single endpoint, <code>POST /api/agent/ask</code> — requirement&nbsp;11's own framing: "zero new
+endpoints... every explanation... passes through the same tool-routing/Tier-2/Tier-3/refusal governance."</p>
+
+<h4>1. The ✦ explain icon (<code>ExplainButton.jsx</code>, <code>useExplain</code> hook)</h4>
+<div class="defn">
+<b>Mechanics.</b> Every <code>Panel</code> heading and every <code>StatTile</code> carries a small circular
+spark-icon button in its action cluster. Clicking it toggles an inline "answer strip" that renders UNDER the
+panel body (never a modal, never squeezed into the header row — FINAL_SPEC §7.4). On click, it calls
+<code>buildQuestion()</code> FRESH (so the question always reflects the panel's CURRENT payload, not a stale
+snapshot from when the component first mounted), then <code>askAgent(question)</code>. The composed question
+follows a fixed wire-text convention (<code>app/ui/src/api.js</code>'s <code>explainPanelQuestion</code>):
+<pre class="trace">[explain:&lt;panel_id&gt; &lt;live params&gt;] &lt;Exhibit label&gt; — &lt;panel title&gt;: &lt;CODE-GENERATED
+recap of the exact figures the panel is showing right now&gt; What should I take from this?</pre>
+<code>panel_id</code> is a short STABLE slug (e.g. <code>waterfall</code>, <code>hazard_coefficients</code>,
+<code>kpi_jensen_ratio</code>) — the same value every render, never free text; live params (when present) are
+<code>key=value</code> pairs reflecting the panel's current control state (e.g. <code>t0=59 t1=60</code>). The
+recap sentence is built from the SAME payload object that rendered the panel — never hand-typed prose — so the
+router always has the rendered numbers directly in front of it.
+</div>
+<div class="ex">
+<b>Live worked example — clicking ✦ on the Jensen-ratio tile.</b> Composed question (built exactly as the
+convention above specifies, from the live summary payload):
+<pre class="trace">[explain:kpi_jensen_ratio] Jensen ratio: Jensen ratio is 1.0353x — scenario-weighted allowance
+\$34.0m vs allowance at the averaged macro path \$32.9m. What should I take from this?</pre>
+This is a real, reproducible question string — posting it to <code>POST /api/agent/ask</code> live this
+session routed to <code>REASONED</code> (a conceptual "what should I take from this" question, no fixed tool
+computes a fresh number for it) and returned a cited interpretation grounded in the recap's own numbers.
+</div>
+<p>The answer strip itself renders one of four states, matching a small state machine in <code>useExplain</code>:
+<code>loading</code> ("THINKING," a warm-coloured status dot), <code>done</code> + refusal route ("OUT OF
+SCOPE," muted dot, the refusal text shown), <code>done</code> + non-refusal route ("GROUNDED," good-coloured
+dot, the answer text plus a <code>⚙ &lt;route&gt;</code> citation chip), or <code>network-error</code> ("OUT
+OF SCOPE — request failed (...)," muted dot — a network failure is deliberately shown in the SAME visual
+register as a genuine refusal, never a scary red error state, so a flaky connection never looks like the
+model did something wrong).</p>
+
+<h4>2. The selection-explain chip (<code>SelectionExplain.jsx</code>)</h4>
+<div class="defn">
+<b>Mechanics.</b> Highlighting ANY text anywhere inside <code>.app-main</code> (i.e. any of the six tab
+bodies, but explicitly NOT inside an input/textarea/select/contenteditable, NOT inside either chat surface,
+and NOT inside an already-open explain popover — <code>inExcludedZone</code>'s exact exclusion list) shows a
+small floating "Explain with AI" chip near the selection, after a 220ms debounce. Clicking it composes:
+<pre class="trace">Explain, in the context of the &lt;tab label&gt; tab: "&lt;selected text, trimmed, &lt;=300 chars&gt;"</pre>
+<code>&lt;tab label&gt;</code> is one of the six tab display names; the selected text is quoted VERBATIM
+(truncated at 300 chars, never paraphrased) so the router sees exactly what the user highlighted, with the
+active tab as routing context.
+</div>
+<div class="gotcha">
+<b>Gotcha — this is a genuinely global affordance, not per-panel.</b> Unlike the ✦ icon (which only exists on
+panels that explicitly pass a <code>buildExplainQuestion</code> prop), selection-explain works on ANY visible
+text in the main area — a stray sentence in a caption, a table cell, even the "Consultant's read" narrative
+paragraph — which makes it the one AI affordance that requires no per-panel wiring at all to reach every
+panel's prose.
+</div>
+
+<h4>3. The chat-dock status states — GROUNDED / REASONED / THINKING / OUT OF SCOPE</h4>
+<p>Both <code>MiniChatDock</code> (present on 5 of 6 tabs, collapsed-first, per §9.2) and the Copilot tab's
+own <code>ChatPanel</code> render every agent reply through the SAME 4-state vocabulary — the "grounding
+vocabulary" graft the shipped design spec pulled from the losing <code>terminal</code> direction (§9.12):</p>
+<div class="table-wrap">
+<table>
+<tr><th>State</th><th>When</th><th>What it implies about trustworthiness</th></tr>
+<tr><td><span class="statebadge sb-thinking">THINKING</span></td><td>request in flight
+(<code>status === 'thinking'</code>/<code>'loading'</code>)</td><td>no answer yet — nothing to trust or
+distrust</td></tr>
+<tr><td><span class="statebadge sb-grounded">GROUNDED</span></td><td>response <code>mode === "grounded"</code>
+— a numeric tool ran, or the cited docs retriever (<code>query_model_docs</code>) answered</td>
+<td><b>highest trust</b>: every number traces to a frozen-engine tool call or a real cited passage</td></tr>
+<tr><td><span class="statebadge sb-reasoned">REASONED</span></td><td>response <code>mode ===
+"reasoned"</code> — the REASONED route, a cited, number-disciplined LLM interpretation with NO fresh engine
+computation</td><td><b>middle trust</b>: grounded in retrieved passages + the engine's own baseline snapshot,
+but not a fresh computed number — treat as interpretation, not a new fact</td></tr>
+<tr><td><span class="statebadge sb-outofscope">OUT OF SCOPE</span></td><td>response <code>mode ===
+"refusal"</code>, OR a network/request failure</td><td><b>no claim made</b> — refusal-by-design is a feature
+(Chapter&nbsp;8), not a degraded answer; a network error is shown identically so a connectivity blip never
+reads as "the model refused"</td></tr>
+</table>
+</div>
+<div class="interpretation">
+<b>Interpretation.</b> This is the SAME <code>mode</code> field <code>POST /api/agent/ask</code> already
+returns (§9.8) — the UI adds zero new server-side logic, only a consistent visual vocabulary layered on top of
+three pre-existing values. Prefer <code>res.mode</code> when present; fall back to a route-name regex
+(<code>isRefusalRoute</code>/<code>isReasonedRoute</code>, matching <code>REFUSE</code>/<code>refusal</code>
+case-insensitively, since the live LangGraph router and the offline fallback router spell refusal
+differently) only for callers that predate the <code>mode</code> field.
+</div>
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A user clicks the ✦ icon on the Scenario table (Executive tab) right after the page loads, before any
+control anywhere has been touched. What number(s) does the composed question actually contain?
+  <details><summary>Answer</summary>
+  <div class="answer">Exactly the three scenario rows' weight/allowance/coverage as CURRENTLY rendered on the
+  page — the recap is built from the same <code>summary.scenarios</code> array the table itself renders, at
+  click time, via <code>buildQuestion()</code> called fresh — never a stale value and never a number the panel
+  isn't already showing.</div>
+  </details>
+</li>
+<li>Why does a network failure render as "OUT OF SCOPE — request failed" rather than a distinct red error
+state?
+  <details><summary>Answer</summary>
+  <div class="answer">A deliberate design choice (<code>ExplainStrip</code>'s own state machine) so a flaky
+  connection is never visually confused with "the model did something dangerous or wrong" — refusal and
+  network failure share the same muted, non-alarming visual register, distinct from how a genuine engine error
+  elsewhere in the app (e.g. "Engine API offline") is shown.</div>
+  </details>
+</li>
+<li>Selection-explain is disabled inside the Copilot tab's own chat log. Why, given that IS visible text in
+the main area?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>inExcludedZone</code> explicitly excludes <code>.chat-panel</code> (and
+  <code>.mini-dock</code>, <code>.explain-strip</code>, <code>.selection-explain</code> itself) — highlighting
+  text inside an already-agent-mediated surface would be a confusing double affordance (explain-a-highlighted
+  chat-answer, inside a surface whose whole purpose is already asking the agent things) — the exclusion keeps
+  the two affordances non-overlapping.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-10">9.10 The endpoint → panel wiring table</h3>
+<!-- ============================================================== -->
+<p>Every one of the 22 JSON endpoints <code>docs/api_contract.md</code>'s own summary table lists, cross-walked
+to which panel(s) in this chapter call it — built from the actual <code>app/ui/src/api.js</code> function
+list, cross-checked against every tab file's own import statements.</p>
+
+<img class="fig" src="../assets/img/ch09/09_endpoint_wiring_flowchart.png" alt="Tab to endpoint wiring flowchart: six tab boxes on the left, each with arrows fanning out to the specific API endpoint boxes it calls, plus shared boxes for the health check on boot and the static asset mounts">
+<div class="figcap"><b>Exhibit 9.9</b> — Tab → endpoint wiring, all 22 endpoints across 6 tabs plus the 3
+static mounts and the app-boot health check — a structural diagram from <code>app/ui/src/app.jsx</code>'s
+<code>TABS</code> array and every tab's own <code>api.js</code> calls, cross-checked against
+<code>docs/api_contract.md</code>'s own summary table.</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Endpoint</th><th>Method</th><th>Tab(s) / component</th><th>Key contract fields consumed</th></tr>
+<tr><td><code>/api/health</code></td><td>GET</td><td>app boot (not tab-scoped)</td><td><code>status,
+engine_warm, agent</code></td></tr>
+<tr><td><code>/api/ecl/summary</code></td><td>GET</td><td>Executive (tiles, stage mix, narrative, scenario
+table); app header</td><td><code>weighted_allowance, coverage, jensen_ratio, stage_mix, scenarios[]</code></td></tr>
+<tr><td><code>/api/ecl/waterfall</code></td><td>GET</td><td>Executive Exhibit&nbsp;3; Scenario Lab Exhibit&nbsp;2
+(fallback mode)</td><td><code>components[], identity_gap, period_t0, period_t1</code></td></tr>
+<tr><td><code>/api/exhibits/credit_cycle</code></td><td>GET</td><td>Executive Exhibit&nbsp;4</td>
+<td><code>rho, points[]</code></td></tr>
+<tr><td><code>/api/tools/shock_macro</code></td><td>POST</td><td>Scenario Lab (Macro shock control)</td>
+<td><code>shocked_allowance, delta_pct, waterfall_vs_baseline, applied_peak_deltas_pp</code></td></tr>
+<tr><td><code>/api/tools/reweight_scenarios</code></td><td>POST</td><td>Scenario Lab (Reweight control);
+Policy Exhibit&nbsp;2 (3× per page load)</td><td><code>weighted_allowance, jensen_ratio,
+delta_vs_adopted_pct</code></td></tr>
+<tr><td><code>/api/tools/rerun_ecl</code></td><td>POST</td><td>Scenario Lab (Rerun-by-segment control)</td>
+<td><code>share_of_book_allowance_pct, stage_mix</code></td></tr>
+<tr><td><code>/api/tools/decompose_waterfall</code></td><td>POST</td><td>Scenario Lab (Decompose control)</td>
+<td>same shape as <code>/api/ecl/waterfall</code></td></tr>
+<tr><td><code>/api/agent/ask</code></td><td>POST</td><td>Copilot ChatPanel; MiniChatDock (5 tabs); ✦ explain
+icon (every tab); selection-explain chip (every tab)</td><td><code>answer, route, mode, trace[]</code></td></tr>
+<tr><td><code>/api/agent/stream</code></td><td>GET (SSE)</td><td>Copilot Agent trace panel</td>
+<td>node-keyed event dicts</td></tr>
+<tr><td><code>/api/agent/interpret</code></td><td>POST</td><td>Scenario Lab (auto-interpretation card)</td>
+<td><code>interpretation, grounded, mode</code></td></tr>
+<tr><td><code>/api/model/coefficients</code></td><td>GET</td><td>The Model Exhibits&nbsp;1–2</td>
+<td><code>models.{default,prepay}, fit_stats</code></td></tr>
+<tr><td><code>/api/model/variable_dictionary</code></td><td>GET</td><td>The Model Exhibit&nbsp;4</td>
+<td><code>preamble, rows[]</code></td></tr>
+<tr><td><code>/api/model/macro_glossary</code></td><td>GET</td><td>The Model Exhibit&nbsp;5</td>
+<td><code>series[]</code></td></tr>
+<tr><td><code>/api/model/lgd</code></td><td>GET</td><td>The Model Exhibit&nbsp;6</td>
+<td><code>cure_rate, oot_calibration, cure_stage_coefficients, severity_stage_coefficients</code></td></tr>
+<tr><td><code>/api/policy/staging_sensitivity</code></td><td>GET</td><td>Policy Exhibit&nbsp;1</td>
+<td><code>thresholds, rows[], reading, image_url</code></td></tr>
+<tr><td><code>/api/policy/weights_table</code></td><td>GET</td><td>Policy Exhibit&nbsp;2</td>
+<td><code>weight_sets[], scenario_totals</code></td></tr>
+<tr><td><code>/api/exhibits/list</code></td><td>GET</td><td>The Model Exhibit&nbsp;3 (filtered), Exhibit&nbsp;6
+image grid (filtered)</td><td><code>exhibits[].{id, title, png_url, caption}</code></td></tr>
+<tr><td><code>/api/freddie/summary</code></td><td>GET</td><td>Real Data hero tiles; Exhibit&nbsp;8 (lstm
+object)</td><td><code>panel, hazard, covid, lgd, backtest_headline, lstm, gate_verdict</code></td></tr>
+<tr><td><code>/api/freddie/hazard</code></td><td>GET</td><td>Real Data Exhibits&nbsp;5–6</td>
+<td><code>coefficients[], dcr_sign_comparison[], covid</code></td></tr>
+<tr><td><code>/api/freddie/backtest</code></td><td>GET</td><td>Real Data Exhibit&nbsp;3</td>
+<td><code>rows[], central_honesty_note, overlay_narrative</code></td></tr>
+<tr><td><code>/api/freddie/exhibits</code></td><td>GET</td><td>Real Data Exhibits&nbsp;1,2,4,6,7,8 (image
+grids)</td><td><code>exhibits[].{id, title, png_url, caption, source}</code></td></tr>
+<tr><td><code>/static/exhibits/*</code></td><td>GET (static)</td><td>every <code>ExhibitImage</code> on
+Executive/Model/Policy</td><td>raw PNG bytes</td></tr>
+<tr><td><code>/static/freddie/*</code></td><td>GET (static)</td><td>every <code>ExhibitImage</code> on Real
+Data</td><td>raw PNG bytes</td></tr>
+<tr><td><code>/static/mdd/*</code></td><td>GET (static)</td><td>the header MDD link (all tabs)</td>
+<td><code>MDD.html</code></td></tr>
+</table>
+</div>
+<div class="gotcha">
+<b>Gotcha — one endpoint, many callers.</b> <code>POST /api/agent/ask</code> is called from FIVE distinct UI
+surfaces (Copilot's own chat, 5 instances of <code>MiniChatDock</code>, every panel's ✦ icon, the
+selection-explain chip, and indirectly by nothing else) — it is architecturally ONE endpoint with many wire-text
+CONVENTIONS layered on top (§9.9), not five different endpoints. Similarly, <code>GET
+/api/policy/weights_table</code> triggers three SEPARATE server-side <code>reweight_scenarios</code> calls
+internally (one per canned weight set) purely to populate one page's table — a single page load can append
+multiple audit-trail rows without the user ever touching Copilot.
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-11">9.11 Docker &amp; deployment linkage</h3>
+<!-- ============================================================== -->
+<p>A single-image deploy (HF Spaces Docker SDK, port&nbsp;7860) — the full stage-by-stage <code>Dockerfile</code>
+read is Chapter&nbsp;10's job; this section is the narrower bridge every panel above actually depends on:
+which build stage puts which static asset where, so a panel that renders fine locally does not silently 404 in
+the deployed Space.</p>
+
+<img class="fig" src="../assets/img/ch09/10_docker_deployment_linkage.png" alt="Docker build stages to static assets diagram: stage 1 node build produces the SPA dist folder, stage 2 python runtime copies the engine and outputs directories, and four boxes show which static mount each output feeds">
+<div class="figcap"><b>Exhibit 9.10</b> — Docker build stages → the static assets this chapter's panels
+consume (<code>Dockerfile</code>, both stages; <code>app/api/main.py</code>'s static-mount block).</div>
+
+<div class="defn">
+<b>Two build stages, one runtime image.</b> Stage&nbsp;1 (<code>node:22-alpine</code>) runs <code>npm ci
+&amp;&amp; npm run build</code> over <code>app/ui/src</code>, producing <code>app/ui/dist</code> — the SPA
+every tab in this chapter lives inside. Stage&nbsp;2 (<code>python:3.13-slim</code>) is the runtime: an
+EXPLICIT <code>COPY</code> allowlist (never a broad copy + <code>.dockerignore</code>-exclude — Chapter&nbsp;10's
+own design-decision framing) brings in <code>engine/ agent/ app/api/ analysis/ wiki/ knowledge/ data/</code>
+plus a curated slice of <code>outputs/</code>: <code>models</code> (pre-fitted joblib cache, ~9s warm start),
+<code>hazard, lgd, staging, eda, vasicek, scenario_ecl, challenger</code> (the App&nbsp;v2 consultant exhibits —
+everything The Model/Policy/Executive tabs' <code>/api/model/*</code>, <code>/api/policy/*</code>,
+<code>/api/exhibits/*</code> endpoints parse), and <code>outputs/freddie</code> + <code>outputs/mdd</code> (the
+Real Data tab's four endpoints and the header's MDD link). Finally <code>COPY --from=ui /build/dist
+./app/ui/dist</code> pulls stage&nbsp;1's build output into the runtime image.
+</div>
+<div class="table-wrap">
+<table>
+<tr><th>Static mount</th><th>Backs which panels</th><th>Guard</th></tr>
+<tr><td><code>/</code> → <code>app/ui/dist</code></td><td>the entire SPA — every tab in this chapter</td>
+<td><code>if (UI_DIST / "index.html").exists()</code>, else a plain "not built yet" fallback response</td></tr>
+<tr><td><code>/static/exhibits/*</code> → whole <code>outputs/</code> tree</td><td>every
+<code>ExhibitImage</code> on Executive/Model/Policy (17-row list); ALSO covers
+<code>outputs/freddie/**</code> as a side effect, since this mount is the WHOLE outputs tree</td>
+<td><code>if OUTPUTS_DIR.exists()</code></td></tr>
+<tr><td><code>/static/freddie/*</code> → <code>outputs/freddie/</code></td><td>Real Data tab's own
+<code>png_url</code> convention (a SECOND, more convenient mount over files already reachable via
+<code>/static/exhibits/freddie/*</code> above — the contract doc is explicit this is not because the files
+are otherwise unreachable)</td><td><code>if FREDDIE_DIR.exists()</code></td></tr>
+<tr><td><code>/static/mdd/*</code> → <code>outputs/mdd/</code></td><td>the header's MDD link (all tabs)</td>
+<td><code>if MDD_DIR.exists()</code> — 404s harmlessly if absent; the header link is wired unconditionally
+regardless</td></tr>
+</table>
+</div>
+<div class="gotcha">
+<b>Gotcha — a real deployment incident, not a hypothetical.</b> The Dockerfile's own comments record a live
+build failure: 9 consecutive HF Spaces build attempts (plain restarts, factory reboot, content-change repush,
+atomic delete+re-add) all failed identically on the two <code>outputs/freddie</code>/<code>outputs/mdd</code>
+<code>COPY</code> lines specifically — "failed to calculate checksum... not found," despite both directories
+verifiably present and their LFS objects resolving fine over HTTP at every attempted commit. The two lines
+were TEMPORARILY commented out to restore the Space to RUNNING (the app boots fine without them — the guarded
+<code>if FREDDIE_DIR.exists()</code>/<code>if MDD_DIR.exists()</code> mounts mean only the Real Data tab's own
+calls would 404/500 until re-enabled). As of this chapter's writing (2026-07-19) both lines are ACTIVE again
+in the Dockerfile — the eventual fix was a longer wall-clock wait for backend LFS propagation, not more
+aggressive cache-busting (full retry timeline: <code>outputs/gate/mdd_freddie_gate.md</code>). The practical
+lesson for anyone extending this app: a panel that reads live locally can still 404 in a freshly-deployed
+Space if its backing <code>outputs/</code> subtree hit exactly this kind of platform-side propagation race —
+check the guarded-mount log line, not just the endpoint's own 200/404, before assuming a code bug.
+</div>
+<p>Security posture (bridges Chapter&nbsp;10 in full): non-root <code>appuser</code> (uid 1000), no
+<code>.env</code>/<code>data/raw</code>/secrets baked into the image (<code>.dockerignore</code>-enforced,
+CI-greps the saved image for key prefixes), <code>OPENROUTER_API_KEY</code> injected at RUN time only — absent
+a key, the app still serves via the deterministic offline fallback router (a demoed feature, not a degraded
+failure mode: refusal-over-guessing holds either way, Chapter&nbsp;8).</p>
+
+<!-- ============================================================== -->
+<h3 id="s9-12">9.12 Three design directions → the shipped spec</h3>
+<!-- ============================================================== -->
+<p>Before any of the panels above existed in their current visual form, three FULL candidate design
+directions were built and judged in parallel (<code>outputs/design/{editorial,fintech,terminal}/</code>, each
+with its own <code>design_spec.md</code> + <code>preview.html</code> + <code>rationale.md</code>), then scored
+against each other and merged into one binding spec, <code>outputs/design/FINAL_SPEC.md</code> — the document
+every component in this chapter is actually built from.</p>
+
+<img class="fig" src="../assets/img/ch09/11_design_direction_comparison.png" alt="Bar chart comparing three design directions editorial, fintech, and terminal across five judging criteria: north-star fit, information hierarchy, data-ink discipline, dark and light parity, and implementability, with fintech winning on total score">
+<div class="figcap"><b>Exhibit 9.11</b> — Three design directions, judge scoring (<code>outputs/design/
+FINAL_SPEC.md</code> §0; totals 37/42/39 — <code>fintech</code> wins with 5 grafts adopted from the other
+two).</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>Direction</th><th>Framing</th><th>Core bet</th><th>Where it risked failing (own rationale.md)</th></tr>
+<tr><td><b>editorial</b> — "The Consulting Deliverable"</td><td>Numbered exhibits, serif prose, a warm-paper
+report register — "stop looking like an internal analytics dashboard and start looking like the deliverable a
+consulting engagement actually produces."</td><td>Exhibit apparatus (numbered kicker + source footer) makes
+"never hallucinated numbers" visually structural, not just a promise.</td><td>A stronger stylistic bet than
+neutral (warm serif can read "considered" or "old-fashioned" depending on the viewer); the waterfall's own
+worked numbers didn't reconcile in the mock (flagged honestly, not hidden).</td></tr>
+<tr><td><b>fintech</b> — "The Modern Risk Platform" <b>(WINNER)</b></td><td>Crisp dashboard register, one
+accent, hairline borders — "reads as the same visual register as the tools this audience already trusts...
+does not read as a student project or a chatbot demo with charts bolted on."</td><td>The ✦ icon on EVERY
+panel/tile (not tucked in a menu) + a citation chip on every agent surface, styled identically everywhere —
+"trains the eye that this app always shows its work."</td><td>Blue means both "the confident thing to click"
+(buttons/links/active tab) AND "this waterfall component increased the allowance" on the same screen — a real
+tension the spec mitigates (never colour-only encode direction) but doesn't fully resolve.</td></tr>
+<tr><td><b>terminal</b> — "THE PRECISION INSTRUMENT"</td><td>Regulatory/quant-report grammar — hairlines,
+dense tabular figures, a raw <code>SOURCE · /api/ecl/summary</code> provenance stamp on every panel.</td>
+<td>The waterfall's explicit no-fake-scale rule: tiny floored bars + a footnote flag, rather than quietly
+rescaling a ~2.6-order-of-magnitude roll-forward to look calmer than the data is.</td><td>Coldness for a
+non-quant reader; all-caps micro-labels trade legibility for density; a real engineering trap this exploration
+caught and fixed (a <code>position: fixed</code> chat dock that silently covered live content at ordinary
+viewport heights) — the fix (collapse-first, reserved bottom padding) is exactly graft&nbsp;5 below.</td></tr>
+</table>
+</div>
+<div class="defn">
+<b>Five grafts, from the judge's decision summary (<code>FINAL_SPEC.md</code>, verbatim structure).</b>
+<ol>
+<li><b>editorial → exhibit apparatus:</b> the numbered <code>Exhibit N</code> kicker + mandatory source/caption
+footer on every chart/table panel — literally the <code>&lt;span class="exhibit-kicker"&gt;</code> and
+<code>&lt;p class="panel-source"&gt;</code> this chapter's own <code>Panel.jsx</code> reads use, every panel
+doc block above.</li>
+<li><b>terminal → grounding vocabulary:</b> the <code>GROUNDED</code>/<code>THINKING</code>/<code>OUT OF
+SCOPE</code> chat-dock status word + dot, tied to real <code>/api/agent/ask</code> states — §9.9's whole third
+subsection.</li>
+<li><b>terminal → adopted-row treatment + units-in-header:</b> the 2px accent-border/6% wash/<code>ADOPTED</code>
+tag Policy's Exhibit&nbsp;2 table uses (§9.6), and units-in-column-header (never repeated per cell) throughout
+every data table in this chapter.</li>
+<li><b>editorial → the explain-question figure recap:</b> the code-generated recap sentence merged with
+fintech's own <code>[explain:&lt;panel&gt; &lt;params&gt;]</code> tag — §9.9's ✦-icon convention is literally
+this graft.</li>
+<li><b>terminal → dock scroll reserve:</b> <code>MiniChatDock</code> collapsed-first on small viewports, every
+tab's scroll container reserving ≥160px of bottom padding — directly traceable to the concrete engineering trap
+the terminal rationale.md documents catching.</li>
+</ol>
+</div>
+<div class="interpretation">
+<b>Interpretation.</b> Every one of the app's five biggest single UI decisions — the exhibit numbering, the
+chat-dock vocabulary, the adopted-row highlight, the explain-question convention, and the dock's collapse
+behaviour — traces to a SPECIFIC losing direction's rationale, not to the winning direction alone. The shipped
+product is a deliberate synthesis, not simply "fintech, unmodified" — reading only the winner's own rationale
+without the two losers' would miss why several of this chapter's most load-bearing conventions look the way
+they do.
+</div>
+<div class="gotcha">
+<b>Gotcha — "winner" does not mean "flawless."</b> The fintech direction's OWN rationale.md names a real,
+unresolved tension it did not fully fix (blue-for-button vs blue-for-increase, above) — reading the scoring
+table's win as an endorsement that every remaining risk was solved would miss the losing directions' most
+valuable contribution: each one's "where it risks failing" section is itself a live, still-relevant caveat
+list for the shipped app, not an artifact of a rejected path.
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s9-13">9.13 Closing quiz bank — "where would you look to answer X"</h3>
+<!-- ============================================================== -->
+<p>One block per tab, cross-referenced to its documentation section above — the practical test of whether
+this chapter's coverage actually works as a reference, not just a read-through.</p>
+
+<div class="quiz">
+<b>Executive Overview (§9.3) &amp; Scenario Lab (§9.5).</b>
+<ol>
+<li>A client asks "how much of our allowance sits in loans that are already in default?" Which panel, and
+what's the number?
+  <details><summary>Answer</summary>
+  <div class="answer">Executive Overview's Stage mix of allowance (Exhibit&nbsp;1, §9.3) — Stage&nbsp;3
+  (credit-impaired) carries 17.83% of the reported allowance, live capture.</div>
+  </details>
+</li>
+<li>A risk manager wants to see the effect of a 2pp unemployment shock BEFORE deciding whether to book it as
+policy. Where do they go, and does it change the Executive tab's numbers?
+  <details><summary>Answer</summary>
+  <div class="answer">Scenario Lab's "Macro shock" control (§9.5) — running <code>shock_macro</code> there
+  updates ONLY that tab's own Result card and Allowance bridge; it does NOT change anything on the Executive
+  tab (the reported allowance, KPI tiles, and historical waterfall there are unaffected) — the
+  scenario-controls-vs-historical-waterfall distinction requirement&nbsp;11 names explicitly.</div>
+  </details>
+</li>
+<li>Why does the Executive tab's waterfall show a tiny "new loans" bar while the Scenario Lab's default
+waterfall (before any control is run) can show a much bigger one?
+  <details><summary>Answer</summary>
+  <div class="answer">Different default windows: Executive Overview fixes <code>t0=59, t1=60</code> (the
+  latest single quarter); Scenario Lab's fallback default is <code>t0=20, t1=40</code> (a long historical
+  window spanning most of the panel's origination period) — both are the SAME component, just different props,
+  per §9.3/§9.5.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="quiz">
+<b>The Model (§9.4) &amp; Real Data (§9.7).</b>
+<ol>
+<li>A modeller asks "is the unemployment-level coefficient really risk-REDUCING?" Where's the honest answer?
+  <details><summary>Answer</summary>
+  <div class="answer">The Model tab's Fit statistics panel (Exhibit&nbsp;2, §9.4), specifically the
+  <code>net_uer_effect_note</code> caveat — the level coefficient alone (HR 0.693) is a collinearity artifact;
+  combined with the momentum term the NET effect is risk-INCREASING (hazard ratio 1.280 per pp).</div>
+  </details>
+</li>
+<li>A reviewer wants to know whether a macro series is a genuine live FRED pull or not, for a specific row in
+a coefficient table. Which field, on which endpoint?
+  <details><summary>Answer</summary>
+  <div class="answer">The row's own <code>fred_series</code> field (nullable) on
+  <code>GET /api/model/coefficients</code>/<code>/api/model/variable_dictionary</code> (always null — DCR/
+  national is vendor-premerged, not live) or <code>GET /api/freddie/hazard</code> (populated with a real ID,
+  e.g. <code>{POSTAL}UR</code>, for the three genuinely state-level FRED-pulled rows) — or the dedicated
+  Macro data glossary (Exhibit&nbsp;5, §9.4) for the full cross-model picture in one table.</div>
+  </details>
+</li>
+<li>Where would you find evidence that a champion model genuinely could not have foreseen the 2008 financial
+crisis, stated as an honest limitation rather than smoothed over?
+  <details><summary>Answer</summary>
+  <div class="answer">Real Data's backtest honesty panel (Exhibit&nbsp;3, §9.7) — the 2007-12 row's 9.42×
+  miss ratio (frozen macro), explicitly framed as "the model was never wrong about its own coefficients, it
+  simply never saw the crisis coming."</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="quiz">
+<b>Policy (§9.6), Copilot (§9.8) &amp; the app as a whole.</b>
+<ol>
+<li>A credit-risk committee wants to see how sensitive the Stage&nbsp;2 population is to the SICR threshold
+choice, before they sign off on 2.0× as the house convention. Which exhibit?
+  <details><summary>Answer</summary>
+  <div class="answer">Policy's Stage-2 share vs SICR threshold (Exhibit&nbsp;1, §9.6) — at the stress
+  reporting date the choice between 2.0× and 4.0× alone swings Stage-2's allowance share by over 72
+  percentage points.</div>
+  </details>
+</li>
+<li>A user asks the Copilot a question, gets an answer, and wants to know whether to trust the specific
+NUMBER in the reply or treat it as commentary. What single UI signal answers that fastest, without reading the
+prose?
+  <details><summary>Answer</summary>
+  <div class="answer">The chat-dock status word (§9.9): GROUNDED means every number traces to a tool call or
+  cited passage; REASONED means it's a cited interpretation with no fresh computed number — the word alone,
+  before reading a single sentence of the answer, tells you which.</div>
+  </details>
+</li>
+<li>An engineer deploys a fresh copy of the app and the Real Data tab returns 404s on every endpoint while
+every other tab works fine. Where would you look first?
+  <details><summary>Answer</summary>
+  <div class="answer">§9.11's Docker linkage note — check whether the <code>outputs/freddie</code> COPY line
+  actually completed in this build (the guarded <code>if FREDDIE_DIR.exists()</code> static mount means a
+  failed COPY degrades exactly this way: the rest of the app boots fine, only <code>/api/freddie/*</code> and
+  <code>/static/freddie/*</code> fail) — a real incident this exact chapter documents, not a hypothetical.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<hr>
+<p class="small">End of Chapter&nbsp;9. Next: Chapter&nbsp;10 — Docker &amp; Deployment Guidebook (the
+full stage-by-stage <code>Dockerfile</code> read this chapter's §9.11 only bridged to), building directly on
+the linkage table above.</p>
+
+<script src="../assets/js/toc.js" defer></script>
+</body>
+</html>

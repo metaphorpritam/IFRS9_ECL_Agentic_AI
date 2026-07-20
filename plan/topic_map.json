@@ -1,0 +1,1917 @@
+{
+  "generated_by": "notes-plan subagent",
+  "generated_date": "2026-07-19",
+  "purpose": "Master topic map for the IFRS9 ECL study-notes compendium: every concept in the project mapped to its theory anchor, fixtures, exhibits, reports, wiki pages, code and app/docker touchpoints.",
+  "sources_swept": [
+    "knowledge/index (pageindex tree, --render, 69 nodes over 23 pages)",
+    "tests/fixtures/compute_{ecl,pd,vasicek,scenarios,grossup,ncl,rollrate,validation}.py (8 files, 133 golden RESULTS values per tests/test_fixtures.py)",
+    "outputs/**/*.md (34 report files across panel/eda/hazard/lgd/ead/staging/ecl/gate/vasicek/scenarios/satellite/scenario_ecl/challenger/design/mdd/mcp + outputs/freddie/**)",
+    "outputs/**/*.png (36 project exhibits + 10 textbook figure cards in knowledge/corpus/img/)",
+    "wiki/index.md + all 20 pages in wiki/pages/",
+    "agent/*.py (graph.py, tools_tier1.py, tools_tier2.py, tier3_retrieval.py, mcp_server.py)",
+    "app/api/main.py (24 endpoints), app/ui/src/**, docs/api_contract.md (886 lines)",
+    "Dockerfile, .dockerignore, requirements.docker.txt",
+    "engine/*.py, analysis/*.py, freddie/*.py (module references only \u2014 READ-ONLY, not modified)"
+  ],
+  "concept_count": 46,
+  "concepts": [
+    {
+      "id": "A1",
+      "title": "IFRS 9 standard: origins, scope, classification",
+      "topics": [
+        "IAS39->IFRS9",
+        "scope of ECL",
+        "business model test",
+        "SPPI test",
+        "simplified approach",
+        "POCI"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0003",
+          "0004",
+          "0005",
+          "0006"
+        ],
+        "section": "s1 (1, 1.1, 1.2, 1.3)"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/mdd/MDD.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/project-overview.md",
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Foundational/definitional; no fixture (no worked numeric example in source)."
+    },
+    {
+      "id": "A2",
+      "title": "Staging, default definition, SICR",
+      "topics": [
+        "3-stage model",
+        "12m vs lifetime ECL trigger",
+        "default (90 DPD/UTP)",
+        "SICR relative test",
+        "backstops",
+        "low-credit-risk exemption"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0007",
+          "0008",
+          "0009"
+        ],
+        "section": "s2 (2, 2.1, 2.2); Fig. 1 (node 0060)"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/staging/stage2_sensitivity.png",
+        "outputs/staging/stage_distribution.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig001.png"
+      ],
+      "reports": [
+        "outputs/staging/staging_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/staging-model.md"
+      ],
+      "code": [
+        "engine/staging.py",
+        "analysis/staging_exhibits.py"
+      ],
+      "app_surface": {
+        "tab": "Policy",
+        "endpoint": "/api/policy/staging_sensitivity"
+      },
+      "docker_touchpoints": [],
+      "notes": "Project verified relative-SICR test to 1e-10; Stage 2 empty in calm regime vs 75.8% in stress (staging_report.md)."
+    },
+    {
+      "id": "A3",
+      "title": "ECL mechanics: formula, term structure, worked example",
+      "topics": [
+        "ECL = sum PV(hazard x survival x LGD x EAD)",
+        "discrete-time decomposition",
+        "12m vs lifetime ECL",
+        "worked 5-year amortising loan example"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0010"
+        ],
+        "section": "s3"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_ecl.py",
+          "keys": [
+            "ecl_12m_eur",
+            "ecl_lifetime_eur",
+            "lifetime_over_12m_ratio",
+            "cumulative_pd_5y_pct",
+            "workout_pv_recoveries_eur",
+            "workout_pv_costs_eur",
+            "workout_recovery_rate_pct",
+            "workout_lgd_pct",
+            "workout_lgd_undiscounted_pct",
+            "revolver_ead_eur_m",
+            "revolver_ead_over_drawn"
+          ]
+        }
+      ],
+      "exhibits": [
+        "outputs/ecl/ecl_waterfall.png",
+        "outputs/ecl/allowance_by_stage.png",
+        "outputs/ecl/coverage_by_stage.png"
+      ],
+      "reports": [
+        "outputs/ecl/ecl_report.md",
+        "outputs/gate/gate_report.md",
+        "outputs/gate/day3_gate_report.md",
+        "outputs/gate/day4_gate_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/ecl-engine.md",
+        "wiki/pages/golden-fixtures.md"
+      ],
+      "code": [
+        "engine/ecl.py",
+        "analysis/run_ecl.py"
+      ],
+      "app_surface": {
+        "tab": "Model / Executive Overview",
+        "endpoint": "/api/ecl/summary, /api/ecl/waterfall"
+      },
+      "docker_touchpoints": [],
+      "notes": "Core theorem chapter; ECL decomposition THEOREM box must be expanded step-by-step (hazard->survival->PV chain). Engine frozen 2026-07-05, gate 187/187."
+    },
+    {
+      "id": "A4",
+      "title": "IFRS 9 vs Basel IRB vs CECL",
+      "topics": [
+        "PIT vs TTC parameters",
+        "downturn LGD vs neutral LGD",
+        "12m floor",
+        "day-1 loss recognition (CECL) vs staged (IFRS9)"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0011"
+        ],
+        "section": "s4"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Comparison table topic; candidate for a 'Gotchas' box on re-using Basel PD/LGD unmodified."
+    },
+    {
+      "id": "A5",
+      "title": "Data foundations: public datasets, macro series, scenarios, variable dictionary",
+      "topics": [
+        "Freddie Mac SFLLD",
+        "FRED/ALFRED",
+        "left truncation/right censoring",
+        "modelling-variable dictionary"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0012",
+          "0013",
+          "0014",
+          "0015",
+          "0016",
+          "0017"
+        ],
+        "section": "s5 (5.1-5.5)"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/variable_dictionary.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/variable-dictionary.md",
+        "wiki/pages/knowledge-pipeline.md"
+      ],
+      "code": [
+        "freddie/ingest.py",
+        "freddie/macro.py",
+        "freddie/build_panel.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": "/api/model/variable_dictionary"
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "A6",
+      "title": "Retail scorecards: WOE, IV, logistic regression",
+      "topics": [
+        "weight of evidence",
+        "information value",
+        "coarse classing",
+        "logistic scorecard"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0019"
+        ],
+        "section": "s6.1"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_pd.py",
+          "keys": [
+            "bad_rate_pct_ltv_le_60",
+            "dist_good_ltv_le_60",
+            "dist_bad_ltv_le_60",
+            "woe_ltv_le_60",
+            "iv_contrib_ltv_le_60",
+            "bad_rate_pct_ltv_60_80",
+            "dist_good_ltv_60_80",
+            "dist_bad_ltv_60_80",
+            "woe_ltv_60_80",
+            "iv_contrib_ltv_60_80",
+            "bad_rate_pct_ltv_80_90",
+            "dist_good_ltv_80_90",
+            "dist_bad_ltv_80_90",
+            "woe_ltv_80_90",
+            "iv_contrib_ltv_80_90",
+            "bad_rate_pct_ltv_gt_90",
+            "dist_good_ltv_gt_90",
+            "dist_bad_ltv_gt_90",
+            "woe_ltv_gt_90",
+            "iv_contrib_ltv_gt_90",
+            "iv_total_ltv"
+          ]
+        }
+      ],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "4-bin LTV example, IV total = 0.4403 target; every bin's WOE/IV contribution must show the log-odds substitution step-by-step."
+    },
+    {
+      "id": "A7",
+      "title": "Lifetime PD via discrete-time survival analysis (hazard/cloglog)",
+      "topics": [
+        "discrete-time hazard",
+        "logit vs cloglog link",
+        "competing risks",
+        "survival function",
+        "continuous-time hazard -> cloglog derivation"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0020"
+        ],
+        "section": "s6.2"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/hazard/age_baseline.png",
+        "outputs/hazard/pd_term_structure.png",
+        "outputs/eda/hazard_by_loan_age.png"
+      ],
+      "reports": [
+        "outputs/hazard/fit_stats.md",
+        "outputs/hazard/hazard_ratios.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/hazard-model.md"
+      ],
+      "code": [
+        "engine/hazard.py",
+        "analysis/fit_hazard.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": "/api/model/coefficients"
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND (flagged by user): cloglog link from the continuous-time proportional-hazards assumption P(T=t|T>=t) = 1 - exp(-exp(x'beta)) is asserted, not derived, in the source notes. DCR hazard AUC 0.748/0.661 (engine); Freddie hazard AUC in outputs/freddie/hazard/hazard_report.md."
+    },
+    {
+      "id": "A8",
+      "title": "Transition matrices (Markov chains) for wholesale/rating books",
+      "topics": [
+        "cohort method",
+        "duration/generator method",
+        "intensity matrix Q",
+        "embedding problem"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0021"
+        ],
+        "section": "s6.3"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "No project fixture/code \u2014 theory-only topic (wholesale not modelled in this retail-mortgage capstone); flag as scope note in chapter."
+    },
+    {
+      "id": "A9",
+      "title": "Corporate & low-default PD: Merton, shadow ratings, Pluto-Tasche",
+      "topics": [
+        "Merton structural model (equity as call option)",
+        "distance to default",
+        "shadow rating masterscale",
+        "Pluto-Tasche most-prudent-estimation",
+        "Bayesian LDP calibration"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0022",
+          "0023",
+          "0024",
+          "0025"
+        ],
+        "section": "s7 (7.1-7.3)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_pd.py",
+          "keys": [
+            "merton_dd",
+            "merton_pd_pct"
+          ]
+        }
+      ],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND: Merton PD = Phi(-DD) from V_T<D under GBM asset dynamics \u2014 the Ito/log-normal step from asset SDE to the distance-to-default formula is compressed in the source and must be shown in full."
+    },
+    {
+      "id": "A10",
+      "title": "PIT vs TTC: the Vasicek one-factor framework",
+      "topics": [
+        "one-factor Gaussian copula",
+        "asset-value latent factor",
+        "systematic factor Z",
+        "PD_PIT(Z) conditioning formula",
+        "correlation rho",
+        "law of total probability check"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0026"
+        ],
+        "section": "s8; Fig. 5 (node 0064)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_vasicek.py",
+          "keys": [
+            "default_threshold_ppf_002",
+            "pd_pit_pct_z_plus_2_0",
+            "pd_pit_pct_z_plus_1_0",
+            "pd_pit_pct_z_0_0",
+            "pd_pit_pct_z_minus_1_0",
+            "pd_pit_pct_z_minus_2_0",
+            "pd_pit_pct_z_minus_2_5",
+            "expected_pd_pit_gauss_hermite",
+            "expected_pd_pit_fine_grid"
+          ]
+        }
+      ],
+      "exhibits": [
+        "outputs/vasicek/credit_cycle.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig005.png"
+      ],
+      "reports": [
+        "outputs/vasicek/vasicek_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [
+        "engine/vasicek.py",
+        "analysis/fit_vasicek.py"
+      ],
+      "app_surface": {
+        "tab": "Scenario Lab",
+        "endpoint": "/api/exhibits/credit_cycle, /api/tools/shock_macro"
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND: full one-factor Gaussian copula derivation from asset value A_i = sqrt(rho)Z + sqrt(1-rho)eps_i to PD_PIT(Z)=Phi[(Phi^-1(PD_TTC) - sqrt(rho)Z)/sqrt(1-rho)]. Project-calibrated rho=0.0227 (wiki scenario-layer.md) vs the textbook's illustrative rho=0.12 \u2014 chapter must reconcile both. INTERACTIVE WIDGET: PD_PIT vs Z and rho slider."
+    },
+    {
+      "id": "A11",
+      "title": "Forward-looking scenarios: satellite (macro-link) models",
+      "topics": [
+        "credit-index ~ macro drivers regression",
+        "GDP/unemployment/HPI drivers",
+        "reasonable and supportable information (IFRS9 5.5.17c)"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0028"
+        ],
+        "section": "s9.1"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/satellite/satellite_fit.png"
+      ],
+      "reports": [
+        "outputs/satellite/satellite_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [
+        "engine/satellite.py"
+      ],
+      "app_surface": {
+        "tab": "Scenario Lab",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "A12",
+      "title": "Multiple probability-weighted scenarios; Jensen's inequality",
+      "topics": [
+        "convexity of ECL in the macro state",
+        "Jensen's inequality applied to ECL",
+        "probability-weighted vs single-scenario understatement"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0029"
+        ],
+        "section": "s9.2; Fig. 6 (node 0065)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_scenarios.py",
+          "keys": [
+            "upside_z",
+            "upside_pd_pit_pct",
+            "upside_ecl_eurm",
+            "base_z",
+            "base_pd_pit_pct",
+            "base_ecl_eurm",
+            "downside_z",
+            "downside_pd_pit_pct",
+            "downside_ecl_eurm",
+            "weighted_pd_pct",
+            "weighted_ecl_eurm",
+            "avg_gdp_growth_pct",
+            "avg_path_pd_pct",
+            "avg_path_ecl_eurm",
+            "understatement_pct",
+            "weighted_over_single_ratio"
+          ]
+        }
+      ],
+      "exhibits": [
+        "outputs/scenario_ecl/jensen_gap.png",
+        "outputs/scenario_ecl/scenario_ecl_bars.png",
+        "outputs/scenario_ecl/z_paths.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig006.png"
+      ],
+      "reports": [
+        "outputs/scenario_ecl/scenario_ecl_report.md",
+        "outputs/scenarios/scenarios_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [
+        "engine/scenarios.py",
+        "analysis/run_scenarios.py",
+        "analysis/scenario_exhibits.py"
+      ],
+      "app_surface": {
+        "tab": "Scenario Lab",
+        "endpoint": "/api/tools/reweight_scenarios"
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND: full Jensen's-inequality proof (convex f => E[f(X)] >= f(E[X])) applied to the PD_PIT(Z) convexity in Z, then to ECL; project measured 1.035x uplift (wiki scenario-layer.md) vs the textbook's illustrative understatement_pct. INTERACTIVE WIDGET: 3-scenario weight sliders -> live weighted ECL vs single-path ECL bar chart, exposing the Jensen gap."
+    },
+    {
+      "id": "A13",
+      "title": "Post-model adjustments (overlays)",
+      "topics": [
+        "overlay governance",
+        "ECB thematic review findings",
+        "quarter of coverage from overlays",
+        "exit criteria for overlays"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0030"
+        ],
+        "section": "s9.3"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md",
+        "wiki/pages/master-plan.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Narrative/governance topic, folds into the Governance & MDD chapter."
+    },
+    {
+      "id": "A14",
+      "title": "Forecast horizon, lifetime, and the gross-up factor",
+      "topics": [
+        "reasonable and supportable window",
+        "TTC reversion tail",
+        "gross-up factor = cum PD lifetime / cum PD short-horizon"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0031"
+        ],
+        "section": "s9.4"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_grossup.py",
+          "keys": [
+            "cum_pd_12m_pct",
+            "gross_up_12m_to_life",
+            "ecl_12m",
+            "cum_pd_36m_pct",
+            "gross_up_36m_to_life",
+            "ecl_36m",
+            "cum_pd_60m_pct",
+            "gross_up_60m_to_life",
+            "ecl_60m",
+            "cum_pd_84m_pct",
+            "gross_up_84m_to_life",
+            "ecl_84m"
+          ]
+        }
+      ],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Ties directly to A3 (ECL mechanics) and A12 (scenario horizon); 7-year loan, PIT-elevated hazard for 3-year R&S window reverting to 1.5% TTC."
+    },
+    {
+      "id": "A15",
+      "title": "LGD: workout definition and discounting",
+      "topics": [
+        "workout LGD measurement",
+        "recoveries R_k",
+        "workout costs C_k",
+        "discount at original EIR",
+        "NOT the reporting-date discount rate"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0033"
+        ],
+        "section": "s10.1"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/lgd-model.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "A16",
+      "title": "LGD distributional reality and model families",
+      "topics": [
+        "bimodal LGD (cure spike + write-off hump)",
+        "beta regression",
+        "two-stage cure x severity models"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0034"
+        ],
+        "section": "s10.2; Fig. 8 (node 0067)"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/eda/lgd_realised_bimodal.png",
+        "outputs/lgd/lgd_distribution.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig008.png"
+      ],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/lgd-model.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "A17",
+      "title": "LGD: secured/unsecured/corporate structural formula",
+      "topics": [
+        "indexed collateral value",
+        "forced-sale discount",
+        "time-to-repossession",
+        "loss = shortfall vs indexed collateral"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0035"
+        ],
+        "section": "s10.3"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/lgd/calibration_ltv.png",
+        "outputs/lgd/cure_by_ltv.png"
+      ],
+      "reports": [
+        "outputs/lgd/lgd_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/lgd-model.md"
+      ],
+      "code": [
+        "engine/lgd.py",
+        "analysis/fit_lgd.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": "/api/model/lgd"
+      },
+      "docker_touchpoints": [],
+      "notes": "Project two-stage cure x severity model; excess-loss loading +0.0255, never clipped (wiki lgd-model.md)."
+    },
+    {
+      "id": "A18",
+      "title": "Net Credit Loss (NCL): loan-level vs portfolio-level; discounting worked example",
+      "topics": [
+        "loan-level NCL definition",
+        "portfolio NCL rate",
+        "PV of recoveries and expenses at EIR",
+        "discounted vs nominal severity"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0036",
+          "0037",
+          "0039"
+        ],
+        "section": "s11 (11.1, 11.3)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_ncl.py",
+          "keys": [
+            "df_reo_m20",
+            "pv_reo_m20",
+            "df_mi_m22",
+            "pv_mi_m22",
+            "df_non_mi_m23",
+            "pv_non_mi_m23",
+            "df_taxes_m10",
+            "pv_taxes_m10",
+            "df_legal_m16",
+            "pv_legal_m16",
+            "face_recoveries_eur",
+            "pv_recoveries_eur",
+            "pv_expenses_eur",
+            "face_loss_eur",
+            "face_severity_pct",
+            "discounted_loss_ncl_pv_eur",
+            "discounted_lgd_pct",
+            "accrued_interest_eur",
+            "nominal_ncl_agency_eur",
+            "nominal_severity_pct"
+          ]
+        }
+      ],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/lgd-model.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND: each cash flow's DF(m)=(1+EIR)^(-m/12) shown individually before summing (currently a compressed table in the source notes)."
+    },
+    {
+      "id": "A19",
+      "title": "The 90-DPD vs 180-DPD default trigger; roll-rate bridge",
+      "topics": [
+        "90 DPD IFRS9/Basel backstop",
+        "180 DPD agency convention",
+        "roll-rate bridge (route 2)",
+        "eventual roll-forward q_b",
+        "roll-through rate R"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0038",
+          "0040"
+        ],
+        "section": "s11.2, s11.4; Fig. 9 (node 0068)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_rollrate.py",
+          "keys": [
+            "q_eventual_rollforward_90dpd",
+            "q_eventual_rollforward_120dpd",
+            "q_eventual_rollforward_150dpd",
+            "roll_through_rate_R",
+            "pd_90_pct",
+            "lgd_90_cure_loss_free_pct",
+            "lgd_90_cure_loss_3pct_pct",
+            "el_180_pct",
+            "el_90_cure_loss_free_pct",
+            "el_90_cure_loss_3pct_pct"
+          ]
+        }
+      ],
+      "exhibits": [
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig009.png"
+      ],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND: q_b = fwd/(fwd+cure) per bucket, R = q90*q120*q150 = 0.60, then EL_90 = EL_180 / R style rescaling \u2014 every multiplication shown."
+    },
+    {
+      "id": "A20",
+      "title": "EAD: term loans, revolver CCF, behavioural life",
+      "topics": [
+        "contractual amortisation profile",
+        "prepayment SMM/CPR",
+        "credit conversion factor (CCF)",
+        "IFRS9 5.5.20 behavioural life exception for revolvers"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0042",
+          "0043",
+          "0044"
+        ],
+        "section": "s12 (12.1-12.3); Fig. 10 (node 0069)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_ecl.py",
+          "keys": [
+            "revolver_ead_eur_m",
+            "revolver_ead_over_drawn"
+          ]
+        }
+      ],
+      "exhibits": [
+        "outputs/ead/ead_profiles.png",
+        "knowledge/corpus/img/ifrs9_credit_risk_notes.md_fig010.png"
+      ],
+      "reports": [
+        "outputs/ead/ead_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/ead-model.md"
+      ],
+      "code": [
+        "engine/ead.py",
+        "analysis/ead_exhibits.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Project's 'double-counting rule' for combining amortisation + CCF (wiki ead-model.md) is a GOTCHA to surface explicitly. EAD fixture: EUR 14.0m revolver worked example."
+    },
+    {
+      "id": "A21",
+      "title": "Validation: discrimination, calibration backtests, stability (PSI)",
+      "topics": [
+        "Gini/AUC/KS",
+        "binomial backtest",
+        "Jeffreys test",
+        "PSI worked example",
+        "LGD/EAD/ECL-level validation"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0045",
+          "0046",
+          "0047",
+          "0048",
+          "0049"
+        ],
+        "section": "s13 (13.1-13.4)"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_validation.py",
+          "keys": [
+            "binomial_backtest_p_value",
+            "binomial_rejects_at_5pct",
+            "binomial_critical_count",
+            "jeffreys_p_value",
+            "jeffreys_rejects_at_5pct",
+            "psi_term_band1",
+            "psi_term_band2",
+            "psi_term_band3",
+            "psi_term_band4",
+            "psi_term_band5",
+            "psi_total",
+            "psi_is_stable"
+          ]
+        }
+      ],
+      "exhibits": [
+        "outputs/challenger/reliability.png",
+        "outputs/challenger/psi_scores.png",
+        "outputs/challenger/perm_importance.png",
+        "outputs/challenger/pdp_grid.png",
+        "outputs/challenger/pdp_double_trigger.png",
+        "outputs/challenger/staging_swap.png"
+      ],
+      "reports": [
+        "outputs/challenger/scorecard.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md",
+        "wiki/pages/golden-fixtures.md"
+      ],
+      "code": [
+        "analysis/fit_challenger.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "DERIVATION TO EXPAND: binomial exact test statistic (1-CDF), Jeffreys prior-posterior interval, and the full PSI sum-of-bands formula with each band's term shown."
+    },
+    {
+      "id": "A22",
+      "title": "Governance, disclosure, capital interaction, hot topics",
+      "topics": [
+        "BCBS d350 11 principles",
+        "IFRS7 disclosure package (staged reconciliation tables)",
+        "CRR Art. 473a transitional arrangements",
+        "overlay discipline",
+        "climate risk in ECL"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0050",
+          "0051",
+          "0052",
+          "0053",
+          "0054"
+        ],
+        "section": "s14 (14.1-14.4)"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/mdd/MDD.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/project-overview.md",
+        "wiki/pages/master-plan.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Governance chapter anchor; MDD.md is the project's own model documentation deliverable and should be walked through structurally as a worked example of this section's disclosure requirements."
+    },
+    {
+      "id": "A23",
+      "title": "Learning path, tooling, interview drill (meta/appendix)",
+      "topics": [
+        "12-week build path",
+        "python/R tooling",
+        "12 interview questions"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0055",
+          "0056",
+          "0057",
+          "0058"
+        ],
+        "section": "s15"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [],
+      "wiki_pages": [
+        "wiki/pages/ifrs9-study-notes.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Not a standalone chapter; fold key interview-drill Qs into a closing appendix / per-chapter 'Check yourself' bank."
+    },
+    {
+      "id": "B1",
+      "title": "DCR loan-quarter panel construction & waterfall",
+      "topics": [
+        "eligible loan-quarter panel",
+        "621,736 rows",
+        "itemized exclusion waterfall",
+        "train/OOT split",
+        "lag verification"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "supports s5/s6"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/panel/waterfall.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/loan-panel.md"
+      ],
+      "code": [
+        "engine/staging.py (upstream panel build referenced by analysis/*)"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "No PNGs in outputs/panel/ \u2014 the waterfall table itself is the exhibit (render as styled HTML table)."
+    },
+    {
+      "id": "B2",
+      "title": "DCR EDA: default rates, hazard by age, LGD, origination quality, prepay",
+      "topics": [
+        "default rate vs macro overlay",
+        "hazard-by-loan-age seasoning hump",
+        "LGD bimodality",
+        "origination quality trends",
+        "prepay vs rate incentive",
+        "vintage cumulative default curves"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "supports s6.2/s10.2"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/eda/default_rate_vs_macro.png",
+        "outputs/eda/hazard_by_loan_age.png",
+        "outputs/eda/lgd_realised_bimodal.png",
+        "outputs/eda/origination_quality.png",
+        "outputs/eda/prepay_vs_rate_incentive.png",
+        "outputs/eda/vintage_cumulative_default.png"
+      ],
+      "reports": [
+        "outputs/eda/eda_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/loan-panel.md"
+      ],
+      "code": [
+        "analysis/eda_suite.py"
+      ],
+      "app_surface": {
+        "tab": "Model / Real Data",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "B3",
+      "title": "DCR hazard model (cloglog competing-risk PD engine)",
+      "topics": [
+        "cloglog GLM fit",
+        "AUC 0.748/0.661",
+        "seasoning hump reproduced",
+        "hazard ratios"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0020"
+        ],
+        "section": "extends s6.2"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/hazard/age_baseline.png",
+        "outputs/hazard/pd_term_structure.png"
+      ],
+      "reports": [
+        "outputs/hazard/fit_stats.md",
+        "outputs/hazard/hazard_ratios.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/hazard-model.md"
+      ],
+      "code": [
+        "engine/hazard.py",
+        "analysis/fit_hazard.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": "/api/model/coefficients"
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "B4",
+      "title": "DCR LGD model (two-stage cure x severity)",
+      "topics": [
+        "cure probability stage",
+        "severity | not-cured stage",
+        "excess-loss loading"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0034",
+          "0035"
+        ],
+        "section": "extends s10"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/lgd/calibration_ltv.png",
+        "outputs/lgd/cure_by_ltv.png",
+        "outputs/lgd/lgd_distribution.png"
+      ],
+      "reports": [
+        "outputs/lgd/lgd_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/lgd-model.md"
+      ],
+      "code": [
+        "engine/lgd.py",
+        "analysis/fit_lgd.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": "/api/model/lgd"
+      },
+      "docker_touchpoints": [],
+      "notes": "Same as A17; cross-referenced from LGD theory chapter."
+    },
+    {
+      "id": "B5",
+      "title": "DCR EAD model",
+      "topics": [
+        "amortisation + CCF combination",
+        "double-counting rule"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0042",
+          "0043"
+        ],
+        "section": "extends s12"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_ecl.py",
+          "keys": [
+            "revolver_ead_eur_m",
+            "revolver_ead_over_drawn"
+          ]
+        }
+      ],
+      "exhibits": [
+        "outputs/ead/ead_profiles.png"
+      ],
+      "reports": [
+        "outputs/ead/ead_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/ead-model.md"
+      ],
+      "code": [
+        "engine/ead.py",
+        "analysis/ead_exhibits.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Same underlying model as A20; separate entry for the build-report walkthrough."
+    },
+    {
+      "id": "B6",
+      "title": "DCR staging model & threshold sensitivity",
+      "topics": [
+        "relative SICR verified to 1e-10",
+        "Stage 2 share: 0% calm / 75.8% stress",
+        "threshold sensitivity sweep"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0007",
+          "0008",
+          "0009"
+        ],
+        "section": "extends s2"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/staging/stage2_sensitivity.png",
+        "outputs/staging/stage_distribution.png"
+      ],
+      "reports": [
+        "outputs/staging/staging_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/staging-model.md"
+      ],
+      "code": [
+        "engine/staging.py",
+        "analysis/staging_exhibits.py"
+      ],
+      "app_surface": {
+        "tab": "Policy",
+        "endpoint": "/api/policy/staging_sensitivity"
+      },
+      "docker_touchpoints": [],
+      "notes": "INTERACTIVE WIDGET: staging threshold slider -> live stage-share recompute (per campaign brief example list)."
+    },
+    {
+      "id": "B7",
+      "title": "DCR ECL engine, gates & golden fixtures",
+      "topics": [
+        "ECL sum + movement decomposition",
+        "gate 187/187",
+        "engine freeze 2026-07-05",
+        "8 golden compute_*.py fixtures, 133 values"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0010"
+        ],
+        "section": "extends s3"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_ecl.py"
+        },
+        {
+          "file": "tests/fixtures/compute_pd.py"
+        },
+        {
+          "file": "tests/fixtures/compute_vasicek.py"
+        },
+        {
+          "file": "tests/fixtures/compute_scenarios.py"
+        },
+        {
+          "file": "tests/fixtures/compute_grossup.py"
+        },
+        {
+          "file": "tests/fixtures/compute_ncl.py"
+        },
+        {
+          "file": "tests/fixtures/compute_rollrate.py"
+        },
+        {
+          "file": "tests/fixtures/compute_validation.py"
+        }
+      ],
+      "exhibits": [
+        "outputs/ecl/allowance_by_stage.png",
+        "outputs/ecl/coverage_by_stage.png",
+        "outputs/ecl/ecl_waterfall.png"
+      ],
+      "reports": [
+        "outputs/ecl/ecl_report.md",
+        "outputs/gate/gate_report.md",
+        "outputs/gate/day3_gate_report.md",
+        "outputs/gate/day4_gate_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/ecl-engine.md",
+        "wiki/pages/golden-fixtures.md"
+      ],
+      "code": [
+        "engine/ecl.py",
+        "analysis/run_ecl.py",
+        "tests/test_fixtures.py"
+      ],
+      "app_surface": {
+        "tab": "Executive Overview",
+        "endpoint": "/api/ecl/summary, /api/ecl/waterfall"
+      },
+      "docker_touchpoints": [],
+      "notes": "The fixtures/gates chapter \u2014 meta-level walkthrough of how every number in the notes is verified (tests/test_fixtures.py maps all 133 golden values)."
+    },
+    {
+      "id": "B8",
+      "title": "Vasicek calibration on the project panel",
+      "topics": [
+        "calibrated rho=0.0227",
+        "credit-cycle Z-path",
+        "PIT PD conditioning applied to DCR book"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0026"
+        ],
+        "section": "extends s8"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/vasicek/credit_cycle.png"
+      ],
+      "reports": [
+        "outputs/vasicek/vasicek_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [
+        "engine/vasicek.py",
+        "analysis/fit_vasicek.py"
+      ],
+      "app_surface": {
+        "tab": "Scenario Lab",
+        "endpoint": "/api/exhibits/credit_cycle"
+      },
+      "docker_touchpoints": [],
+      "notes": "Cross-ref A10."
+    },
+    {
+      "id": "B9",
+      "title": "DFAST macro scenario paths & satellite fit",
+      "topics": [
+        "DFAST severely-adverse/adverse/base paths",
+        "UER and HPI fan charts",
+        "satellite regression fit"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0028"
+        ],
+        "section": "extends s9.1"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/scenarios/fan_hpi_growth.png",
+        "outputs/scenarios/fan_uer.png",
+        "outputs/satellite/satellite_fit.png"
+      ],
+      "reports": [
+        "outputs/scenarios/scenarios_report.md",
+        "outputs/satellite/satellite_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [
+        "engine/scenarios.py",
+        "engine/satellite.py",
+        "analysis/run_scenarios.py"
+      ],
+      "app_surface": {
+        "tab": "Scenario Lab",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "B10",
+      "title": "Scenario ECL & the project's Jensen-gap exhibit",
+      "topics": [
+        "probability-weighted ECL vs single-path",
+        "1.035x uplift measured on DCR book"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0029"
+        ],
+        "section": "extends s9.2"
+      },
+      "fixtures": [
+        {
+          "file": "tests/fixtures/compute_scenarios.py"
+        }
+      ],
+      "exhibits": [
+        "outputs/scenario_ecl/jensen_gap.png",
+        "outputs/scenario_ecl/scenario_ecl_bars.png",
+        "outputs/scenario_ecl/z_paths.png"
+      ],
+      "reports": [
+        "outputs/scenario_ecl/scenario_ecl_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/scenario-layer.md"
+      ],
+      "code": [
+        "analysis/scenario_exhibits.py"
+      ],
+      "app_surface": {
+        "tab": "Scenario Lab",
+        "endpoint": "/api/tools/reweight_scenarios"
+      },
+      "docker_touchpoints": [],
+      "notes": "Cross-ref A12."
+    },
+    {
+      "id": "B11",
+      "title": "Challenger scorecard: benchmarking & explainability",
+      "topics": [
+        "reliability diagram",
+        "PSI scores across time",
+        "permutation importance",
+        "PDP grid + double-trigger PDP",
+        "staging swap-set analysis"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0046",
+          "0047",
+          "0048"
+        ],
+        "section": "extends s13"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/challenger/reliability.png",
+        "outputs/challenger/psi_scores.png",
+        "outputs/challenger/perm_importance.png",
+        "outputs/challenger/pdp_grid.png",
+        "outputs/challenger/pdp_double_trigger.png",
+        "outputs/challenger/staging_swap.png"
+      ],
+      "reports": [
+        "outputs/challenger/scorecard.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/golden-fixtures.md"
+      ],
+      "code": [
+        "analysis/fit_challenger.py"
+      ],
+      "app_surface": {
+        "tab": "Model",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "C1",
+      "title": "SFLLD ingest & data-quality (Phase A)",
+      "topics": [
+        "837k-loan panel",
+        "17 vintages",
+        "real dates/states/losses",
+        "D90 absorbing state",
+        "54-state macro merge",
+        "COVID-regime EDA"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0014"
+        ],
+        "section": "extends s5.2/s5.4"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/freddie/ingest/dq_report.md",
+        "outputs/freddie/gate_phaseA.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/sflld-panel.md"
+      ],
+      "code": [
+        "freddie/ingest.py",
+        "freddie/build_panel.py",
+        "freddie/macro.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": "/api/freddie/summary"
+      },
+      "docker_touchpoints": [],
+      "notes": "Phase-A gate PASS."
+    },
+    {
+      "id": "C2",
+      "title": "SFLLD EDA: vintage curves, roll-rates, state heterogeneity, COVID regime",
+      "topics": [
+        "vintage cumulative-default curves",
+        "roll-rate transition matrices",
+        "calendar-time series",
+        "state-level heterogeneity",
+        "realized LGD distribution"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "extends s5"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/freddie/eda/exhibit1_vintage_curves.png",
+        "outputs/freddie/eda/exhibit2_roll_rate_matrices.png",
+        "outputs/freddie/eda/exhibit3_calendar_time_series.png",
+        "outputs/freddie/eda/exhibit4_state_heterogeneity.png",
+        "outputs/freddie/eda/exhibit5_realized_lgd.png",
+        "outputs/freddie/macro/state_hpi_growth_2000_2025.png",
+        "outputs/freddie/macro/state_uer_2000_2025.png"
+      ],
+      "reports": [
+        "outputs/freddie/eda/eda_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/sflld-panel.md"
+      ],
+      "code": [
+        "freddie/eda.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "C3",
+      "title": "SFLLD hazard model (Phase B) & COVID-regime decision",
+      "topics": [
+        "hazard AUC 0.854/0.685",
+        "COVID=exclude decision (review overturn)",
+        "seasoning curve",
+        "state UER effect",
+        "calibration by year"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0020"
+        ],
+        "section": "extends s6.2"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/freddie/hazard/calibration_by_year.png",
+        "outputs/freddie/hazard/covid_calibration_comparison.png",
+        "outputs/freddie/hazard/seasoning_curve.png",
+        "outputs/freddie/hazard/state_uer_effect.png"
+      ],
+      "reports": [
+        "outputs/freddie/hazard/hazard_report.md",
+        "outputs/freddie/gate_phaseB.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/sflld-models.md"
+      ],
+      "code": [
+        "freddie/fit_hazard.py",
+        "tests/test_freddie_hazard.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": "/api/freddie/hazard"
+      },
+      "docker_touchpoints": [],
+      "notes": "The COVID-exclude decision was a review overturn \u2014 a Gotcha-box candidate about macro-regime handling."
+    },
+    {
+      "id": "C4",
+      "title": "SFLLD LGD (realized) model",
+      "topics": [
+        "realized LGD on resolved workouts",
+        "severity by liquidation year"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0034",
+          "0035"
+        ],
+        "section": "extends s10"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/freddie/lgd/severity_by_liq_year.png"
+      ],
+      "reports": [
+        "outputs/freddie/lgd/lgd_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/sflld-models.md"
+      ],
+      "code": [
+        "freddie/fit_lgd.py",
+        "freddie/lgd.py",
+        "tests/test_freddie_lgd.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": ""
+    },
+    {
+      "id": "C5",
+      "title": "SFLLD backtest: the 9.42x honesty exhibit",
+      "topics": [
+        "predicted vs realized default rate by vintage-quarter",
+        "9.42x backtest ratio",
+        "out-of-time validation across 5 snapshot dates"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0045",
+          "0047"
+        ],
+        "section": "extends s13"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/freddie/backtest/predicted_vs_realized_200712.png",
+        "outputs/freddie/backtest/predicted_vs_realized_200912.png",
+        "outputs/freddie/backtest/predicted_vs_realized_201512.png",
+        "outputs/freddie/backtest/predicted_vs_realized_201912.png",
+        "outputs/freddie/backtest/predicted_vs_realized_202112.png"
+      ],
+      "reports": [
+        "outputs/freddie/backtest/backtest_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/sflld-models.md"
+      ],
+      "code": [
+        "freddie/backtest.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": "/api/freddie/backtest"
+      },
+      "docker_touchpoints": [],
+      "notes": "The 9.42x figure (200912 GFC snapshot, presumably) is the single most striking honesty exhibit in the project \u2014 deserves a dedicated worked walkthrough of why backtest ratios blow up at a crisis vintage."
+    },
+    {
+      "id": "C6",
+      "title": "SFLLD LSTM challenger & lift decomposition",
+      "topics": [
+        "sequence model on loan-month panel",
+        "lift over cloglog hazard baseline",
+        "calibration comparison",
+        "lift-split decomposition"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "extends s6.2 (ML challenger)"
+      },
+      "fixtures": [],
+      "exhibits": [
+        "outputs/freddie/lstm/calibration_comparison.png",
+        "outputs/freddie/lstm/lift_split.png"
+      ],
+      "reports": [
+        "outputs/freddie/lstm/lstm_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/sflld-models.md"
+      ],
+      "code": [
+        "freddie/fit_lstm.py",
+        "freddie/lstm.py"
+      ],
+      "app_surface": {
+        "tab": "Real Data",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Gate: 659/659 (Freddie Phase B gate)."
+    },
+    {
+      "id": "D1",
+      "title": "Agent layer: LangGraph router + Tier-1 deterministic tools",
+      "topics": [
+        "route decision (docs/analyze/reasoned/refusal)",
+        "shock_macro",
+        "reweight_scenarios",
+        "rerun_ecl",
+        "decompose_waterfall",
+        "coherent-shock convention",
+        "number-guarded narration"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "n/a (applied system)"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/mcp/README_section.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/agent-layer.md"
+      ],
+      "code": [
+        "agent/graph.py",
+        "agent/tools_tier1.py",
+        "agent/mcp_server.py"
+      ],
+      "app_surface": {
+        "tab": "Copilot",
+        "endpoint": "/api/agent/ask, /api/agent/stream, /api/tools/*"
+      },
+      "docker_touchpoints": [],
+      "notes": "narration_numbers_ok/_allowed_numbers in agent/graph.py implement the 'no hallucinated numbers' guardrail \u2014 worth a code-reading callout in the Agent chapter."
+    },
+    {
+      "id": "D2",
+      "title": "Agent Tier-2 sandbox & Tier-3 retrieval",
+      "topics": [
+        "restricted-AST sandboxed code execution",
+        "child-process hardening",
+        "wiki/index Graph-RAG retrieval",
+        "REASONED route: labeled interpretation for conceptual Qs"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "n/a"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/gate/reasoned_route_gate.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/agent-layer.md",
+        "wiki/pages/llm-wiki-skill.md",
+        "wiki/pages/pageindex-plus-skill.md"
+      ],
+      "code": [
+        "agent/tools_tier2.py",
+        "agent/tier3_retrieval.py"
+      ],
+      "app_surface": {
+        "tab": "Copilot",
+        "endpoint": "/api/agent/interpret"
+      },
+      "docker_touchpoints": [],
+      "notes": "SandboxViolation / _validate_ast / _harden_child in tools_tier2.py \u2014 the security model for LLM-written analysis code is itself a notable design pattern to document."
+    },
+    {
+      "id": "D3",
+      "title": "App: FastAPI backend surface",
+      "topics": [
+        "/api/health",
+        "/api/ecl/summary",
+        "/api/ecl/waterfall",
+        "/api/exhibits/credit_cycle",
+        "/api/model/*",
+        "/api/policy/*",
+        "/api/freddie/*",
+        "/api/tools/*",
+        "/api/agent/*"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "n/a"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "docs/api_contract.md",
+        "outputs/gate/appv2_gate_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/agent-layer.md"
+      ],
+      "code": [
+        "app/api/main.py"
+      ],
+      "app_surface": {
+        "tab": "all tabs",
+        "endpoint": "see docs/api_contract.md (886 lines, full contract)"
+      },
+      "docker_touchpoints": [],
+      "notes": "886-line api_contract.md is the ground truth for every request/response shape used across tabs \u2014 the App chapter should render it as a navigable endpoint table, not reproduce verbatim."
+    },
+    {
+      "id": "D4",
+      "title": "App: React UI (6 tabs) & design system",
+      "topics": [
+        "Executive Overview",
+        "The Model",
+        "Scenario Lab",
+        "Policy",
+        "Real Data (Freddie)",
+        "Copilot",
+        "fintech design direction (judged redesign)",
+        "waterfall fix"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "n/a"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/design/FINAL_SPEC.md",
+        "outputs/design/fintech/design_spec.md",
+        "outputs/design/fintech/rationale.md",
+        "outputs/design/editorial/design_spec.md",
+        "outputs/design/editorial/rationale.md",
+        "outputs/design/terminal/design_spec.md",
+        "outputs/design/terminal/rationale.md",
+        "outputs/gate/uiv3_gate_report.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/project-overview.md"
+      ],
+      "code": [
+        "app/ui/src/app.jsx",
+        "app/ui/src/tabs/ExecutiveTab.jsx",
+        "app/ui/src/tabs/ModelTab.jsx",
+        "app/ui/src/tabs/ScenarioLabTab.jsx",
+        "app/ui/src/tabs/PolicyTab.jsx",
+        "app/ui/src/tabs/FreddieTab.jsx",
+        "app/ui/src/tabs/CopilotTab.jsx",
+        "app/ui/src/api.js",
+        "app/ui/src/format.js",
+        "app/ui/src/numText.jsx",
+        "app/ui/src/palette.js"
+      ],
+      "app_surface": {
+        "tab": "all 6 tabs",
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "3 design directions were explored (fintech/editorial/terminal) before FINAL_SPEC.md; App guidebook chapter should show the judged comparison, not just the winner."
+    },
+    {
+      "id": "D5",
+      "title": "Docker & deployment",
+      "topics": [
+        "multi-stage build (node:22-alpine UI -> python:3.13-slim runtime)",
+        "non-root appuser",
+        "COPY whitelist strategy",
+        ".dockerignore lesson",
+        "HF Spaces port 7860"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [],
+        "section": "n/a"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/gate/mdd_freddie_gate.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/project-overview.md"
+      ],
+      "code": [
+        "Dockerfile",
+        ".dockerignore",
+        "requirements.docker.txt"
+      ],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [
+        "Dockerfile",
+        ".dockerignore",
+        "requirements.docker.txt"
+      ],
+      "notes": "The dockerignore whitelist lesson (explicit COPY allowlist rather than broad copy + .dockerignore exclude, per git log + mdd_freddie_gate.md) is the key deployment Gotcha to reproduce with before/after."
+    },
+    {
+      "id": "D6",
+      "title": "Model Documentation Deliverable (MDD) & governance close-out",
+      "topics": [
+        "structured model documentation",
+        "governance sign-off narrative",
+        "capital/disclosure alignment"
+      ],
+      "theory_anchor": {
+        "knowledge_index_node_ids": [
+          "0050",
+          "0051",
+          "0052",
+          "0053"
+        ],
+        "section": "extends s14"
+      },
+      "fixtures": [],
+      "exhibits": [],
+      "reports": [
+        "outputs/mdd/MDD.md"
+      ],
+      "wiki_pages": [
+        "wiki/pages/project-overview.md",
+        "wiki/pages/master-plan.md",
+        "wiki/pages/bootstrap-decisions.md"
+      ],
+      "code": [],
+      "app_surface": {
+        "tab": null,
+        "endpoint": null
+      },
+      "docker_touchpoints": [],
+      "notes": "Closing chapter: walks MDD.md structurally as the worked instance of the governance/disclosure theory (A22)."
+    }
+  ]
+}

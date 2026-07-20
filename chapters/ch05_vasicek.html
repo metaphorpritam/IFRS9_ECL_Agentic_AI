@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.5 — The Vasicek One-Factor Model (PIT vs TTC) | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 5: THE VASICEK ONE-FACTOR MODEL (PIT vs TTC)
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md), CSS
+  block copied verbatim from ch02_ecl_mechanics.html for visual consistency.
+  widgets.js loaded RELATIVE ("../assets/js/widgets.js") -- this chapter lives
+  in notes/chapters/, widgets.js lives in notes/assets/js/ (conventions.md
+  "Inlined vs relative widgets.js"). Standalone deliverable for this build
+  phase (notes/chapters/ holds independent chapter files, not yet spliced
+  into one compendium) -- own <h1>/TOC/closing <hr>; <h2 id="s5"> is written
+  so a later merge into the single-file compendium is a straight splice.
+  MathJax SVG renderer is the only external dependency (CDN, accepted
+  project exception); everything else here is self-contained/inline.
+  Derivation D-5 (one-factor Gaussian copula -> PD_PIT(Z)) fully expanded
+  per notes/plan/derivation_backlog.md; flagship widget extends
+  notes/assets/widget_demo.html's PD_PIT(Z,rho) pattern with fixture-point
+  markers and a TTC<->PIT converter box.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+  .widget-controls { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-bottom: 10px; align-items: flex-end; }
+  .widget-control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .widget-control input[type="range"] { width: 180px; vertical-align: middle; }
+  .widget-control input[type="number"] { width: 80px; }
+  .widget-control .val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-soft); margin-left: 6px; }
+  .widget svg { max-width: 100%; }
+  .widget svg text { font-family: "Charter","Georgia",serif; }
+  .widget table { width: 100%; }
+  .converter { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-end; margin-top: 8px; }
+  .converter-readout { flex: 1 1 260px; background: var(--page-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 12px; font-size: 12.8px; }
+  .converter-readout b { color: var(--accent-soft); }
+
+  .bar-outer { position: relative; height: 34px; background: var(--code-bg); border-radius: 4px; overflow: hidden; margin: 10px 0 4px 0; border: 1px solid var(--rule); }
+  .bar-seg-12m { position: absolute; top:0; left:0; height:100%; background: var(--warn); opacity: 0.75; transition: width 0.12s; }
+  .bar-seg-life { position: absolute; top:0; height:100%; background: var(--accent); opacity: 0.55; transition: width 0.12s, left 0.12s; }
+  .bar-label { display:flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 2px;}
+  .bar-legend { display:flex; gap: 18px; font-size: 11.5px; margin-top: 4px; }
+  .bar-legend span.swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align: -1px; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 5 — The Vasicek One-Factor Model (PIT vs TTC)</h1>
+<div class="subtitle">From an asset-value latent factor to the conditional PD curve — deriving, verifying, and calibrating point-in-time credit risk</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 5 of 13. Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;8, <code>tests/fixtures/compute_vasicek.py</code>, <code>engine/vasicek.py</code>, <code>outputs/vasicek/vasicek_report.md</code>, and <code>wiki/pages/scenario-layer.md</code> on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s5-1">5.1 TTC vs PIT: the philosophical distinction</a></li>
+<li><a href="#s5-2">5.2 The one-factor Gaussian asset-value model</a></li>
+<li><a href="#s5-3">5.3 Derivation: from asset value to PD_PIT(Z)</a></li>
+<li><a href="#s5-4">5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC</a></li>
+<li><a href="#s5-5">5.5 Interactive: PD_PIT vs Z &amp; &rho;, and a TTC&harr;PIT converter</a></li>
+<li><a href="#s5-6">5.6 Z-recovery on the panel: why raw counts mislead</a></li>
+<li><a href="#s5-7">5.7 Belkin calibration and the credit cycle</a></li>
+<li><a href="#s5-8">5.8 The damped hybrid PIT/TTC variant</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s5">5&nbsp; The Vasicek One-Factor Model (PIT vs TTC)</h2>
+<p>Every hazard model in Chapter&nbsp;3 was fit on historical panel data — it necessarily blends calm
+years and stressed years into one set of coefficients. IFRS&nbsp;9 does not want that blend: it wants a
+probability of default that reflects <em>current and forecast</em> conditions (&sect;5.5.17), not the
+long-run average. This chapter derives, from first principles, the single most important transformation
+layer in credit risk modelling — the one that turns a through-the-cycle (TTC) PD into a point-in-time
+(PIT) PD conditional on where the economy sits in the credit cycle, and (the harder direction) recovers
+that cycle position from history when nobody handed it to you. Source anchor:
+<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;8 (all sections); project evidence from
+<code>engine/vasicek.py</code>, <code>analysis/fit_vasicek.py</code>, and
+<code>outputs/vasicek/vasicek_report.md</code> (&sect;<a href="#s5-6">5.6</a>&ndash;<a href="#s5-7">5.7</a>).</p>
+
+<!-- ============================================================== -->
+<h3 id="s5-1">5.1 TTC vs PIT: the philosophical distinction</h3>
+<!-- ============================================================== -->
+<p>Before any algebra, the two philosophies this whole chapter reconciles need to be stated precisely —
+they answer different questions about the same borrower.</p>
+
+<div class="defn">
+<b>Definitions.</b>
+<ul>
+<li><strong>Through-the-cycle (TTC) PD</strong>, $PD_{TTC}$ — the cycle-neutral, long-run average default
+probability for a grade or portfolio: what you'd predict for a borrower with these characteristics
+averaged across an entire economic cycle, ignoring whether today happens to be a boom or a recession.</li>
+<li><strong>Point-in-time (PIT) PD</strong>, $PD_{PIT}$ — the default probability conditional on
+<em>current and forecast</em> economic conditions: higher in a downturn, lower in an expansion, for the
+<em>same</em> underlying borrower quality.</li>
+<li>$Z$ — the <strong>systematic factor</strong> (defined fully in &sect;5.2): a single real number
+summarising "where the credit cycle currently is", with $Z>0$ a good state and $Z<0$ a downturn.</li>
+</ul>
+</div>
+
+<p>Basel IRB systems are typically built TTC or hybrid (capital should not swing wildly with every quarter's
+data), whereas IFRS&nbsp;9 explicitly requires PIT, forward-looking parameters that incorporate reasonable
+and supportable information about the future (Chapter&nbsp;6 picks up how forecast scenarios enter this
+picture). A bank that already has a TTC-calibrated IRB PD model therefore needs a
+<strong>transformation layer</strong> that takes a TTC PD in and returns a PIT PD out, conditional on a
+macro state — that transformation layer is exactly what this chapter derives.</p>
+
+<div class="note">
+<b>Why not just refit the model on recent data only?</b> Refitting continuously on a short recent window
+throws away most of the panel's statistical power and re-injects the very cyclicality IFRS&nbsp;9's
+staging/SICR framework is trying to isolate from the loss-given-default and exposure legs. The Vasicek
+approach keeps <em>one</em> TTC model (Chapter&nbsp;3's hazard, fit on the full panel) and adds a single,
+theoretically motivated dial — the systematic factor $Z$ — that shifts every PD up or down together,
+consistently, without refitting anything.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — TTC and PIT are not "two different models".</b> They are the <em>same</em> underlying credit
+quality assessment viewed through two different conditioning sets: $PD_{TTC}$ conditions only on borrower
+characteristics; $PD_{PIT}(Z)$ conditions on borrower characteristics <em>and</em> the current point in the
+cycle. Nothing about the borrower changed between the two numbers — only how much macro information is
+folded in. Treating them as competing, independently-calibrated models (rather than one model with an
+extra conditioning variable) is the single most common conceptual error in this area.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A bank's Basel IRB PD model is TTC-calibrated. Why can it not be submitted directly as the IFRS&nbsp;9
+ECL input?
+  <details><summary>Answer</summary>
+  <div class="answer">IFRS&nbsp;9 &sect;5.5.17(c) requires PD estimates to reflect reasonable and
+  supportable forward-looking information — a cycle-neutral long-run average, by construction, does not
+  respond to current or forecast conditions, so it understates PD in a downturn and overstates it in an
+  expansion relative to what the standard asks for.</div>
+  </details>
+</li>
+<li>What does $Z>0$ mean, and what does it do to $PD_{PIT}$ relative to $PD_{TTC}$?
+  <details><summary>Answer</summary>
+  <div class="answer">$Z>0$ is a good macro state (above the cycle's average); it <em>compresses</em>
+  $PD_{PIT}$ below $PD_{TTC}$ — see &sect;5.3's derived formula and the golden fixture table, where
+  $Z=+2$ gives $PD_{PIT}=0.17\%$, well below the $2\%$ TTC anchor.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-2">5.2 The one-factor Gaussian asset-value model</h3>
+<!-- ============================================================== -->
+<p>The Vasicek/ASRF (Asymptotic Single Risk Factor) framework builds PIT conditioning out of a structural
+story about <em>why</em> a borrower defaults, in the spirit of Merton's model from Chapter&nbsp;3
+(&sect;A9): a borrower defaults when some latent "asset value" falls below a threshold. The one-factor
+model's specific move is to decompose that latent asset value into a part every borrower shares (the
+economy) and a part unique to each borrower.</p>
+
+<div class="defn">
+<b>Definitions (every symbol used from here on).</b>
+<ul>
+<li>$A_i$ — borrower $i$'s <strong>standardised asset return</strong>: a latent, unobserved continuous
+variable (not a literal balance-sheet asset value — a modelling device standing in for "overall borrower
+health this period"), constructed to be standard normal.</li>
+<li>$Z$ — the <strong>systematic factor</strong>: $Z\sim N(0,1)$, shared identically by every borrower in
+the portfolio. This is the single number representing the credit cycle (macro conditions, sector-wide
+shocks) that Chapter&nbsp;6's scenario paths ultimately drive.</li>
+<li>$\varepsilon_i$ — the <strong>idiosyncratic shock</strong>: $\varepsilon_i\sim N(0,1)$, independent
+across borrowers $i$ and independent of $Z$ — borrower $i$'s own luck, unrelated to the wider economy
+(a job loss, an illness, a local event).</li>
+<li>$\rho$ — the <strong>asset correlation</strong>: $\rho\in(0,1)$, the fraction of each borrower's asset
+variance attributable to the shared systematic factor. $\rho$ near 0 means borrowers default almost
+independently of each other and of the cycle; $\rho$ near 1 means the whole portfolio moves as one.</li>
+<li>$PD_{TTC}$ — the through-the-cycle PD from &sect;5.1, taken as an input to this model (it comes from
+Chapter&nbsp;3's hazard model or a rating grade's long-run average).</li>
+<li>$c$ — the <strong>default threshold</strong>, derived in &sect;5.3 as $c=\Phi^{-1}(PD_{TTC})$, where
+$\Phi(\cdot)$ is the standard-normal CDF.</li>
+</ul>
+</div>
+
+<p>The model asserts a single decomposition equation:</p>
+
+$$ A_i = \sqrt{\rho}\,Z + \sqrt{1-\rho}\,\varepsilon_i, \qquad Z,\varepsilon_i \stackrel{iid}{\sim} N(0,1)\ \text{independent of each other.} $$
+
+<div class="interpretation">
+<b>Interpretation — why this exact decomposition, and why the square roots.</b> The weights $\sqrt{\rho}$
+and $\sqrt{1-\rho}$ are not arbitrary — they are chosen so that $A_i$ itself comes out standard normal
+(shown formally in &sect;5.3, step&nbsp;1), which is what lets the threshold $c$ be read directly off the
+standard-normal table as $\Phi^{-1}(PD_{TTC})$. Splitting $A_i$ into a common piece ($Z$) and a private
+piece ($\varepsilon_i$) is what makes every borrower's default correlated with every other borrower's
+default <em>only through</em> the shared $Z$ — exactly the "systemic vs idiosyncratic" split that credit
+portfolio risk (and Basel's capital formula, which uses the same kernel at $Z$'s 99.9th percentile) is
+built on. Exhibit&nbsp;5.1 draws the whole structure end to end.
+</div>
+
+<img class="fig" src="../assets/img/ch05/01_one_factor_structure.png" alt="Flowchart: systematic factor Z and idiosyncratic shock eps_i, each scaled and summed into standardised asset return A_i, compared against threshold c; a bell-curve inset shows the conditional density of A_i given Z with the default tail shaded, feeding into the PD_PIT(Z) formula box">
+<div class="figcap"><b>Exhibit 5.1</b> — The one-factor asset-value model: $Z$ (systematic) and $\varepsilon_i$
+(idiosyncratic) combine into $A_i$; defaulting is $A_i\lt c$; conditioning on $Z$ shifts and shrinks the
+distribution of $A_i$, shading the default region shown in the inset. Regenerated in matplotlib
+(<code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;8).</div>
+
+<div class="warn">
+<b>Validity condition — this is a PORTFOLIO-level statement, not a per-loan guarantee.</b> The ASRF
+approximation (used implicitly whenever a single default RATE is identified with $PD_{PIT}(Z)$, as in
+&sect;5.6&ndash;5.7) requires an infinitely granular portfolio — no single borrower's idiosyncratic shock
+should move the portfolio default rate. For a large, well-diversified retail mortgage book this is a
+reasonable approximation; for a handful of large corporate names it is not, and idiosyncratic
+concentration risk needs a separate capital add-on.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — $\rho$ here is an ASSET correlation, not a DEFAULT correlation.</b> $\rho$ measures how
+correlated the latent, continuous $A_i$ variables are across borrowers — the correlation between the much
+rarer binary default EVENTS is always smaller than $\rho$ (defaults are tail events; two borrowers can have
+highly correlated asset values and still only rarely default in the same quarter). Reading a calibrated
+$\rho=0.0227$ (&sect;5.7) as "2.27% of defaults are correlated" conflates the two quantities.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why must $Z$ and $\varepsilon_i$ be independent of each other for the decomposition to make sense?
+  <details><summary>Answer</summary>
+  <div class="answer">If $Z$ and $\varepsilon_i$ were correlated, the split into "systematic" and
+  "idiosyncratic" would double-count some of the variance — part of what looks like borrower $i$'s own
+  luck would secretly already be priced into the cycle factor, breaking both the clean variance
+  decomposition in &sect;5.3 step&nbsp;1 and the conditioning argument in step&nbsp;3 (which relies on
+  $\varepsilon_i$ staying standard normal even after conditioning on $Z$).</div>
+  </details>
+</li>
+<li>Two portfolios have identical $PD_{TTC}$ but portfolio B has a higher $\rho$ than portfolio A. In a
+downturn ($Z\ll 0$), which portfolio's PIT PD rises further, and why?
+  <details><summary>Answer</summary>
+  <div class="answer">Portfolio B (higher $\rho$) — a larger $\rho$ means more of each borrower's asset
+  variance is tied to the shared factor $Z$, so a bad realisation of $Z$ pushes every borrower's asset
+  value down together more forcefully, and (per &sect;5.3's formula) the $\sqrt{\rho}Z$ term in the
+  numerator has more weight, moving $PD_{PIT}(Z)$ further from $PD_{TTC}$ for the same $|Z|$.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-3">5.3 Derivation: from asset value to PD_PIT(Z)</h3>
+<!-- ============================================================== -->
+<p>This is the derivation flagged explicitly in the campaign brief (backlog D-5) — the notes present
+$PD_{PIT}(Z)=\Phi\big[(\Phi^{-1}(PD_{TTC})-\sqrt{\rho}Z)/\sqrt{1-\rho}\big]$ as a given formula; every step
+from the asset-value representation to that formula is shown here, with no skipped algebra.</p>
+
+<div class="derivation">
+<b>Derivation — the Vasicek conditional-PD formula.</b>
+<div class="step"><span class="stepno">1.</span> <strong>$A_i$ is standard normal unconditionally.</strong>
+$A_i=\sqrt{\rho}Z+\sqrt{1-\rho}\,\varepsilon_i$ is a linear combination of two independent standard normals,
+hence itself normal, with mean $\mathbb{E}[A_i]=\sqrt{\rho}\,\mathbb{E}[Z]+\sqrt{1-\rho}\,\mathbb{E}[\varepsilon_i]=0$
+and, using independence ($\mathrm{Cov}(Z,\varepsilon_i)=0$),
+$\mathrm{Var}(A_i)=\rho\,\mathrm{Var}(Z)+(1-\rho)\,\mathrm{Var}(\varepsilon_i)=\rho(1)+(1-\rho)(1)=1$.
+So $A_i\sim N(0,1)$ unconditionally — this is exactly why the weights are $\sqrt{\rho}$ and $\sqrt{1-\rho}$
+(square roots of variance shares, not the shares themselves): they make the variances, not the standard
+deviations, add to 1.</div>
+<div class="step"><span class="stepno">2.</span> <strong>Calibrate the threshold $c$ so the unconditional
+default probability is exactly $PD_{TTC}$.</strong> Define default as the event $A_i\lt c$ for some threshold
+$c$. Since $A_i\sim N(0,1)$ (step&nbsp;1), $P(A_i\lt c)=\Phi(c)$. Requiring this unconditional probability to
+equal $PD_{TTC}$ (the calibration condition — this is what "TTC" means for this model: the threshold is set
+against the long-run average) gives $\Phi(c)=PD_{TTC}$, hence
+$$ c = \Phi^{-1}(PD_{TTC}). $$
+This is the calibration step that is often skipped in compressed presentations of the model — $c$ is not
+an assumption, it is <em>derived</em> from requiring internal consistency with the TTC anchor.</div>
+<div class="step"><span class="stepno">3.</span> <strong>Condition on $Z$.</strong> Fix a value of $Z$.
+Then $A_i=\sqrt{\rho}Z+\sqrt{1-\rho}\,\varepsilon_i$ is, conditional on $Z$, a deterministic shift
+($\sqrt{\rho}Z$) plus $\sqrt{1-\rho}$ times $\varepsilon_i$ — and $\varepsilon_i$ is independent of $Z$, so
+conditioning on $Z$ does not change $\varepsilon_i$'s distribution: $\varepsilon_i\mid Z \sim N(0,1)$, the
+same as its unconditional distribution. Therefore
+$$ A_i \mid Z \;\sim\; N\big(\sqrt{\rho}Z,\ 1-\rho\big). $$</div>
+<div class="step"><span class="stepno">4.</span> <strong>Standardise and evaluate.</strong>
+$$ P(A_i\lt c\mid Z) = P\big(\sqrt{\rho}Z+\sqrt{1-\rho}\,\varepsilon_i\lt c \mid Z\big) = P\!\left(\varepsilon_i < \frac{c-\sqrt{\rho}Z}{\sqrt{1-\rho}}\ \Big|\ Z\right). $$
+Since $\varepsilon_i\mid Z\sim N(0,1)$ (step&nbsp;3), the right-hand probability is exactly the standard
+normal CDF evaluated at that point:
+$$ P(A_i\lt c\mid Z) = \Phi\!\left(\frac{c-\sqrt{\rho}Z}{\sqrt{1-\rho}}\right). $$</div>
+<div class="step"><span class="stepno">5.</span> <strong>Substitute the calibrated threshold from
+step&nbsp;2.</strong> Writing $PD_{PIT}(Z):=P(A_i\lt c\mid Z)$ and substituting $c=\Phi^{-1}(PD_{TTC})$:
+$$ \boxed{\,PD_{PIT}(Z) = \Phi\!\left(\frac{\Phi^{-1}(PD_{TTC})-\sqrt{\rho}\,Z}{\sqrt{1-\rho}}\right)\,} $$
+— the target formula, with every step traceable back to the asset-value decomposition and nothing asserted
+without justification.</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Step&nbsp;4's standardisation is the entire mechanism: conditioning on $Z$ shrinks
+the residual borrower-level uncertainty from a full standard normal ($A_i$ unconditionally) down to just
+the idiosyncratic piece ($\varepsilon_i\mid Z$, scaled by $\sqrt{1-\rho}$), and shifts the threshold's
+effective location by $\sqrt{\rho}Z$. A downturn ($Z<0$) makes $-\sqrt{\rho}Z$ positive, pushing the
+argument of $\Phi$ up, so $PD_{PIT}$ rises above $PD_{TTC}$ — and because $\Phi$ is an S-shaped CDF, this
+effect is <em>not</em> linear in $Z$: moving $Z$ from 0 to $-1$ moves $PD_{PIT}$ by less than moving it from
+$-1$ to $-2$ does (in absolute PD terms) whenever the starting PD is on the steep part of $\Phi$'s curve,
+the mechanism behind Chapter&nbsp;6's Jensen's-inequality result.
+</div>
+
+<div class="ex">
+<b>Worked example — the golden fixture, step by step.</b> $PD_{TTC}=2\%$, $\rho=0.12$
+(<code>tests/fixtures/compute_vasicek.py</code>). First, the calibrated threshold (step&nbsp;2):
+$$ c = \Phi^{-1}(0.02) = -2.053749, \qquad \sqrt{\rho}=\sqrt{0.12}=0.346410, \qquad \sqrt{1-\rho}=\sqrt{0.88}=0.938083. $$
+Now substitute three marked cycle states into step&nbsp;5's formula, with every intermediate value shown
+(computed by <code>tests/fixtures/compute_vasicek.py</code>, printed values below):
+<div class="table-wrap">
+<table>
+<tr><th>$Z$</th><th>numerator $c-\sqrt{\rho}Z$</th><th>ratio $\div\sqrt{1-\rho}$</th><th>$PD_{PIT}(Z)=\Phi(\text{ratio})$</th></tr>
+<tr><td>$+2.0$ (good state)</td><td class="num">$-2.053749-(0.346410)(2.0)=-2.746569$</td><td class="num">$-2.746569/0.938083=-2.927853$</td><td class="num">$\Phi(-2.927853)=0.17\%$</td></tr>
+<tr><td>$\phantom{+}0.0$ (cycle-neutral)</td><td class="num">$-2.053749-(0.346410)(0.0)=-2.053749$</td><td class="num">$-2.053749/0.938083=-2.189304$</td><td class="num">$\Phi(-2.189304)=1.43\%$</td></tr>
+<tr><td>$-2.0$ (downturn)</td><td class="num">$-2.053749-(0.346410)(-2.0)=-1.360929$</td><td class="num">$-1.360929/0.938083=-1.450755$</td><td class="num">$\Phi(-1.450755)=7.34\%$</td></tr>
+</table>
+</div>
+The full 6-point table the source notes tabulate (all reproduced exactly by
+<code>compute_vasicek.py</code>'s <code>RESULTS</code>, matching <code>TARGETS</code> at the notes'
+displayed 2-decimal precision):
+<div class="table-wrap">
+<table>
+<tr><th>$Z$ (cycle)</th><td>+2.0</td><td>+1.0</td><td>0.0</td><td>&minus;1.0</td><td>&minus;2.0</td><td>&minus;2.5</td></tr>
+<tr><th>$PD_{PIT}$ (computed)</th><td class="num">0.1707%</td><td class="num">0.5255%</td><td class="num">1.4287%</td><td class="num">3.4377%</td><td class="num">7.3424%</td><td class="num">10.2736%</td></tr>
+<tr><th>$PD_{PIT}$ (notes, 2dp)</th><td class="num">0.17%</td><td class="num">0.53%</td><td class="num">1.43%</td><td class="num">3.44%</td><td class="num">7.34%</td><td class="num">10.27%</td></tr>
+</table>
+</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> A $2\%$ TTC borrower is essentially safe in a good state ($0.17\%$ at $Z=+2$, an
+$11.7\times$ compression) and roughly $5\times$ riskier at the depth of a downturn ($10.27\%$ at $Z=-2.5$)
+— the asymmetry (compression in good states is smaller in absolute terms than inflation in bad states) is
+the same convexity Chapter&nbsp;6 turns into a quantitative Jensen's-inequality statement about
+probability-weighted vs single-path ECL.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In step&nbsp;2, why is $c=\Phi^{-1}(PD_{TTC})$ rather than, say, $c=PD_{TTC}$ directly?
+  <details><summary>Answer</summary>
+  <div class="answer">$c$ is a threshold on the standard-normal variable $A_i$, not a probability itself
+  — $P(A_i\lt c)=\Phi(c)$ (step&nbsp;1's result), so setting this equal to $PD_{TTC}$ and solving for $c$
+  requires inverting $\Phi$: $c=\Phi^{-1}(PD_{TTC})$. Using $c=PD_{TTC}$ directly would put the threshold
+  on the wrong scale (a probability, not a standard-normal quantile) and give the wrong unconditional
+  default rate.</div>
+  </details>
+</li>
+<li>Recompute $PD_{PIT}(Z=-1.0)$ from the boxed formula using $c=-2.053749$, $\sqrt{\rho}=0.346410$,
+$\sqrt{1-\rho}=0.938083$ and check it against the table.
+  <details><summary>Answer</summary>
+  <div class="answer">Numerator: $-2.053749-(0.346410)(-1.0)=-2.053749+0.346410=-1.707339$. Ratio:
+  $-1.707339/0.938083=-1.820030$. $PD_{PIT}=\Phi(-1.820030)\approx 3.44\%$ — matches the table's
+  $-1.0$ column exactly.</div>
+  </details>
+</li>
+<li>Which step of the derivation would break if $\varepsilon_i$ were correlated with $Z$?
+  <details><summary>Answer</summary>
+  <div class="answer">Step&nbsp;3 — the claim "$\varepsilon_i\mid Z\sim N(0,1)$, unchanged from its
+  unconditional distribution" relies entirely on independence between $\varepsilon_i$ and $Z$. If they
+  were correlated, conditioning on $Z$ would shift and/or rescale $\varepsilon_i$'s conditional
+  distribution too, and the clean closed form in step&nbsp;4 would not follow.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="gotcha">
+<b>Gotcha — $\Phi^{-1}(PD_{TTC})$ is negative for any realistic PD.</b> Since $PD_{TTC}<0.5$ for any sane
+credit portfolio, $\Phi^{-1}(PD_{TTC})<0$ always ($\Phi^{-1}(0.02)=-2.0537$ here). It is easy to
+mis-transcribe the sign when substituting into the numerator $c-\sqrt{\rho}Z$ — double-check that a
+POSITIVE $Z$ (good state) makes the numerator MORE negative (since $-\sqrt{\rho}Z<0$ when $Z>0$), which
+pushes $\Phi(\cdot)$ toward 0, i.e. a LOWER PD. If your substitution gives a higher PD at $Z=+2$ than at
+$Z=-2$, a sign has flipped somewhere.
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-4">5.4 The anchor property: E_Z[PD_PIT(Z)] = PD_TTC</h3>
+<!-- ============================================================== -->
+<p>The model would be useless as a TTC-consistent transformation layer if averaging $PD_{PIT}(Z)$ back over
+the cycle did not return exactly $PD_{TTC}$. This section proves that it does, analytically, then verifies
+it two independent numerical ways.</p>
+
+<div class="thm">
+<b>Theorem — the anchor property.</b> With $Z\sim N(0,1)$ and $PD_{PIT}(Z)$ as derived in
+&sect;5.3, $$ \mathbb{E}_Z\big[PD_{PIT}(Z)\big] = PD_{TTC}. $$
+</div>
+
+<div class="derivation">
+<b>Proof — via the tower property / law of total probability.</b>
+<div class="step"><span class="stepno">1.</span> By definition, $PD_{PIT}(Z)=P(\text{default}\mid Z)$ — the
+conditional probability of the event "$A_i\lt c$" given the systematic factor $Z$ (&sect;5.3, step&nbsp;4).</div>
+<div class="step"><span class="stepno">2.</span> The tower property (law of total probability, integrating
+a conditional probability over the conditioning variable's own distribution) states
+$\mathbb{E}_Z\big[P(\text{default}\mid Z)\big]=P(\text{default})$ — the UNCONDITIONAL probability of
+default, marginalising $Z$ out.</div>
+<div class="step"><span class="stepno">3.</span> But $P(\text{default})=P(A_i\lt c)$ is exactly the quantity
+&sect;5.3 step&nbsp;2 calibrated $c$ against: $P(A_i\lt c)=\Phi(c)=PD_{TTC}$, by construction.</div>
+<div class="step"><span class="stepno">4.</span> Chaining steps 1&ndash;3: $\mathbb{E}_Z[PD_{PIT}(Z)] = \mathbb{E}_Z[P(\text{default}\mid Z)] = P(\text{default}) = PD_{TTC}$. $\blacksquare$</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> This is not a numerical coincidence that happens to hold at $PD_{TTC}=2\%,\rho=0.12$
+— it is a structural identity that holds for <em>any</em> $(PD_{TTC},\rho)$ pair, because it follows purely
+from how $c$ was calibrated in &sect;5.3 step&nbsp;2 and the tower property, neither of which depended on
+the specific numbers. It is the model's internal consistency guarantee: cycle-average the PIT curve and you
+get back exactly the TTC anchor you started from, no matter how you slice the cycle.
+</div>
+
+<div class="ex">
+<b>Numerical verification — Gauss&ndash;Hermite quadrature.</b> The proof above is exact, but
+<code>tests/fixtures/compute_vasicek.py</code> additionally verifies it numerically two independent ways, as
+the backlog requires. Gauss&ndash;Hermite quadrature approximates
+$\mathbb{E}_Z[f(Z)]=\frac{1}{\sqrt{\pi}}\sum_i w_i\, f(\sqrt{2}\,x_i)$ for Hermite nodes $x_i$/weights
+$w_i$ and $f=PD_{PIT}(\cdot)$. At $n=80$ nodes, printed directly from the fixture's computation:
+<pre style="white-space:pre-wrap; font-size:12.3px; background:var(--code-bg); padding:8px 10px; border-radius:4px;">sum_i w_i * f(sqrt(2) * x_i)              = 0.035449
+E_Z[PD_PIT(Z)] = (1/sqrt(pi)) * 0.035449  = 0.020000
+target PD_TTC                              = 0.020000
+|error|                                     = 6.939e-18</pre>
+A second, independent method — fine trapezoidal integration of $PD_{PIT}(z)\cdot\phi(z)$ over
+$z\in[-10,10]$ at 200,001 points — lands on the same six-decimal value:
+<code>expected_pd_pit_fine_grid = 0.020000</code>. Both agree with $PD_{TTC}=0.020000$ to far beyond the
+notes' displayed precision, and with each other despite being algorithmically unrelated (orthogonal
+polynomial quadrature vs brute-force trapezoidal integration) — a strong cross-check that the closed-form
+formula and its integral are both implemented correctly.
+</div>
+
+<div class="warn">
+<b>Do not confuse this with "$Z=0$ reproduces $PD_{TTC}$".</b> $PD_{PIT}(0)=1.4287\%\ne PD_{TTC}=2\%$ (the
+golden fixture's own $Z=0$ row) — the anchor property is about the <em>average over the full distribution
+of $Z$</em>, not the value at the cycle-neutral point $Z=0$. The gap $PD_{TTC}-PD_{PIT}(0)=2\%-1.43\%=0.57$
+percentage points is Jensen's inequality again ($PD_{PIT}$ is convex in $Z$ over this range, so its value
+at the mean of $Z$ is below the mean of its values) — Chapter&nbsp;6 proves this rigorously and quantifies
+the ECL consequence.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the anchor property is a statement about $Z$'s TRUE distribution, not about a finite
+sample.</b> A recovered path of only 60 quarters (&sect;5.6&ndash;5.7) will not average to exactly
+$PD_{TTC}$ even at the correctly calibrated $\rho$ — sampling noise in a finite historical window means
+the SAMPLE mean of $PD_{PIT}(Z_t)$ over 60 realised quarters can differ from the theoretical $PD_{TTC}$
+anchor. &sect;5.7 documents exactly this: the recovered path's mean(Z) is $-1.145$, not $0$, and the notes
+attribute the gap to identifiable modelling causes rather than treating it as a violation of the theorem.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Which step of the tower-property proof would fail if $c$ had been chosen arbitrarily, rather than
+calibrated as $\Phi^{-1}(PD_{TTC})$?
+  <details><summary>Answer</summary>
+  <div class="answer">Step&nbsp;3 — $P(A_i\lt c)=\Phi(c)$ would still hold (that's just $A_i$'s
+  unconditional CDF), but it would equal $\Phi(c)$ for whatever $c$ was chosen, not necessarily
+  $PD_{TTC}$. The whole point of the calibration in &sect;5.3 step&nbsp;2 is to make $\Phi(c)=PD_{TTC}$
+  exactly, which is what step&nbsp;3 then plugs in.</div>
+  </details>
+</li>
+<li>Why does the fixture verify the anchor property with TWO independent numerical methods instead of
+one?
+  <details><summary>Answer</summary>
+  <div class="answer">Agreement between two algorithmically unrelated methods (orthogonal-polynomial
+  quadrature vs brute-force trapezoidal grid integration) that both land on the same value is much
+  stronger evidence of a correct implementation than either method alone — a bug shared by both would
+  have to be a genuine error in the closed-form $PD_{PIT}(Z)$ formula itself, not an artefact of one
+  integration scheme.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-5">5.5 Interactive: PD_PIT vs Z &amp; &rho;, and a TTC&harr;PIT converter</h3>
+<!-- ============================================================== -->
+<p>The widget below re-implements &sect;5.3's boxed formula in JavaScript — an independent normal
+CDF/inverse-CDF pair, not a lookup table — and recomputes the curve and the marked-point table live as you
+drag $PD_{TTC}$ and $\rho$. At the defaults ($PD_{TTC}=2\%$, $\rho=0.12$) the six marked points reproduce
+&sect;5.3's golden-fixture table exactly, annotated as dots on the curve. Below it, a small converter box
+runs the &sect;5.6 INVERSE direction: given an observed rate and a TTC anchor, recover the implied $Z$.</p>
+
+<div class="widget">
+<h4>Live widget — drag the sliders</h4>
+<div class="widget-controls" id="vasicek-controls"></div>
+<div id="vasicek-plot"></div>
+<div id="vasicek-table"></div>
+</div>
+
+<div class="note">
+<b>Correctness check.</b> At the defaults the marked-point table below the curve reproduces
+<code>tests/fixtures/compute_vasicek.py</code>'s golden values exactly (e.g. $PD_{PIT}(-2.0)=7.34\%$,
+$PD_{PIT}(+2.0)=0.17\%$) — this page's JS normal-CDF/PPF are independent re-implementations of the same
+closed form the Python fixture computes with <code>scipy.stats.norm</code>, so agreement to 2 displayed
+decimals cross-checks both.
+</div>
+
+<h4>TTC&harr;PIT converter</h4>
+<p>Forward direction (TTC&rarr;PIT) is the widget above. This box runs the INVERSE direction &sect;5.6
+needs: given an observed default rate $DR$ for some period and a TTC anchor, invert &sect;5.3's formula to
+recover the implied systematic factor $Z$ — the same <code>invert_z</code> operation
+<code>engine/vasicek.py</code> runs once per panel quarter.</p>
+<div class="widget">
+<h4>Recover Z from an observed rate</h4>
+<div class="converter" id="converter-controls"></div>
+<div class="converter-readout" id="converter-readout"></div>
+</div>
+
+<script src="../assets/js/widgets.js"></script>
+<script>
+(function () {
+  // --- Standard normal CDF and inverse CDF, independent JS re-implementation
+  //     (same pair as notes/assets/widget_demo.html) ---
+  function erf(x) {
+    var sign = x < 0 ? -1 : 1;
+    x = Math.abs(x);
+    var a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741,
+        a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    var t = 1 / (1 + p * x);
+    var y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+  }
+  function normCdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+  function normPpf(p) {
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+              1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+              6.680131188771972e+01, -1.328068155288572e+01];
+    var c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+              -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    var d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+              3.754408661907416e+00];
+    var plow = 0.02425, phigh = 1 - plow, q, r;
+    if (p < plow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+             ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    } else if (p <= phigh) {
+      q = p - 0.5; r = q * q;
+      return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5]) * q /
+             (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+              ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    }
+  }
+  function pdPit(z, pdTtc, rho) {
+    return normCdf((normPpf(pdTtc) - Math.sqrt(rho) * z) / Math.sqrt(1 - rho));
+  }
+  function invertZ(observedRate, ttcAnchor, rho) {
+    return (normPpf(ttcAnchor) - Math.sqrt(1 - rho) * normPpf(observedRate)) / Math.sqrt(rho);
+  }
+
+  // ---- Flagship widget: PD_PIT(Z) curve with marked-fixture-point annotations ----
+  var state = { pdTtc: 0.02, rho: 0.12 };
+  var controls = document.getElementById('vasicek-controls');
+
+  Widgets.makeSlider(controls, {
+    label: 'PD_TTC', min: 0.005, max: 0.10, step: 0.001, value: state.pdTtc,
+    format: function (v) { return (v * 100).toFixed(1) + '%'; },
+    onInput: function (v) { state.pdTtc = v; redraw(); }
+  });
+  Widgets.makeSlider(controls, {
+    label: 'rho (asset correlation)', min: 0.01, max: 0.30, step: 0.01, value: state.rho,
+    format: function (v) { return v.toFixed(2); },
+    onInput: function (v) { state.rho = v; redraw(); }
+  });
+  var zInput = Widgets.makeNumberInput(controls, {
+    label: 'Z (query point)', min: -3, max: 3, step: 0.1, value: -1,
+    format: function (v) { return v.toFixed(1); },
+    onInput: function () { redraw(); }
+  });
+
+  function curvePoints(pdTtc, rho) {
+    var pts = [];
+    for (var z = -3; z <= 3.0001; z += 0.05) pts.push([z, pdPit(z, pdTtc, rho) * 100]);
+    return pts;
+  }
+
+  var plot = Widgets.makeLinePlot(document.getElementById('vasicek-plot'), {
+    width: 640, height: 340,
+    xDomain: [-3, 3], yDomain: [0, 15],
+    xLabel: 'Z (systematic factor, downturn <- -> upturn)',
+    yLabel: 'PD_PIT (%)',
+    title: 'PD_PIT(Z) at current PD_TTC, rho -- dots mark the golden-fixture Z points',
+    series: [{ name: 'PD_PIT(Z)', color: '#1f3a5f', points: curvePoints(state.pdTtc, state.rho) }]
+  });
+
+  // Marker layer: widgets.js's makeLinePlot has no built-in point markers, so
+  // this chapter's own script appends <circle> elements onto plot.svg after
+  // every update(), using the SAME margin/domain convention as widgets.js's
+  // internal sx()/sy() (documented in notes/assets/js/widgets.js).
+  var PLOT_W = 640, PLOT_H = 340;
+  var MARGIN = { top: 26, right: 18, bottom: 42, left: 52 };
+  var plotW = PLOT_W - MARGIN.left - MARGIN.right;
+  var plotH = PLOT_H - MARGIN.top - MARGIN.bottom;
+  function svgEl(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function addMarkers(xDomain, yDomain, points, color, radius) {
+    points.forEach(function (p) {
+      var sx = MARGIN.left + (p[0] - xDomain[0]) / (xDomain[1] - xDomain[0]) * plotW;
+      var sy = MARGIN.top + plotH - (p[1] - yDomain[0]) / (yDomain[1] - yDomain[0]) * plotH;
+      plot.svg.appendChild(svgEl('circle', { cx: sx, cy: sy, r: radius, fill: color, stroke: '#fff', 'stroke-width': 1 }));
+    });
+  }
+
+  var markedZ = [2.0, 1.0, 0.0, -1.0, -2.0, -2.5];
+  var table = Widgets.makeLiveTable(document.getElementById('vasicek-table'), {
+    columns: [
+      { key: 'z', label: 'Z', format: function (v) { return v.toFixed(1); } },
+      { key: 'pdPit', label: 'PD_PIT (%)', format: function (v) { return v.toFixed(2); } }
+    ],
+    rows: markedZ.map(function (z) { return { z: z, pdPit: pdPit(z, state.pdTtc, state.rho) * 100 }; })
+  });
+
+  function redraw() {
+    var pts = curvePoints(state.pdTtc, state.rho);
+    var maxY = Math.max(15, Math.ceil(Math.max.apply(null, pts.map(function (p) { return p[1]; })) * 1.15));
+    var yDomain = [0, maxY];
+    plot.update([{ name: 'PD_PIT(Z)', color: '#1f3a5f', points: pts }], yDomain, [-3, 3]);
+
+    var markerPts = markedZ.map(function (z) { return [z, pdPit(z, state.pdTtc, state.rho) * 100]; });
+    addMarkers([-3, 3], yDomain, markerPts, '#c0392b', 3.4);
+    var q = zInput.value;
+    addMarkers([-3, 3], yDomain, [[q, pdPit(q, state.pdTtc, state.rho) * 100]], '#e67e22', 4.6);
+
+    var rows = markedZ.map(function (z) { return { z: z, pdPit: pdPit(z, state.pdTtc, state.rho) * 100 }; });
+    rows.push({ z: q, pdPit: pdPit(q, state.pdTtc, state.rho) * 100 });
+    table.update(rows);
+  }
+  redraw();
+
+  // ---- TTC<->PIT converter: recover Z from an observed rate + TTC anchor ----
+  var conv = { observed: 0.0415, anchor: 0.0167, rho: 0.0227 };
+  var convControls = document.getElementById('converter-controls');
+  Widgets.makeNumberInput(convControls, {
+    label: 'observed rate DR_t', min: 0.001, max: 0.30, step: 0.001, value: conv.observed,
+    format: function (v) { return (v * 100).toFixed(2) + '%'; },
+    onInput: function (v) { conv.observed = v; convRedraw(); }
+  });
+  Widgets.makeNumberInput(convControls, {
+    label: 'TTC anchor PD_TTC,t', min: 0.001, max: 0.30, step: 0.001, value: conv.anchor,
+    format: function (v) { return (v * 100).toFixed(2) + '%'; },
+    onInput: function (v) { conv.anchor = v; convRedraw(); }
+  });
+  Widgets.makeNumberInput(convControls, {
+    label: 'rho', min: 0.005, max: 0.30, step: 0.001, value: conv.rho,
+    format: function (v) { return v.toFixed(4); },
+    onInput: function (v) { conv.rho = v; convRedraw(); }
+  });
+  var convReadout = document.getElementById('converter-readout');
+  function convRedraw() {
+    var z = invertZ(conv.observed, conv.anchor, conv.rho);
+    var roundTrip = pdPit(z, conv.anchor, conv.rho);
+    var err = Math.abs(roundTrip - conv.observed);
+    convReadout.innerHTML =
+      'recovered <b>Z = ' + z.toFixed(4) + '</b> &nbsp; | &nbsp; round trip check: PD_PIT(Z, anchor, rho) = ' +
+      (roundTrip * 100).toFixed(4) + '% vs observed ' + (conv.observed * 100).toFixed(4) +
+      '% &nbsp; (|error| = ' + err.toExponential(2) + ')';
+  }
+  convRedraw();
+})();
+</script>
+
+<div class="note">
+<b>What to try.</b> The converter's defaults are the panel's own 2008Q1 row
+(<code>outputs/vasicek/z_path.csv</code>: observed $DR=4.15\%$, composition-adjusted anchor
+$PD_{TTC,t}=1.67\%$, calibrated $\rho=0.0227$) — it recovers $Z\approx-2.74$, the credit-cycle trough
+&sect;5.7 reports. Push the observed rate toward the anchor value and watch $Z\to 0$; push $\rho$ toward 0
+and watch small differences between observed and anchor blow $|Z|$ up (the $1/\sqrt{\rho}$ factor in the
+inversion formula), which is exactly the mechanism &sect;5.7's Belkin calibration exploits to pin down
+$\rho$.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the flagship widget's curve is NOT the same object as the anchor property.</b> Moving the
+sliders shows how $PD_{PIT}$ varies WITH $Z$ at a fixed $(PD_{TTC},\rho)$ — it never re-verifies
+&sect;5.4's $\mathbb{E}_Z[PD_{PIT}(Z)]=PD_{TTC}$ identity, because the widget does not integrate over $Z$'s
+distribution, it only evaluates the curve pointwise. The two are related (the curve IS the function being
+averaged) but a live curve is a different check from a live integral.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>At the widget's default sliders, what should $PD_{PIT}(Z=-2.5)$ read, and against which fixture value
+can you verify it?
+  <details><summary>Answer</summary>
+  <div class="answer">$10.27\%$ — verifiable against <code>tests/fixtures/compute_vasicek.py</code>'s
+  <code>RESULTS['pd_pit_pct_z_minus_2_5']</code> (computed $10.2736\%$, matching the notes' displayed
+  $10.27\%$).</div>
+  </details>
+</li>
+<li>In the converter, if $DR_t$ exactly equals the anchor $PD_{TTC,t}$, what should the recovered $Z$ be,
+and why isn't it always exactly 0 even then?
+  <details><summary>Answer</summary>
+  <div class="answer">Algebraically, $Z=\big(\Phi^{-1}(a)-\sqrt{1-\rho}\Phi^{-1}(a)\big)/\sqrt{\rho}
+  =\Phi^{-1}(a)\,(1-\sqrt{1-\rho})/\sqrt{\rho}$ when $DR_t=a=$ anchor — this is only exactly 0 if
+  $\Phi^{-1}(a)=0$ (i.e. $a=50\%$, never true for a credit portfolio) or $\rho\to 0$; for any realistic
+  anchor and $\rho>0$ there is a small structural offset, exactly the "(ii) structural inversion offset"
+  cause &sect;5.7's report documents for why mean(Z) is not forced to zero.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-6">5.6 Z-recovery on the panel: why raw counts mislead</h3>
+<!-- ============================================================== -->
+<p>Sections 5.1&ndash;5.5 assumed $Z$ was handed to you. In practice nobody hands you the cycle factor —
+it has to be RECOVERED from a history of observed default rates by inverting &sect;5.3's formula. This
+section walks the recovery pipeline actually run on this project's 50k-loan mortgage panel
+(<code>engine/vasicek.py</code>, method documented in <code>outputs/vasicek/vasicek_report.md</code>).</p>
+
+<div class="derivation">
+<b>Derivation — inverting the Vasicek formula to recover $Z_t$.</b>
+<div class="step"><span class="stepno">1.</span> Identify a period (quarter $t$)'s OBSERVED default rate
+$DR_t$ (defaults / at-risk loans that quarter) with the model's $PD_{PIT}(Z_t)$ — the ASRF infinite-
+granularity approximation from &sect;5.2's warning box, applied here at the FINITE portfolio level (the
+panel's 621,736 loan-quarters are large enough that this is a reasonable working approximation, not exact).</div>
+<div class="step"><span class="stepno">2.</span> Start from &sect;5.3's boxed formula with the period's own
+TTC anchor $PD_{TTC,t}$: $DR_t=\Phi\big((\Phi^{-1}(PD_{TTC,t})-\sqrt{\rho}Z_t)/\sqrt{1-\rho}\big)$.</div>
+<div class="step"><span class="stepno">3.</span> Apply $\Phi^{-1}$ to both sides:
+$\Phi^{-1}(DR_t)=(\Phi^{-1}(PD_{TTC,t})-\sqrt{\rho}Z_t)/\sqrt{1-\rho}$.</div>
+<div class="step"><span class="stepno">4.</span> Solve for $Z_t$: multiply by $\sqrt{1-\rho}$, move terms,
+divide by $\sqrt{\rho}$:
+$$ Z_t = \frac{\Phi^{-1}(PD_{TTC,t}) - \sqrt{1-\rho}\,\Phi^{-1}(DR_t)}{\sqrt{\rho}}. $$
+This is an EXACT algebraic inversion of &sect;5.3's formula — not a new model, the same equation solved for
+a different unknown.</div>
+</div>
+
+<img class="fig" src="../assets/img/ch05/02_z_recovery_pipeline.png" alt="Flowchart: a quarter's at-risk loans yield the observed default rate and, when scored with macro frozen at panel means, the composition-adjusted TTC anchor; both feed the Vasicek inversion producing Z_t; the recovered path then drives a Belkin calibration solving for rho so Var(Z_t)=1, which feeds back into re-inverting Z">
+<div class="figcap"><b>Exhibit 5.2</b> — The Z-recovery pipeline run once per panel quarter: observed rate
+and composition-adjusted anchor &rarr; inversion &rarr; $Z_t$ &rarr; Belkin $\mathrm{Var}(Z_t)=1$
+calibration (which re-solves $\rho$ and feeds back into the inversion). Regenerated in matplotlib
+(<code>engine/vasicek.py</code>, <code>outputs/vasicek/vasicek_report.md</code>).</div>
+
+<div class="warn">
+<b>The composition-adjustment problem — why $PD_{TTC,t}$ must vary by quarter, and why raw counts
+mislead.</b> This project's 50k-loan panel GROWS toward mid-panel (more loans are at risk in later
+quarters than early ones) — so the raw observed default COUNT, and even the raw observed RATE, mixes
+<em>vintage composition</em> (which loans happen to be at risk this quarter, and how seasoned/risky they
+are) with the genuine credit CYCLE effect this chapter wants to isolate. A naive Z-recovery that used one
+FIXED $PD_{TTC}$ for every quarter (the golden-fixture convention, fine for a static worked example) would
+attribute composition shifts to the cycle, contaminating $Z_t$. <code>engine/vasicek.py</code>'s fix:
+recompute the TTC anchor EVERY quarter as the mean PREDICTED hazard of that quarter's ACTUAL at-risk rows,
+scored by the frozen (train-fit) default hazard with the four macro regressors held at PANEL-PERIOD MEANS
+($\overline{uer}_{t-1}=6.4000$, $\overline{\Delta_4 uer}_{t-1}=0.1600$, $\overline{hpi\ growth}_{t-1}=0.0096$,
+$\overline{gdp}_{t-1}=1.8281$ — <code>outputs/vasicek/vasicek_report.md</code>) while loan-STATE covariates
+(age, FICO, updated LTV, prepay incentive) stay ACTUAL. This reprices the live, evolving book under a
+cycle-NEUTRAL macro state each quarter — composition moves the anchor, the genuine cycle moves $Z_t$.
+</div>
+
+<div class="ex">
+<b>Worked example — the 2008Q1 trough, from the panel's own numbers.</b>
+(<code>outputs/vasicek/z_path.csv</code>, row <code>time=32</code>, calendar 2008Q1): $n_{\text{at-risk}}=24{,}066$,
+defaults$=999$, so the observed rate is $DR_t=999/24{,}066=4.151085\%$; the composition-adjusted anchor that
+quarter is $PD_{TTC,t}=1.671181\%$; the calibrated $\rho=0.0227$ (&sect;5.7). Substituting into
+&sect;5.6's inversion formula:
+<pre style="white-space:pre-wrap; font-size:12.3px; background:var(--code-bg); padding:8px 10px; border-radius:4px;">Phi^-1(PD_TTC,t) = Phi^-1(0.01671181)              = -2.126957
+Phi^-1(DR_t)     = Phi^-1(0.04151085)              = -1.733416
+sqrt(1-rho)      = sqrt(1-0.0227)                  =  0.988585
+sqrt(rho)        = sqrt(0.0227)                    =  0.150665
+Z_t = ( -2.126957 - (0.988585)*(-1.733416) ) / 0.150665
+    = ( -2.126957 + 1.713629 ) / 0.150665
+    = -0.413328 / 0.150665
+    = -2.743357</pre>
+matching (to display rounding of the CSV's own inputs) the panel's reported $Z_{2008Q1}=-2.74289$ — the
+credit-cycle TROUGH, per <code>outputs/vasicek/vasicek_report.md</code>, exactly inside the NBER-dated GFC
+window (2007Q4&ndash;2009Q2).
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The observed rate roughly TRIPLED ($4.15\%$ vs a $1.67\%$ composition-neutral
+anchor) in 2008Q1 — feeding that gap through the calibrated, small $\rho=0.0227$ (division by
+$\sqrt{0.0227}\approx 0.151$, a SMALL number) amplifies the standardised gap into a large $|Z|$. This is
+the same $1/\sqrt{\rho}$ sensitivity the converter widget's "what to try" box demonstrated: a small $\rho$
+makes the recovered cycle factor swing WIDE for a given observed-vs-anchor gap, which is exactly the lever
+&sect;5.7's Belkin calibration uses in reverse to solve for $\rho$ from the REQUIRED variance of the whole
+path.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — identifying a period default RATE with $PD_{PIT}(Z)$ is an approximation, not an identity.</b>
+&sect;5.2's warning box already flagged this: the ASRF result is exact only for an infinitely granular
+portfolio. A 24,066-loan quarter is large but finite — the recovered $Z_t$ therefore also absorbs some pure
+sampling noise on top of the genuine systematic factor, most visibly in the panel's THIN early quarters
+(283 at-risk loans at $t=1$, per <code>outputs/vasicek/vasicek_report.md</code>'s documented limits), where
+$|Z_t|$ noise is inflated and no smoothing is applied.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why can't the Z-recovery pipeline simply reuse the golden fixture's single, constant $PD_{TTC}=2\%$
+for every quarter of the panel?
+  <details><summary>Answer</summary>
+  <div class="answer">The panel's book composition changes materially across quarters (it grows toward
+  mid-panel, so which loans are at risk — their age, vintage, credit quality — shifts over time). A fixed
+  TTC anchor would misattribute those composition shifts to the systematic factor $Z_t$, contaminating the
+  recovered cycle with a vintage-mix effect that has nothing to do with macro conditions; the
+  composition-adjusted per-quarter anchor $PD_{TTC,t}$ removes this before inversion.</div>
+  </details>
+</li>
+<li>In the 2008Q1 worked example, which term in the inversion formula is most responsible for amplifying
+the observed-vs-anchor gap into a large $|Z_t|$?
+  <details><summary>Answer</summary>
+  <div class="answer">The division by $\sqrt{\rho}=\sqrt{0.0227}\approx 0.1507$ — a small $\rho$ means a
+  small denominator, so the same standardised numerator gap ($\approx-0.41$ here) gets divided by a small
+  number and blown up into $Z_t\approx-2.74$. A larger $\rho$ (e.g. the notes' $0.12$) would produce a
+  much smaller $|Z_t|$ for the identical observed/anchor gap.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-7">5.7 Belkin calibration and the credit cycle</h3>
+<!-- ============================================================== -->
+<p>&sect;5.6 recovered $Z_t$ GIVEN a value of $\rho$. Where does $\rho$ itself come from? Belkin, Suchower
+&amp; Forest (1998)'s answer: calibrate $\rho$ so that the recovered path's own variance matches the
+model's premise that $Z\sim N(0,1)$, i.e. $\mathrm{Var}(Z)=1$.</p>
+
+<div class="defn">
+<b>Belkin calibration.</b> Solve for the $\rho$ that makes $\mathrm{Var}(Z_t(\rho))=1$ (sample variance,
+ddof=1, over all periods) where $Z_t(\rho)$ is &sect;5.6's inversion formula evaluated at that $\rho$. As
+$\rho\to 0$, the $1/\sqrt{\rho}$ factor blows the variance up without bound; as $\rho\to 1$, the variance
+collapses toward the (small) variance of the anchor thresholds alone — so the crossing $\mathrm{Var}(Z_t(\rho))=1$
+is unique in practice, found here by bracketed root-finding (<code>engine/vasicek.py</code>'s
+<code>calibrate_rho</code>).
+</div>
+
+<div class="table-wrap">
+<table>
+<tr><th>quantity</th><th>main (composition-adjusted)</th><th>variant (orig-LTV frozen)</th></tr>
+<tr><td>calibrated $\rho$ (Var(Z)=1)</td><td class="num"><strong>0.0227</strong></td><td class="num">0.0633</td></tr>
+<tr><td>mean($Z_t$)</td><td class="num">&minus;1.145</td><td class="num">&minus;0.861</td></tr>
+<tr><td>Var($Z_t$), ddof=1</td><td class="num">1.000000</td><td class="num">1.000000</td></tr>
+<tr><td>quarters used</td><td class="num">60</td><td class="num">60</td></tr>
+<tr><td>Z trough</td><td>2008Q1 ($Z=-2.74$)</td><td>2009Q2 ($Z=-2.64$)</td></tr>
+</table>
+</div>
+<p class="src">Source: <code>outputs/vasicek/vasicek_report.md</code> "Calibration" table.</p>
+
+<div class="interpretation">
+<b>Interpretation — $\rho=0.0227$ vs the notes' $0.12$ vs Basel's $0.15$.</b> The calibrated
+$\rho=0.0227$ sits well below BOTH the study notes' illustrative worked-example convention
+($\rho=0.12$, used throughout &sect;5.3&ndash;5.5) AND the Basel IRB supervisory asset correlation for
+residential mortgages ($\rho=0.15$, CRE31.10 — a REGULATORY convention, calibrated for capital
+conservatism, not fit to any specific time series). That ordering is the EXPECTED one, for two compounding
+reasons. First, empirical asset correlations estimated from a real default-rate time series are routinely
+a fraction of regulatory conventions in general — supervisory $\rho$ values are deliberately conservative
+inputs to a capital formula, not maximum-likelihood fits to history. Second, and specific to this project's
+methodology, COMPOSITION-ADJUSTING the anchor (&sect;5.6) absorbs part of the systematic variance INTO the
+quarter-specific TTC rate itself, damping how much variance is left for $Z_t$ to carry — which mechanically
+pulls the calibrated $\rho$ down further. The orig-LTV variant shows this mechanism running in REVERSE:
+freezing collateral (LTV) at origination pushes the HPI housing-price cycle OUT of the anchor (since the
+anchor no longer updates for collateral value) and INTO $Z$ instead, so the recovered factor swings wider
+and needs a LARGER $\rho=0.0633$ to standardise back to unit variance — still far below $0.12$/$0.15$, but
+visibly closer, exactly because less of the true cycle has been pre-absorbed into the anchor.
+</div>
+
+<div class="ex">
+<b>Anchor + round-trip checks, at the project's own calibration.</b> (<code>outputs/vasicek/vasicek_report.md</code>)
+Gauss&ndash;Hermite anchor check at the project's own numbers (flat TTC $=1.3488\%$, $\rho=0.0227$):
+$|\text{error}|=1.91\times10^{-17}$ (well under the $1\times10^{-6}$ gate — the same identity &sect;5.4
+proved, now cross-checked at a completely different, empirically-calibrated $(PD_{TTC},\rho)$ pair, not
+just the golden fixture's $(2\%,0.12)$). PIT&harr;Z round trip on the full recovered path: max
+$|\text{error}|=6.00\times10^{-15}$ (under a $1\times10^{-9}$ gate) — <code>invert_z(pit_pd(p,z,rho),p,rho)==z</code>
+holds to machine precision, the project's fixed-conventions answer to the Basson &amp; van Vuuren (2023)
+caveat that naive TTC&harr;PIT round trips can be inconsistent if $\rho$, the default definition, or the
+cycle index differ between legs.
+</div>
+
+<img class="fig" src="../assets/img/ch05/03_credit_cycle.png" alt="Two-panel chart: top panel shows the quarterly PIT default rate implied by the recovered Z path against a flat 1.35% TTC anchor and a damped hybrid variant, peaking near 3.44% in 2008Q1 with the GFC window shaded; bottom panel shows the recovered Z_t path itself troughing at -2.74 in 2008Q1, with an orig-LTV variant shown dashed">
+<div class="figcap"><b>Exhibit 5.3</b> — The credit cycle through the Vasicek lens: top, the Z-implied PIT
+PD path against the flat $1.35\%$ TTC anchor and the &sect;5.8 damped hybrid; bottom, the recovered
+$Z_t$ path itself (main vs orig-LTV variant, dashed). GFC window (NBER 2007Q4&ndash;2009Q2) shaded;
+calendar axis anchored $t{=}1\sim$2000Q2, verified against FRED UNRATE (corr $0.9963$).
+(<code>outputs/vasicek/credit_cycle.png</code>, embedded — already regenerated in the project's house
+matplotlib style.)</div>
+
+<div class="interpretation">
+<b>Reading the exhibit.</b> The Z-implied PIT PD path (top panel, solid) peaks at $3.44\%$ in 2008Q1 —
+$2.5\times$ the flat $1.35\%$ TTC anchor — precisely where the bottom panel's $Z_t$ path troughs at
+$-2.74$, and both land squarely inside the shaded GFC window (2007Q4&ndash;2009Q2): the recovered cycle
+puts the stress exactly where independently-dated history put it, a strong external validity check on the
+whole pipeline. The damped hybrid (dashed orange, &sect;5.8) tracks the same shape with a visibly smaller
+amplitude — the $\alpha=0.5$ dial deliberately trading cycle pass-through for a smoother path.
+</div>
+
+<div class="warn">
+<b>Documented limitation — mean($Z$) $=-1.145$ is NOT forced to zero, and that is expected, not a bug.</b>
+Belkin calibration pins the VARIANCE of $Z_t$ to 1; sample variance is mean-invariant, so nothing in the
+calibration constrains the MEAN. The observed level gap (observed rates average $2.12\%$ vs $1.35\%$ for
+the frozen-macro anchor) has three identified, non-exclusive causes documented in
+<code>outputs/vasicek/vasicek_report.md</code>: (i) Jensen/convexity of the cloglog inverse link (Chapter
+3) — the hazard evaluated AT mean macros sits below the macro-AVERAGED hazard, biasing the anchor low;
+(ii) the small structural inversion offset from &sect;5.5's quiz (nonzero even when observed exactly equals
+the anchor, because $\sqrt{1-\rho}<1$); (iii) out-of-time calibration drift and adverse survivor selection
+— post-2010 at-risk loans are disproportionately the ones that could NOT refinance away, holding $Z$ near
+$-1.7$ through 2013 even in the broader recovery. The CYCLE read (shape: trough in the GFC, monotone climb
+after 2010) is what &sect;6's satellite model regresses on; the LEVEL piece is absorbed by that model's own
+intercept.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a smaller calibrated $\rho$ does not mean "less systemic risk".</b> It is tempting to read
+$\rho=0.0227\ll 0.12$ as "this portfolio has much less systematic risk than the textbook assumes". Part of
+the gap is genuinely a smaller empirical asset correlation, but part of it (per the interpretation above)
+is a METHODOLOGICAL artefact of composition-adjusting the anchor, which by construction moves systematic
+variance OUT of $Z$ and INTO the time-varying $PD_{TTC,t}$ term instead — it doesn't vanish, it relocates.
+Comparing $\rho$ figures calibrated under different anchor conventions (this project's composition-adjusted
+approach vs a textbook's flat-anchor convention) without adjusting for that relocation is comparing
+different things.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does the orig-LTV variant calibrate to a LARGER $\rho$ (0.0633) than the main specification
+(0.0227), given both use the same underlying panel?
+  <details><summary>Answer</summary>
+  <div class="answer">Freezing collateral value at origination removes the HPI housing-cycle's influence
+  from the composition-adjusted anchor (which no longer updates for changing collateral marks), so more of
+  the true credit cycle shows up as variance in the recovered $Z_t$ instead of being pre-absorbed into the
+  anchor — a wider-swinging $Z_t$ needs a larger $\rho$ to standardise its variance back to 1.</div>
+  </details>
+</li>
+<li>What TWO independent pieces of evidence in this section validate that the recovered $Z_t$ path
+genuinely tracks the real credit cycle, rather than being an artefact of the calibration procedure?
+  <details><summary>Answer</summary>
+  <div class="answer">(1) The Z trough (2008Q1, $Z=-2.74$) and the PIT PD peak (also 2008Q1, $3.44\%$)
+  both land inside the independently-NBER-dated GFC window (2007Q4&ndash;2009Q2) without that window being
+  an input to the calibration; (2) the panel's own macro time index was separately verified to match FRED's
+  national unemployment series at correlation $0.9963$, anchoring the calendar axis on external, real-world
+  data.</div>
+  </details>
+</li>
+<li>Is mean($Z_t$)$=-1.145$ evidence against the &sect;5.4 anchor property?
+  <details><summary>Answer</summary>
+  <div class="answer">No — &sect;5.4's theorem is about the THEORETICAL distribution of $Z$ (true
+  $N(0,1)$), and the &sect;5.4 gotcha box already flagged that a finite 60-quarter sample need not average
+  to exactly the anchor. Here the report goes further and attributes the specific $-1.145$ gap to three
+  identified, documented causes (Jensen bias, structural inversion offset, OOT survivor selection) rather
+  than treating it as an unexplained anomaly.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s5-8">5.8 The damped hybrid PIT/TTC variant</h3>
+<!-- ============================================================== -->
+<p>A fully PIT PD ($\alpha=1$, &sect;5.3's formula as derived) swings all the way with the cycle — useful
+for ECL, but sometimes a bank wants a PRESENTATION dial that trades some cycle pass-through for smoothness
+(rating stability, capital-planning narratives). The Aguais/Forest "dual ratings" convention formalises
+this as a single damping parameter.</p>
+
+<div class="defn">
+<b>Damped hybrid PD.</b> $$ PD_{\text{hybrid}}(Z,\alpha) = PD_{PIT}(\alpha Z), \qquad \alpha\in[0,1]. $$
+$\alpha=1$ recovers the fully PIT curve of &sect;5.3; $\alpha=0$ collapses to $PD_{PIT}(0)$, a CYCLE-NEUTRAL
+PD that is constant regardless of where $Z$ actually sits — NOT the same number as $PD_{TTC}$ (see the
+warning below).
+</div>
+
+<div class="interpretation">
+<b>Interpretation — the Jensen cost of damping.</b> Because $PD_{PIT}$ is convex in $Z$ (&sect;5.4's
+warning box), $PD_{PIT}(0)$ sits BELOW the true cycle-average $PD_{TTC}$ — in the golden fixture,
+$PD_{PIT}(0)=1.43\%$ against $PD_{TTC}=2\%$, a $0.57$ percentage-point gap. Damping ($0<\alpha<1$) therefore
+does not just smooth the cycle response, it also introduces a small systematic DOWNWARD bias relative to
+the $\mathbb{E}_Z$ anchor, growing as $\alpha\to 0$ — a deliberate PRESENTATION trade-off, not a neutral
+transformation, and the anchor property from &sect;5.4 holds EXACTLY only at $\alpha=1$.
+</div>
+
+<div class="warn">
+<b>Do not feed the damped hybrid into ECL as if it were $PD_{PIT}$.</b> <code>engine/vasicek.py</code>'s
+own docstring is explicit: <code>hybrid_pd</code> is "a philosophy/presentation device, not an unbiased
+ECL input" — Exhibit&nbsp;5.3's dashed orange line exists to show a bank's rating-stability narrative
+alongside the true PIT path, not to replace the PIT path in a provision calculation. Chapter&nbsp;2's ECL
+decomposition theorem assumes the PD fed in is the genuine conditional PD; substituting the damped hybrid
+silently understates ECL by the Jensen gap above whenever $\alpha<1$.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — $\alpha=0$ is NOT the same as "no cycle information at all".</b> $PD_{PIT}(0)$ is still
+computed from the FULL Vasicek machinery (threshold $c$, asset correlation $\rho$) — it is the model's
+answer to "what if $Z$ happened to be exactly at its cycle-neutral value", not a return to a naive,
+factor-free PD estimate. It differs from $PD_{TTC}$ specifically because of Jensen's inequality (the
+interpretation box above), not because it ignores the model.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>At the golden fixture's $(PD_{TTC}=2\%,\rho=0.12)$, what does $PD_{\text{hybrid}}(Z=-2,\alpha=0.5)$
+evaluate to, using &sect;5.3's table?
+  <details><summary>Answer</summary>
+  <div class="answer">$PD_{PIT}(\alpha Z)=PD_{PIT}(0.5\times(-2))=PD_{PIT}(-1.0)=3.44\%$ — read directly
+  off &sect;5.3's 6-point table at $Z=-1.0$, since damping just rescales which point on the SAME curve is
+  evaluated.</div>
+  </details>
+</li>
+<li>Why is $PD_{PIT}(0)=1.43\%$ below $PD_{TTC}=2\%$ rather than equal to it?
+  <details><summary>Answer</summary>
+  <div class="answer">Jensen's inequality: $PD_{PIT}(\cdot)$ is a convex function of $Z$ over the relevant
+  range, and $PD_{TTC}=\mathbb{E}_Z[PD_{PIT}(Z)]$ (the &sect;5.4 anchor property) is the AVERAGE of a
+  convex function, which sits ABOVE the function evaluated at the average input ($Z=0$) — i.e.
+  $PD_{PIT}(\mathbb{E}[Z]) \le \mathbb{E}[PD_{PIT}(Z)]$, so $PD_{PIT}(0)\le PD_{TTC}$, with the observed
+  $0.57$pp gap the concrete instance. Chapter&nbsp;6 proves this convexity claim rigorously.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="summary">
+<b>Chapter 5 summary.</b> The Vasicek one-factor model is not a formula to memorise but a structural
+consequence of a single decomposition — $A_i=\sqrt{\rho}Z+\sqrt{1-\rho}\varepsilon_i$ — calibrated so the
+unconditional default probability matches $PD_{TTC}$, then conditioned on the systematic factor $Z$ to
+produce $PD_{PIT}(Z)$; the anchor property $\mathbb{E}_Z[PD_{PIT}(Z)]=PD_{TTC}$ falls straight out of the
+tower property and the calibration step, verified numerically to machine precision by two independent
+integration methods. Recovering $Z$ from real history runs the same formula backwards, but only after a
+composition adjustment that separates genuine cycle movement from a growing book's changing vintage mix —
+on this project's panel that pipeline recovers a $\rho=0.0227$ well below both the textbook's $0.12$
+convention and Basel's $0.15$ supervisory value, for reasons this chapter traced to both a genuine empirical
+gap and a methodological relocation of variance into the anchor, and lands the credit cycle's trough exactly
+where the GFC's NBER dates say it should be. Chapter&nbsp;6 picks up where this chapter's Jensen asides
+pointed: scenario weighting, satellite macro models, and a full proof that probability-weighted ECL exceeds
+single-path ECL whenever the underlying PD curve is convex.
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from <code>knowledge/sources/ifrs9_credit_risk_notes.md</code> &sect;8, <code>tests/fixtures/compute_vasicek.py</code>, <code>engine/vasicek.py</code>, <code>outputs/vasicek/vasicek_report.md</code>, and <code>wiki/pages/scenario-layer.md</code> on 2026-07-19.
+</div>
+
+<script src="../assets/js/toc.js" defer></script>
+</body>
+</html>

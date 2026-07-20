@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.8 — The Agent (LangGraph Copilot) | IFRS9 ECL Study Notes</title>
+<!--
+  ============================================================================
+  IFRS9 ECL STUDY-NOTES — CHAPTER 8: THE AGENT (LANGGRAPH COPILOT)
+  ============================================================================
+  Built from notes/assets/template.html (see notes/plan/conventions.md), CSS
+  block copied verbatim from ch05_vasicek.html for visual consistency across
+  the compendium. Standalone deliverable (notes/chapters/ holds independent
+  chapter files, not yet spliced into one compendium) -- own <h1>/TOC/closing
+  <hr>; <h2 id="s8"> is written so a later merge into the single-file
+  compendium is a straight splice. MathJax SVG renderer is the only external
+  dependency (CDN, accepted project exception).
+
+  NO widgets.js: this is a code-reading/architecture chapter, not a
+  worked-formula chapter -- neither interactive here needs a slider or an
+  SVG line plot (widgets.js's four helpers), so it is deliberately NOT
+  loaded; both interactives below are hand-written vanilla JS/HTML inlined
+  in this file (a native <details> tree for the router explorer, and a
+  small self-contained script for the guard-pipeline stepper that
+  reimplements the REAL regex/word-list logic from agent/graph.py, cited
+  inline). This keeps the file self-contained per conventions.md's "inlined
+  vs relative" choice for a chapter that needs no shared widget code.
+
+  GROUNDING DISCIPLINE (this chapter has no tests/fixtures/compute_*.py --
+  it is architecture, not a worked numeric example, per
+  notes/plan/chapters.md's Ch.8 scope): every number quoted below is either
+  (a) copied verbatim from a real recorded exchange under outputs/agent_log/
+  or outputs/demo/ or outputs/gate/, cited inline, or (b) reproduced LIVE
+  this session by calling the real agent/tools_tier1.py, agent/tools_tier2.py
+  and agent/graph.py functions directly via `uv run --no-sync python -c
+  "..."` against the live engine state -- never invented, never a
+  transcript. Every such live call is noted as such in its box. No
+  derivations in this chapter (systems chapter, not a mathematical one) --
+  notes/plan/derivation_backlog.md has no D-numbered item for Ch.8.
+-->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']],
+         displayMath: [['$$','$$'], ['\\[','\\]']],
+         processEscapes: true,   // \$ renders as a literal dollar — currency-safe
+         tags: 'none' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #4a4a4a;
+    --rule: #c8c8c8;
+    --accent: #1f3a5f;
+    --accent-soft: #2e5a94;
+    --warn: #a4321e;
+    --gotcha: #b5650a;
+    --good: #1e7e34;
+    --page-bg: #ffffff;
+    --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee;
+    --noteBg: #eef3fb;
+    --thmBg: #fff7e6;
+    --warnBg: #fdecea;
+    --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee;
+    --derivBg: #f4f2fc;
+    --interpBg: #eaf7f1;
+    --quizBg: #fbfbf5;
+    --th-bg: #e8eef7;
+    --td-border: #999999;
+    --code-bg: #f0f0f0;
+    --pageW: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+      --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+      --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+      --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+      --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8e6e0; --muted: #b3aea3; --rule: #45433e; --accent: #8fb4e3; --accent-soft: #a9c6ec;
+    --warn: #e08a72; --gotcha: #e3a75e; --good: #7fce97; --page-bg: #17181a; --shell-bg: #0d0d0d;
+    --boxbg: #23241f; --noteBg: #1c2733; --thmBg: #2b2415; --warnBg: #2e1d1a; --gotchaBg: #2c2015;
+    --exBg: #16261a; --derivBg: #211f2c; --interpBg: #17271f; --quizBg: #1e1e19;
+    --th-bg: #1f2a38; --td-border: #4a4842; --code-bg: #26251f;
+  }
+  :root[data-theme="light"] {
+    --ink: #1a1a1a; --muted: #4a4a4a; --rule: #c8c8c8; --accent: #1f3a5f; --accent-soft: #2e5a94;
+    --warn: #a4321e; --gotcha: #b5650a; --good: #1e7e34; --page-bg: #ffffff; --shell-bg: #dde1e6;
+    --boxbg: #f7f5ee; --noteBg: #eef3fb; --thmBg: #fff7e6; --warnBg: #fdecea; --gotchaBg: #fdf1e3;
+    --exBg: #ecf7ee; --derivBg: #f4f2fc; --interpBg: #eaf7f1; --quizBg: #fbfbf5;
+    --th-bg: #e8eef7; --td-border: #999999; --code-bg: #f0f0f0;
+  }
+  html { background: var(--shell-bg); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Charter", "Iowan Old Style", "Cambria", "Georgia", serif;
+    color: var(--ink); line-height: 1.48; max-width: var(--pageW);
+    margin: 28px auto; padding: 36px 48px; background: var(--page-bg);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    font-size: 14.5px;
+  }
+  h1 { font-size: 25px; text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  h1 + .subtitle { text-align:center; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .meta-line { text-align:center; color: var(--muted); font-size: 12.5px; margin-bottom: 22px; }
+  h2 { font-size: 19px; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 3px; margin-top: 34px; scroll-margin-top: 12px; }
+  h3 { font-size: 15.5px; color: var(--accent-soft); margin-top: 20px; margin-bottom: 6px; scroll-margin-top: 12px; }
+  h4 { font-size: 13.5px; margin-top: 14px; margin-bottom: 4px; color: var(--accent-soft); }
+  p { margin: 6px 0 10px 0; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 6px 0 12px 20px; padding-left: 8px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent-soft); }
+  strong { color: var(--ink); }
+
+  .fig { display:block; margin: 12px auto 4px auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 4px; page-break-inside: avoid; }
+  .figcap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 0; margin-bottom: 18px; max-width: 92%; margin-left: auto; margin-right: auto; }
+  .figcap b { font-style: normal; color: var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0 16px 0; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 12.6px; min-width: 100%; }
+  th, td { border: 1px solid var(--td-border); padding: 4px 9px; text-align: center; }
+  th { background: var(--th-bg); font-weight: 600; color: var(--ink); }
+  td:first-child, th:first-child { text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .defn, .note, .thm, .ex, .warn, .derivation, .interpretation, .gotcha, .quiz {
+    border-left: 4px solid var(--accent);
+    background: var(--noteBg);
+    padding: 9px 14px; margin: 12px 0;
+    border-radius: 3px;
+    page-break-inside: avoid;
+  }
+  .thm            { border-left-color: #8e44ad; background: var(--noteBg); }
+  .ex             { border-left-color: var(--good); background: var(--exBg); }
+  .warn           { border-left-color: var(--warn); background: var(--warnBg); }
+  .note           { border-left-color: #d39e00; background: var(--thmBg); }
+  .derivation     { border-left-color: #6c4fb5; background: var(--derivBg); }
+  .interpretation { border-left-color: #1e9e6b; background: var(--interpBg); }
+  .gotcha         { border-left-color: var(--gotcha); background: var(--gotchaBg); }
+  .quiz           { border: 1px dashed var(--rule); border-left: 4px dashed var(--muted); background: var(--quizBg); }
+  .defn b, .note b, .thm b, .ex b, .warn b, .derivation b, .interpretation b, .gotcha b, .quiz b {
+    font-variant: small-caps; letter-spacing: 0.4px;
+  }
+  .derivation .step { margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--rule); }
+  .derivation .step .stepno { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+  .quiz ol { margin-top: 6px; }
+  .quiz details { margin: 4px 0 10px 0; }
+  .quiz summary { cursor: pointer; color: var(--accent-soft); font-size: 12.5px; }
+  .quiz .answer { margin-top: 4px; font-size: 13px; }
+
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12.6px; }
+  pre.trace { white-space: pre-wrap; font-size: 12.2px; background: var(--code-bg); padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  hr { border: none; border-top: 1px dashed var(--rule); margin: 20px 0; }
+  .toc { columns: 2; column-gap: 30px; font-size: 13px; }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc a { color: var(--accent-soft); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .small { font-size: 12px; color: var(--muted); }
+  .summary {
+    background: var(--boxbg); border-radius: 4px; border: 1px solid var(--rule);
+    padding: 10px 16px; margin: 10px 0;
+  }
+  .src { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .widget {
+    border: 1px solid var(--rule); border-radius: 6px; background: var(--boxbg);
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .widget h4 { margin-top: 0; }
+
+  /* router-decision explorer: nested <details>, native expand/collapse */
+  .router-tree details { margin: 3px 0 3px 4px; border-left: 2px solid var(--rule); padding-left: 10px; }
+  .router-tree summary { cursor: pointer; font-weight: 600; color: var(--accent-soft); padding: 3px 0; }
+  .router-tree summary:hover { color: var(--accent); }
+  .router-tree .rule-body { font-size: 12.8px; margin: 4px 0 8px 4px; padding: 6px 10px; background: var(--page-bg); border: 1px solid var(--rule); border-radius: 4px; }
+  .router-tree .tag { display:inline-block; font-size: 10.8px; font-variant: small-caps; letter-spacing: 0.4px; padding: 1px 7px; border-radius: 10px; margin-left: 6px; color: white; }
+  .tag-computable { background: var(--good); }
+  .tag-reasoned   { background: var(--gotcha); }
+  .tag-refuse     { background: var(--warn); }
+
+  /* guard-pipeline stepper */
+  .stepper textarea { width: 100%; min-height: 64px; font-family: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--page-bg); color: var(--ink); }
+  .stepper .presets { display:flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .stepper .presets button, .stepper .runbtn { font-size: 12px; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--rule); background: var(--page-bg); color: var(--ink); cursor: pointer; }
+  .stepper .presets button:hover, .stepper .runbtn:hover { border-color: var(--accent-soft); color: var(--accent-soft); }
+  .stepper .guard-row { display:flex; align-items: center; gap: 10px; padding: 6px 10px; margin: 5px 0; border-radius: 4px; border: 1px solid var(--rule); font-size: 12.8px; }
+  .stepper .verdict { font-weight: 700; font-variant: small-caps; padding: 2px 9px; border-radius: 10px; min-width: 48px; text-align: center; }
+  .verdict-pass { background: var(--interpBg); color: var(--good); border: 1px solid var(--good); }
+  .verdict-fail { background: var(--warnBg); color: var(--warn); border: 1px solid var(--warn); }
+  .stepper .overall { margin-top: 8px; font-size: 13.4px; padding: 8px 12px; border-radius: 4px; }
+
+  #theme-toggle {
+    position: fixed; top: 14px; right: 18px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--boxbg); color: var(--ink);
+    font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #theme-toggle:hover { border-color: var(--accent-soft); }
+
+  @media print {
+    html { background: white; }
+    body { box-shadow: none; max-width: 100%; padding: 0 8px; margin: 0; }
+    .toc { columns: 1; }
+    a { color: inherit; text-decoration: none; }
+    h2 { break-before: page; }
+    h1 { break-before: avoid; }
+    .fig, table, .defn, .thm, .ex, .warn, .note, .derivation, .interpretation, .gotcha, .quiz, .widget {
+      break-inside: avoid;
+    }
+    #theme-toggle { display: none; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle theme">&#9788;</button>
+<script>
+(function () {
+  var KEY = 'ifrs9-notes-theme';
+  var btn = document.getElementById('theme-toggle');
+  var root = document.documentElement;
+  function apply(mode) {
+    if (mode === 'dark' || mode === 'light') { root.setAttribute('data-theme', mode); }
+    else { root.removeAttribute('data-theme'); }
+    btn.innerHTML = mode === 'dark' ? '&#9789;' : '&#9788;';
+  }
+  var saved = localStorage.getItem(KEY);
+  apply(saved);
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next);
+    apply(next);
+  });
+})();
+</script>
+
+<h1>Chapter 8 — The Agent (LangGraph Copilot)</h1>
+<div class="subtitle">A grounded, three-tier agent that never computes a number itself — reading the router, the guard stack, and the sandbox that let it write code safely</div>
+<div class="meta-line">IFRS9 ECL Study-Notes Compendium — Chapter 8 of 13. Compiled from <code>agent/graph.py</code>, <code>agent/tools_tier1.py</code>, <code>agent/tools_tier2.py</code>, <code>agent/tier3_retrieval.py</code>, <code>agent/mcp_server.py</code>, <code>wiki/pages/agent-layer.md</code>, <code>outputs/agent_log/*.jsonl</code>, <code>outputs/demo/*.json</code>, <code>outputs/gate/reasoned_route_gate.md</code>, <code>tests/test_tier2.py</code>, and live reproduction against the local engine on 2026-07-19.</div>
+
+<div class="summary">
+<b>Contents.</b>
+<div class="toc">
+<ol>
+<li><a href="#s8-1">8.1 The governing rule and the three-tier split</a></li>
+<li><a href="#s8-2">8.2 Tier-1: four validated tools</a></li>
+<li><a href="#s8-3">8.3 Tier-2: the sandboxed <code>analyze_data</code></a></li>
+<li><a href="#s8-4">8.4 Tier-3: <code>query_model_docs</code></a></li>
+<li><a href="#s8-5">8.5 The LangGraph router: a three-way scope split</a></li>
+<li><a href="#s8-6">8.6 The guard stack, derived as a pipeline</a></li>
+<li><a href="#s8-7">8.7 REASONED in full, refusal as a feature, and an honest limitation</a></li>
+<li><a href="#s8-8">8.8 The audit trail</a></li>
+<li><a href="#s8-9">8.9 The MCP server surface</a></li>
+</ol>
+</div>
+</div>
+
+<h2 id="s8">8&nbsp; The Agent (LangGraph Copilot)</h2>
+<p>Chapters&nbsp;1&ndash;7 built a frozen, deterministic IFRS&nbsp;9 ECL engine and validated it exhaustively.
+This chapter is about the layer sitting on top of that engine that lets a bank risk analyst ask it questions
+in plain English — and the entire design problem it solves is trust: a large language model is fluent, but
+it is also a confident maker-upper of plausible-sounding numbers. The project's answer, built across four
+phases (Day&nbsp;4's LangGraph router and four Tier-1 tools; a stretch phase adding Tier-3 documentation
+retrieval and an MCP server; App&nbsp;v2 adding the Tier-2 sandboxed code interpreter; and a final REASONED
+route for conceptual questions) is a <strong>three-tier grounded-agent architecture</strong> in which the LLM
+is never trusted with a number or a fact on its own — every tier enforces that constraint by a different
+mechanical means, and a shared guard stack catches the LLM's narration prose before it ever reaches a user.
+Source anchors: <code>agent/graph.py</code> (module docstring is the architecture's own best summary),
+<code>wiki/pages/agent-layer.md</code> (topic-map ids D1&ndash;D2). This is a systems chapter, not a
+mathematical one — no derivations, and every number below is either quoted verbatim from a real recorded
+exchange under <code>outputs/</code>, or reproduced live this session against the actual local engine.</p>
+
+<!-- ============================================================== -->
+<h3 id="s8-1">8.1 The governing rule and the three-tier split</h3>
+<!-- ============================================================== -->
+
+<div class="defn">
+<b>The governing rule (verbatim, <code>agent/graph.py</code> module docstring).</b>
+<p style="margin:4px 0;">"THE GOVERNING RULE (non-negotiable): the LLM never does arithmetic and never
+states a fact from its own memory. Every NUMBER in every Tier-1 answer comes from the frozen engine via the
+four Tier-1 tools in <code>agent/tools_tier1.py</code>. Every CLAIM in a Tier-3
+(<code>query_model_docs</code>) answer comes from a retrieved wiki/knowledge-corpus passage, cited. Every
+NUMBER in a Tier-2 (<code>analyze_data</code>) answer comes from EXECUTING LLM-written pandas code in the
+sandbox — the LLM may write the CODE, never the number."</p>
+<p style="margin:4px 0 0 0;">Three tiers, three different mechanical enforcements of the same rule:
+Tier-1 numbers are looked up from a pydantic-validated call into the frozen engine; Tier-2 numbers are
+computed by code that was <em>executed</em>, not merely written; Tier-3 claims are quoted passages with a
+verified citation. A fourth outcome, REASONED (&sect;8.5), extends the same discipline to conceptual
+questions with no exact tool answer, and a fifth, refusal (&sect;8.7), is what happens when none of the
+above legitimately applies.</p>
+</div>
+
+<img class="fig" src="../assets/img/ch08/01_three_tier_architecture.png" alt="Three-tier architecture: user question into an LLM router that classifies only; five outcomes fan out — REASONED, Tier-1 (four validated tools, frozen-engine numbers), Tier-2 (sandboxed analyze_data, executed-code numbers), Tier-3 (query_model_docs, cited passages), and refusal; all LLM-touched outcomes pass through a shared guard stack before a shared audit trail">
+<div class="figcap"><b>Exhibit 8.1</b> — The three-tier architecture: one router, five possible outcomes, one
+shared guard stack, one shared audit trail (<code>agent/graph.py</code>, <code>agent/tools_tier1.py</code>,
+<code>agent/tools_tier2.py</code>, <code>agent/tier3_retrieval.py</code>).</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The three tiers are not three different feature areas bolted together — they are
+three different <em>evidentiary standards</em> for the same underlying question, "can this number be
+trusted", ranked from most to least constrained. Tier-1 is the tightest: six fixed engine functions, closed
+argument space, no code generation at all. Tier-2 relaxes the argument space (the LLM may write arbitrary
+pandas) but keeps the trust boundary at the <em>execution</em> step, not the LLM's claim. Tier-3 relaxes
+further still (any documentation question) but keeps trust at the <em>citation</em> step — a claim is only
+as good as the real passage backing it. REASONED is the most permissive tier of all (free-form reasoning,
+no fixed tool, no fixed passage requirement) and is exactly why it carries the heaviest guard (&sect;8.6):
+the further a route sits from "just look this up", the more the guard stack has to work.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — three tiers is not three different LLM models.</b> Every LLM call in this system — the router,
+every narrator, the Tier-2 code-writer, the REASONED reasoner — is the SAME two models,
+<code>PRIMARY_MODEL = "google/gemma-4-31b-it"</code> with automatic fallback to
+<code>FALLBACK_MODEL = "deepseek/deepseek-v4-flash"</code> on any API error (<code>agent/graph.py</code>),
+called with a different SYSTEM PROMPT at each graph node. The "three tiers" describe three different
+<em>trust architectures</em> around the LLM's output, not three specialised models — the same general-purpose
+chat model that routes your question is the one that later narrates the tool result, with its role
+constrained entirely by which system prompt it was handed and which mechanical guard checks its output
+afterward.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A colleague says "Tier-2 is less safe than Tier-1 because the LLM writes the code." Is that a fair
+characterisation of where the trust boundary sits?
+  <details><summary>Answer</summary>
+  <div class="answer">Not quite — the LLM writing the code is not itself the risk; the risk is what happens
+  to a NUMBER before it reaches the user. In both tiers, no number the LLM merely CLAIMS is ever trusted:
+  Tier-1's number comes from a fixed engine function call, Tier-2's number comes from EXECUTING the
+  LLM-written code in a validated sandbox (&sect;8.3) and reading the result — the LLM's code is a means to
+  an end, never itself a source of truth the way its prose narration is. What genuinely differs is the
+  ATTACK SURFACE (arbitrary code vs. six fixed function signatures), which is exactly why Tier-2 needs the
+  AST/fork/hardening stack &sect;8.3 describes and Tier-1 does not.</div>
+  </details>
+</li>
+<li>Why does REASONED carry the heaviest guard of the five outcomes, per the interpretation box above?
+  <details><summary>Answer</summary>
+  <div class="answer">Because it is the most permissive tier — no fixed tool, no fixed passage the answer
+  must simply quote, free-form reasoning over retrieved material plus general credit-risk economics. The
+  further an outcome sits from "just look this up in a validated source", the more surface area there is
+  for an invented number to slip in, so REASONED's guard (&sect;8.6, &sect;8.7) is extended with a THIRD
+  legal number source (the user's own question) on top of the two Tier-3 already checks, and is the route
+  where the live spelled-out-number bypass was actually found (&sect;8.6).</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-2">8.2 Tier-1: four validated tools</h3>
+<!-- ============================================================== -->
+<p>Tier-1 (<code>agent/tools_tier1.py</code>) is four pure, deterministic Python functions the router may
+call: <code>shock_macro</code>, <code>reweight_scenarios</code>, <code>rerun_ecl</code>,
+<code>decompose_waterfall</code>. Each has a pydantic argument model with <code>extra="forbid"</code> —
+malformed or extraneous arguments raise <code>ValidationError</code> BEFORE any engine code runs, and the
+router never gets a second chance to guess: a validation failure collapses straight to refusal
+(<code>decide_route</code>, &sect;8.5). Every one of the six heavy artifacts these tools need (fitted hazard
+and LGD models, recovered systematic factor <code>Z</code>, the fitted satellite, the DFAST scenario set,
+the four per-loan scenario ECL books) is built ONCE, lazily, on first use — the frozen-engine discipline
+means these tools <em>compose</em> Chapters&nbsp;2&ndash;6's engine (<code>engine/{hazard,lgd,ead,staging,
+ecl,vasicek,scenarios,satellite}.py</code>), never re-derive it.</p>
+
+<div class="defn">
+<b>The pydantic contract pattern (every Tier-1 tool, condensed from <code>agent/tools_tier1.py</code>).</b>
+<pre class="trace">class ShockMacroArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    var: Literal["UER", "HPI", "GDP"]
+    shock: float = Field(allow_inf_nan=False)
+    shape: Literal["parallel", "peak_revert"] = "parallel"
+
+    @model_validator(mode="after")
+    def _within_bounds(self) -> "ShockMacroArgs":
+        bound = SHOCK_BOUNDS[self.var]          # UER 10pp, HPI/GDP 5pp/q
+        if abs(self.shock) > bound:
+            raise ValueError(...)               # -> ValidationError -> refusal
+        return self</pre>
+<p style="margin:4px 0 0 0;">The same shape recurs for all four tools: a <code>Literal</code> enum wherever
+the argument space is closed (segment names, macro variables, shock shapes), a bounded <code>Field</code>
+wherever it is numeric, and a <code>@model_validator</code> for cross-field checks that can't be expressed
+per-field alone — weights summing to 1 (<code>ReweightArgs</code>), <code>t0 &lt; t1</code>
+(<code>DecomposeWaterfallArgs</code>). Nothing downstream ever sees an argument the pydantic model did not
+already accept.</p>
+</div>
+
+<h4>shock_macro — the coherent-shock convention</h4>
+<p><code>shock_macro(var, shock, shape)</code> perturbs the base scenario's macro path and reruns the
+satellite&rarr;Z&rarr;PIT&rarr;ECL chain (Chapters&nbsp;5&ndash;6) for the t=60 book. The interesting design
+decision is what happens to a UNIVARIATE shock: the project's fitted satellite is
+$Z=f(\text{hpi_growth_lag1},\ \text{gdp_growth_lag2})$ — the unemployment driver was EXCLUDED by the
+economic-sign governance constraint on this one-cycle panel (Chapter&nbsp;6, <code>outputs/satellite/
+satellite_report.md</code>). A UER-only path move would therefore be entirely invisible to the credit-cycle
+factor $Z$ — not because unemployment doesn't matter economically, but because of a small-sample
+identification artifact in THIS fitted satellite. <code>shock_macro</code> closes that gap by applying every
+shock as a CO-MOVING multivariate move along the DFAST severe-minus-base direction:</p>
+
+$$ \beta_c \;=\; \frac{\langle d_v,\, d_c\rangle}{\langle d_v,\, d_v\rangle}, \qquad
+   d_v = \text{path}_{\text{down}}[v] - \text{path}_{\text{base}}[v] \ \text{over the 13q R&S window} $$
+
+<p>for each concept $c\in\{\text{uer},\ \text{hpi_growth},\ \text{gdp_growth}\}$, where $v$ is the named
+shock variable ($\beta_v=1$ by construction). A named shock of size <code>shock</code> pp therefore drags
+the OTHER two concepts along by their empirically co-moving amount, not by zero — the applied per-concept
+deltas are returned in full for transparency, never hidden inside an opaque re-run.</p>
+
+<div class="ex">
+<b>Recorded exchange — <code>shock_macro("UER", 2.0, "parallel")</code>.</b> Full router&rarr;tool&rarr;
+narrator trace, quoted verbatim from <code>outputs/demo/e2e_trace.json</code> (question: "What happens to the
+allowance if unemployment rises 2 percentage points?", per the router's own few-shot example, &sect;8.5):
+<pre class="trace">route: "shock_macro"
+router args: {"var": "UER", "shock": 2.0, "shape": "parallel"}
+tool headline (tc-000001): "UER +2pp (parallel) coherent shock of the base scenario:
+  reported allowance \$30.5m -> \$31.7m (delta +1.2m, +4.1%), shocked coverage 1.89%"
+narrator answer: "UER +2pp (parallel) coherent shock of the base scenario: reported
+  allowance \$30.5m -> \$31.7m (delta +1.2m, +4.1%), shocked coverage 1.89%. The increase
+  is driven by remeasurement of 1239931.6012929585. Stage 1 accounts for
+  79.31532452794009 of the total allowance."
+number_check_passed: true</pre>
+<p style="margin:8px 0 4px 0;">Reproduced LIVE this session (<code>uv run --no-sync python -c "from
+agent.tools_tier1 import shock_macro; shock_macro('UER', 2.0, 'parallel')"</code>) — byte-identical headline,
+full precision below (a fresh audit-trail entry, <code>tc-000048</code>, was appended by this live call, the
+same mechanism &sect;8.8 describes):</p>
+<div class="table-wrap">
+<table>
+<tr><th>field</th><th>value</th></tr>
+<tr><td>baseline_allowance</td><td class="num">\$30,454,080.65</td></tr>
+<tr><td>shocked_allowance</td><td class="num">\$31,694,012.25</td></tr>
+<tr><td>delta / delta_pct</td><td class="num">+\$1,239,931.60 / +4.0715%</td></tr>
+<tr><td>coverage (baseline &rarr; shocked)</td><td class="num">1.8195% &rarr; 1.8936%</td></tr>
+<tr><td>applied_peak_deltas_pp.uer</td><td class="num">+2.0 (the named variable, &beta;=1 exactly)</td></tr>
+<tr><td>applied_peak_deltas_pp.hpi_growth</td><td class="num">&minus;0.8258713 pp/q</td></tr>
+<tr><td>applied_peak_deltas_pp.gdp_growth</td><td class="num">&minus;0.1090326 pp/q</td></tr>
+</table>
+</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Both co-moving deltas are NEGATIVE — a rising unemployment shock coherently drags
+house-price growth and GDP growth DOWN too, exactly the DFAST severe scenario's own economic direction
+(<code>tests/test_tools.py::test_shock_uer_up_increases_allowance</code> asserts this sign live). This is
+the coherent-shock convention as the agent actually applies it: a one-line "UER +2pp" request never reaches
+the satellite as a univariate nudge — it reaches it as a small, internally consistent three-variable
+recession, which is why it moves the allowance at all despite the satellite having no direct UER term.
+</div>
+
+<h4>reweight_scenarios</h4>
+<p><code>reweight_scenarios(w_up, w_base, w_down)</code> recomputes the weighted allowance from the three
+CACHED per-scenario ECL totals (no re-run) and reports the Jensen ratio — weighted allowance divided by the
+allowance AT the weighted-average macro path (Chapter&nbsp;6's Jensen's-inequality gap, made interactively
+queryable).</p>
+
+<div class="ex">
+<b>Recorded exchange — <code>reweight_scenarios(0.3, 0.4, 0.3)</code>.</b> Audit-log entry, quoted verbatim
+from <code>outputs/agent_log/tool_calls.jsonl</code> (seq&nbsp;2): <code>{"tool": "reweight_scenarios",
+"args": {"w_up": 0.3, "w_base": 0.4, "w_down": 0.3}, "headline": "weights up/base/down = 0.30/0.40/0.30:
+weighted allowance \$34.8m (+2.1% vs adopted 25/50/25 \$34.0m); Jensen ratio 1.041x vs \$33.4m at the averaged
+path"}</code>. Reproduced live this session, full precision:
+<div class="table-wrap">
+<table>
+<tr><th>per-scenario allowance</th><th>up</th><th>base</th><th>down</th></tr>
+<tr><td>USD</td><td class="num">\$27.69m</td><td class="num">\$30.45m</td><td class="num">\$47.59m</td></tr>
+</table>
+</div>
+<code>weighted_allowance = \$34,764,837.25</code>; <code>allowance_at_average_path = \$33,411,300.28</code>;
+<code>jensen_ratio = 1.0405113528588055</code>; <code>adopted_weighted_allowance (25/50/25) =
+\$34,046,377.82</code>; <code>delta_vs_adopted_pct = +2.110237507390167</code>.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The Jensen ratio here (1.041&times;) is close to but distinct from the adopted
+25/50/25 weights' own ratio (1.035&times;, Chapter&nbsp;6) — shifting weight toward the down scenario
+(0.40 base instead of 0.50, extra weight split 0.30/0.30 instead of 0.25/0.25) both raises the weighted
+allowance in absolute terms AND slightly widens the Jensen gap, because the down scenario sits on the more
+convex part of $PD_{PIT}(Z)$ (Chapter&nbsp;5&ndash;6). The tool makes this sensitivity a live, queryable
+number rather than a single frozen exhibit.
+</div>
+
+<h4>rerun_ecl</h4>
+<p><code>rerun_ecl(segment)</code> filters the cached per-loan scenario books by segment (<code>all</code>,
+<code>stage1</code>, <code>stage2</code>, <code>stage3</code>, <code>investor</code>,
+<code>high_ltv</code> — current updated LTV&nbsp;&gt;&nbsp;80) and reports the scenario-weighted allowance,
+stage mix, and share of the total book allowance — pure decomposition of already-computed numbers, no
+re-run.</p>
+
+<div class="ex">
+<b>Recorded exchange — <code>rerun_ecl("high_ltv")</code>.</b> Audit-log entry, <code>outputs/agent_log/
+tool_calls.jsonl</code> (seq&nbsp;3): headline <code>"segment 'high_ltv' (current updated LTV &gt; 80): 3,201
+loans, balance \$756.7m, scenario-weighted allowance \$18.9m (55.6% of the book allowance), coverage
+2.50%"</code>. Reproduced live this session, full precision:
+<div class="table-wrap">
+<table>
+<tr><th>stage</th><th>n_loans</th><th>allowance</th><th>% of segment allowance</th></tr>
+<tr><td>Stage 1</td><td class="num">3,176</td><td class="num">\$14,738,040.49</td><td class="num">77.80%</td></tr>
+<tr><td>Stage 2</td><td class="num">3</td><td class="num">\$486,590.04</td><td class="num">2.57%</td></tr>
+<tr><td>Stage 3</td><td class="num">22</td><td class="num">\$3,717,983.07</td><td class="num">19.63%</td></tr>
+</table>
+</div>
+<code>segment_definition = "current updated LTV &gt; 80"</code>; <code>weighted_allowance =
+\$18,942,613.59</code>; <code>share_of_book_allowance_pct = 55.6377%</code>.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Only 3,201 of the book's loans are high-LTV, yet they carry <strong>55.6%</strong> of
+the total book's scenario-weighted allowance — the single largest concentration-risk fact this tool surfaces
+in one call. Almost all of that segment is still Stage&nbsp;1 by loan count (3,176 of 3,201), but Stage&nbsp;3
+alone (22 loans, 0.7% of the segment's loans) already carries 19.6% of the segment's allowance — exactly the
+severity-concentrates-in-a-few-defaults pattern Chapter&nbsp;4's bimodal LGD distribution predicts.
+</div>
+
+<h4>decompose_waterfall</h4>
+<p><code>decompose_waterfall(t0, t1)</code> runs the FROZEN engine's <code>movement_decomposition</code>
+(Chapter&nbsp;2) between two rung-1 snapshots: opening + stage_migration + remeasurement + derecognitions +
+new_loans = closing, an identity asserted inside the frozen engine itself.</p>
+
+<div class="ex">
+<b>Recorded exchange — <code>decompose_waterfall(20, 40)</code>.</b> Audit-log entry, <code>outputs/
+agent_log/tool_calls.jsonl</code> (seq&nbsp;4): headline <code>"allowance waterfall t=20 (2005Q1) -&gt; t=40
+(2010Q1): opening \$24.5m, stage migration +3.9m, remeasurement +26.0m, derecognitions -21.2m, new loans
++999.4m, closing \$1,032.6m"</code>. Reproduced live this session, full precision:
+<div class="table-wrap">
+<table>
+<tr><th>component</th><th>amount (USD)</th><th>n_loans</th><th>kind</th></tr>
+<tr><td>opening</td><td class="num">24,538,544.76</td><td class="num">8,662</td><td>level</td></tr>
+<tr><td>stage_migration</td><td class="num">+3,879,319.76</td><td class="num">498</td><td>delta</td></tr>
+<tr><td>remeasurement</td><td class="num">+26,010,644.52</td><td class="num">1,948</td><td>delta</td></tr>
+<tr><td>derecognitions</td><td class="num">&minus;21,177,011.65</td><td class="num">6,714</td><td>delta</td></tr>
+<tr><td>new_loans</td><td class="num">+999,361,873.81</td><td class="num">11,915</td><td>delta</td></tr>
+<tr><td>closing</td><td class="num">1,032,613,371.19</td><td class="num">13,863</td><td>level</td></tr>
+</table>
+</div>
+<code>identity_gap = 0.0</code> — opening + the four deltas equals closing exactly, to full float precision.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The <code>new_loans</code> component dwarfs every other term here (\$999.4m) because
+t=20&rarr;t=40 (2005Q1&rarr;2010Q1) spans most of this synthetic panel's origination window, not because
+of anything unusual about credit quality — a reminder that <code>decompose_waterfall</code>'s components are
+period-specific attributions, not universal shares, and a reader asking the agent for "the waterfall" without
+specifying dates gets the tool's own defaults (t0=20, t1=40), matching the published Chapter&nbsp;2 exhibit
+exactly.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a <code>shock_macro</code> delta is ALWAYS 100% remeasurement, by design, not by accident.</b>
+Staging is frozen at the t=60 reporting date and is scenario-invariant (Chapters&nbsp;1&ndash;2) — a macro
+shock changes the ECL AMOUNT for a loan without ever changing which STAGE it sits in. Feeding a shocked book
+back through <code>movement_decomposition</code> against the unshocked base book therefore always shows
+zero stage migration, zero derecognitions, zero new loans — the entire delta lands in
+<code>remeasurement</code>, "which is exactly the point" (<code>tools_tier1.py</code> docstring,
+<code>test_shock_waterfall_books_delta_as_remeasurement</code>). Expecting a macro shock to move loans
+between stages is a category error: that is what the SICR/staging engine does at a NEW reporting date, not
+what a same-date macro re-run does.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does a UER-only <code>shock_macro</code> call move the allowance at all, given the satellite has no
+direct UER coefficient?
+  <details><summary>Answer</summary>
+  <div class="answer">Because <code>shock_macro</code> never applies a univariate move — the co-movement
+  betas (&sect;8.2's boxed formula) drag <code>hpi_growth</code> and <code>gdp_growth</code> (the satellite's
+  actual drivers) along by their empirically fitted co-moving amount over the DFAST severe-minus-base window,
+  so the requested UER shock reaches the satellite indirectly through the two variables it actually
+  responds to.</div>
+  </details>
+</li>
+<li><code>rerun_ecl("high_ltv")</code> reports 3,201 loans carrying 55.6% of the book's allowance. Is that a
+statement about the book's CURRENT risk, or a forward-looking prediction?
+  <details><summary>Answer</summary>
+  <div class="answer">It is a snapshot of the CURRENT t=60 scenario-weighted allowance decomposition — a
+  pure filter-and-sum over already-computed per-loan ECL, not a fresh model run or a forecast. It says
+  "here is where the book's allowance concentration already sits today", which is itself useful risk
+  information, but it is not <code>shock_macro</code>'s kind of what-if statement.</div>
+  </details>
+</li>
+<li>A user asks <code>decompose_waterfall</code> for the waterfall between t=61 and t=90. What happens, and
+why?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>DecomposeWaterfallArgs</code> bounds both <code>t0</code> and <code>t1</code>
+  to <code>1..T_SNAP</code> (T_SNAP=60, the panel's last reporting quarter) via a pydantic
+  <code>Field(..., le=T_SNAP)</code> — <code>t1=90</code> fails validation BEFORE any engine code runs,
+  which <code>decide_route</code> (&sect;8.5) turns into a refusal, never a guessed or extrapolated
+  waterfall beyond the panel's actual history.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-3">8.3 Tier-2: the sandboxed <code>analyze_data</code></h3>
+<!-- ============================================================== -->
+<p>Tier-1's four tools cover the questions someone anticipated in advance. Real analysts ask long-tail
+questions no fixed parameter set covers — "which FICO band drives the most allowance", "top 10 loans by
+exposure", "average LTV of Stage 2 loans". Tier-2's <code>analyze_data</code> (<code>agent/
+tools_tier2.py</code>) answers these by letting the LLM WRITE pandas code against three read-only
+DataFrames (<code>book</code>, <code>scenarios</code>, <code>z_path</code> — built once from the already-run
+Tier-1 engine state, documented in full in the module's own docstring) — but the number shown to the user
+always comes from EXECUTING that code, never from the LLM's own claim about what it would compute.</p>
+
+<div class="ex">
+<b>Recorded exchange — average updated LTV of Stage&nbsp;2 loans.</b> Full trace, quoted verbatim from
+<code>outputs/demo/live_b_tier2.json</code>:
+<pre class="trace">route: "analyze_data"
+generated code: result = book[book['stage'] == 2]['updated_ltv'].mean()
+narrator answer: "The average updated LTV of stage 2 loans is 272.9774621332569."
+number_check_passed: true</pre>
+Reproduced LIVE this session directly against <code>run_sandboxed</code> — identical to the full float:
+<code>{"ok": true, "result_preview": 272.9774621332569, "result_shape": null, "error": null}</code>.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> That number (272.98%) looks wrong for an LTV at first glance — but it is exactly what
+the underlying synthetic panel's <code>updated_ltv</code> column contains for this tiny 3-loan Stage&nbsp;2
+segment (recall &sect;8.2's <code>rerun_ecl("high_ltv")</code> found only 3 Stage&nbsp;2 loans among the
+high-LTV segment too): a small-sample severely-underwater LTV outlier, not a bug. This is precisely the value
+of executing rather than trusting an LLM's arithmetic — a narrator asked to state "the average LTV" from
+memory would very plausibly have rounded or sanity-checked this figure down to something more typical; the
+guard stack (&sect;8.6) forces it to be quoted exactly as computed, outlier and all.
+</div>
+
+<img class="fig" src="../assets/img/ch08/02_sandbox_hardening_pipeline.png" alt="Tier-2 sandbox hardening pipeline: LLM code-writer writes pandas code, an AST walk validates it before execution banning dunders/exec/eval/open/read-and-to-methods/forbidden attributes at every depth, a forked child process executes with copy-on-write isolation, child hardening caps address space and scrubs environment variables and installs an audit hook, then a timeout and result-size cap; right panel documents the RCE catch — pd.io.common.os.system chaining through four attribute hops past a filter that once checked only the outermost name, fixed by walking every attribute node in the chain, live-confirmed rejected today">
+<div class="figcap"><b>Exhibit 8.2</b> — The Tier-2 sandbox's four-layer hardening pipeline, and the RCE catch
+that shaped layer&nbsp;1 (<code>agent/tools_tier2.py</code>; wiki/memory/log.md; tests/test_tier2.py).</div>
+
+<div class="defn">
+<b>The AST whitelist (<code>_validate_ast</code>, walked BEFORE any code executes).</b>
+<ul>
+<li>Imports: only bare <code>import pandas</code> / <code>import numpy</code> (either alias) or
+<code>from pandas import ...</code> / <code>from numpy import ...</code> — anything else (<code>os</code>,
+<code>sys</code>, a pandas/numpy submodule import) is rejected.</li>
+<li>Every dunder attribute (<code>__class__</code>, <code>__mro__</code>, <code>__globals__</code>, ...) is
+rejected outright — this alone stops <code>().__class__.__mro__</code>-style sandbox escapes.</li>
+<li>The bare names <code>exec</code>, <code>eval</code>, <code>compile</code>, <code>open</code>,
+<code>input</code>, <code>globals</code>, <code>locals</code>, <code>vars</code>, <code>getattr</code>,
+<code>setattr</code>, <code>delattr</code>, <code>__import__</code> are rejected wherever they appear — and
+are ALSO simply absent from the restricted <code>__builtins__</code> handed to the child's <code>exec</code>,
+so even an AST pattern this walk fails to anticipate still hits a plain <code>NameError</code> at runtime,
+never the real builtin.</li>
+<li>Any attribute starting with <code>read_</code> (file I/O) or <code>to_</code> EXCEPT the five in-memory
+conversions <code>to_dict</code>/<code>to_list</code>/<code>to_numpy</code>/<code>to_frame</code>/
+<code>to_series</code> is rejected.</li>
+<li><code>FORBIDDEN_ATTRS</code> — a denylist of module handles and OS primitives (<code>os</code>,
+<code>sys</code>, <code>subprocess</code>, <code>system</code>, <code>popen</code>, <code>environ</code>,
+<code>get_handle</code>, ...) — is checked against EVERY <code>ast.Attribute</code> node the walk visits, at
+ANY depth of a chain, not only a name's direct attribute.</li>
+<li><code>.eval()</code>/<code>.query()</code> ARE allowed (common pandas idioms) but only with a
+STRING-LITERAL expression argument (so its contents can actually be inspected) containing neither
+<code>@</code> (outer-scope variable access) nor <code>__</code>, and only at their default engine/parser.</li>
+</ul>
+</div>
+
+<div class="warn">
+<b>The RCE catch — the security lesson (adversarial review, App&nbsp;v2 gate).</b> The project's own build log
+records it plainly: <em>"Fable security review caught CRITICAL module-traversal RCE (pd.io.common escape
+past attribute-only AST filter) and fixed it"</em> (<code>wiki/memory/log.md</code>, App&nbsp;v2 + Tier-2
+gate entry). The concrete escape was <code>pd.io.common.os.system('id')</code>: this chains through FOUR
+attribute hops (<code>.io</code> &rarr; <code>.common</code> &rarr; <code>.os</code> &rarr;
+<code>.system</code>) starting from the already-whitelisted name <code>pd</code>. An attribute check that
+only inspects a name's OUTERMOST/direct attribute would see nothing wrong with <code>pd.io</code> and never
+re-examine the <code>.os</code>/<code>.system</code> hops buried further down the same expression — a
+textbook module-traversal escape past a filter that is technically "checking attributes" but not checking
+EVERY attribute in a chain. The fix, still in the code today, is exactly what &sect;8.3's boxed AST rules
+above describe: <code>_validate_ast</code> walks EVERY <code>ast.Attribute</code> node the parser produces
+(<code>for node in ast.walk(tree): ... elif isinstance(node, ast.Attribute): attr = node.attr; if attr in
+FORBIDDEN_ATTRS or attr.startswith(FORBIDDEN_ATTR_PREFIXES): raise SandboxViolation(...)</code>), so
+<code>FORBIDDEN_ATTRS</code>'s entries (<code>"os"</code>, <code>"system"</code>, <code>"environ"</code>,
+<code>"popen"</code>, <code>"get_handle"</code>, ...) match at ANY depth, not just as <code>pd</code>'s or
+<code>np</code>'s direct attribute. <code>tests/test_tier2.py</code> now carries this exact attack and six
+siblings — <code>os.environ</code> dict dump, <code>os.environ.get</code>, <code>os.open</code>,
+<code>os.popen</code>, a numpy-submodule variant (<code>np.lib.npyio.os.environ</code>), and
+<code>get_handle</code> — under one comment reading <em>"NEW (adversarial review): module-traversal RCE /
+exfiltration"</em>, one test per variant, all inside the same <code>ESCAPE_ATTEMPTS</code> list a few lines
+below a SEPARATE trio of <code>str.format</code>/<code>format_map</code> attribute-traversal exfiltration
+attempts (own comment, same underlying attribute-walk defence). Reproduced LIVE this session against the
+actual sandbox:
+<pre class="trace">&gt;&gt;&gt; run_sandboxed("result = pd.io.common.os.system('id')")
+{"ok": false, "result_preview": null, "result_shape": null,
+ "error": "attribute access '.system' is not allowed in sandboxed code
+           (frame/module/OS-escape surface)"}</pre>
+</div>
+
+<div class="interpretation">
+<b>Interpretation — defence in depth, not just one filter.</b> The AST walk is layer&nbsp;1 of four
+(Exhibit&nbsp;8.2): even a hypothetical attack pattern the walk fails to anticipate still has to survive
+layer&nbsp;2 (fork isolation — the code runs in a forked child, so a runaway process cannot touch the
+parent), layer&nbsp;3 (<code>_harden_child</code>, run BEFORE user code — an address-space cap, an
+<code>os.environ.clear()</code> that removes every secret the child could otherwise leak, and a Python audit
+hook that blocks file writes, network calls, and process-spawning primitives PATH-INDEPENDENTLY, i.e. no
+matter which attribute chain reached them), and layer&nbsp;4 (a hard 5-second wall-clock timeout plus
+50-row/5000-character result caps). The module docstring is explicit that this is deliberate belt-and-braces
+design, not redundancy for its own sake: the AST filter gives a clean pre-execution error and a repair
+signal the code-writer LLM can act on; the runtime hardening is the PATH-INDEPENDENT backstop for whatever
+the denylist fails to anticipate next time.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — a capped result is never a SILENT truncation.</b> Tier-2 caps any DataFrame/Series/array result
+at 50 rows and the whole rendered preview at 5,000 characters (<code>MAX_ROWS</code>, <code>MAX_CHARS</code>)
+— but the summarised preview always ALSO reports <code>n_rows_total</code> alongside
+<code>n_rows_shown</code>, so a narrator (and a reader) can always tell a result was cut down, and by how
+much. A stray unbounded query (e.g. returning every row of the t=60 book) fails safely into a visibly
+truncated preview, never a silently misleading "here is the whole answer" when it isn't.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does the AST walk check <code>FORBIDDEN_ATTRS</code> against every <code>ast.Attribute</code> node,
+rather than just the first attribute after a name like <code>pd</code> or <code>np</code>?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the RCE catch showed that a filter checking only the outermost/direct
+  attribute misses attacks that chain several attribute hops deep (<code>pd.io.common.os.system</code>) —
+  each hop in that chain is its own <code>ast.Attribute</code> node in the parsed tree, so only walking
+  EVERY node (not just ones directly off a known name) catches <code>.os</code>/<code>.system</code>
+  wherever they appear in the expression.</div>
+  </details>
+</li>
+<li>Suppose a future attack somehow slips past the AST walk entirely (a pattern nobody anticipated). What
+stops it from reading <code>OPENROUTER_API_KEY</code> out of the process environment?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>_harden_child</code> calls <code>os.environ.clear()</code> in the forked child
+  BEFORE any user code runs — the secret is simply gone from that process's environment by the time the
+  sandboxed code executes, regardless of which attribute chain an attack used to try to reach it. This is
+  the path-independent layer the interpretation box above describes: it does not matter HOW the code tries
+  to reach the environment, because the environment is empty.</div>
+  </details>
+</li>
+<li>A generated query returns a 500-row DataFrame. What does the user actually see, and how do they know it
+was cut down?
+  <details><summary>Answer</summary>
+  <div class="answer">The preview is capped at the first 50 rows (further shrunk if still over 5,000
+  characters), but the summarised preview dict always also reports <code>n_rows_total: 500</code> alongside
+  <code>n_rows_shown: 50</code> — so the truncation is visible in the structured result, never a silent
+  "these are all the rows" misrepresentation.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-4">8.4 Tier-3: <code>query_model_docs</code></h3>
+<!-- ============================================================== -->
+<p>Tier-1 and Tier-2 answer questions with a NUMBER. Tier-3 (<code>agent/tier3_retrieval.py</code>) answers
+questions about what the project's OWN documentation says — methodology, definitions, design rationale —
+strictly by retrieving and quoting real passages, with NO LLM involved in the retrieval step itself. Two
+sources, reused from two existing skills rather than reimplemented: the model-development wiki's typed graph
+(<code>.claude/skills/llm-wiki/scripts/wiki_query.py</code> — lexical seed scoring + a 1-hop graph
+expansion) and the indexed IFRS&nbsp;9 knowledge corpus (<code>.claude/skills/pageindex-plus/scripts/
+pageindex_query.py</code> — offline keyword scoring over the PageIndex tree). Both retrieval passes are pure
+functions of (question, on-disk wiki, on-disk index) — same question, same files, identical passages every
+time; only the audit sequence number varies.</p>
+
+<div class="defn">
+<b>Citation anchors are REAL, never invented.</b> A wiki passage's citation is
+<code>"&lt;page path&gt;#&lt;heading&gt;"</code> where the heading is drawn VERBATIM from that exact page's
+own parsed heading list — the module never authors a heading string itself, only echoes one it already found.
+A notes passage's citation is <code>"notes &sect;&lt;section&gt; p&lt;start&gt;[-&lt;end&gt;]"</code>, with
+the section number and page range read straight off the loaded PageIndex tree. Before ever citing a heading,
+the code asserts it is present in that page's own parsed heading list — defensive, since it is true by
+construction, but asserted anyway so the invariant can never silently break.
+</div>
+
+<div class="ex">
+<b>Recorded exchange — "Explain the ECL movement waterfall."</b> Full trace, quoted verbatim from
+<code>outputs/demo/live_c_tier3.json</code>:
+<pre class="trace">route: "query_model_docs"
+tool headline: "6 documentation passage(s) found for 'Explain the ECL movement waterfall.':
+  pages/ecl-engine.md#Headline numbers; pages/scenario-layer.md#Satellite + scenario ECL;
+  index.md#Modules; notes §9.4 p11; notes §9.2 p10; notes §12.3 p17"
+narrator answer:
+  "The ECL movement waterfall decomposes the change in allowance between two periods.
+   For the movement from t=20 to t=40, the waterfall consists of the following components:
+   *   Opening balance: \$24.5m [pages/ecl-engine.md#Headline numbers].
+   *   Stage migration: +\$3.9m [pages/ecl-engine.md#Headline numbers].
+   *   Remeasurement: +\$26.0m [pages/ecl-engine.md#Headline numbers].
+   *   Derecognitions: -\$21.2m [pages/ecl-engine.md#Headline numbers].
+   *   New loans: +\$999.4m [pages/ecl-engine.md#Headline numbers].
+   *   Closing balance: \$1,032.6m [pages/ecl-engine.md#Headline numbers].
+   The identity residual for this movement is less than \$0.01
+   [pages/ecl-engine.md#Headline numbers]."
+citation_check_passed: true</pre>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Every number in that answer matches &sect;8.2's <code>decompose_waterfall(20, 40)</code>
+exchange almost exactly (the wiki page's own printed figures, not a fresh engine run — Tier-3 quotes
+documentation, it does not call Tier-1) — a nice cross-check that the wiki's own numbers and the live engine
+agree. Note the citation discipline: EVERY bullet repeats the same citation
+<code>[pages/ecl-engine.md#Headline numbers]</code> because every number in this particular answer happens to
+come from that one section; a question drawing on multiple passages would show different citations attached
+to different claims.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — "explain the waterfall" and "walk me through the waterfall" are DIFFERENT routes, on purpose.</b>
+The router's own disambiguation rule (&sect;8.5) is explicit: <em>"a request to SEE, show, or walk through
+the book's actual allowance movement or waterfall NUMBERS ... is <code>decompose_waterfall</code>
+(tool&nbsp;4), never this route. Use this route only for what the documentation SAYS."</em> This distinction
+was not free — the project's own build log records a review catch during the stretch phase:
+<em>"knowledge route was swallowing decompose_waterfall question 9 - fixed"</em>
+(<code>wiki/memory/log.md</code>) — an early router misrouted a "walk me through" question that should have
+triggered a fresh Tier-1 engine call into Tier-3's documentation quote instead. The fix is the disambiguation
+rule now baked directly into <code>ROUTER_SYSTEM_PROMPT</code>.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why can <code>query_model_docs</code> get away with NO LLM call anywhere in its retrieval step, while
+Tier-1's narrator still needs one?
+  <details><summary>Answer</summary>
+  <div class="answer">Because retrieval here is pure deterministic scoring (lexical token matching + a
+  1-hop graph expansion over the wiki, offline keyword scoring over the PageIndex tree) — there is no
+  "compute a number" step an LLM would otherwise be asked to do. The narrator LLM is still used afterward
+  to turn the retrieved passages into readable prose, but — exactly like Tier-1's narrator — its output is
+  mechanically checked (<code>docs_answer_ok</code>, &sect;8.6) and replaced by a deterministic passage
+  listing if it fails.</div>
+  </details>
+</li>
+<li>A citation reads <code>pages/ecl-engine.md#Headline numbers</code>. Could the narrator LLM have invented
+that heading string itself?
+  <details><summary>Answer</summary>
+  <div class="answer">No — <code>_wiki_passages</code> only ever selects a heading it already found in that
+  exact page's own parsed heading list (<code>n["headings"]</code>), and defensively re-asserts the heading
+  is present in that list before ever building the citation string. The narrator LLM is handed the citation
+  as part of the passage JSON and is REQUIRED to reproduce it verbatim (&sect;8.6's citation check) — it
+  cannot author a new one that would pass the guard.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-5">8.5 The LangGraph router: a three-way scope split</h3>
+<!-- ============================================================== -->
+<p>Every question enters the graph at exactly one place: the router node. A single LLM call, temperature 0,
+classifies the question into exactly one of three CLASSES — COMPUTABLE (one of the six Tier-1/Tier-2/Tier-3
+tools), REASONED (a conceptual question no tool computes or simply quotes, but that a grounded, cited
+reasoning pass can responsibly address), or REFUSE (everything else) — and, for COMPUTABLE, also emits that
+tool's arguments. <code>decide_route</code> (<code>agent/graph.py</code>) then pydantic-validates whatever
+the router claimed: an unparseable response, an unknown route, or an argument-validation failure ALL collapse
+straight to REFUSE — the agent never guesses an argument to paper over a malformed router response.</p>
+
+<img class="fig" src="../assets/img/ch08/03_langgraph_state_machine.png" alt="LangGraph state machine: START into router, which branches to five Tier-1/Tier-3 tool nodes all merging into a shared narrator node, to a Tier-2 analyze_data node that either reaches the narrator or falls through to refusal after one failed repair attempt, to a REASONED node, and to a refusal node; REASONED and refusal each produce a final answer directly and skip the narrator, reaching their own END alongside the narrator's END">
+<div class="figcap"><b>Exhibit 8.3</b> — <code>build_graph()</code>: one router, eight node kinds, one
+loop-free pass from START to END (<code>agent/graph.py</code>).</div>
+
+<div class="defn">
+<b>The router's output contract.</b> The router must respond with ONLY a JSON object, no prose:
+<code>{"route": "&lt;tool name, REASONED, or REFUSE&gt;", "args": {...}}</code>.
+<code>_extract_json</code> tolerates a code-fenced or prose-trailing response (a common LLM formatting
+habit) but still requires a well-formed JSON object underneath. <code>ROUTE_ARG_MODELS</code> maps every
+legal route to its pydantic model — REASONED and Tier-2/Tier-3's own argument models are deliberately EMPTY
+(<code>extra="forbid"</code>, no fields) by design: for these three routes the downstream node always reuses
+the user's OWN ORIGINAL question text, never a router-authored paraphrase, so the router's only job for them
+is classification, never argument extraction.
+</div>
+
+<p>The router's own system prompt spells out the disambiguation logic in detail — worth reading close to
+verbatim, since it is the actual few-shot logic driving every routing decision (condensed from
+<code>ROUTER_SYSTEM_PROMPT</code>, <code>agent/graph.py</code>):</p>
+
+<div class="note">
+<b>Excerpt — the three-class framing and the REASONED/REFUSE line.</b>
+<p style="margin:4px 0;">"(a) COMPUTABLE — one of six engine tools that returns a fresh number; (b) REASONED
+— a conceptually relevant question about credit risk, IFRS&nbsp;9, or this model's own methodology that NO
+tool computes or the documentation retriever simply quotes verbatim, but that a grounded, cited,
+number-disciplined reasoning pass can responsibly address; (c) REFUSE — everything else (no connection to
+this model or credit risk, or a request for a fresh number/fact with no tool for it)."</p>
+<p style="margin:4px 0;">"REFUSE anything else: general knowledge unrelated to credit risk or this project,
+market or rate predictions, opinions/advice unconnected to this model, arithmetic requests, poems or other
+creative writing, other portfolios, anything needing data or computation outside these seven routes. <em>When
+in doubt between REASONED and REFUSE for a question that IS at least about credit risk / IFRS&nbsp;9 / this
+model, prefer REASONED</em> — never invent a number, but do not refuse a legitimate conceptual question
+either. When a question has no connection at all to this model or credit risk, REFUSE."</p>
+</div>
+
+<p>The prompt closes with three worked few-shot examples per class — quoted exactly, since these are the
+literal anchors the router generalises from:</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>class</th><th>example question</th><th>routed to</th></tr>
+<tr><td>COMPUTABLE</td><td>"What happens to the allowance if unemployment rises 2 percentage points?"</td><td><code>shock_macro</code></td></tr>
+<tr><td>COMPUTABLE</td><td>"How much of the allowance sits in Stage 2?"</td><td><code>rerun_ecl</code></td></tr>
+<tr><td>COMPUTABLE</td><td>"What are the top 5 loans by weighted allowance?"</td><td><code>analyze_data</code></td></tr>
+<tr><td>REASONED</td><td>"Does the satellite need a UER x HPI interaction, or do the main effects and momentum already account for the joint stress response?"</td><td>REASONED</td></tr>
+<tr><td>REASONED</td><td>"Why does the double-trigger LTV x UER coefficient come out negative?"</td><td>REASONED</td></tr>
+<tr><td>REASONED</td><td>"If unemployment and house prices both deteriorate at once, would you expect the combined hit to default risk to be additive, or worse than additive?"</td><td>REASONED</td></tr>
+<tr><td>REFUSE</td><td>"What's your view on Bitcoin as a hedge for our book?"</td><td>REFUSE</td></tr>
+<tr><td>REFUSE</td><td>"What will the Fed do with rates next year?"</td><td>REFUSE</td></tr>
+<tr><td>REFUSE</td><td>"Please compute 123 * 456 for me."</td><td>REFUSE</td></tr>
+</table>
+</div>
+
+<div class="widget">
+<h4>Interactive — router-decision explorer <span class="small">(illustrative decision tree, NOT the real LLM)</span></h4>
+<p class="small" style="margin-top:0;">The real router is a single temperature-0 LLM call reading the full
+natural-language system prompt above and returning one JSON classification — it is not literally a decision
+tree. The tree below is a teaching approximation of the SAME disambiguation rules, restructured as clickable
+yes/no questions; click a node to expand the rule it encodes, quoted or paraphrased from
+<code>ROUTER_SYSTEM_PROMPT</code>.</p>
+<div class="router-tree">
+<details open>
+<summary>Does the question have ANY connection to this model, IFRS&nbsp;9, or credit risk generally?</summary>
+<div class="rule-body">Per the prompt: "REASONED is for questions ABOUT this model or IFRS&nbsp;9 / credit
+risk generally, even ones with no fixed tool or exact documented answer. REFUSE is for questions with NO
+connection to either." Bitcoin-as-a-hedge, Fed rate predictions, and arithmetic-for-its-own-sake all fail
+this first gate.</div>
+<details>
+<summary>NO &rarr; <span class="tag tag-refuse">REFUSE</span></summary>
+<div class="rule-body">Fixed refusal message naming the six validated tool families (&sect;8.7) — never a
+guessed answer, and never silent.</div>
+</details>
+<details open>
+<summary>YES &rarr; does one of the six tools compute this exact number, or does the documentation simply
+state this exact fact?</summary>
+<div class="rule-body">Six COMPUTABLE sub-routes to check against, in the router's own order:</div>
+<details>
+<summary>A named macro shock (UER/HPI/GDP, a size, optionally a shape)?</summary>
+<div class="rule-body">&rarr; <span class="tag tag-computable">shock_macro</span> — e.g. "What happens if
+unemployment rises 2pp?"</div>
+</details>
+<details>
+<summary>A scenario-weight what-if (up/base/down summing to 1)?</summary>
+<div class="rule-body">&rarr; <span class="tag tag-computable">reweight_scenarios</span></div>
+</details>
+<details>
+<summary>The allowance for a named segment (all/stage1/stage2/stage3/investor/high_ltv)?</summary>
+<div class="rule-body">&rarr; <span class="tag tag-computable">rerun_ecl</span></div>
+</details>
+<details>
+<summary>A movement/waterfall between two SPECIFIC reporting snapshots (numbers, not documentation)?</summary>
+<div class="rule-body">&rarr; <span class="tag tag-computable">decompose_waterfall</span> — the exact
+disambiguation catch of &sect;8.4: "walk me through the waterfall" is THIS route, not
+<code>query_model_docs</code>, even though both mention "the waterfall".</div>
+</details>
+<details>
+<summary>A long-tail ad-hoc query over the book (ranking, filter, group-by) with no fixed parameter for it?</summary>
+<div class="rule-body">&rarr; <span class="tag tag-computable">analyze_data</span> — Tier-2's sandboxed
+code-writer (&sect;8.3). Only used when none of the four fixed tools fit.</div>
+</details>
+<details>
+<summary>A plain "what does the documentation SAY / how is X defined here" lookup, quotable near-verbatim?</summary>
+<div class="rule-body">&rarr; <span class="tag tag-computable">query_model_docs</span> (Tier-3, &sect;8.4).</div>
+</details>
+</details>
+<details>
+<summary>YES to the connection gate, but NONE of the six tools fit exactly — does it need REASONING (an
+interaction-term judgment, a "does X already cover Y" synthesis, a "why" beyond a quoted fact)?</summary>
+<div class="rule-body">Per the prompt's own disambiguation: "route to REASONED when the question needs
+REASONING — combining what's documented with ordinary credit-risk logic ... When genuinely torn between
+[query_model_docs and REASONED], prefer REASONED — it still cites its sources and never invents a number, so
+it is never the unsafe choice."</div>
+<details>
+<summary>YES &rarr; <span class="tag tag-reasoned">REASONED</span></summary>
+<div class="rule-body">Tier-3 passages + the <code>rerun_ecl(segment="all")</code> baseline snapshot ground a
+free-form, cited, number-disciplined LLM reasoning pass (&sect;8.7 walks a full recorded example).</div>
+</details>
+</details>
+</details>
+</div>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> Notice the router's OWN stated tie-breaking rule always resolves toward the safer
+option, never the more confident-sounding one: "when in doubt between REASONED and REFUSE ... prefer
+REASONED" and "when genuinely torn between [query_model_docs and REASONED], prefer REASONED — it ... is never
+the unsafe choice." Both tie-breaks favour the route that is STILL grounded and STILL guarded (&sect;8.6)
+over a route that would either invent something (never chosen) or unhelpfully decline a legitimate question
+(the loser in ambiguous cases). The router is deliberately biased toward answering SOMETHING useful and
+grounded, not toward maximum caution for its own sake.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — REFUSE is not "the router is unsure"; it is "no connection at all".</b> A common misreading is
+that REFUSE fires whenever the router lacks high confidence. In fact the prompt's gate is about SCOPE, not
+confidence: any question with a genuine connection to this model, IFRS&nbsp;9, or credit risk generally
+routes to a tool or to REASONED, even if the router isn't sure which — REFUSE is reserved specifically for
+questions with NO such connection (Bitcoin commentary, rate forecasts, arithmetic-for-its-own-sake, poems).
+An ambiguous BUT on-topic question should never end in refusal by design.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A question asks "walk me through the allowance waterfall." Which route, and why not the other
+waterfall-sounding route?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>decompose_waterfall</code> (Tier-1) — the router's explicit disambiguation
+  rule routes any request to SEE/show/walk through the book's actual movement NUMBERS to this tool, reserving
+  <code>query_model_docs</code> for what the documentation SAYS (definitions, stated methodology) rather than
+  a numeric walkthrough. &sect;8.4's gotcha records the real review catch that made this rule necessary.</div>
+  </details>
+</li>
+<li>Why are the pydantic argument models for <code>query_model_docs</code>, <code>analyze_data</code>, and
+REASONED all deliberately EMPTY (<code>extra="forbid"</code>, no fields)?
+  <details><summary>Answer</summary>
+  <div class="answer">Because all three routes always reuse the user's OWN ORIGINAL question text verbatim
+  downstream, never a router-authored paraphrase or extracted argument — keeping the router's job identical
+  across all seven routes ("classify, don't guess arguments") while guaranteeing the text that eventually
+  gets cited back to the user, or coded against, is the text they actually typed.</div>
+  </details>
+</li>
+<li>The router returns malformed JSON (a parsing failure). What happens next?
+  <details><summary>Answer</summary>
+  <div class="answer"><code>decide_route</code> catches the <code>ValueError</code> from
+  <code>_extract_json</code> and returns <code>{"route": REFUSE, ...}</code> with a diagnostic detail string
+  — the agent NEVER falls back to guessing a route or arguments from a malformed response; any parse or
+  validation failure collapses straight to the same fixed refusal path as a genuinely out-of-scope
+  question.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-6">8.6 The guard stack, derived as a pipeline</h3>
+<!-- ============================================================== -->
+<p>Every LLM-authored piece of prose in this system — Tier-1's narration, Tier-3's docs narration, REASONED's
+interpretation — is DISTRUSTED mechanically before it is ever shown. The guard stack was not designed in one
+pass; it was built up in the order the project actually needed each layer, and understanding that
+construction order is the clearest way to understand what each layer catches that the others don't.</p>
+
+<div class="defn">
+<b>Layer 1 (built first, Day&nbsp;4) — the VERBATIM-NUMBER check.</b> <code>_number_tokens(text)</code> finds
+every digit-token substring (<code>-?\d[\d,]*(?:\.\d+)?</code>) in the LLM's narration.
+<code>_allowed_numbers(tool_result)</code> walks the ENTIRE tool-result JSON and, for every numeric leaf,
+allows the raw value AND its two legitimate DISPLAY transforms — dollars&rarr;millions (&divide;1e6) and a
+fraction&rarr;percent (&times;100) — plus every digit token appearing anywhere in the JSON's own text
+(headline strings, period labels, the <code>tool_call_id</code>). <code>narration_numbers_ok</code> then
+requires EVERY number token in the narration to equal, or be a plain rounding at ITS OWN printed precision
+of, an allowed number — sign-insensitive, so "fell by \$2.8m" legally matches a delta of &minus;2.8. One miss
+fails the whole text.
+</div>
+
+<div class="warn">
+<b>Layer 2 (added post-UI-v3, after a live adversarial catch) — the SPELLED-NUMBER check.</b> A digit-token
+regex is, by construction, blind to a number spelled out in WORDS — "two hundred million dollars",
+"forty-seven percent" contain zero digit characters, so Layer&nbsp;1 alone lets them straight through no
+matter what they claim. This was not a hypothetical concern: <em>"adversarial review CONFIRMED a live
+spelled-out-number bypass ('tens of millions' — the router LLM did its own subtraction and verbalised it to
+dodge the digit regex) and fixed it with <code>_spelled_number_violation()</code> wired into ALL THREE guards
+(reasoned/narration/docs)"</em> (<code>wiki/pages/agent-layer.md</code>). The fix,
+<code>_spelled_number_violation(text)</code>, fires on two independently sufficient triggers: (1) any
+MAGNITUDE noun — hundred/thousand/million/billion/trillion/dozen/score, singular or plural — appearing at
+all (these words are essentially never used non-numerically in this financial domain, so "tens of millions"
+is caught even with no digit and no leading number word), or (2) a small cardinal word (zero..ninety) within
+4 tokens of a unit word (percent/pp/bps/dollars/cents/basis) — catching "forty-seven percent" while NOT
+flagging ordinary prose ("the model has one satellite equation and two macro drivers").
+<b>Note on execution order:</b> in the code today <code>narration_numbers_ok</code> (and its Tier-3/REASONED
+siblings) actually run this spelled-number check FIRST as a cheap short-circuit, then the verbatim-number
+loop — the two layers are listed here in the order they were BUILT into the codebase, not the order they
+execute at runtime; Exhibit&nbsp;8.4 below shows the real runtime order.
+</div>
+
+<div class="defn">
+<b>Layer 3 (Tier-3/REASONED specific) — the CITATION check.</b> <code>docs_answer_ok</code> additionally
+requires at least one retrieved passage's <code>citation</code> string to appear VERBATIM in the answer — the
+narrator must show its work, not merely avoid inventing a number. REASONED's guard
+(<code>reasoned_answer_ok</code>) extends the verbatim-number check with a THIRD legal source beyond passages
+and the engine baseline: the user's OWN question text (a rate or figure the user themselves named is legal to
+echo back) — but does NOT require a citation, since a REASONED answer may legitimately be pure credit-risk
+economic reasoning with nothing specific to cite.
+</div>
+
+<div class="note">
+<b>Layer 4 (always present) — the deterministic fallback.</b> ANY miss at any layer discards the LLM's prose
+entirely and substitutes an engine-authored template: Tier-1 falls back to the tool's own
+<code>headline</code> string (already engine-generated text, never LLM prose) with an audit reference; Tier-3
+falls back to a plain bulleted listing of the retrieved passages under their citations; REASONED falls back
+to a qualitative passage listing plus a pointer to the closest validated tool. Either an API failure on BOTH
+the primary and fallback LLM, or a failed guard check, routes here — never a partially-trusted answer shown
+to the user.
+</div>
+
+<img class="fig" src="../assets/img/ch08/04_guard_pipeline.png" alt="Guard pipeline in its actual runtime execution order: LLM narration into a spelled-number check, then a verbatim-number check, then a citation check for Tier-3/REASONED only, reaching an all-pass state shown verbatim; any miss at any of the three steps routes to a shared deterministic fallback; below, a panel documenting the live-confirmed tens-of-millions bypass and its fix, and a panel of four worked pass/fail examples">
+<div class="figcap"><b>Exhibit 8.4</b> — The guard pipeline in its actual RUNTIME order (spelled-number check
+first, as a short-circuit), with the live-confirmed bypass that motivated layer&nbsp;2
+(<code>agent/graph.py</code>).</div>
+
+<div class="widget stepper">
+<h4>Interactive — guard-pipeline stepper <span class="small">(the REAL regex/word-list logic from <code>agent/graph.py</code>, reimplemented in JS)</span></h4>
+<p class="small" style="margin-top:0;">Type or paste a candidate narration below; the two number guards run
+LIVE against a real recorded <code>shock_macro</code> result (&sect;8.2's exchange) using the same digit-token
+regex and spelled-number word lists as <code>_number_tokens</code> / <code>_spelled_number_violation</code>
+(<code>agent/graph.py</code> lines&nbsp;658&ndash;719). The citation check (layer&nbsp;3) is Tier-3/REASONED-only
+and is described qualitatively above rather than reimplemented here, since it needs a passages list this
+tool_result doesn't carry.</p>
+<div class="presets">
+<button type="button" data-preset="good">load: PASS example</button>
+<button type="button" data-preset="bad_digit">load: invented digit</button>
+<button type="button" data-preset="bad_spelled1">load: "two hundred million"</button>
+<button type="button" data-preset="bad_spelled2">load: "forty-seven percent"</button>
+</div>
+<textarea id="stepper-input" spellcheck="false"></textarea>
+<div id="stepper-results" style="margin-top:10px;"></div>
+</div>
+
+<script>
+(function () {
+  // ---- reimplements agent/graph.py's _number_tokens / _spelled_number_violation
+  //      / _allowed_numbers / narration_numbers_ok, cited above ----
+  var NUM_TOKEN_RE = /-?\d[\d,]*(?:\.\d+)?/g;
+  var MAGNITUDE_WORDS = {hundred:1, hundreds:1, thousand:1, thousands:1, million:1, millions:1,
+    billion:1, billions:1, trillion:1, trillions:1, dozen:1, dozens:1, score:1, scores:1};
+  var SMALL_NUMBER_WORDS = {zero:1, one:1, two:1, three:1, four:1, five:1, six:1, seven:1, eight:1,
+    nine:1, ten:1, eleven:1, twelve:1, thirteen:1, fourteen:1, fifteen:1, sixteen:1, seventeen:1,
+    eighteen:1, nineteen:1, twenty:1, thirty:1, forty:1, fifty:1, sixty:1, seventy:1, eighty:1, ninety:1};
+  var UNIT_WORDS = {percent:1, percentage:1, pp:1, bps:1, dollars:1, dollar:1, usd:1, cents:1, cent:1, basis:1};
+  var WINDOW = 4;
+
+  function numberTokens(text) { return text.match(NUM_TOKEN_RE) || []; }
+
+  function spelledNumberViolation(text) {
+    var words = (text.toLowerCase().match(/[a-z]+/g)) || [];
+    for (var i = 0; i < words.length; i++) { if (MAGNITUDE_WORDS[words[i]]) return true; }
+    for (var i = 0; i < words.length; i++) {
+      if (!SMALL_NUMBER_WORDS[words[i]]) continue;
+      var lo = Math.max(0, i - WINDOW), hi = Math.min(words.length, i + WINDOW + 1);
+      for (var j = lo; j < hi; j++) { if (j !== i && UNIT_WORDS[words[j]]) return true; }
+    }
+    return false;
+  }
+
+  // real recorded shock_macro tool_result (&sect;8.2's exchange, tc-000001/tc-000048)
+  var TOOL_RESULT = {
+    var: "UER", shock: 2.0, shape: "parallel",
+    baseline_allowance: 30454080.645958915, shocked_allowance: 31694012.247251876,
+    delta: 1239931.6012929603, delta_pct: 4.071479338705607,
+    coverage: 0.018935969214955575, baseline_coverage: 0.018195157150911207,
+    headline: "UER +2pp (parallel) coherent shock of the base scenario: reported " +
+      "allowance $30.5m -> $31.7m (delta +1.2m, +4.1%), shocked coverage 1.89%",
+    tool_call_id: "tc-000001"
+  };
+
+  function allowedNumbers(toolResult) {
+    var allowed = [];
+    function walk(v) {
+      if (typeof v === 'boolean') return;
+      if (typeof v === 'number' && isFinite(v)) { allowed.push(v, v / 1e6, v * 100.0); return; }
+      if (Array.isArray(v)) { v.forEach(walk); return; }
+      if (v && typeof v === 'object') { Object.keys(v).forEach(function (k) { walk(v[k]); }); return; }
+    }
+    walk(toolResult);
+    numberTokens(JSON.stringify(toolResult)).forEach(function (tok) {
+      var n = parseFloat(tok.replace(/,/g, ''));
+      if (!isNaN(n)) allowed.push(n);
+    });
+    return allowed;
+  }
+  var ALLOWED = allowedNumbers(TOOL_RESULT);
+
+  function verbatimNumberCheck(text) {
+    var toks = numberTokens(text);
+    for (var i = 0; i < toks.length; i++) {
+      var tok = toks[i];
+      var n = parseFloat(tok.replace(/,/g, ''));
+      var decimals = tok.indexOf('.') >= 0 ? tok.split('.')[1].length : 0;
+      var tol = 0.5 * Math.pow(10, -decimals) + 1e-9;
+      var found = ALLOWED.some(function (a) {
+        return Math.abs(n - a) <= tol || Math.abs(Math.abs(n) - Math.abs(a)) <= tol;
+      });
+      if (!found) return {ok: false, reason: 'number "' + tok + '" does not match any allowed value from the tool JSON'};
+    }
+    return {ok: true, reason: toks.length ? ('all ' + toks.length + ' digit token(s) matched') : 'no digit tokens to check'};
+  }
+
+  var PRESETS = {
+    good: 'The allowance rises from $30.5m to $31.7m under the shock, a +4.1% increase, with coverage moving to 1.89%.',
+    bad_digit: 'The allowance rises to $32.0m under the shock.',
+    bad_spelled1: 'The allowance would rise by roughly two hundred million dollars.',
+    bad_spelled2: 'That is a forty-seven percent jump in the allowance.'
+  };
+
+  var input = document.getElementById('stepper-input');
+  var out = document.getElementById('stepper-results');
+
+  function row(label, ok, detail) {
+    return '<div class="guard-row"><span class="verdict ' + (ok ? 'verdict-pass">PASS' : 'verdict-fail">FAIL') +
+      '</span><span>' + label + ' &mdash; ' + detail + '</span></div>';
+  }
+
+  function render() {
+    var text = input.value;
+    var spelled = spelledNumberViolation(text);
+    var verbatim = verbatimNumberCheck(text);
+    var html = '';
+    html += row('1. Spelled-number check', !spelled,
+      spelled ? 'a magnitude word or a small-number+unit pair was found' : 'no spelled-out magnitude detected');
+    html += row('2. Verbatim-number check', verbatim.ok, verbatim.reason);
+    var overallOk = !spelled && verbatim.ok;
+    html += '<div class="overall" style="' +
+      (overallOk ? 'background:var(--interpBg);color:var(--good);border:1px solid var(--good);'
+                 : 'background:var(--warnBg);color:var(--warn);border:1px solid var(--warn);') + '">' +
+      (overallOk ? 'ALL CHECKED GUARDS PASS -> would be shown verbatim (pending layer 3 citation check where applicable)'
+                 : 'GUARD MISS -> would be discarded for the deterministic fallback (the tool headline)') +
+      '</div>';
+    out.innerHTML = html;
+  }
+
+  document.querySelectorAll('.stepper .presets button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      input.value = PRESETS[btn.getAttribute('data-preset')];
+      render();
+    });
+  });
+  input.addEventListener('input', render);
+  input.value = PRESETS.good;
+  render();
+})();
+</script>
+
+<div class="interpretation">
+<b>Interpretation.</b> The stepper's default (PASS) example and the "invented digit" example differ only in
+one figure (\$31.7m vs a fabricated \$32.0m) — everything else about the two narrations is equally fluent and
+equally plausible-sounding. This is exactly the failure mode digit-only verification exists to catch: fluency
+is not evidence of correctness, and the guard's job is to check the ONE thing prose fluency cannot signal —
+whether a number was actually computed, or merely sounds right.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>A narration says "the allowance rose by roughly \$1.24m." Using &sect;8.2's exchange
+(<code>delta = 1239931.60</code>), does this pass the verbatim-number check, and why?
+  <details><summary>Answer</summary>
+  <div class="answer">Yes — \$1.24m rounds <code>1239931.60/1e6 = 1.23993...</code> to 2 displayed decimals,
+  and the tolerance rule is "a plain rounding AT ITS OWN PRINTED PRECISION" (2 decimals here, so tolerance
+  &asymp;0.005), which <code>1.24</code> satisfies. The dollars&rarr;millions transform is one of the two
+  legitimate DISPLAY transforms <code>_allowed_numbers</code> always permits.</div>
+  </details>
+</li>
+<li>Why does the spelled-number check treat "tens of millions" as a violation even though it names no exact
+number at all — arguably a MORE honest, hedged statement than a fabricated precise figure?
+  <details><summary>Answer</summary>
+  <div class="answer">Because "tens of millions" is still an invented MAGNITUDE claim not grounded in the
+  tool JSON — the live-confirmed bypass this layer was built to close was exactly a case where the LLM used
+  vague wording to STATE something it had computed itself (a subtraction) while technically stating no
+  precise digit. The guard's job is to block any stated magnitude the LLM computed or recalled itself, hedged
+  or not — precision is not the issue, provenance is.</div>
+  </details>
+</li>
+<li>Why is the citation check (layer&nbsp;3) not required for Tier-1's <code>narration_numbers_ok</code>?
+  <details><summary>Answer</summary>
+  <div class="answer">Because Tier-1 narrations are not quoting a passage at all — they are restating
+  numbers the ENGINE itself already computed and returned as structured JSON. There is nothing to cite; the
+  provenance guarantee comes entirely from the number matching the tool's own output. The citation check only
+  makes sense for Tier-3/REASONED, where the underlying claim is "the documentation says X" and needs a real
+  passage backing it.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-7">8.7 REASONED in full, refusal as a feature, and an honest limitation</h3>
+<!-- ============================================================== -->
+
+<h4>REASONED — the route's own motivating example, worked in full</h4>
+<p>&sect;8.5's router few-shot table lists the first of its two REASONED examples as "does the satellite need
+a UER&nbsp;&times;&nbsp;HPI interaction, or do the main effects and momentum already account for the joint
+stress response?" &mdash; not by coincidence: it is literally the ship gate's own "motivating example" for the
+whole route (<code>outputs/gate/reasoned_route_gate.md</code> &sect;5: "Before this feature this question hit
+REFUSE; it no longer does"). Here is that exact recorded exchange in full, not merely the routing decision.</p>
+
+<div class="ex">
+<b>Recorded exchange &mdash; the REASONED route's own motivating example.</b> Full trace, quoted verbatim from
+<code>outputs/agent_log/agent_runs.jsonl</code> (ts 2026-07-17T13:36:08) and the matching
+<code>outputs/agent_log/tool_calls.jsonl</code> entries: seq&nbsp;44 is the grounding
+<code>query_model_docs</code> call this question triggers; seq&nbsp;45 is the second validated number source
+the router-tree widget above already names, <code>rerun_ecl(segment="all")</code>, logged here with headline
+<code>"segment 'all' ... 7,849 loans, balance \$1,673.7m, scenario-weighted allowance \$34.0m (100.0% of the
+book allowance), coverage 2.03%"</code> (none of these numbers happen to appear in the final answer below, but
+they were an available legal source per &sect;8.6's <code>reasoned_answer_ok</code>); seq&nbsp;46 is the
+REASONED call itself:
+<pre class="trace">route: "REASONED"
+answer: "[REASONED - interpretation, not engine output] Based on the project's
+  documented fit results, a UER x HPI interaction is not required because the
+  main effects and momentum already capture the joint stress response
+  [pages/hazard-model.md#Fit]. While a "double trigger" (LTV x UER) was tested
+  and showed a slight in-sample substitution with a coefficient of -0.006
+  (p=.04), the documentation explicitly states that the main effects and
+  momentum are sufficient to carry the joint stress response
+  [pages/hazard-model.md#Fit]."
+number_check_passed: true
+tool_call_id: "tc-000046"</pre>
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> The load-bearing number in that answer, <code>-0.006</code>, is quoted VERBATIM from
+<code>pages/hazard-model.md#Fit</code> ("Double trigger (ltv &times; uer): &minus;0.006 (p=.04) &mdash; slight
+in-sample substitution; main effects + momentum already carry the joint stress response") &mdash; not computed
+or recalled by the REASONED LLM itself, exactly as &sect;8.6's guard requires. The answer's actual conceptual
+CLAIM ("a UER&nbsp;&times;&nbsp;HPI interaction is not required because...") is free-form reasoning laid on
+TOP of that cited fact, never a fact invented to support a pre-decided conclusion. Note that citing a passage
+here was the LLM's OWN choice, not a hard requirement the way it is for Tier-3 (&sect;8.6's Layer&nbsp;3):
+&sect;8.1's interpretation box calls REASONED "the most permissive tier of all ... no fixed passage
+requirement" — this exchange happens to lean on a citation because the honest answer to this particular
+question really does live in the documentation, not because the guard would have blocked an uncited but
+still correctly-grounded conceptual answer.
+</div>
+
+<p>The refusal path that follows is REASONED's opposite number: deliberately not framed as a failure state.
+The module docstring states this plainly:
+<em>"The REFUSAL path is a feature, not an error state: out-of-scope questions get a fixed message naming the
+validated tool families and offering to extend the toolset. Nothing is invented."</em></p>
+
+<div class="defn">
+<b>The refusal message (verbatim, current, <code>REFUSAL_MESSAGE</code>, <code>agent/graph.py</code>).</b>
+<p style="margin:4px 0;">"That question is outside my validated scope, so I will not answer it with made-up
+numbers. Every figure I report is computed by the frozen IFRS&nbsp;9 ECL engine through four validated tool
+families: (1)&nbsp;<code>shock_macro</code> &ndash; coherent macro shocks (UER / HPI / GDP, parallel or
+peak-and-revert) applied to the base scenario; (2)&nbsp;<code>reweight_scenarios</code> &ndash; scenario-weight
+sensitivity of the weighted allowance and the Jensen gap; (3)&nbsp;<code>rerun_ecl</code> &ndash; allowance for
+a book segment (all, stage1, stage2, stage3, investor, high_ltv); (4)&nbsp;<code>decompose_waterfall</code>
+&ndash; the allowance movement decomposition between two reporting snapshots; (5)&nbsp;<code>analyze_data</code>
+&ndash; long-tail analytical questions (rankings, filters, group-bys, ...) answered by generating pandas code
+that is EXECUTED in a validated sandbox against the scored book, never by LLM arithmetic; and one documentation
+tool, (6)&nbsp;<code>query_model_docs</code> &ndash; methodology / definition questions answered strictly from
+the model-development wiki and the IFRS&nbsp;9 knowledge corpus, every claim cited to a real page or note
+section. Rephrase your question into one of those, or ask the model owners to extend the validated toolset.
+Conceptually-related questions about this model's methodology or design get a reasoned interpretation
+automatically, so rephrasing your question toward the model or its methodology may help."</p>
+</div>
+
+<div class="ex">
+<b>Recorded exchange — a genuine refusal-class question.</b> Live E2E verification, quoted from
+<code>outputs/gate/reasoned_route_gate.md</code> &sect;5: <code>POST /api/agent/ask {"question": "What's your
+view on Bitcoin as a hedge for our book?"}</code> &rarr; <code>route: "REFUSE"</code>,
+<code>mode: "refusal"</code>, the standard six-tool-family refusal text. The same report notes this class is
+"unaffected by the reasoned-route change" — a genuinely out-of-scope question still refuses even after
+REASONED widened what counts as answerable.
+</div>
+
+<div class="interpretation">
+<b>Interpretation.</b> A refusal is information, not silence: it names exactly which six validated families
+exist and invites a rephrase, so a user who asked a slightly-off-target question has an actionable next step
+rather than a dead end. This only works because the refusal MESSAGE ITSELF is fixed, engine-authored text —
+never generated by the LLM that just failed to route the question — so even the refusal path inherits the
+"never let unchecked LLM prose reach the user" discipline &sect;8.6 enforces everywhere else.
+</div>
+
+<div class="warn">
+<b>An honest, recorded limitation: magnitude vs. attribution.</b> The project's own wiki records this
+precisely: <em>"Recorded inherent limitation (pre-existing, all tiers): guards check a number's magnitude
+exists in a legal source, not its semantic attribution."</em> (<code>wiki/pages/agent-layer.md</code>). Every
+guard in &sect;8.6 verifies that a stated number MATCHES something in the tool JSON — it cannot verify that
+the narration attached the RIGHT CLAIM to that number. A constructed, illustrative example (not a captured
+failure — no such transcript exists in this project's logs): &sect;8.2's <code>shock_macro</code> result
+contains both <code>delta = \$1.24m</code> (the total allowance increase) and a <code>waterfall_vs_baseline</code>
+breakdown where the ENTIRE delta is <code>remeasurement</code> (&sect;8.2's gotcha — by construction, since
+staging is frozen). A narration stating <em>"the increase is driven primarily by new loan originations, about
+\$1.24m"</em> would PASS every guard in &sect;8.6 — \$1.24m is a legitimate rounding of a real allowed number —
+even though the attribution to "new loan originations" is flatly wrong for a same-date macro shock. The guard
+stack cannot see the difference between a correct and an incorrect CLAIM riding on a correct NUMBER; it only
+verifies the number.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>In the REASONED worked example above, is <code>-0.006</code> a number the LLM computed from the double-trigger
+model, or something else? Why does it matter to the governing rule (&sect;8.1)?
+  <details><summary>Answer</summary>
+  <div class="answer">It is a number quoted verbatim out of the retrieved <code>pages/hazard-model.md#Fit</code>
+  passage, never computed or recalled by the REASONED LLM itself — the passage already states "Double trigger
+  (ltv &times; uer): &minus;0.006 (p=.04)" before the LLM ever sees the question. This matters because it is
+  exactly the distinction &sect;8.1's governing rule draws for Tier-3-flavoured claims: the LLM's job is to
+  REASON about what a cited fact implies, never to originate the fact's own magnitude.</div>
+  </details>
+</li>
+<li>Why does the project treat refusal as "a feature, not an error state" rather than something to minimise
+at all costs?
+  <details><summary>Answer</summary>
+  <div class="answer">Because the alternative to a clearly-labelled refusal is a plausible-sounding but
+  invented answer — and the entire system's design goal (&sect;8.1's governing rule) ranks an honest "I
+  cannot validate this" strictly above a fluent guess. A refusal that names the six validated tool families
+  is itself useful, actionable information, which is why it is engineered as carefully as any other answer
+  path rather than treated as a fallback to be avoided.</div>
+  </details>
+</li>
+<li>Construct your own illustrative (not real) example of the magnitude-vs-attribution gap, distinct from
+the one in the warning box, using &sect;8.2's <code>rerun_ecl("high_ltv")</code> exchange.
+  <details><summary>Answer</summary>
+  <div class="answer">Many are possible; one shape: the exchange reports Stage&nbsp;3 carrying
+  <code>\$3,717,983.07</code> (19.63%) of the high-LTV segment's allowance. A narration claiming "Stage&nbsp;1
+  loans carry the largest single share of high-LTV allowance risk, about \$3.7m" would pass the verbatim-number
+  guard (\$3.7m rounds the real Stage&nbsp;3 figure) while misattributing it to the wrong stage — the guard
+  cannot detect that the number belongs to Stage&nbsp;3, not Stage&nbsp;1, in the JSON it was checking
+  against.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-8">8.8 The audit trail</h3>
+<!-- ============================================================== -->
+<p>Every Tier-1/Tier-2/Tier-3 call, and every full graph run, is logged — not as an afterthought, but as the
+mechanism that makes every number in this chapter independently verifiable rather than merely asserted.</p>
+
+<div class="defn">
+<b>Two logs, two grains.</b>
+<ul>
+<li><code>outputs/agent_log/tool_calls.jsonl</code> — one line per successful TOOL call (Tier-1, Tier-2,
+Tier-3, and REASONED's baseline lookup all share this file and its sequence counter):
+<code>{"seq", "ts", "tool", "args", "headline"}</code>. The returned <code>tool_call_id</code>
+(<code>"tc-&lt;seq&gt;"</code>) references this exact line. <code>_last_logged_seq</code> reads the last
+line's own <code>seq</code> field to resume numbering correctly even across process restarts — never
+resets or double-counts. Validation FAILURES are never logged here (nothing ran).</li>
+<li><code>outputs/agent_log/agent_runs.jsonl</code> — one line per full graph invocation (every node's
+trace event, the final route, the final answer): <code>{"ts", "question", "route", "answer", "trace"}</code>.
+This is the "replay the whole conversation" log; <code>tool_calls.jsonl</code> is the "verify one number"
+log.</li>
+</ul>
+</div>
+
+<div class="ex">
+<b>The audit trail as of this session's live reproduction.</b> A scan of the real
+<code>outputs/agent_log/tool_calls.jsonl</code> at the start of this chapter's work found 47 logged calls
+across seven tool kinds (<code>shock_macro</code>&times;6, <code>reweight_scenarios</code>&times;16,
+<code>rerun_ecl</code>&times;4, <code>decompose_waterfall</code>&times;5, <code>query_model_docs</code>&times;12,
+<code>analyze_data</code>&times;3, <code>REASONED</code>&times;1) — the entire history of every recorded
+demo, gate-report verification, and pytest-adjacent run across this project's build. This chapter's own live
+reproductions (&sect;8.2&ndash;8.3) appended fresh entries on top (e.g. <code>tc-000048</code> for the
+<code>shock_macro</code> re-run quoted in &sect;8.2) using the exact same mechanism a real user's question
+would — this chapter is, in a small way, itself now part of that audit trail.
+</div>
+
+<div class="interpretation">
+<b>Interpretation — replayability closes the "trust me" gap.</b> Every recorded exchange quoted in this
+chapter carries a <code>tool_call_id</code> that resolves to a real, timestamped line in
+<code>tool_calls.jsonl</code>, with the EXACT arguments that produced it — so a sceptical reader does not have
+to trust this chapter's transcription; they can open the log, find the line, and independently re-run the
+same tool call to confirm the number (as this chapter did throughout &sect;8.2&ndash;8.3). This is the same
+"recompute every number" discipline the rest of this compendium applies to `tests/fixtures/compute_*.py` golden
+values (Chapters&nbsp;1&ndash;7) — here the "fixture" is a real historical tool call, not a synthetic worked
+example, but the verification standard is identical.
+</div>
+
+<!-- ============================================================== -->
+<h3 id="s8-9">8.9 The MCP server surface</h3>
+<!-- ============================================================== -->
+<p><code>agent/mcp_server.py</code> exposes the SAME four Tier-1 tools over the Model Context Protocol, so any
+MCP client (Claude Desktop, an IDE agent, a script using the <code>fastmcp</code>/<code>mcp</code> SDK) can
+call them directly — no HTTP layer, no copilot chat UI in between. It is deliberately a THIN ADAPTER: each
+tool is registered by wrapping the real <code>tools_tier1</code> function in a wrapper whose sole parameter is
+typed with the REAL pydantic model from <code>TIER1_ARG_MODELS</code>, so <code>fastmcp</code> builds the
+wire schema straight from that model — bounds, <code>extra="forbid"</code>, and every cross-field
+<code>model_validator</code> (shock bounds, weights summing to 1, <code>t0 &lt; t1</code>) all run UNCHANGED
+on every MCP call, exactly as they do for a direct Python call or a FastAPI route. "One validated model,
+three surfaces" (<code>outputs/mcp/README_section.md</code>) — same functions, same numbers, no
+re-implementation anywhere.</p>
+
+<div class="note">
+<b>The health resource — cheap, never triggers the engine build.</b>
+<code>resource://ifrs9-ecl/health</code> returns static/cheap facts (project version, the frozen-engine module
+list, the t=60 book date, whether the heavy engine state has been warmed yet in this process) WITHOUT ever
+triggering that ~9&ndash;50s warm-up itself — an MCP client can poll it safely before committing to a first
+(slow) tool call.
+</div>
+
+<div class="ex">
+<b>The documented example question flow (<code>outputs/mcp/README_section.md</code>).</b> A user asks their
+MCP client: <em>"What happens to the allowance if unemployment rises 2 points, and how much of that is Stage
+3?"</em> The client's own model (not this server) plans two tool calls: (1)
+<code>shock_macro({"args": {"var": "UER", "shock": 2.0, "shape": "peak_revert"}})</code> &rarr; the shocked
+allowance and its full movement decomposition vs. baseline; (2)
+<code>rerun_ecl({"args": {"segment": "stage3"}})</code> &rarr; Stage&nbsp;3's scenario-weighted allowance and
+share of the total book. <em>"The client's own model narrates the two JSON results; this server never
+narrates and never computes — it only validates arguments and forwards to the frozen engine."</em> Every call
+is still appended to the SAME <code>outputs/agent_log/tool_calls.jsonl</code> &sect;8.8 describes — the audit
+trail does not care which of the three surfaces (Python, FastAPI, MCP) made the call.
+</div>
+
+<div class="gotcha">
+<b>Gotcha — the MCP server has NO router, NO REASONED, NO refusal of its own.</b> Unlike the LangGraph copilot
+(&sect;8.5), the MCP server exposes only the four raw, fixed Tier-1 tools — there is no LLM classification
+step on this surface at all. Scope discipline shifts entirely onto the CALLING client: if the client's own
+model asks for an argument outside a tool's bounds, the SAME pydantic validation used everywhere else
+surfaces as a <code>fastmcp.exceptions.ToolError</code> (never a silent guess, never a crash) — but there is
+no REFUSAL message, no REASONED fallback, and no guard stack (&sect;8.6) on this surface, because there is no
+LLM-authored prose here to guard in the first place; every MCP response is already raw, structured engine
+JSON.
+</div>
+
+<div class="quiz">
+<b>Check yourself.</b>
+<ol>
+<li>Why does <code>agent/mcp_server.py</code> contain "NO engine logic, NO LLM call, and NO re-declared
+argument shape" (its own module docstring)?
+  <details><summary>Answer</summary>
+  <div class="answer">Because it is a THIN ADAPTER, not a fourth implementation — every tool is a one-line
+  forwarder onto the already-validated <code>agent/tools_tier1.py</code> functions, and every wire schema is
+  the corresponding pydantic model reused VERBATIM. This guarantees the "one validated model, three surfaces"
+  property: Python call, FastAPI route, and MCP call all run through the exact same validation and the exact
+  same frozen-engine functions, so there is no drift for a re-implementation to introduce.</div>
+  </details>
+</li>
+<li>An MCP client reads <code>resource://ifrs9-ecl/health</code> and sees <code>"engine_warm": false</code>.
+What should it expect from the NEXT tool call?
+  <details><summary>Answer</summary>
+  <div class="answer">A ~9-second joblib warm start if the model cache's fingerprint matches
+  (<code>outputs/models/tier1_models.joblib</code>), or a fresh ~10&ndash;50 second refit of the three models if
+  it does not (<code>tools_tier1.py</code>'s own staleness-rule docstring: "the three model fits, ~10-50s" —
+  <code>agent/mcp_server.py</code>'s module docstring restates this cost as "~19-50s", a stale figure that has
+  drifted from the authoritative number in <code>tools_tier1.py</code> itself) — the health resource itself is
+  cheap and never triggers this build, but the client should not assume the FIRST tool call in a fresh process
+  answers instantly.</div>
+  </details>
+</li>
+</ol>
+</div>
+
+<div class="summary">
+<b>Chapter 8 summary.</b> The agent's whole design is a refusal to let a fluent language model be the last
+word on a number or a fact. Three tiers enforce that refusal by three different mechanisms — Tier-1's closed,
+pydantic-validated argument space over six frozen-engine functions; Tier-2's AST-whitelisted, fork-isolated,
+runtime-hardened sandbox that lets the LLM write code but never claim a result; Tier-3's deterministic
+lexical/graph retrieval with verified, verbatim citations — and a shared guard stack (verbatim-number check,
+then a spelled-out-number check retrofitted after a live adversarial catch, then a citation check where
+applicable) discards any LLM prose that fails, falling back to engine-authored text every time. A REASONED
+route extends the same discipline to conceptual questions with no exact tool answer; a fixed refusal message
+handles everything genuinely out of scope, framed deliberately as a feature rather than a failure. None of
+this is presented as flawless: the project records its own limitation plainly — the guards verify a number's
+MAGNITUDE against a legal source, never its semantic ATTRIBUTION — and its own construction history openly,
+including a critical sandbox escape (module-traversal past an attribute-only filter) and a live
+spelled-out-number bypass, both caught by adversarial review and fixed with tests that still guard against
+regression today. Every recorded exchange in this chapter carries a <code>tool_call_id</code> resolving to a
+real, replayable line in <code>outputs/agent_log/tool_calls.jsonl</code> — the audit trail Chapter&nbsp;9
+picks up from the app's own Copilot tab, where these same six routes surface behind a chat interface.
+</div>
+
+<hr>
+
+<div class="small" style="text-align:center;">
+Compiled from <code>agent/graph.py</code>, <code>agent/tools_tier1.py</code>, <code>agent/tools_tier2.py</code>, <code>agent/tier3_retrieval.py</code>, <code>agent/mcp_server.py</code>, <code>wiki/pages/agent-layer.md</code>, <code>wiki/memory/log.md</code>, <code>outputs/agent_log/{tool_calls,agent_runs}.jsonl</code>, <code>outputs/demo/{e2e_trace,live_b_tier2,live_c_tier3}.json</code>, <code>outputs/gate/reasoned_route_gate.md</code>, <code>outputs/mcp/README_section.md</code>, <code>tests/test_tier2.py</code>, and live reproduction against the local engine on 2026-07-19.
+</div>
+
+<script src="../assets/js/toc.js" defer></script>
+</body>
+</html>
