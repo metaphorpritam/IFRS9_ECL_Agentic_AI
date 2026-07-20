@@ -129,3 +129,11 @@ Notes polish: (1) TOC sidebar shipped on all 14 pages (toc.js + idempotent patch
 ## 2026-07-19 21:15 UTC — tags: notes, polish, complete
 
 Content bugfixes VERIFIED CLEAN + deep math harness final PASS: ch04 widget one-line data-shape fix (object vs [x,y] pair - console clean at all slider positions); math overflow fixed campaign-wide via CSS-only patcher (TWO root causes: uncapped display-math SVG + inline-math immune to overflow per CSS spec -> inline-block promotion); 42/42 file-width combos zero page overflow, wide equations scroll internally. Notes compendium now FULLY polished: content 46/46, sidebar TOC, LaTeX 39->0, responsive 42/42 - all real-Chromium-verified. Project + notes campaign COMPLETE; user-side items only.
+
+## 2026-07-20 12:00 UTC — tags: github, publish
+
+PUBLISHED TO GITHUB: repo public at github.com/metaphorpritam/IFRS9_ECL_Agentic_AI (24MB tracked, zero data/secrets, DATA_SETUP.md replication guide); Pages site LIVE at metaphorpritam.github.io/IFRS9_ECL_Agentic_AI (notes compendium + MDD from gh-pages branch; hero links to HF app/MDD/source). GOTCHA RECORDED: user's GitHub Actions is billing-locked -> Pages deployed via branch source + EXPLICIT build trigger (POST /pages/builds - the source flip alone never queued a build, status was null). Future notes updates: rebuild gh-pages branch manually until billing fixed, then the committed pages.yml workflow takes over. Remaining user items: rotate keys, sudo passwd, fix Actions billing.
+
+## 2026-07-20 16:28 UTC — tags: cv, dossier
+
+CV defense dossier shipped: notes/cv_dossier.html (1525 lines, 23 phrase entries claim->meaning->evidence->verify->Q&A, 10-question bank, 8 exhibits). Review verdict fixed (3 citation defects: wrong chapter anchor, 5-vs-7 simplification count, audit date off by a day). Both gates PASS. Deploying to gh-pages.
