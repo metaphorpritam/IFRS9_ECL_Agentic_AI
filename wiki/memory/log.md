@@ -137,3 +137,7 @@ PUBLISHED TO GITHUB: repo public at github.com/metaphorpritam/IFRS9_ECL_Agentic_
 ## 2026-07-20 16:28 UTC — tags: cv, dossier
 
 CV defense dossier shipped: notes/cv_dossier.html (1525 lines, 23 phrase entries claim->meaning->evidence->verify->Q&A, 10-question bank, 8 exhibits). Review verdict fixed (3 citation defects: wrong chapter anchor, 5-vs-7 simplification count, audit date off by a day). Both gates PASS. Deploying to gh-pages.
+
+## 2026-07-24 21:24 UTC — tags: cv, plan, handoff
+
+CV/dossier-v2 state PERSISTED for compaction safety: full approved plan at notes/plan/dossier_v2_plan.md (canonical 4-pointer card byte-exact, S1 ECL-performance + S2 agent-eval defense sections with LIVE revalidation manifests, impl deep-dives + visuals inventory + AI-dev gauntlet, app panels incl. Model-at-a-glance + EAD/EIR + grounding, website strips, 3 no-ultracode stages). AWAITING USER GO. Prior workflow wf_2689d5df-c55 user-stopped; partial edits uncommitted. Live dossier still shows v1 5-bullet card. User pointers finalized incl. dropping the model-performance pointer (perf lives in S1). Housekeeping open: rotate 4 keys, sudo passwd, GH Actions billing.
