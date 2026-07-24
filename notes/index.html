@@ -167,6 +167,15 @@ window.MathJax = {
   }
   .count-chip b { color: var(--ink); }
 
+  /* Model-components quick index (dossier-v2 propagation) */
+  .component-strip { text-align: center; margin: 6px 0 14px; }
+  .component-strip .strip-label {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-right: 6px;
+  }
+  a.tag { text-decoration: none; }
+  a.tag:hover { border-color: var(--accent-soft); color: var(--accent); }
+
   /* Stat strip */
   .stat-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
   .stat-tile {
@@ -265,8 +274,10 @@ window.MathJax = {
 <p style="text-align:center; margin: 14px 0 6px 0; font-size: 1.05em;">
   <a href="https://huggingface.co/spaces/Preetomsorkar/ifrs9-ecl-copilot"><strong>&#9654; Live App (Hugging Face Spaces)</strong></a>
   &nbsp;&middot;&nbsp; <a href="mdd/MDD.html">Model Development Document</a>
+  &nbsp;&middot;&nbsp; <a href="cv_dossier.html">CV Dossier</a>
   &nbsp;&middot;&nbsp; <a href="https://github.com/metaphorpritam/IFRS9_ECL_Agentic_AI">Source on GitHub</a>
 </p>
+<div class="meta-line">Reading paths &mdash; Recruiter: <a href="cv_dossier.html">CV Dossier</a> &middot; Risk practitioner: <a href="chapters/ch01_ifrs9_foundations_staging.html">Ch.1 IFRS&nbsp;9 foundations &amp; staging</a> &middot; AI engineer: <a href="chapters/ch08_the_agent.html">Ch.8 the agent</a> + <a href="chapters/ch09_app_guide.html">Ch.9 app guide</a></div>
 <div class="meta-line">Master landing page. Compiled from <code>knowledge/</code> theory, <code>engine/</code>+<code>freddie/</code>+<code>agent/</code>+<code>app/</code> code (read-only citation), <code>outputs/</code> reports, <code>tests/fixtures/</code> golden values, and <code>wiki/</code> project memory, via the PageIndex-plus pipeline, on 2026-07-19.</div>
 
 <div class="stat-strip">
@@ -278,6 +289,19 @@ window.MathJax = {
   <div class="stat-tile"><div class="num">123</div><div class="lbl">quiz topics (2&ndash;4 Qs each)</div></div>
   <div class="stat-tile"><div class="num">133 / 133</div><div class="lbl">golden fixture values</div></div>
   <div class="stat-tile"><div class="num">665 / 665</div><div class="lbl">project test suite</div></div>
+</div>
+
+<div class="component-strip">
+  <span class="strip-label">Model components</span>
+  <a class="tag" href="chapters/ch01_ifrs9_foundations_staging.html#s1-5">Staging &amp; SICR</a>
+  <a class="tag" href="chapters/ch02_ecl_mechanics.html#s2-1">ECL formula &amp; discounting</a>
+  <a class="tag" href="chapters/ch03_hazard_modeling.html#s3-1">Default hazard (PD)</a>
+  <a class="tag" href="chapters/ch03_hazard_modeling.html#s3-2">Survival &amp; competing risks</a>
+  <a class="tag" href="chapters/ch04_lgd_ead.html#s4-1">LGD two-stage workout</a>
+  <a class="tag" href="chapters/ch04_lgd_ead.html#s4-7">EAD annuity &amp; CCF</a>
+  <a class="tag" href="chapters/ch05_vasicek.html#s5-1">PIT &harr; TTC (Vasicek)</a>
+  <a class="tag" href="chapters/ch06_scenarios_satellite_jensen.html#s6-5">Scenarios &amp; satellite Z</a>
+  <a class="tag" href="chapters/ch08_the_agent.html">Agent grounding</a>
 </div>
 
 <div class="summary">

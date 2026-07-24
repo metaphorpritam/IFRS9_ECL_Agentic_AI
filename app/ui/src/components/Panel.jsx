@@ -11,6 +11,7 @@ import { useExplain } from './ExplainButton.jsx';
  * answer strip renders inline UNDER the panel body (§7.4).
  */
 export default function Panel({
+  id,
   exhibit,
   title,
   subtitle,
@@ -27,7 +28,7 @@ export default function Panel({
     buildQuestion: buildExplainQuestion,
   });
   return (
-    <section class={`panel exhibit-panel ${className}`}>
+    <section id={id} class={`panel exhibit-panel ${className}`}>
       <div class="panel-kicker-row">
         <span class="exhibit-kicker">{exhibit != null ? `Exhibit ${exhibit}` : ''}</span>
         <span class="panel-actions">

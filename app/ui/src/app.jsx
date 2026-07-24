@@ -79,6 +79,15 @@ export default function App() {
           >
             MDD
           </a>
+          <a
+            class="mdd-link"
+            href="https://metaphorpritam.github.io/IFRS9_ECL_Agentic_AI/"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-tip="The 13-chapter study compendium + CV dossier"
+          >
+            Notes
+          </a>
         </div>
         <span class="grounded-badge">
           <span class="status-dot status-dot-good" />

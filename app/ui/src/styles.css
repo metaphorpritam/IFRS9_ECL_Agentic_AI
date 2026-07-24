@@ -1847,3 +1847,111 @@ input[type='range'] {
   .tab-nav { padding: 0 14px; gap: 16px; }
   .app-main { padding: 14px 14px 160px; }
 }
+
+/* ------------------------------------------- model-at-a-glance / method
+   (dossier-v2 propagation: the ECL-formula index panel, the EAD & EIR
+   method panel, and the Copilot "How grounding works" panel) */
+
+.glance-formula {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 17px;
+  color: var(--ink);
+  text-align: center;
+  padding: 10px 0 14px;
+  letter-spacing: 0.02em;
+}
+
+.glance-terms {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.glance-term-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.glance-chip {
+  font-family: var(--mono, ui-monospace, monospace);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  min-width: 92px;
+  text-align: center;
+}
+
+.glance-term-text {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.glance-term-text b { color: var(--ink); }
+
+.glance-jump {
+  color: var(--accent-text);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.glance-jump:hover { text-decoration: underline; }
+
+.glance-term-actions { margin-left: auto; flex: 0 0 auto; }
+
+.method-p {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0 0 10px;
+}
+
+.method-p b { color: var(--ink); }
+
+.method-formula { font-size: 14px; padding: 4px 0 10px; }
+
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  text-align: center;
+  margin: 0 4px;
+}
+
+.frac-top { padding: 0 6px 2px; border-bottom: 1px solid var(--ink-2); }
+.frac-bot { padding: 2px 6px 0; }
+
+.ground-steps {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.ground-steps b { color: var(--ink); }
+
+.ground-legend {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-bottom: 10px;
+}
+
+.ground-legend-row {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin: 0 0 6px;
+}
+
+.ground-legend-row b { color: var(--ink); letter-spacing: 0.04em; }
+
+@media (max-width: 640px) {
+  .glance-term-head { flex-wrap: wrap; }
+}

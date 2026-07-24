@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import ChatPanel from '../components/ChatPanel.jsx';
 import AgentTrace from '../components/AgentTrace.jsx';
+import HowGroundingWorks from '../components/HowGroundingWorks.jsx';
 import Panel from '../components/Panel.jsx';
 import { fmtTime } from '../format.js';
 import { explainPanelQuestion } from '../api.js';
@@ -101,6 +102,7 @@ export default function CopilotTab() {
           <ChatPanel mode="full" suggestions={SUGGESTIONS} onResult={(e) => setLog((l) => [...l, e])} />
         </div>
         <div class="copilot-side-col">
+          <HowGroundingWorks />
           <AgentTrace />
           <AuditLog entries={log} />
         </div>

@@ -13,6 +13,8 @@ import SearchableTable from '../components/SearchableTable.jsx';
 import ExhibitImage from '../components/ExhibitImage.jsx';
 import Panel from '../components/Panel.jsx';
 import HowToReadCoefficients from '../components/HowToReadCoefficients.jsx';
+import ModelAtAGlance from '../components/ModelAtAGlance.jsx';
+import EadEirMethod, { buildEadEirExplainQuestion } from '../components/EadEirMethod.jsx';
 import {
   ExpandToggle,
   InterpretationRow,
@@ -346,9 +348,12 @@ export default function ModelTab() {
         <div class="empty-note">Engine API offline ({error}).</div>
       )}
 
+      <ModelAtAGlance />
+
       <HowToReadCoefficients />
 
       <Panel
+        id="panel-hazard"
         exhibit={1}
         title="Hazard-ratio coefficients"
         subtitle="Hazard ratio > 1 = risk-increasing; < 1 = risk-reducing (exp(coef) of a cloglog hazard). Each family's intuition story is below its rows."
@@ -458,6 +463,7 @@ export default function ModelTab() {
       </Panel>
 
       <Panel
+        id="panel-lgd"
         exhibit={6}
         title="LGD — two-stage workout model"
         source={{ endpoint: 'GET /api/model/lgd', runDate: runDate() }}
@@ -473,6 +479,15 @@ export default function ModelTab() {
         }
       >
         <LgdSection lgd={lgd} exhibits={exhibits} />
+      </Panel>
+
+      <Panel
+        id="panel-ead-eir"
+        title="EAD & EIR method"
+        subtitle="The two ECL terms with no coefficients to show — exposure and discounting are conventions, so here they are, stated exactly as the engine documents them."
+        buildExplainQuestion={buildEadEirExplainQuestion}
+      >
+        <EadEirMethod />
       </Panel>
     </div>
   );
