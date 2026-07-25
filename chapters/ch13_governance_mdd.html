@@ -265,6 +265,24 @@ window.MathJax = {
     display: block;
   }
 </style>
+<style id="mobile-overflow-fix">
+  /* Phone-width containment (apply_mobile_overflow_fix.py): wide tables and
+     long code runs must scroll or wrap INSIDE their own box — the page
+     itself never scrolls horizontally. Scoped to narrow viewports only. */
+  @media (max-width: 700px) {
+    table { display: block; overflow-x: auto; max-width: 100%; }
+    pre { overflow-x: auto; max-width: 100%; }
+    :not(pre) > code { overflow-wrap: anywhere; }
+    /* long unbreakable tokens in prose boxes / definition lists / summaries
+       wrap instead of forcing a page pan (ch08 router-tree, ch09 pdoc,
+       ch10 gotcha — 390px-viewport bisection, 2026-07-25) */
+    summary, dt, dd, .gotcha, .note, .warn, .defn, .thm, .ex,
+    .interpretation { overflow-wrap: anywhere; }
+    /* interactive tree/diagram widgets keep their layout and scroll as a
+       unit rather than wrapping mid-node */
+    .widget { overflow-x: auto; max-width: 100%; }
+  }
+</style>
 </head>
 <body>
 

@@ -265,6 +265,53 @@ window.MathJax = {
     #theme-toggle { display: none; }
   }
 </style>
+<style id="mobile-overflow-fix">
+  /* Phone-width containment (apply_mobile_overflow_fix.py): wide tables and
+     long code runs must scroll or wrap INSIDE their own box — the page
+     itself never scrolls horizontally. Scoped to narrow viewports only. */
+  @media (max-width: 700px) {
+    table { display: block; overflow-x: auto; max-width: 100%; }
+    pre { overflow-x: auto; max-width: 100%; }
+    :not(pre) > code { overflow-wrap: anywhere; }
+    /* long unbreakable tokens in prose boxes / definition lists / summaries
+       wrap instead of forcing a page pan (ch08 router-tree, ch09 pdoc,
+       ch10 gotcha — 390px-viewport bisection, 2026-07-25) */
+    summary, dt, dd, .gotcha, .note, .warn, .defn, .thm, .ex,
+    .interpretation { overflow-wrap: anywhere; }
+    /* interactive tree/diagram widgets keep their layout and scroll as a
+       unit rather than wrapping mid-node */
+    .widget { overflow-x: auto; max-width: 100%; }
+  }
+</style>
+<style id="math-overflow-fix">
+  /* Math-equation overflow containment (apply_math_overflow_fix.py): MathJax
+     SVG output has no built-in width cap, so a wide equation — display
+     ($$...$$) OR inline ($...$) — can overflow the content column and force
+     the whole PAGE to scroll horizontally at narrow viewports. Give every
+     equation its own horizontal scrollbar instead — same containment
+     pattern as .table-wrap. Equation content/markup is never touched by
+     this rule.
+     Inline containers (no [display="true"]) are additionally promoted to
+     inline-block: MathJax's own CSS renders them as plain `display:inline`
+     so they flow with the surrounding text, but `overflow`/`max-width` do
+     not apply to non-replaced inline boxes, so an oversized inline formula
+     would otherwise have no way to be contained. inline-block still flows
+     inline with the text (the SVG was already a single non-breaking unit
+     on the line either way) while letting the containment rules take
+     effect. */
+  mjx-container[jax="SVG"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  mjx-container[jax="SVG"]:not([display="true"]) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  mjx-container[jax="SVG"][display="true"] {
+    display: block;
+  }
+</style>
 </head>
 <body>
 
