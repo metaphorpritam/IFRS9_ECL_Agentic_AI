@@ -117,10 +117,10 @@ STYLE_BLOCK = """<style id="math-overflow-fix">
 
 def target_files(notes_dir: Path) -> list[Path]:
     chapters = sorted((notes_dir / "chapters").glob("ch*.html"))
-    index = notes_dir / "index.html"
     files = list(chapters)
-    if index.is_file():
-        files.append(index)
+    for extra in (notes_dir / "index.html", notes_dir / "cv_dossier.html"):
+        if extra.is_file():
+            files.append(extra)
     return files
 
 
