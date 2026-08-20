@@ -277,7 +277,7 @@ function LgdSection({ lgd, exhibits }) {
           <SearchableTable columns={coefCols} rows={lgd.cure_stage_coefficients} placeholder="Search…" />
         </div>
         <div>
-          <h3>Severity-stage coefficients (OLS, HC1)</h3>
+          <h3>Severity-stage coefficients (fractional logit, HC1)</h3>
           <SearchableTable
             columns={coefCols.map((c) => (c.key === 'se' ? { ...c, label: 'SE (HC1)' } : c))}
             rows={lgd.severity_stage_coefficients}
